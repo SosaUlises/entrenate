@@ -1,0 +1,12 @@
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\bin\Debug\net9.0\Entrenate.Domain.deps.json
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\bin\Debug\net9.0\Entrenate.Domain.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\bin\Debug\net9.0\Entrenate.Domain.pdb
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\Entrenate.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\Entrenate.Domain.AssemblyInfoInputs.cache
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\Entrenate.Domain.AssemblyInfo.cs
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\Entrenate.Domain.csproj.CoreCompileInputs.cache
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\Entrenate.Domain.sourcelink.json
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\Entrenate.Domain.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\refint\Entrenate.Domain.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\Entrenate.Domain.pdb
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\ref\Entrenate.Domain.dll
