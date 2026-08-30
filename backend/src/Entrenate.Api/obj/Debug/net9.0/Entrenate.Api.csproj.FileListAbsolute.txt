@@ -37,3 +37,4 @@ C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\obj\Debug\net9.0
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\obj\Debug\net9.0\Entrenate.Api.pdb
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\obj\Debug\net9.0\Entrenate.Api.genruntimeconfig.cache
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\obj\Debug\net9.0\ref\Entrenate.Api.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
