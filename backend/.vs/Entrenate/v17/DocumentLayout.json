@@ -1,0 +1,202 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|c:\\users\\ulipv\\source\\repos\\entrenate\\backend\\src\\entrenate.infrastructure\\persistence\\entrenatedbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|solutionrelative:src\\entrenate.infrastructure\\persistence\\entrenatedbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|c:\\users\\ulipv\\source\\repos\\entrenate\\backend\\src\\entrenate.infrastructure\\persistence\\configurations\\diarutinaconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|solutionrelative:src\\entrenate.infrastructure\\persistence\\configurations\\diarutinaconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|c:\\users\\ulipv\\source\\repos\\entrenate\\backend\\src\\entrenate.infrastructure\\persistence\\configurations\\ejercicioconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|solutionrelative:src\\entrenate.infrastructure\\persistence\\configurations\\ejercicioconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|c:\\users\\ulipv\\source\\repos\\entrenate\\backend\\src\\entrenate.infrastructure\\persistence\\configurations\\ejerciciorutinaconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|solutionrelative:src\\entrenate.infrastructure\\persistence\\configurations\\ejerciciorutinaconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|c:\\users\\ulipv\\source\\repos\\entrenate\\backend\\src\\entrenate.infrastructure\\persistence\\configurations\\ejerciciosesionconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|solutionrelative:src\\entrenate.infrastructure\\persistence\\configurations\\ejerciciosesionconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|c:\\users\\ulipv\\source\\repos\\entrenate\\backend\\src\\entrenate.infrastructure\\persistence\\configurations\\perfilentrenamientoconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|solutionrelative:src\\entrenate.infrastructure\\persistence\\configurations\\perfilentrenamientoconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|c:\\users\\ulipv\\source\\repos\\entrenate\\backend\\src\\entrenate.infrastructure\\persistence\\configurations\\rutinaconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|solutionrelative:src\\entrenate.infrastructure\\persistence\\configurations\\rutinaconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|c:\\users\\ulipv\\source\\repos\\entrenate\\backend\\src\\entrenate.infrastructure\\persistence\\configurations\\serieentrenamientoconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|solutionrelative:src\\entrenate.infrastructure\\persistence\\configurations\\serieentrenamientoconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|c:\\users\\ulipv\\source\\repos\\entrenate\\backend\\src\\entrenate.infrastructure\\persistence\\configurations\\sesionentrenamientoconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|solutionrelative:src\\entrenate.infrastructure\\persistence\\configurations\\sesionentrenamientoconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|c:\\users\\ulipv\\source\\repos\\entrenate\\backend\\src\\entrenate.infrastructure\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{37D5ADE2-90BA-4A0E-8DC2-B3DE321BF978}|src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj|solutionrelative:src\\entrenate.infrastructure\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 5,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "EjercicioConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioConfiguration.cs",
+              "RelativeDocumentMoniker": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioConfiguration.cs",
+              "ToolTip": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioConfiguration.cs",
+              "RelativeToolTip": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T00:20:25.069Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DiaRutinaConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\DiaRutinaConfiguration.cs",
+              "RelativeDocumentMoniker": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\DiaRutinaConfiguration.cs",
+              "ToolTip": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\DiaRutinaConfiguration.cs",
+              "RelativeToolTip": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\DiaRutinaConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T00:20:37.378Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "EntrenateDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\EntrenateDbContext.cs",
+              "RelativeDocumentMoniker": "src\\Entrenate.Infrastructure\\Persistence\\EntrenateDbContext.cs",
+              "ToolTip": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\EntrenateDbContext.cs",
+              "RelativeToolTip": "src\\Entrenate.Infrastructure\\Persistence\\EntrenateDbContext.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T00:19:56.051Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "EjercicioRutinaConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioRutinaConfiguration.cs",
+              "RelativeDocumentMoniker": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioRutinaConfiguration.cs",
+              "ToolTip": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioRutinaConfiguration.cs",
+              "RelativeToolTip": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioRutinaConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T00:20:43.771Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "EjercicioSesionConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioSesionConfiguration.cs",
+              "RelativeDocumentMoniker": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioSesionConfiguration.cs",
+              "ToolTip": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioSesionConfiguration.cs",
+              "RelativeToolTip": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\EjercicioSesionConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T00:20:56.763Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "PerfilEntrenamientoConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\PerfilEntrenamientoConfiguration.cs",
+              "RelativeDocumentMoniker": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\PerfilEntrenamientoConfiguration.cs",
+              "ToolTip": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\PerfilEntrenamientoConfiguration.cs",
+              "RelativeToolTip": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\PerfilEntrenamientoConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACYAAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T00:20:16.323Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "RutinaConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\RutinaConfiguration.cs",
+              "RelativeDocumentMoniker": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\RutinaConfiguration.cs",
+              "ToolTip": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\RutinaConfiguration.cs",
+              "RelativeToolTip": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\RutinaConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T00:20:31.012Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "SerieEntrenamientoConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\SerieEntrenamientoConfiguration.cs",
+              "RelativeDocumentMoniker": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\SerieEntrenamientoConfiguration.cs",
+              "ToolTip": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\SerieEntrenamientoConfiguration.cs",
+              "RelativeToolTip": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\SerieEntrenamientoConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACUAAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T00:21:06.412Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "SesionEntrenamientoConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\SesionEntrenamientoConfiguration.cs",
+              "RelativeDocumentMoniker": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\SesionEntrenamientoConfiguration.cs",
+              "ToolTip": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Persistence\\Configurations\\SesionEntrenamientoConfiguration.cs",
+              "RelativeToolTip": "src\\Entrenate.Infrastructure\\Persistence\\Configurations\\SesionEntrenamientoConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAwBMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T00:20:50.157Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "DependencyInjection.cs",
+              "DocumentMoniker": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\DependencyInjection.cs",
+              "RelativeDocumentMoniker": "src\\Entrenate.Infrastructure\\DependencyInjection.cs",
+              "ToolTip": "C:\\Users\\ulipv\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\DependencyInjection.cs",
+              "RelativeToolTip": "src\\Entrenate.Infrastructure\\DependencyInjection.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T00:21:18.558Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
