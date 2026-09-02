@@ -1,9 +1,12 @@
 ﻿using Entrenate.Domain.Entidades;
+using Entrenate.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Entrenate.Infrastructure.Persistence
 {
-    public class EntrenateDbContext : DbContext
+    public class EntrenateDbContext
+     : IdentityDbContext<ApplicationUser>
     {
         public EntrenateDbContext(
             DbContextOptions<EntrenateDbContext> options)
