@@ -13,7 +13,7 @@ namespace Entrenate.Application
             {
                 configuration.RegisterServicesFromAssembly(
                     typeof(DependencyInjection).Assembly);
-                
+
                 configuration.AddOpenBehavior(
                     typeof(ValidationBehavior<,>));
             });

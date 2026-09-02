@@ -1,4 +1,5 @@
-﻿using Entrenate.Application.Common.Interfaces;
+﻿using Entrenate.Application.Common.Exceptions;
+using Entrenate.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
 namespace Entrenate.Infrastructure.Identity
@@ -30,11 +31,18 @@ namespace Entrenate.Infrastructure.Identity
 
             if (!result.Succeeded)
             {
+                if (HasDuplicateUserError(result))
+                {
+                    throw new ConflictException(
+                        "Ya existe un usuario registrado con ese email.");
+                }
+
                 var errors = string.Join(
                     "; ",
                     result.Errors.Select(error => error.Description));
 
-                throw new InvalidOperationException(errors);
+                throw new InvalidOperationException(
+                    $"No se pudo crear el usuario. {errors}");
             }
 
             return user.Id;
@@ -63,6 +71,14 @@ namespace Entrenate.Infrastructure.Identity
             }
 
             return user.Id;
+        }
+
+        private static bool HasDuplicateUserError(
+            IdentityResult result)
+        {
+            return result.Errors.Any(error =>
+                error.Code == nameof(IdentityErrorDescriber.DuplicateEmail) ||
+                error.Code == nameof(IdentityErrorDescriber.DuplicateUserName));
         }
     }
 }
