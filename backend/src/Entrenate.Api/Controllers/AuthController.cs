@@ -1,6 +1,8 @@
-﻿using Entrenate.Application.Auth.Commands.Login;
+﻿using Entrenate.Application.Auth.Commands.ChangePassword;
+using Entrenate.Application.Auth.Commands.Login;
 using Entrenate.Application.Auth.Commands.Register;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Entrenate.Api.Controllers
@@ -38,6 +40,17 @@ namespace Entrenate.Api.Controllers
                 cancellationToken);
 
             return Ok(response);
+        }
+
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword(
+            ChangePasswordCommand command,
+            CancellationToken cancellationToken)
+        {
+            await _sender.Send(command, cancellationToken);
+
+            return NoContent();
         }
     }
 }

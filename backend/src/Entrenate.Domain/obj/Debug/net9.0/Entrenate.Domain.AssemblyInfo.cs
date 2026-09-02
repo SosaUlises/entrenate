@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Entrenate.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+df8f88c5500dd0c444b82241dcbc23fa8d2e1f13")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ebeefc1c6b262958cd268d49ff59c0045794b420")]
 [assembly: System.Reflection.AssemblyProductAttribute("Entrenate.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Entrenate.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

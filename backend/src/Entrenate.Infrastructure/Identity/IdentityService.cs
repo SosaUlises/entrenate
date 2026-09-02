@@ -80,5 +80,45 @@ namespace Entrenate.Infrastructure.Identity
                 error.Code == nameof(IdentityErrorDescriber.DuplicateEmail) ||
                 error.Code == nameof(IdentityErrorDescriber.DuplicateUserName));
         }
+
+        public async Task ChangePasswordAsync(
+            string userId,
+            string currentPassword,
+            string newPassword,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user is null)
+            {
+                throw new UnauthorizedAccessException(
+                    "El usuario autenticado no existe.");
+            }
+
+            var result = await _userManager.ChangePasswordAsync(
+                user,
+                currentPassword,
+                newPassword);
+
+            if (!result.Succeeded)
+            {
+                var invalidPassword = result.Errors.Any(error =>
+                    error.Code == nameof(
+                        IdentityErrorDescriber.PasswordMismatch));
+
+                if (invalidPassword)
+                {
+                    throw new UnauthorizedAccessException(
+                        "La contraseña actual es incorrecta.");
+                }
+
+                var errors = string.Join(
+                    "; ",
+                    result.Errors.Select(error => error.Description));
+
+                throw new InvalidOperationException(
+                    $"No se pudo cambiar la contraseña. {errors}");
+            }
+        }
     }
 }
