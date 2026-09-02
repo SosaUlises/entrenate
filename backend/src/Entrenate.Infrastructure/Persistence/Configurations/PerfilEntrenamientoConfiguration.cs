@@ -18,6 +18,20 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasMaxLength(450);
 
+            builder.Property(x => x.Sexo)
+                .IsRequired(false);
+
+            builder.Property(x => x.FechaNacimiento)
+                .IsRequired(false);
+
+            builder.Property(x => x.AlturaCm)
+                .HasPrecision(5, 2)
+                .IsRequired(false);
+
+            builder.Property(x => x.PesoCorporalKg)
+                .HasPrecision(6, 2)
+                .IsRequired(false);
+
             builder.Property(x => x.NivelExperiencia)
                 .IsRequired();
 

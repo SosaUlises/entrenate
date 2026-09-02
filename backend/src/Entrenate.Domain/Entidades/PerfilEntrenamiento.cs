@@ -10,6 +10,14 @@ namespace Entrenate.Domain.Entidades
 
         public NivelExperiencia NivelExperiencia { get; set; }
 
+        public Sexo? Sexo { get; set; }
+
+        public DateOnly? FechaNacimiento { get; set; }
+
+        public decimal? AlturaCm { get; set; }
+
+        public decimal? PesoCorporalKg { get; set; }
+
         public ObjetivoEntrenamiento ObjetivoPrincipal { get; set; }
 
         public int DiasDisponiblesSemana { get; private set; }
