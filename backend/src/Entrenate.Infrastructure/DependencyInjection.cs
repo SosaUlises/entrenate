@@ -110,6 +110,7 @@ namespace Entrenate.Infrastructure
 
             // Infrastructure Services
             services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IIdentityService, IdentityService>();
 
 
             return services;

@@ -16,15 +16,15 @@ namespace Entrenate.Infrastructure.Authentication
             _settings = options.Value;
         }
 
-        public string GenerarToken(
-            string usuarioId,
+        public string GenerateToken(
+            string userId,
             string email)
         {
             var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, usuarioId),
+            new(JwtRegisteredClaimNames.Sub, userId),
             new(JwtRegisteredClaimNames.Email, email),
-            new(ClaimTypes.NameIdentifier, usuarioId),
+            new(ClaimTypes.NameIdentifier, userId),
             new(ClaimTypes.Email, email)
         };
 

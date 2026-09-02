@@ -149,3 +149,8 @@ C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\obj\Debug\net9.0
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\obj\Debug\net9.0\Entrenate.Api.pdb
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\obj\Debug\net9.0\Entrenate.Api.genruntimeconfig.cache
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\obj\Debug\net9.0\ref\Entrenate.Api.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\MediatR.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\MediatR.Contracts.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\System.Diagnostics.DiagnosticSource.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\FluentValidation.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\FluentValidation.DependencyInjectionExtensions.dll
