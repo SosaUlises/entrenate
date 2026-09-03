@@ -15,6 +15,7 @@ import {
   type LoginFormValues,
 } from "../schemas/auth.schemas";
 import { AuthPageHeader } from "./auth-page-header";
+import { AuthSecondaryAction } from "./auth-secondary-action";
 
 const emailFieldId = "login-email";
 const passwordFieldId = "login-password";
@@ -143,15 +144,11 @@ export function LoginForm() {
         </Button>
       </form>
 
-      <p className="flex flex-col items-center gap-1 text-center text-sm leading-6 text-text-secondary">
-        <span>¿No tenés cuenta?</span>
-        <Link
-          className="rounded-sm font-semibold text-primary underline-offset-4 transition duration-200 hover:opacity-85 hover:underline focus-visible:outline-primary"
-          href="/register"
-        >
-          Crear cuenta
-        </Link>
-      </p>
+      <AuthSecondaryAction
+        action="Crear cuenta"
+        href="/register"
+        prompt="¿No tenés cuenta?"
+      />
     </div>
   );
 }
