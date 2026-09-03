@@ -4,11 +4,11 @@ export function BrandMark() {
   return (
     <Image
       alt="Entrenate"
-      className="h-auto w-56 sm:w-60"
-      height={174}
+      className="h-auto w-[256px] sm:w-[288px]"
+      height={127}
       priority
-      src="/branding/logo/entrenate-logo-horizontal-white.png"
-      width={1076}
+      src="/branding/logo/entrenate-logo-white.png"
+      width={936}
     />
   );
 }

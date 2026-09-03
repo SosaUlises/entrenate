@@ -124,7 +124,7 @@ export function LoginForm() {
 
           <div className="flex justify-end">
             <Link
-              className="min-h-12 content-center text-sm font-semibold text-primary underline-offset-4 transition-colors duration-200 hover:text-text-primary hover:underline focus-visible:outline-primary"
+              className="min-h-12 content-center rounded-sm text-sm font-medium text-primary underline-offset-4 transition duration-200 hover:opacity-85 hover:underline focus-visible:outline-primary"
               href="/forgot-password"
             >
               ¿Olvidaste tu contraseña?
@@ -146,7 +146,7 @@ export function LoginForm() {
       <p className="flex flex-col items-center gap-1 text-center text-sm leading-6 text-text-secondary">
         <span>¿No tenés cuenta?</span>
         <Link
-          className="font-semibold text-primary underline-offset-4 transition-colors duration-200 hover:text-text-primary hover:underline focus-visible:outline-primary"
+          className="rounded-sm font-semibold text-primary underline-offset-4 transition duration-200 hover:opacity-85 hover:underline focus-visible:outline-primary"
           href="/register"
         >
           Crear cuenta
