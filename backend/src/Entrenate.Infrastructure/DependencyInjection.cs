@@ -1,5 +1,6 @@
 ﻿using Entrenate.Application.Common.Interfaces;
 using Entrenate.Infrastructure.Authentication;
+using Entrenate.Infrastructure.Email;
 using Entrenate.Infrastructure.Identity;
 using Entrenate.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -103,6 +104,24 @@ namespace Entrenate.Infrastructure
                         };
                 });
 
+            // Email Brevo
+            services
+                .AddOptions<EmailSettings>()
+                .Bind(configuration.GetSection("Email"))
+                .Validate(
+                    settings =>
+                        !string.IsNullOrWhiteSpace(settings.ApiKey),
+                    "Email:ApiKey es obligatorio.")
+                .Validate(
+                    settings =>
+                        !string.IsNullOrWhiteSpace(settings.FromEmail),
+                    "Email:FromEmail es obligatorio.")
+                .Validate(
+                    settings =>
+                        !string.IsNullOrWhiteSpace(settings.FromName),
+                    "Email:FromName es obligatorio.")
+                .ValidateOnStart();
+
 
             // Authorization
             services.AddAuthorization();
@@ -111,6 +130,7 @@ namespace Entrenate.Infrastructure
             // Infrastructure Services
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IIdentityService, IdentityService>();
+            services.AddHttpClient<IEmailService, BrevoEmailService>();
 
 
             return services;
