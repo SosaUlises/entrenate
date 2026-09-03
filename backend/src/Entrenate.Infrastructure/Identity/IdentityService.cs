@@ -120,5 +120,49 @@ namespace Entrenate.Infrastructure.Identity
                     $"No se pudo cambiar la contraseña. {errors}");
             }
         }
+
+        public async Task<string?> GeneratePasswordResetTokenAsync(
+            string email,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user is null)
+            {
+                return null;
+            }
+
+            return await _userManager.GeneratePasswordResetTokenAsync(user);
+        }
+
+        public async Task ResetPasswordAsync(
+            string email,
+            string token,
+            string newPassword,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user is null)
+            {
+                throw new UnauthorizedAccessException(
+                    "El token de recuperación no es válido.");
+            }
+
+            var result = await _userManager.ResetPasswordAsync(
+                user,
+                token,
+                newPassword);
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(
+                    "; ",
+                    result.Errors.Select(error => error.Description));
+
+                throw new InvalidOperationException(
+                    $"No se pudo restablecer la contraseña. {errors}");
+            }
+        }
     }
 }

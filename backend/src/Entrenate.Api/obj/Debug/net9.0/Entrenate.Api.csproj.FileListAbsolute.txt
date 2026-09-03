@@ -30,7 +30,9 @@ C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.EntityFrameworkCore.Relational.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.Caching.Abstractions.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.Caching.Memory.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.Configuration.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.Configuration.Abstractions.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.Configuration.Binder.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.DependencyInjection.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.DependencyModel.dll
@@ -39,6 +41,7 @@ C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.Logging.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.Logging.Abstractions.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.Options.dll
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.Options.ConfigurationExtensions.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.Extensions.Primitives.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.IdentityModel.Abstractions.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Api\bin\Debug\net9.0\Microsoft.IdentityModel.JsonWebTokens.dll

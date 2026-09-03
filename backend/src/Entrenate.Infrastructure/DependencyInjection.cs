@@ -1,4 +1,5 @@
 ﻿using Entrenate.Application.Common.Interfaces;
+using Entrenate.Application.Common.Settings;
 using Entrenate.Infrastructure.Authentication;
 using Entrenate.Infrastructure.Email;
 using Entrenate.Infrastructure.Identity;
@@ -122,6 +123,14 @@ namespace Entrenate.Infrastructure
                     "Email:FromName es obligatorio.")
                 .ValidateOnStart();
 
+            // Frontend
+            services
+                .AddOptions<FrontendSettings>()
+                .Bind(configuration.GetSection("Frontend"))
+                .Validate(
+                    settings => !string.IsNullOrWhiteSpace(settings.BaseUrl),
+                    "Frontend:BaseUrl es obligatorio.")
+                .ValidateOnStart();
 
             // Authorization
             services.AddAuthorization();

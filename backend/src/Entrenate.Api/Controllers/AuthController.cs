@@ -1,6 +1,8 @@
 ﻿using Entrenate.Application.Auth.Commands.ChangePassword;
+using Entrenate.Application.Auth.Commands.ForgotPassword;
 using Entrenate.Application.Auth.Commands.Login;
 using Entrenate.Application.Auth.Commands.Register;
+using Entrenate.Application.Auth.Commands.ResetPassword;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -51,6 +53,34 @@ namespace Entrenate.Api.Controllers
             await _sender.Send(command, cancellationToken);
 
             return NoContent();
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(
+            ForgotPasswordCommand command,
+            CancellationToken cancellationToken)
+        {
+            await _sender.Send(command, cancellationToken);
+
+            return Ok(new
+            {
+                message =
+                    "Si existe una cuenta asociada al email, " +
+                    "recibirás instrucciones para restablecer tu contraseña."
+            });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(
+            ResetPasswordCommand command,
+            CancellationToken cancellationToken)
+        {
+            await _sender.Send(command, cancellationToken);
+
+            return Ok(new
+            {
+                message = "La contraseña fue restablecida correctamente."
+            });
         }
     }
 }

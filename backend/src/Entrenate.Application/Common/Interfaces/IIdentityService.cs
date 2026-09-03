@@ -17,5 +17,15 @@
             string currentPassword,
             string newPassword,
             CancellationToken cancellationToken = default);
+
+        Task<string?> GeneratePasswordResetTokenAsync(
+            string email,
+            CancellationToken cancellationToken = default);
+
+        Task ResetPasswordAsync(
+            string email,
+            string token,
+            string newPassword,
+            CancellationToken cancellationToken = default);
     }
 }
