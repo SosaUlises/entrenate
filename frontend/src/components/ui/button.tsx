@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/class-names";
 import { Spinner } from "./spinner";
 
-type ButtonVariant = "primary" | "secondary" | "text";
+type ButtonVariant = "gradient" | "primary" | "secondary" | "text";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   fullWidth?: boolean;
@@ -11,6 +11,8 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
+  gradient:
+    "bg-linear-to-r from-primary to-secondary text-text-primary hover:brightness-110 active:scale-[0.99] active:brightness-95 focus-visible:outline-primary",
   primary:
     "bg-primary-strong text-text-primary hover:bg-primary focus-visible:outline-primary",
   secondary:
@@ -40,7 +42,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex min-h-12 items-center justify-center gap-2 rounded-control px-5 text-sm font-semibold transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex min-h-12 items-center justify-center gap-2 rounded-control px-5 text-sm font-semibold transition-[background-color,border-color,color,filter,opacity,transform] duration-200 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
         variantClasses[variant],
         fullWidth && "w-full",
         className,

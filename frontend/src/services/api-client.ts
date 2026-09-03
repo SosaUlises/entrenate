@@ -33,11 +33,11 @@ type ApiClientErrorOptions = {
 
 const statusMessages: Record<number, string> = {
   400: "Revisa los datos ingresados.",
-  401: "Necesitas iniciar sesion para continuar.",
-  403: "No tenes permisos para realizar esta accion.",
+  401: "Necesitás iniciar sesión para continuar.",
+  403: "No tenés permisos para realizar esta acción.",
   404: "No encontramos el recurso solicitado.",
-  409: "No se pudo completar la accion por el estado actual.",
-  500: "Ocurrio un error inesperado. Intentalo nuevamente.",
+  409: "No se pudo completar la acción por el estado actual.",
+  500: "Ocurrió un error inesperado. Intentalo nuevamente.",
 };
 
 export class ApiClientError extends Error {
@@ -73,11 +73,19 @@ export async function apiRequest<
     requestHeaders.set("Authorization", `Bearer ${authToken}`);
   }
 
-  const response = await fetch(buildApiUrl(path), {
-    ...requestOptions,
-    body: body === undefined ? undefined : JSON.stringify(body),
-    headers: requestHeaders,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(buildApiUrl(path), {
+      ...requestOptions,
+      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: requestHeaders,
+    });
+  } catch {
+    throw new ApiClientError("No pudimos conectar con la API.", {
+      code: "network_error",
+    });
+  }
 
   const payload = await parseResponsePayload(response);
 
@@ -90,7 +98,7 @@ export async function apiRequest<
 
 function buildApiUrl(path: string): string {
   if (!env.apiUrl) {
-    throw new ApiClientError("La URL de la API no esta configurada.", {
+    throw new ApiClientError("La URL de la API no está configurada.", {
       code: "missing_api_url",
     });
   }
@@ -108,7 +116,7 @@ async function parseResponsePayload(response: Response): Promise<unknown> {
 
   const contentType = response.headers.get("Content-Type");
 
-  if (!contentType?.includes("application/json")) {
+  if (!contentType?.includes("json")) {
     return undefined;
   }
 

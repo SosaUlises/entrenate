@@ -30,8 +30,8 @@ export function PasswordInput({
       />
       <button
         aria-controls={inputId}
-        aria-label={isVisible ? "Ocultar contrasena" : "Mostrar contrasena"}
-        className="absolute right-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-control-sm text-text-secondary transition-colors duration-200 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+        aria-label={isVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+        className="absolute right-3 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-control-sm text-text-secondary transition-colors duration-200 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
         disabled={disabled}
         onClick={() => setIsVisible((value) => !value)}
         type="button"
