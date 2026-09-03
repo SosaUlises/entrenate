@@ -1,4 +1,5 @@
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Infrastructure\bin\Debug\net9.0\Entrenate.Infrastructure.deps.json
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Infrastructure\bin\Debug\net9.0\Entrenate.Infrastructure.runtimeconfig.json
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Infrastructure\bin\Debug\net9.0\Entrenate.Infrastructure.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Infrastructure\bin\Debug\net9.0\Entrenate.Infrastructure.pdb
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Infrastructure\bin\Debug\net9.0\Entrenate.Application.dll
@@ -15,4 +16,5 @@ C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Infrastructure\obj\D
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Infrastructure\obj\Debug\net9.0\Entrenate.Infrastructure.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Infrastructure\obj\Debug\net9.0\refint\Entrenate.Infrastructure.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Infrastructure\obj\Debug\net9.0\Entrenate.Infrastructure.pdb
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Infrastructure\obj\Debug\net9.0\Entrenate.Infrastructure.genruntimeconfig.cache
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Infrastructure\obj\Debug\net9.0\ref\Entrenate.Infrastructure.dll

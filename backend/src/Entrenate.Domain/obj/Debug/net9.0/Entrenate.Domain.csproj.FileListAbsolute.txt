@@ -1,4 +1,5 @@
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\bin\Debug\net9.0\Entrenate.Domain.deps.json
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\bin\Debug\net9.0\Entrenate.Domain.runtimeconfig.json
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\bin\Debug\net9.0\Entrenate.Domain.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\bin\Debug\net9.0\Entrenate.Domain.pdb
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\Entrenate.Domain.GeneratedMSBuildEditorConfig.editorconfig
@@ -9,4 +10,5 @@ C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\Entrenate.Domain.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\refint\Entrenate.Domain.dll
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\Entrenate.Domain.pdb
+C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\Entrenate.Domain.genruntimeconfig.cache
 C:\Users\ulipv\source\repos\entrenate\backend\src\Entrenate.Domain\obj\Debug\net9.0\ref\Entrenate.Domain.dll
