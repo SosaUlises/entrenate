@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
+
 type AuthPageHeaderProps = {
-  supportingText?: string;
+  supportingText?: ReactNode;
   title: string;
 };
 

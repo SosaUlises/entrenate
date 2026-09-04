@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Entrenate.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+83276d5dde209f826a48c682378c1b395a12a553")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+852068a7750cad9982f2ba5eef7a569080e0d05c")]
 [assembly: System.Reflection.AssemblyProductAttribute("Entrenate.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Entrenate.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

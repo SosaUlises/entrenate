@@ -6,68 +6,96 @@ import { useForm, useWatch } from "react-hook-form";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
-import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { registerAction } from "../actions/register.action";
+import { resetPasswordAction } from "../actions/reset-password.action";
 import {
-  registerSchema,
-  type RegisterFormValues,
+  resetPasswordFormSchema,
+  type ResetPasswordFormValues,
 } from "../schemas/auth.schemas";
 import { AuthPageHeader } from "./auth-page-header";
+import { AuthPrimaryLink } from "./auth-primary-link";
 import { AuthSecondaryAction } from "./auth-secondary-action";
 import { PasswordRequirements } from "./password-requirements";
 
-const emailFieldId = "register-email";
-const passwordFieldId = "register-password";
-const confirmPasswordFieldId = "register-confirm-password";
-const passwordRequirementsId = "register-password-requirements";
+const newPasswordFieldId = "reset-password-new-password";
+const confirmPasswordFieldId = "reset-password-confirm-password";
+const passwordRequirementsId = "reset-password-requirements";
+
+type ResetPasswordFormProps = {
+  email?: string;
+  token?: string;
+};
 
 type SubmitFeedback = {
   message: string;
-  variant: "error" | "success";
+  variant: "error";
 };
 
-export function RegisterForm() {
+export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
   const [submitFeedback, setSubmitFeedback] = useState<SubmitFeedback | null>(
     null,
   );
+  const [invalidLinkMessage, setInvalidLinkMessage] = useState<string | null>(
+    null,
+  );
+  const [isComplete, setIsComplete] = useState(false);
   const {
     control,
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
     setError,
-  } = useForm<RegisterFormValues>({
+  } = useForm<ResetPasswordFormValues>({
     defaultValues: {
       confirmPassword: "",
-      email: "",
-      password: "",
+      newPassword: "",
     },
     mode: "onTouched",
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(resetPasswordFormSchema),
   });
 
-  const password = useWatch({
+  const newPassword = useWatch({
     control,
-    name: "password",
+    name: "newPassword",
   });
+
+  if (!email || !token || invalidLinkMessage) {
+    return (
+      <InvalidResetLink
+        message={
+          invalidLinkMessage ??
+          "Solicitá un nuevo enlace para restablecer tu contraseña."
+        }
+      />
+    );
+  }
+
+  if (isComplete) {
+    return <ResetPasswordSuccess />;
+  }
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitFeedback(null);
 
-    const result = await registerAction(values);
+    const result = await resetPasswordAction({
+      ...values,
+      email,
+      token,
+    });
 
     if (result.ok) {
-      setSubmitFeedback({
-        message: "Cuenta creada correctamente.",
-        variant: "success",
-      });
+      setIsComplete(true);
+      return;
+    }
+
+    if (result.reason === "invalid_link") {
+      setInvalidLinkMessage(result.message);
       return;
     }
 
     if (result.fieldErrors) {
       for (const [field, message] of Object.entries(result.fieldErrors)) {
-        setError(field as keyof RegisterFormValues, {
+        setError(field as keyof ResetPasswordFormValues, {
           message,
           type: "server",
         });
@@ -80,22 +108,24 @@ export function RegisterForm() {
     });
   });
 
-  const emailMessageId = errors.email ? `${emailFieldId}-message` : undefined;
-  const passwordMessageId = errors.password
-    ? `${passwordFieldId}-message`
+  const newPasswordMessageId = errors.newPassword
+    ? `${newPasswordFieldId}-message`
     : undefined;
   const confirmPasswordMessageId = errors.confirmPassword
     ? `${confirmPasswordFieldId}-message`
     : undefined;
-  const passwordDescribedBy = [passwordMessageId, passwordRequirementsId]
+  const newPasswordDescribedBy = [
+    newPasswordMessageId,
+    passwordRequirementsId,
+  ]
     .filter(Boolean)
     .join(" ");
 
   return (
     <div className="space-y-8 sm:space-y-9">
       <AuthPageHeader
-        supportingText="Empezá a registrar tu progreso."
-        title="Creá tu cuenta"
+        supportingText="Elegí una contraseña segura para volver a acceder."
+        title="Creá una nueva contraseña"
       />
 
       <form className="space-y-5" noValidate onSubmit={onSubmit}>
@@ -103,45 +133,27 @@ export function RegisterForm() {
           <Alert variant={submitFeedback.variant}>{submitFeedback.message}</Alert>
         ) : null}
 
-        <FormField
-          error={errors.email?.message}
-          id={emailFieldId}
-          label="Correo electrónico"
-        >
-          <Input
-            autoComplete="email"
-            hasError={Boolean(errors.email)}
-            id={emailFieldId}
-            inputMode="email"
-            placeholder="nombre@correo.com"
-            type="email"
-            {...register("email")}
-            aria-describedby={emailMessageId}
-            aria-invalid={Boolean(errors.email)}
-          />
-        </FormField>
-
         <div className="space-y-4">
           <div className="space-y-2">
             <FormField
-              error={errors.password?.message}
-              id={passwordFieldId}
-              label="Contraseña"
+              error={errors.newPassword?.message}
+              id={newPasswordFieldId}
+              label="Nueva contraseña"
             >
               <PasswordInput
                 autoComplete="new-password"
-                hasError={Boolean(errors.password)}
-                id={passwordFieldId}
+                hasError={Boolean(errors.newPassword)}
+                id={newPasswordFieldId}
                 placeholder="••••••••"
-                {...register("password")}
-                aria-describedby={passwordDescribedBy || undefined}
-                aria-invalid={Boolean(errors.password)}
+                {...register("newPassword")}
+                aria-describedby={newPasswordDescribedBy || undefined}
+                aria-invalid={Boolean(errors.newPassword)}
               />
             </FormField>
 
             <PasswordRequirements
               id={passwordRequirementsId}
-              password={password}
+              password={newPassword}
             />
           </div>
 
@@ -169,15 +181,39 @@ export function RegisterForm() {
           type="submit"
           variant="gradient"
         >
-          Crear cuenta
+          Guardar contraseña
         </Button>
       </form>
 
-      <AuthSecondaryAction
-        action="Iniciar sesión"
-        href="/login"
-        prompt="¿Ya tenés cuenta?"
+      <AuthSecondaryAction action="Volver a iniciar sesión" href="/login" />
+    </div>
+  );
+}
+
+function InvalidResetLink({ message }: { message: string }) {
+  return (
+    <div className="space-y-8 sm:space-y-9">
+      <AuthPageHeader
+        supportingText={message}
+        title="El enlace no es válido"
       />
+
+      <AuthPrimaryLink href="/forgot-password">
+        Solicitar nuevo enlace
+      </AuthPrimaryLink>
+    </div>
+  );
+}
+
+function ResetPasswordSuccess() {
+  return (
+    <div className="space-y-8 sm:space-y-9">
+      <AuthPageHeader
+        supportingText="Tu contraseña fue restablecida correctamente. Ya podés volver a iniciar sesión."
+        title="Contraseña actualizada"
+      />
+
+      <AuthPrimaryLink href="/login">Iniciar sesión</AuthPrimaryLink>
     </div>
   );
 }
