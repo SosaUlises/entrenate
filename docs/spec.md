@@ -79,10 +79,11 @@ El usuario podrá crear una cuenta proporcionando los datos necesarios.
 
 Como mínimo:
 
-* nombre;
-* apellido;
 * correo electrónico;
 * contraseña.
+
+El nombre, apellido y demás datos personales no formarán parte del registro inicial
+mientras el contrato real del backend no los solicite.
 
 La autenticación será administrada mediante **ASP.NET Core Identity**.
 
@@ -924,6 +925,7 @@ POST /api/auth/register
 POST /api/auth/login
 POST /api/auth/logout
 POST /api/auth/forgot-password
+POST /api/auth/reset-password
 ```
 
 ## Perfil
