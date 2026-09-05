@@ -15,7 +15,16 @@ namespace Entrenate.Infrastructure.Persistence
         }
 
         public DbSet<PerfilEntrenamiento> PerfilesEntrenamiento =>
-            Set<PerfilEntrenamiento>();
+          Set<PerfilEntrenamiento>();
+
+        public DbSet<Equipamiento> Equipamientos =>
+            Set<Equipamiento>();
+
+        public DbSet<PerfilEquipamiento> PerfilEquipamientos =>
+            Set<PerfilEquipamiento>();
+
+        public DbSet<DiaEntrenamientoPreferido> DiasEntrenamientoPreferidos =>
+            Set<DiaEntrenamientoPreferido>();
 
         public DbSet<Ejercicio> Ejercicios =>
             Set<Ejercicio>();

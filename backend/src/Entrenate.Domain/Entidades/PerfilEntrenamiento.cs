@@ -4,48 +4,194 @@ namespace Entrenate.Domain.Entidades
 {
     public class PerfilEntrenamiento
     {
-        public Guid Id { get; set; }
+        private readonly List<DiaEntrenamientoPreferido> _diasPreferidos = [];
+        private readonly List<PerfilEquipamiento> _equipamientos = [];
 
-        public string UsuarioId { get; set; } = string.Empty;
+        public Guid Id { get; private set; }
 
-        public NivelExperiencia NivelExperiencia { get; set; }
+        public string UsuarioId { get; private set; } = string.Empty;
 
-        public Sexo? Sexo { get; set; }
+        public ObjetivoEntrenamiento Objetivo { get; private set; }
 
-        public DateOnly? FechaNacimiento { get; set; }
+        public NivelExperiencia NivelExperiencia { get; private set; }
 
-        public decimal? AlturaCm { get; set; }
+        public int Edad { get; private set; }
 
-        public decimal? PesoCorporalKg { get; set; }
+        public Sexo? Sexo { get; private set; }
 
-        public ObjetivoEntrenamiento ObjetivoPrincipal { get; set; }
+        public decimal? PesoKg { get; private set; }
 
-        public int DiasDisponiblesSemana { get; private set; }
+        public int DiasEntrenamientoPorSemana { get; private set; }
 
-        public int DuracionSesionDeseadaMinutos { get; private set; }
+        public int DuracionSesionMinutos { get; private set; }
 
-        public DateTime FechaCreacion { get; set; }
+        public EntornoEntrenamiento EntornoEntrenamiento { get; private set; }
 
-        public DateTime FechaUltimaModificacion { get; set; }
+        public DateTime CreadoEnUtc { get; private set; }
 
-        public void ConfigurarDiasDisponibles(int dias)
+        public DateTime ActualizadoEnUtc { get; private set; }
+
+        public IReadOnlyCollection<DiaEntrenamientoPreferido> DiasPreferidos
+            => _diasPreferidos.AsReadOnly();
+
+        public IReadOnlyCollection<PerfilEquipamiento> Equipamientos
+            => _equipamientos.AsReadOnly();
+
+        private PerfilEntrenamiento()
         {
-            if (dias < 1 || dias > 7)
-                throw new ArgumentOutOfRangeException(
-                    nameof(dias),
-                    "Los días disponibles deben estar entre 1 y 7.");
-
-            DiasDisponiblesSemana = dias;
         }
 
-        public void ConfigurarDuracionSesion(int minutos)
+        public PerfilEntrenamiento(
+            string usuarioId,
+            ObjetivoEntrenamiento objetivo,
+            NivelExperiencia nivelExperiencia,
+            int edad,
+            Sexo? sexo,
+            decimal? pesoKg,
+            int diasEntrenamientoPorSemana,
+            int duracionSesionMinutos,
+            EntornoEntrenamiento entornoEntrenamiento)
         {
-            if (minutos < 15 || minutos > 240)
-                throw new ArgumentOutOfRangeException(
-                    nameof(minutos),
-                    "La duración de la sesión debe estar entre 15 y 240 minutos.");
+            ValidarDatos(
+                usuarioId,
+                edad,
+                pesoKg,
+                diasEntrenamientoPorSemana,
+                duracionSesionMinutos);
 
-            DuracionSesionDeseadaMinutos = minutos;
+            Id = Guid.NewGuid();
+
+            UsuarioId = usuarioId;
+            Objetivo = objetivo;
+            NivelExperiencia = nivelExperiencia;
+            Edad = edad;
+            Sexo = sexo;
+            PesoKg = pesoKg;
+            DiasEntrenamientoPorSemana = diasEntrenamientoPorSemana;
+            DuracionSesionMinutos = duracionSesionMinutos;
+            EntornoEntrenamiento = entornoEntrenamiento;
+
+            CreadoEnUtc = DateTime.UtcNow;
+            ActualizadoEnUtc = DateTime.UtcNow;
+        }
+
+        public void Actualizar(
+            ObjetivoEntrenamiento objetivo,
+            NivelExperiencia nivelExperiencia,
+            int edad,
+            Sexo? sexo,
+            decimal? pesoKg,
+            int diasEntrenamientoPorSemana,
+            int duracionSesionMinutos,
+            EntornoEntrenamiento entornoEntrenamiento)
+        {
+            ValidarDatos(
+                UsuarioId,
+                edad,
+                pesoKg,
+                diasEntrenamientoPorSemana,
+                duracionSesionMinutos);
+
+            Objetivo = objetivo;
+            NivelExperiencia = nivelExperiencia;
+            Edad = edad;
+            Sexo = sexo;
+            PesoKg = pesoKg;
+            DiasEntrenamientoPorSemana = diasEntrenamientoPorSemana;
+            DuracionSesionMinutos = duracionSesionMinutos;
+            EntornoEntrenamiento = entornoEntrenamiento;
+
+            ActualizadoEnUtc = DateTime.UtcNow;
+        }
+
+        public void DefinirDiasPreferidos(
+            IEnumerable<DiaSemana> dias)
+        {
+            var diasUnicos = dias
+                .Distinct()
+                .ToList();
+
+            if (diasUnicos.Count > DiasEntrenamientoPorSemana)
+            {
+                throw new InvalidOperationException(
+                    "La cantidad de días preferidos no puede superar " +
+                    "la cantidad de días de entrenamiento por semana.");
+            }
+
+            _diasPreferidos.Clear();
+
+            foreach (var dia in diasUnicos)
+            {
+                _diasPreferidos.Add(
+                    new DiaEntrenamientoPreferido(
+                        Id,
+                        dia));
+            }
+
+            ActualizadoEnUtc = DateTime.UtcNow;
+        }
+
+        public void DefinirEquipamientos(
+            IEnumerable<Guid> equipamientoIds)
+        {
+            var idsUnicos = equipamientoIds
+                .Distinct()
+                .ToList();
+
+            _equipamientos.Clear();
+
+            foreach (var equipamientoId in idsUnicos)
+            {
+                _equipamientos.Add(
+                    new PerfilEquipamiento(
+                        Id,
+                        equipamientoId));
+            }
+
+            ActualizadoEnUtc = DateTime.UtcNow;
+        }
+
+        private static void ValidarDatos(
+            string usuarioId,
+            int edad,
+            decimal? pesoKg,
+            int diasEntrenamientoPorSemana,
+            int duracionSesionMinutos)
+        {
+            if (string.IsNullOrWhiteSpace(usuarioId))
+            {
+                throw new ArgumentException(
+                    "El usuario es obligatorio.",
+                    nameof(usuarioId));
+            }
+
+            if (edad <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(edad),
+                    "La edad debe ser mayor a cero.");
+            }
+
+            if (pesoKg is <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(pesoKg),
+                    "El peso debe ser mayor a cero.");
+            }
+
+            if (diasEntrenamientoPorSemana is < 1 or > 7)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(diasEntrenamientoPorSemana),
+                    "Los días de entrenamiento deben estar entre 1 y 7.");
+            }
+
+            if (duracionSesionMinutos <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(duracionSesionMinutos),
+                    "La duración de la sesión debe ser mayor a cero.");
+            }
         }
     }
 }

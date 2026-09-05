@@ -4,8 +4,8 @@ using Entrenate.Infrastructure.Authentication;
 using Entrenate.Infrastructure.Email;
 using Entrenate.Infrastructure.Identity;
 using Entrenate.Infrastructure.Persistence;
+using Entrenate.Infrastructure.Persistence.Seed;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -140,6 +140,7 @@ namespace Entrenate.Infrastructure
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IIdentityService, IdentityService>();
             services.AddHttpClient<IEmailService, BrevoEmailService>();
+            services.AddScoped<DatabaseSeeder>();
 
 
             return services;

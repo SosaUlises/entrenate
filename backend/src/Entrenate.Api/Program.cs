@@ -3,6 +3,7 @@ using Entrenate.Api.Services;
 using Entrenate.Application;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Infrastructure;
+using Entrenate.Infrastructure.Persistence.Seed;
 using Microsoft.OpenApi;
 
 
@@ -47,6 +48,14 @@ builder.Services.AddScoped<
     CurrentUserService>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider
+        .GetRequiredService<DatabaseSeeder>();
+
+    await seeder.SeedAsync();
+}
 
 app.UseExceptionHandler();
 

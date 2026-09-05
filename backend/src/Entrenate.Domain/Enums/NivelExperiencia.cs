@@ -2,8 +2,9 @@
 {
     public enum NivelExperiencia
     {
-        Principiante = 1,
-        Intermedio = 2,
-        Avanzado = 3
+        SinExperiencia = 1,
+        Principiante = 2,
+        Intermedio = 3,
+        Avanzado = 4
     }
 }
