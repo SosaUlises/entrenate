@@ -32,6 +32,14 @@ namespace Entrenate.Api.ExceptionHandling
                         Detail = exception.Message
                     },
 
+                NotFoundException =>
+                    new ProblemDetails
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Title = "Recurso no encontrado",
+                        Detail = exception.Message
+                    },
+
                 ConflictException =>
                     new ProblemDetails
                     {

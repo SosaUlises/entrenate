@@ -1,4 +1,5 @@
 ﻿using Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile;
+using Entrenate.Application.TrainingProfiles.Queries.GetMyTrainingProfile;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +34,17 @@ namespace Entrenate.Api.Controllers
                 {
                     id = profileId
                 });
+        }
+
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMe(
+           CancellationToken cancellationToken)
+        {
+            var profile = await _sender.Send(
+                new GetMyTrainingProfileQuery(),
+                cancellationToken);
+
+            return Ok(profile);
         }
     }
 }

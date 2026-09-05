@@ -104,5 +104,15 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Entrenate.Api.Controllers.TrainingProfilesController",
+    "Method": "GetMe",
+    "RelativePath": "api/training-profile/me",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
   }
 ]

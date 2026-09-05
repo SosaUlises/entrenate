@@ -25,5 +25,22 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                 .ThenBy(x => x.Nombre)
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<IReadOnlyCollection<Equipamiento>> GetByIdsAsync(
+            IEnumerable<Guid> ids,
+            CancellationToken cancellationToken = default)
+        {
+            var equipmentIds = ids
+                .Distinct()
+                .ToList();
+
+            return await _context
+                .Equipamientos
+                .AsNoTracking()
+                .Where(x => equipmentIds.Contains(x.Id))
+                .OrderBy(x => x.Categoria)
+                .ThenBy(x => x.Nombre)
+                .ToListAsync(cancellationToken);
+        }
     }
 }

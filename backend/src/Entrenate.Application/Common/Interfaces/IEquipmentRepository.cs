@@ -6,5 +6,9 @@ namespace Entrenate.Application.Common.Interfaces
     {
         Task<IReadOnlyCollection<Equipamiento>> GetActiveAsync(
             CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyCollection<Equipamiento>> GetByIdsAsync(
+            IEnumerable<Guid> ids,
+            CancellationToken cancellationToken = default);
     }
 }
