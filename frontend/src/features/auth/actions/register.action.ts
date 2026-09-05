@@ -35,10 +35,10 @@ export async function registerAction(
     };
   }
 
-  const { email, password } = parsedValues.data;
+  const { nombre, email, password } = parsedValues.data;
 
   try {
-    const response = await registerUser({ email, password });
+    const response = await registerUser({ nombre, email, password });
     await createAuthSession(response);
 
     return { ok: true };
@@ -51,7 +51,12 @@ function flattenRegisterFieldErrors(
   errors: Partial<Record<keyof RegisterFormValues, string[]>>,
 ): RegisterFieldErrors {
   const fieldErrors: RegisterFieldErrors = {};
-  const fields = ["email", "password", "confirmPassword"] as const;
+  const fields = [
+    "nombre",
+    "email",
+    "password",
+    "confirmPassword",
+  ] as const;
 
   for (const field of fields) {
     const message = errors[field]?.[0];
@@ -113,8 +118,10 @@ function mapApiValidationErrors(details: unknown): RegisterFieldErrors {
   const fieldErrors: RegisterFieldErrors = {};
   const fieldMap = {
     Email: "email",
+    Nombre: "nombre",
     Password: "password",
     email: "email",
+    nombre: "nombre",
     password: "password",
   } as const;
 

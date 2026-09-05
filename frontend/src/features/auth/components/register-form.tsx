@@ -17,6 +17,7 @@ import { AuthPageHeader } from "./auth-page-header";
 import { AuthSecondaryAction } from "./auth-secondary-action";
 import { PasswordRequirements } from "./password-requirements";
 
+const nombreFieldId = "register-nombre";
 const emailFieldId = "register-email";
 const passwordFieldId = "register-password";
 const confirmPasswordFieldId = "register-confirm-password";
@@ -39,9 +40,10 @@ export function RegisterForm() {
     setError,
   } = useForm<RegisterFormValues>({
     defaultValues: {
-      confirmPassword: "",
+      nombre: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
     mode: "onTouched",
     resolver: zodResolver(registerSchema),
@@ -80,6 +82,9 @@ export function RegisterForm() {
     });
   });
 
+  const nombreMessageId = errors.nombre
+    ? `${nombreFieldId}-message`
+    : undefined;
   const emailMessageId = errors.email ? `${emailFieldId}-message` : undefined;
   const passwordMessageId = errors.password
     ? `${passwordFieldId}-message`
@@ -102,6 +107,24 @@ export function RegisterForm() {
         {submitFeedback ? (
           <Alert variant={submitFeedback.variant}>{submitFeedback.message}</Alert>
         ) : null}
+
+        <FormField
+          error={errors.nombre?.message}
+          id={nombreFieldId}
+          label="Nombre"
+        >
+          <Input
+            autoComplete="name"
+            hasError={Boolean(errors.nombre)}
+            id={nombreFieldId}
+            maxLength={100}
+            placeholder="Tu nombre"
+            type="text"
+            {...register("nombre")}
+            aria-describedby={nombreMessageId}
+            aria-invalid={Boolean(errors.nombre)}
+          />
+        </FormField>
 
         <FormField
           error={errors.email?.message}
