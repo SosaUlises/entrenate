@@ -1,4 +1,5 @@
 ﻿using Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile;
+using Entrenate.Application.TrainingProfiles.Commands.UpdateTrainingProfile;
 using Entrenate.Application.TrainingProfiles.Queries.GetMyTrainingProfile;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -45,6 +46,18 @@ namespace Entrenate.Api.Controllers
                 cancellationToken);
 
             return Ok(profile);
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Update(
+            UpdateTrainingProfileCommand command,
+            CancellationToken cancellationToken)
+        {
+            await _sender.Send(
+                command,
+                cancellationToken);
+
+            return NoContent();
         }
     }
 }

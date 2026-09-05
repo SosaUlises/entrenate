@@ -28,24 +28,6 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                     cancellationToken);
         }
 
-        public async Task<IReadOnlyCollection<Guid>>
-            GetValidEquipmentIdsAsync(
-                IEnumerable<Guid> equipmentIds,
-                CancellationToken cancellationToken = default)
-        {
-            var ids = equipmentIds
-                .Distinct()
-                .ToList();
-
-            return await _context
-                .Equipamientos
-                .Where(x =>
-                    ids.Contains(x.Id) &&
-                    x.Activo)
-                .Select(x => x.Id)
-                .ToListAsync(cancellationToken);
-        }
-
         public async Task AddAsync(
             PerfilEntrenamiento perfil,
             CancellationToken cancellationToken = default)

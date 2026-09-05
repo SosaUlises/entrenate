@@ -65,7 +65,8 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.Navigation(x => x.DiasPreferidos)
-                .UsePropertyAccessMode(PropertyAccessMode.Field);
+            .HasField("_diasPreferidos")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
 
             builder.HasMany(x => x.Equipamientos)
                 .WithOne()
@@ -73,7 +74,8 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.Navigation(x => x.Equipamientos)
-                .UsePropertyAccessMode(PropertyAccessMode.Field);
+            .HasField("_equipamientos")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }
 }

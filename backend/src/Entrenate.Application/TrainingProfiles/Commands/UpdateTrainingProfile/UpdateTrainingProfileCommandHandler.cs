@@ -1,31 +1,30 @@
 ﻿using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
-using Entrenate.Domain.Entidades;
 using FluentValidation;
 using FluentValidation.Results;
 using MediatR;
 
-namespace Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile
+namespace Entrenate.Application.TrainingProfiles.Commands.UpdateTrainingProfile
 {
-    public class CreateTrainingProfileCommandHandler
-    : IRequestHandler<CreateTrainingProfileCommand, Guid>
+    public class UpdateTrainingProfileCommandHandler
+    : IRequestHandler<UpdateTrainingProfileCommand>
     {
         private readonly ICurrentUserService _currentUserService;
-        private readonly ITrainingProfileRepository _repository;
+        private readonly ITrainingProfileRepository _trainingProfileRepository;
         private readonly IEquipmentRepository _equipmentRepository;
 
-        public CreateTrainingProfileCommandHandler(
-          ICurrentUserService currentUserService,
-          ITrainingProfileRepository repository,
-          IEquipmentRepository equipmentRepository)
+        public UpdateTrainingProfileCommandHandler(
+            ICurrentUserService currentUserService,
+            ITrainingProfileRepository trainingProfileRepository,
+            IEquipmentRepository equipmentRepository)
         {
             _currentUserService = currentUserService;
-            _repository = repository;
+            _trainingProfileRepository = trainingProfileRepository;
             _equipmentRepository = equipmentRepository;
         }
 
-        public async Task<Guid> Handle(
-            CreateTrainingProfileCommand request,
+        public async Task Handle(
+            UpdateTrainingProfileCommand request,
             CancellationToken cancellationToken)
         {
             var userId = _currentUserService.UserId;
@@ -36,28 +35,28 @@ namespace Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile
                     "No se pudo identificar al usuario autenticado.");
             }
 
-            var existingProfile =
-                await _repository.GetByUserIdAsync(
+            var perfil =
+                await _trainingProfileRepository.GetByUserIdAsync(
                     userId,
                     cancellationToken);
 
-            if (existingProfile is not null)
+            if (perfil is null)
             {
-                throw new ConflictException(
-                    "El usuario ya tiene un perfil de entrenamiento.");
+                throw new NotFoundException(
+                    "El usuario todavía no tiene un perfil de entrenamiento.");
             }
 
-            var requestedEquipmentIds =
-                request.EquipamientoIds
-                    .Distinct()
-                    .ToList();
+            var requestedEquipmentIds = request
+                .EquipamientoIds
+                .Distinct()
+                .ToList();
 
             if (requestedEquipmentIds.Count > 0)
             {
                 var validEquipmentIds =
-                 await _equipmentRepository.GetValidActiveIdsAsync(
-                     requestedEquipmentIds,
-                     cancellationToken);
+                    await _equipmentRepository.GetValidActiveIdsAsync(
+                        requestedEquipmentIds,
+                        cancellationToken);
 
                 if (validEquipmentIds.Count !=
                     requestedEquipmentIds.Count)
@@ -73,8 +72,7 @@ namespace Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile
                 }
             }
 
-            var perfil = new PerfilEntrenamiento(
-                userId,
+            perfil.Actualizar(
                 request.Objetivo,
                 request.NivelExperiencia,
                 request.Edad,
@@ -90,14 +88,8 @@ namespace Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile
             perfil.DefinirEquipamientos(
                 requestedEquipmentIds);
 
-            await _repository.AddAsync(
-                perfil,
+            await _trainingProfileRepository.SaveChangesAsync(
                 cancellationToken);
-
-            await _repository.SaveChangesAsync(
-                cancellationToken);
-
-            return perfil.Id;
         }
     }
 }

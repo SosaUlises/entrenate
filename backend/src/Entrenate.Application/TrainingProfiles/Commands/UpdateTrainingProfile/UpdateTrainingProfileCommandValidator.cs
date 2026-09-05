@@ -1,11 +1,11 @@
 ﻿using FluentValidation;
 
-namespace Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile
+namespace Entrenate.Application.TrainingProfiles.Commands.UpdateTrainingProfile
 {
-    public class CreateTrainingProfileCommandValidator
-     : AbstractValidator<CreateTrainingProfileCommand>
+    public class UpdateTrainingProfileCommandValidator
+    : AbstractValidator<UpdateTrainingProfileCommand>
     {
-        public CreateTrainingProfileCommandValidator()
+        public UpdateTrainingProfileCommandValidator()
         {
             RuleFor(x => x.Objetivo)
                 .IsInEnum()
@@ -18,10 +18,7 @@ namespace Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile
                     "El nivel de experiencia no es válido.");
 
             RuleFor(x => x.Edad)
-                .GreaterThan(0)
-                .WithMessage(
-                    "La edad debe ser mayor a cero.")
-                .LessThanOrEqualTo(120)
+                .InclusiveBetween(1, 120)
                 .WithMessage(
                     "La edad ingresada no es válida.");
 
@@ -58,16 +55,10 @@ namespace Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile
                 .WithMessage(
                     "La lista de días preferidos es obligatoria.");
 
-            RuleFor(x => x.EquipamientoIds)
-                .NotNull()
-                .WithMessage(
-                    "La lista de equipamientos es obligatoria.");
-
             RuleForEach(x => x.DiasPreferidos)
-            .IsInEnum();
-
-            RuleForEach(x => x.EquipamientoIds)
-            .NotEmpty();
+                .IsInEnum()
+                .WithMessage(
+                    "Uno o más días preferidos no son válidos.");
 
             RuleFor(x => x.DiasPreferidos)
                 .Must(dias =>
@@ -75,13 +66,6 @@ namespace Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile
                     dias.Distinct().Count() == dias.Count)
                 .WithMessage(
                     "No se pueden repetir días preferidos.");
-
-            RuleFor(x => x.EquipamientoIds)
-                .Must(ids =>
-                    ids is null ||
-                    ids.Distinct().Count() == ids.Count)
-                .WithMessage(
-                    "No se pueden repetir equipamientos.");
 
             RuleFor(x => x)
                 .Must(command =>
@@ -91,6 +75,23 @@ namespace Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile
                 .WithMessage(
                     "La cantidad de días preferidos no puede superar " +
                     "los días de entrenamiento por semana.");
+
+            RuleFor(x => x.EquipamientoIds)
+                .NotNull()
+                .WithMessage(
+                    "La lista de equipamientos es obligatoria.");
+
+            RuleForEach(x => x.EquipamientoIds)
+                .NotEmpty()
+                .WithMessage(
+                    "Los identificadores de equipamiento no son válidos.");
+
+            RuleFor(x => x.EquipamientoIds)
+                .Must(ids =>
+                    ids is null ||
+                    ids.Distinct().Count() == ids.Count)
+                .WithMessage(
+                    "No se pueden repetir equipamientos.");
         }
     }
 }

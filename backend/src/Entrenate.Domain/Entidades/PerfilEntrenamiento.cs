@@ -107,9 +107,11 @@ namespace Entrenate.Domain.Entidades
         public void DefinirDiasPreferidos(
             IEnumerable<DiaSemana> dias)
         {
+            ArgumentNullException.ThrowIfNull(dias);
+
             var diasUnicos = dias
                 .Distinct()
-                .ToList();
+                .ToHashSet();
 
             if (diasUnicos.Count > DiasEntrenamientoPorSemana)
             {
@@ -118,10 +120,20 @@ namespace Entrenate.Domain.Entidades
                     "la cantidad de días de entrenamiento por semana.");
             }
 
-            _diasPreferidos.Clear();
+            _diasPreferidos.RemoveAll(
+                actual => !diasUnicos.Contains(actual.Dia));
+
+            var diasExistentes = _diasPreferidos
+                .Select(x => x.Dia)
+                .ToHashSet();
 
             foreach (var dia in diasUnicos)
             {
+                if (diasExistentes.Contains(dia))
+                {
+                    continue;
+                }
+
                 _diasPreferidos.Add(
                     new DiaEntrenamientoPreferido(
                         Id,
@@ -132,16 +144,29 @@ namespace Entrenate.Domain.Entidades
         }
 
         public void DefinirEquipamientos(
-            IEnumerable<Guid> equipamientoIds)
+           IEnumerable<Guid> equipamientoIds)
         {
+            ArgumentNullException.ThrowIfNull(equipamientoIds);
+
             var idsUnicos = equipamientoIds
                 .Distinct()
-                .ToList();
+                .ToHashSet();
 
-            _equipamientos.Clear();
+            _equipamientos.RemoveAll(
+                actual =>
+                    !idsUnicos.Contains(actual.EquipamientoId));
+
+            var idsExistentes = _equipamientos
+                .Select(x => x.EquipamientoId)
+                .ToHashSet();
 
             foreach (var equipamientoId in idsUnicos)
             {
+                if (idsExistentes.Contains(equipamientoId))
+                {
+                    continue;
+                }
+
                 _equipamientos.Add(
                     new PerfilEquipamiento(
                         Id,

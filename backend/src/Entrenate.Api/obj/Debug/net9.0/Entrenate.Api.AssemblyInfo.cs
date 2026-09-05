@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Entrenate.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7587b3660b49913470725a5747d1a417e7c0791b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3223c8bcafa30c1bf8271bb40b525c504515856a")]
 [assembly: System.Reflection.AssemblyProductAttribute("Entrenate.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Entrenate.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -8,10 +8,6 @@ namespace Entrenate.Application.Common.Interfaces
             string userId,
             CancellationToken cancellationToken = default);
 
-        Task<IReadOnlyCollection<Guid>> GetValidEquipmentIdsAsync(
-            IEnumerable<Guid> equipmentIds,
-            CancellationToken cancellationToken = default);
-
         Task AddAsync(
             PerfilEntrenamiento perfil,
             CancellationToken cancellationToken = default);

@@ -201,6 +201,35 @@
             "description": "OK"
           }
         }
+      },
+      "put": {
+        "tags": [
+          "TrainingProfiles"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrainingProfileCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrainingProfileCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrainingProfileCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/training-profile/me": {
@@ -389,6 +418,56 @@
         ],
         "type": "integer",
         "format": "int32"
+      },
+      "UpdateTrainingProfileCommand": {
+        "type": "object",
+        "properties": {
+          "objetivo": {
+            "$ref": "#/components/schemas/ObjetivoEntrenamiento"
+          },
+          "nivelExperiencia": {
+            "$ref": "#/components/schemas/NivelExperiencia"
+          },
+          "edad": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sexo": {
+            "$ref": "#/components/schemas/Sexo"
+          },
+          "pesoKg": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "diasEntrenamientoPorSemana": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duracionSesionMinutos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "entornoEntrenamiento": {
+            "$ref": "#/components/schemas/EntornoEntrenamiento"
+          },
+          "diasPreferidos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiaSemana"
+            },
+            "nullable": true
+          },
+          "equipamientoIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       }
     },
     "securitySchemes": {
