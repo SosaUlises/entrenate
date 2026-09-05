@@ -159,6 +159,37 @@
           }
         }
       }
+    },
+    "/api/training-profile": {
+      "post": {
+        "tags": [
+          "TrainingProfiles"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTrainingProfileCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTrainingProfileCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTrainingProfileCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -176,6 +207,79 @@
           }
         },
         "additionalProperties": false
+      },
+      "CreateTrainingProfileCommand": {
+        "type": "object",
+        "properties": {
+          "objetivo": {
+            "$ref": "#/components/schemas/ObjetivoEntrenamiento"
+          },
+          "nivelExperiencia": {
+            "$ref": "#/components/schemas/NivelExperiencia"
+          },
+          "edad": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sexo": {
+            "$ref": "#/components/schemas/Sexo"
+          },
+          "pesoKg": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "diasEntrenamientoPorSemana": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duracionSesionMinutos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "entornoEntrenamiento": {
+            "$ref": "#/components/schemas/EntornoEntrenamiento"
+          },
+          "diasPreferidos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiaSemana"
+            },
+            "nullable": true
+          },
+          "equipamientoIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DiaSemana": {
+        "enum": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "EntornoEntrenamiento": {
+        "enum": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "type": "integer",
+        "format": "int32"
       },
       "ForgotPasswordCommand": {
         "type": "object",
@@ -200,6 +304,26 @@
           }
         },
         "additionalProperties": false
+      },
+      "NivelExperiencia": {
+        "enum": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "ObjetivoEntrenamiento": {
+        "enum": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "type": "integer",
+        "format": "int32"
       },
       "RegisterCommand": {
         "type": "object",
@@ -232,6 +356,15 @@
           }
         },
         "additionalProperties": false
+      },
+      "Sexo": {
+        "enum": [
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "format": "int32"
       }
     },
     "securitySchemes": {
@@ -251,6 +384,9 @@
   "tags": [
     {
       "name": "Auth"
+    },
+    {
+      "name": "TrainingProfiles"
     }
   ]
 }
