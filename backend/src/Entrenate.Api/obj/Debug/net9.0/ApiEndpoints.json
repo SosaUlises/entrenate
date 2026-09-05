@@ -78,5 +78,57 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Entrenate.Api.Controllers.EquipmentController",
+    "Method": "GetAll",
+    "RelativePath": "api/equipment",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Entrenate.Api.Controllers.TrainingProfilesController",
+    "Method": "Create",
+    "RelativePath": "api/training-profile",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "command",
+        "Type": "Entrenate.Application.TrainingProfiles.Commands.CreateTrainingProfile.CreateTrainingProfileCommand",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Entrenate.Api.Controllers.TrainingProfilesController",
+    "Method": "Update",
+    "RelativePath": "api/training-profile",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "command",
+        "Type": "Entrenate.Application.TrainingProfiles.Commands.UpdateTrainingProfile.UpdateTrainingProfileCommand",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Entrenate.Api.Controllers.TrainingProfilesController",
+    "Method": "GetMe",
+    "RelativePath": "api/training-profile/me",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
   }
 ]

@@ -22,6 +22,26 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Entrenate.Domain.Entidades.DiaEntrenamientoPreferido", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Dia")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PerfilEntrenamientoId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PerfilEntrenamientoId", "Dia")
+                        .IsUnique();
+
+                    b.ToTable("DiasEntrenamientoPreferidos", (string)null);
+                });
+
             modelBuilder.Entity("Entrenate.Domain.Entidades.DiaRutina", b =>
                 {
                     b.Property<Guid>("Id")
@@ -188,38 +208,62 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.ToTable("EjerciciosSesion", (string)null);
                 });
 
+            modelBuilder.Entity("Entrenate.Domain.Entidades.Equipamiento", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Categoria")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nombre")
+                        .IsUnique();
+
+                    b.ToTable("Equipamientos", (string)null);
+                });
+
             modelBuilder.Entity("Entrenate.Domain.Entidades.PerfilEntrenamiento", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<decimal?>("AlturaCm")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
-
-                    b.Property<int>("DiasDisponiblesSemana")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("DuracionSesionDeseadaMinutos")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("FechaCreacion")
+                    b.Property<DateTime>("ActualizadoEnUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateOnly?>("FechaNacimiento")
-                        .HasColumnType("date");
-
-                    b.Property<DateTime>("FechaUltimaModificacion")
+                    b.Property<DateTime>("CreadoEnUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DiasEntrenamientoPorSemana")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DuracionSesionMinutos")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Edad")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EntornoEntrenamiento")
+                        .HasColumnType("integer");
 
                     b.Property<int>("NivelExperiencia")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ObjetivoPrincipal")
+                    b.Property<int>("Objetivo")
                         .HasColumnType("integer");
 
-                    b.Property<decimal?>("PesoCorporalKg")
+                    b.Property<decimal?>("PesoKg")
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)");
 
@@ -237,6 +281,28 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("PerfilesEntrenamiento", (string)null);
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.PerfilEquipamiento", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EquipamientoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PerfilEntrenamientoId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EquipamientoId");
+
+                    b.HasIndex("PerfilEntrenamientoId", "EquipamientoId")
+                        .IsUnique();
+
+                    b.ToTable("PerfilEquipamientos", (string)null);
                 });
 
             modelBuilder.Entity("Entrenate.Domain.Entidades.Rutina", b =>
@@ -546,6 +612,15 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Entrenate.Domain.Entidades.DiaEntrenamientoPreferido", b =>
+                {
+                    b.HasOne("Entrenate.Domain.Entidades.PerfilEntrenamiento", null)
+                        .WithMany("DiasPreferidos")
+                        .HasForeignKey("PerfilEntrenamientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Entrenate.Domain.Entidades.DiaRutina", b =>
                 {
                     b.HasOne("Entrenate.Domain.Entidades.Rutina", "Rutina")
@@ -593,6 +668,30 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.Navigation("Ejercicio");
 
                     b.Navigation("SesionEntrenamiento");
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.PerfilEntrenamiento", b =>
+                {
+                    b.HasOne("Entrenate.Infrastructure.Identity.ApplicationUser", null)
+                        .WithOne()
+                        .HasForeignKey("Entrenate.Domain.Entidades.PerfilEntrenamiento", "UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.PerfilEquipamiento", b =>
+                {
+                    b.HasOne("Entrenate.Domain.Entidades.Equipamiento", null)
+                        .WithMany()
+                        .HasForeignKey("EquipamientoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Entrenate.Domain.Entidades.PerfilEntrenamiento", null)
+                        .WithMany("Equipamientos")
+                        .HasForeignKey("PerfilEntrenamientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Entrenate.Domain.Entidades.SerieEntrenamiento", b =>
@@ -675,6 +774,13 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Entrenate.Domain.Entidades.EjercicioSesion", b =>
                 {
                     b.Navigation("Series");
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.PerfilEntrenamiento", b =>
+                {
+                    b.Navigation("DiasPreferidos");
+
+                    b.Navigation("Equipamientos");
                 });
 
             modelBuilder.Entity("Entrenate.Domain.Entidades.Rutina", b =>

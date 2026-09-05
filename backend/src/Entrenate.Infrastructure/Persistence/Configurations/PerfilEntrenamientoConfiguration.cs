@@ -1,11 +1,12 @@
 ﻿using Entrenate.Domain.Entidades;
+using Entrenate.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Entrenate.Infrastructure.Persistence.Configurations
 {
     public class PerfilEntrenamientoConfiguration
-     : IEntityTypeConfiguration<PerfilEntrenamiento>
+    : IEntityTypeConfiguration<PerfilEntrenamiento>
     {
         public void Configure(
             EntityTypeBuilder<PerfilEntrenamiento> builder)
@@ -18,40 +19,63 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasMaxLength(450);
 
-            builder.Property(x => x.Sexo)
-                .IsRequired(false);
+            builder.HasIndex(x => x.UsuarioId)
+                .IsUnique();
 
-            builder.Property(x => x.FechaNacimiento)
-                .IsRequired(false);
+            builder.HasOne<ApplicationUser>()
+                .WithOne()
+                .HasForeignKey<PerfilEntrenamiento>(
+                    x => x.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(x => x.AlturaCm)
-                .HasPrecision(5, 2)
-                .IsRequired(false);
-
-            builder.Property(x => x.PesoCorporalKg)
-                .HasPrecision(6, 2)
-                .IsRequired(false);
+            builder.Property(x => x.Objetivo)
+                .IsRequired();
 
             builder.Property(x => x.NivelExperiencia)
                 .IsRequired();
 
-            builder.Property(x => x.ObjetivoPrincipal)
+            builder.Property(x => x.Edad)
                 .IsRequired();
 
-            builder.Property(x => x.DiasDisponiblesSemana)
+            builder.Property(x => x.Sexo)
+                .IsRequired(false);
+
+            builder.Property(x => x.PesoKg)
+                .HasPrecision(6, 2)
+                .IsRequired(false);
+
+            builder.Property(x => x.DiasEntrenamientoPorSemana)
                 .IsRequired();
 
-            builder.Property(x => x.DuracionSesionDeseadaMinutos)
+            builder.Property(x => x.DuracionSesionMinutos)
                 .IsRequired();
 
-            builder.Property(x => x.FechaCreacion)
+            builder.Property(x => x.EntornoEntrenamiento)
                 .IsRequired();
 
-            builder.Property(x => x.FechaUltimaModificacion)
+            builder.Property(x => x.CreadoEnUtc)
                 .IsRequired();
 
-            builder.HasIndex(x => x.UsuarioId)
-                .IsUnique();
+            builder.Property(x => x.ActualizadoEnUtc)
+                .IsRequired();
+
+            builder.HasMany(x => x.DiasPreferidos)
+                .WithOne()
+                .HasForeignKey(x => x.PerfilEntrenamientoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Navigation(x => x.DiasPreferidos)
+            .HasField("_diasPreferidos")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            builder.HasMany(x => x.Equipamientos)
+                .WithOne()
+                .HasForeignKey(x => x.PerfilEntrenamientoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Navigation(x => x.Equipamientos)
+            .HasField("_equipamientos")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }
 }
