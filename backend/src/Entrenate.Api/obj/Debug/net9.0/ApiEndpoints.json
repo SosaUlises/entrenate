@@ -80,6 +80,16 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Entrenate.Api.Controllers.EquipmentController",
+    "Method": "GetAll",
+    "RelativePath": "api/equipment",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Entrenate.Api.Controllers.TrainingProfilesController",
     "Method": "Create",
     "RelativePath": "api/training-profile",

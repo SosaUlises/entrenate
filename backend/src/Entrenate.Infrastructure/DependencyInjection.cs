@@ -144,6 +144,8 @@ namespace Entrenate.Infrastructure
             services.AddScoped<DatabaseSeeder>();
 
             services.AddScoped<ITrainingProfileRepository,TrainingProfileRepository>();
+            services.AddScoped<IEquipmentRepository, EquipmentRepository>();
+
 
 
             return services;

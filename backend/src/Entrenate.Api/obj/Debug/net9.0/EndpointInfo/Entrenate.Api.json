@@ -160,6 +160,18 @@
         }
       }
     },
+    "/api/equipment": {
+      "get": {
+        "tags": [
+          "Equipment"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/training-profile": {
       "post": {
         "tags": [
@@ -384,6 +396,9 @@
   "tags": [
     {
       "name": "Auth"
+    },
+    {
+      "name": "Equipment"
     },
     {
       "name": "TrainingProfiles"
