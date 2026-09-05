@@ -15,14 +15,25 @@ namespace Entrenate.Infrastructure.Identity
         }
 
         public async Task<string> CreateUserAsync(
+            string nombre,
             string email,
             string password,
             CancellationToken cancellationToken = default)
         {
+            var existingUser =
+                await _userManager.FindByEmailAsync(email);
+
+            if (existingUser is not null)
+            {
+                throw new ConflictException(
+                    "Ya existe un usuario registrado con ese email.");
+            }
+
             var user = new ApplicationUser
             {
-                UserName = email,
-                Email = email
+                Nombre = nombre.Trim(),
+                UserName = email.Trim().ToLowerInvariant(),
+                Email = email.Trim().ToLowerInvariant()
             };
 
             var result = await _userManager.CreateAsync(
@@ -31,7 +42,13 @@ namespace Entrenate.Infrastructure.Identity
 
             if (!result.Succeeded)
             {
-                if (HasDuplicateUserError(result))
+                var duplicateUser = result.Errors.Any(error =>
+                    error.Code == nameof(
+                        IdentityErrorDescriber.DuplicateUserName) ||
+                    error.Code == nameof(
+                        IdentityErrorDescriber.DuplicateEmail));
+
+                if (duplicateUser)
                 {
                     throw new ConflictException(
                         "Ya existe un usuario registrado con ese email.");

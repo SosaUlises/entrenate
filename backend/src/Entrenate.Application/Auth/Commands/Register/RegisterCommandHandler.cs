@@ -23,9 +23,10 @@ namespace Entrenate.Application.Auth.Commands.Register
             CancellationToken cancellationToken)
         {
             var userId = await _identityService.CreateUserAsync(
-                request.Email,
-                request.Password,
-                cancellationToken);
+                 request.Nombre,
+                 request.Email,
+                 request.Password,
+                 cancellationToken);
 
             var token = _tokenService.GenerateToken(
                 userId,

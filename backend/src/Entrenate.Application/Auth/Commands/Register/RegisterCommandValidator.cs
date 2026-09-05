@@ -7,6 +7,13 @@ namespace Entrenate.Application.Auth.Commands.Register
     {
         public RegisterCommandValidator()
         {
+            RuleFor(x => x.Nombre)
+           .NotEmpty()
+           .WithMessage("El nombre es obligatorio.")
+           .MaximumLength(100)
+           .WithMessage(
+               "El nombre no puede superar los 100 caracteres.");
+
             RuleFor(x => x.Email)
                 .NotEmpty()
                 .WithMessage("El email es obligatorio.")

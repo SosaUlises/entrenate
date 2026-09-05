@@ -3,6 +3,7 @@
     public interface IIdentityService
     {
         Task<string> CreateUserAsync(
+            string nombre,
             string email,
             string password,
             CancellationToken cancellationToken = default);

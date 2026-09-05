@@ -381,6 +381,10 @@
       "RegisterCommand": {
         "type": "object",
         "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
           "email": {
             "type": "string",
             "nullable": true
