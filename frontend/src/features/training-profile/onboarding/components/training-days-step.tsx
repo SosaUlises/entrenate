@@ -90,6 +90,7 @@ export function TrainingDaysStep() {
           className="min-h-14"
           disabled={selectedDays === undefined}
           fullWidth
+          onClick={() => router.push("/onboarding/preferred-days")}
           type="button"
           variant="gradient"
         >

@@ -23,8 +23,21 @@ export const diasEntrenamientoPorSemanaValues = [1, 2, 3, 4, 5, 6, 7] as const;
 export type DiasEntrenamientoPorSemana =
   (typeof diasEntrenamientoPorSemanaValues)[number];
 
+export const DiaSemana = {
+  Domingo: 7,
+  Jueves: 4,
+  Lunes: 1,
+  Martes: 2,
+  Miercoles: 3,
+  Sabado: 6,
+  Viernes: 5,
+} as const;
+
+export type DiaSemana = (typeof DiaSemana)[keyof typeof DiaSemana];
+
 export type OnboardingDraft = {
   diasEntrenamientoPorSemana?: DiasEntrenamientoPorSemana;
+  diasPreferidos?: DiaSemana[];
   nivelExperiencia?: NivelExperiencia;
   objetivo?: ObjetivoEntrenamiento;
 };

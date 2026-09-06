@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 import type {
+  DiaSemana,
   DiasEntrenamientoPorSemana,
   NivelExperiencia,
   ObjetivoEntrenamiento,
@@ -13,6 +14,7 @@ type OnboardingContextValue = {
   setDiasEntrenamientoPorSemana: (
     diasEntrenamientoPorSemana: DiasEntrenamientoPorSemana,
   ) => void;
+  setDiasPreferidos: (diasPreferidos: DiaSemana[] | undefined) => void;
   setNivelExperiencia: (nivelExperiencia: NivelExperiencia) => void;
   setObjetivo: (objetivo: ObjetivoEntrenamiento) => void;
 };
@@ -28,7 +30,16 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setDraft((currentDraft) => ({
       ...currentDraft,
       diasEntrenamientoPorSemana,
+      diasPreferidos:
+        currentDraft.diasPreferidos !== undefined &&
+        currentDraft.diasPreferidos.length > diasEntrenamientoPorSemana
+          ? undefined
+          : currentDraft.diasPreferidos,
     }));
+  };
+
+  const setDiasPreferidos = (diasPreferidos: DiaSemana[] | undefined) => {
+    setDraft((currentDraft) => ({ ...currentDraft, diasPreferidos }));
   };
 
   const setNivelExperiencia = (nivelExperiencia: NivelExperiencia) => {
@@ -44,6 +55,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       value={{
         draft,
         setDiasEntrenamientoPorSemana,
+        setDiasPreferidos,
         setNivelExperiencia,
         setObjetivo,
       }}
