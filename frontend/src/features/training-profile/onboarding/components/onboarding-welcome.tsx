@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 type OnboardingWelcomeProps = {
@@ -6,6 +9,7 @@ type OnboardingWelcomeProps = {
 };
 
 export function OnboardingWelcome({ nombre }: OnboardingWelcomeProps) {
+  const router = useRouter();
   const normalizedName = nombre?.trim();
   const greeting = normalizedName ? `Hola, ${normalizedName}` : "Hola";
 
@@ -52,6 +56,7 @@ export function OnboardingWelcome({ nombre }: OnboardingWelcomeProps) {
         <Button
           className="min-h-14"
           fullWidth
+          onClick={() => router.push("/onboarding/objective")}
           type="button"
           variant="gradient"
         >
