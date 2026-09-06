@@ -8,6 +8,17 @@ export const ObjetivoEntrenamiento = {
 export type ObjetivoEntrenamiento =
   (typeof ObjetivoEntrenamiento)[keyof typeof ObjetivoEntrenamiento];
 
+export const NivelExperiencia = {
+  Avanzado: 4,
+  Intermedio: 3,
+  Principiante: 2,
+  SinExperiencia: 1,
+} as const;
+
+export type NivelExperiencia =
+  (typeof NivelExperiencia)[keyof typeof NivelExperiencia];
+
 export type OnboardingDraft = {
+  nivelExperiencia?: NivelExperiencia;
   objetivo?: ObjetivoEntrenamiento;
 };
