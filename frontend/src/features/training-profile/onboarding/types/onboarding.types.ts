@@ -18,7 +18,13 @@ export const NivelExperiencia = {
 export type NivelExperiencia =
   (typeof NivelExperiencia)[keyof typeof NivelExperiencia];
 
+export const diasEntrenamientoPorSemanaValues = [1, 2, 3, 4, 5, 6, 7] as const;
+
+export type DiasEntrenamientoPorSemana =
+  (typeof diasEntrenamientoPorSemanaValues)[number];
+
 export type OnboardingDraft = {
+  diasEntrenamientoPorSemana?: DiasEntrenamientoPorSemana;
   nivelExperiencia?: NivelExperiencia;
   objetivo?: ObjetivoEntrenamiento;
 };

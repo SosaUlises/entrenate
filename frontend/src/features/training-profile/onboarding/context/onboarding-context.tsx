@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 import type {
+  DiasEntrenamientoPorSemana,
   NivelExperiencia,
   ObjetivoEntrenamiento,
   OnboardingDraft,
@@ -9,6 +10,9 @@ import type {
 
 type OnboardingContextValue = {
   draft: OnboardingDraft;
+  setDiasEntrenamientoPorSemana: (
+    diasEntrenamientoPorSemana: DiasEntrenamientoPorSemana,
+  ) => void;
   setNivelExperiencia: (nivelExperiencia: NivelExperiencia) => void;
   setObjetivo: (objetivo: ObjetivoEntrenamiento) => void;
 };
@@ -17,6 +21,15 @@ const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [draft, setDraft] = useState<OnboardingDraft>({});
+
+  const setDiasEntrenamientoPorSemana = (
+    diasEntrenamientoPorSemana: DiasEntrenamientoPorSemana,
+  ) => {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      diasEntrenamientoPorSemana,
+    }));
+  };
 
   const setNivelExperiencia = (nivelExperiencia: NivelExperiencia) => {
     setDraft((currentDraft) => ({ ...currentDraft, nivelExperiencia }));
@@ -27,7 +40,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <OnboardingContext value={{ draft, setNivelExperiencia, setObjetivo }}>
+    <OnboardingContext
+      value={{
+        draft,
+        setDiasEntrenamientoPorSemana,
+        setNivelExperiencia,
+        setObjetivo,
+      }}
+    >
       {children}
     </OnboardingContext>
   );

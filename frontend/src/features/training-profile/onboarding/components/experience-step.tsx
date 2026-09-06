@@ -53,6 +53,7 @@ export function ExperienceStep() {
       name="nivelExperiencia"
       onBack={() => router.push("/onboarding/objective")}
       onChange={setNivelExperiencia}
+      onContinue={() => router.push("/onboarding/training-days")}
       options={experienceOptions}
       question="¿Cuánta experiencia tenés entrenando?"
       selectedValue={draft.nivelExperiencia}
