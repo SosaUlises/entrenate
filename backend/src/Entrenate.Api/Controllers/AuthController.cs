@@ -3,6 +3,7 @@ using Entrenate.Application.Auth.Commands.ForgotPassword;
 using Entrenate.Application.Auth.Commands.Login;
 using Entrenate.Application.Auth.Commands.Register;
 using Entrenate.Application.Auth.Commands.ResetPassword;
+using Entrenate.Application.Auth.Queries.GetCurrentUser;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -39,6 +40,18 @@ namespace Entrenate.Api.Controllers
         {
             var response = await _sender.Send(
                 command,
+                cancellationToken);
+
+            return Ok(response);
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMe(
+            CancellationToken cancellationToken)
+        {
+            var response = await _sender.Send(
+                new GetCurrentUserQuery(),
                 cancellationToken);
 
             return Ok(response);

@@ -1,6 +1,7 @@
 import { apiRequest } from "@/services/api-client";
 import type {
   AuthResponse,
+  CurrentUser,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   LoginRequest,
@@ -22,6 +23,14 @@ export function register(request: RegisterRequest): Promise<AuthResponse> {
     body: request,
     cache: "no-store",
     method: "POST",
+  });
+}
+
+export function getCurrentUser(authToken: string): Promise<CurrentUser> {
+  return apiRequest<CurrentUser>("/api/auth/me", {
+    authToken,
+    cache: "no-store",
+    method: "GET",
   });
 }
 

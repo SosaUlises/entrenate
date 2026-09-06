@@ -1,5 +1,6 @@
 ﻿using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
+using Entrenate.Application.Auth.DTOs;
 using Microsoft.AspNetCore.Identity;
 
 namespace Entrenate.Infrastructure.Identity
@@ -88,6 +89,23 @@ namespace Entrenate.Infrastructure.Identity
             }
 
             return user.Id;
+        }
+
+        public async Task<CurrentUserDto?> GetUserByIdAsync(
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user is null)
+            {
+                return null;
+            }
+
+            return new CurrentUserDto(
+                user.Id,
+                user.Nombre,
+                user.Email ?? string.Empty);
         }
 
         private static bool HasDuplicateUserError(

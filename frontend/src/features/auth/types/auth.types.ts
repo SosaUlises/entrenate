@@ -32,3 +32,9 @@ export type AuthResponse = {
   token: string;
   userId: string;
 };
+
+export type CurrentUser = {
+  email: string;
+  nombre: string;
+  userId: string;
+};
