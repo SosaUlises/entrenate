@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  type ReactNode,
+} from "react";
 import type {
   DiaSemana,
   DiasEntrenamientoPorSemana,
@@ -23,6 +29,7 @@ type OnboardingContextValue = {
   setEntornoEntrenamiento: (
     entornoEntrenamiento: EntornoEntrenamiento,
   ) => void;
+  setEquipamientoIds: (equipamientoIds: string[] | undefined) => void;
   setNivelExperiencia: (nivelExperiencia: NivelExperiencia) => void;
   setObjetivo: (objetivo: ObjetivoEntrenamiento) => void;
 };
@@ -62,6 +69,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setDraft((currentDraft) => ({ ...currentDraft, entornoEntrenamiento }));
   };
 
+  const setEquipamientoIds = useCallback(
+    (equipamientoIds: string[] | undefined) => {
+      setDraft((currentDraft) => ({ ...currentDraft, equipamientoIds }));
+    },
+    [],
+  );
+
   const setNivelExperiencia = (nivelExperiencia: NivelExperiencia) => {
     setDraft((currentDraft) => ({ ...currentDraft, nivelExperiencia }));
   };
@@ -78,6 +92,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setDiasPreferidos,
         setDuracionSesionMinutos,
         setEntornoEntrenamiento,
+        setEquipamientoIds,
         setNivelExperiencia,
         setObjetivo,
       }}

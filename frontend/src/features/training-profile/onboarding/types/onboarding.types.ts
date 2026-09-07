@@ -54,6 +54,7 @@ export type OnboardingDraft = {
   diasEntrenamientoPorSemana?: DiasEntrenamientoPorSemana;
   diasPreferidos?: DiaSemana[];
   duracionSesionMinutos?: DuracionSesionMinutos;
+  equipamientoIds?: string[];
   entornoEntrenamiento?: EntornoEntrenamiento;
   nivelExperiencia?: NivelExperiencia;
   objetivo?: ObjetivoEntrenamiento;

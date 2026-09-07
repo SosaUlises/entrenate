@@ -166,6 +166,7 @@ export function EnvironmentStep() {
           className="min-h-14"
           disabled={selectedEnvironment === undefined}
           fullWidth
+          onClick={() => router.push("/onboarding/equipment")}
           type="button"
           variant="gradient"
         >
