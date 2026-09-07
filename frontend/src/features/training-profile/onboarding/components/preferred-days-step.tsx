@@ -165,6 +165,7 @@ export function PreferredDaysStep() {
           className="min-h-14"
           disabled={!isAnswerValid}
           fullWidth
+          onClick={() => router.push("/onboarding/duration")}
           type="button"
           variant="gradient"
         >

@@ -35,9 +35,15 @@ export const DiaSemana = {
 
 export type DiaSemana = (typeof DiaSemana)[keyof typeof DiaSemana];
 
+export const duracionSesionMinutosValues = [30, 45, 60, 75, 90, 120] as const;
+
+export type DuracionSesionMinutos =
+  (typeof duracionSesionMinutosValues)[number];
+
 export type OnboardingDraft = {
   diasEntrenamientoPorSemana?: DiasEntrenamientoPorSemana;
   diasPreferidos?: DiaSemana[];
+  duracionSesionMinutos?: DuracionSesionMinutos;
   nivelExperiencia?: NivelExperiencia;
   objetivo?: ObjetivoEntrenamiento;
 };
