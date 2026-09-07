@@ -88,6 +88,7 @@ export function DurationStep() {
           className="min-h-14"
           disabled={selectedDuration === undefined}
           fullWidth
+          onClick={() => router.push("/onboarding/environment")}
           type="button"
           variant="gradient"
         >

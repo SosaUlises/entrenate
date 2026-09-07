@@ -5,6 +5,7 @@ import type {
   DiaSemana,
   DiasEntrenamientoPorSemana,
   DuracionSesionMinutos,
+  EntornoEntrenamiento,
   NivelExperiencia,
   ObjetivoEntrenamiento,
   OnboardingDraft,
@@ -18,6 +19,9 @@ type OnboardingContextValue = {
   setDiasPreferidos: (diasPreferidos: DiaSemana[] | undefined) => void;
   setDuracionSesionMinutos: (
     duracionSesionMinutos: DuracionSesionMinutos,
+  ) => void;
+  setEntornoEntrenamiento: (
+    entornoEntrenamiento: EntornoEntrenamiento,
   ) => void;
   setNivelExperiencia: (nivelExperiencia: NivelExperiencia) => void;
   setObjetivo: (objetivo: ObjetivoEntrenamiento) => void;
@@ -52,6 +56,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setDraft((currentDraft) => ({ ...currentDraft, duracionSesionMinutos }));
   };
 
+  const setEntornoEntrenamiento = (
+    entornoEntrenamiento: EntornoEntrenamiento,
+  ) => {
+    setDraft((currentDraft) => ({ ...currentDraft, entornoEntrenamiento }));
+  };
+
   const setNivelExperiencia = (nivelExperiencia: NivelExperiencia) => {
     setDraft((currentDraft) => ({ ...currentDraft, nivelExperiencia }));
   };
@@ -67,6 +77,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setDiasEntrenamientoPorSemana,
         setDiasPreferidos,
         setDuracionSesionMinutos,
+        setEntornoEntrenamiento,
         setNivelExperiencia,
         setObjetivo,
       }}
