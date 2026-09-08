@@ -299,6 +299,7 @@ export function EquipmentStep() {
           className="min-h-14"
           disabled={!canContinue}
           fullWidth
+          onClick={() => router.push("/onboarding/age")}
           type="button"
           variant="gradient"
         >

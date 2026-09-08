@@ -29,6 +29,7 @@ type OnboardingContextValue = {
   setEntornoEntrenamiento: (
     entornoEntrenamiento: EntornoEntrenamiento,
   ) => void;
+  setEdad: (edad: number | undefined) => void;
   setEquipamientoIds: (equipamientoIds: string[] | undefined) => void;
   setNivelExperiencia: (nivelExperiencia: NivelExperiencia) => void;
   setObjetivo: (objetivo: ObjetivoEntrenamiento) => void;
@@ -69,6 +70,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setDraft((currentDraft) => ({ ...currentDraft, entornoEntrenamiento }));
   };
 
+  const setEdad = (edad: number | undefined) => {
+    setDraft((currentDraft) => ({ ...currentDraft, edad }));
+  };
+
   const setEquipamientoIds = useCallback(
     (equipamientoIds: string[] | undefined) => {
       setDraft((currentDraft) => ({ ...currentDraft, equipamientoIds }));
@@ -92,6 +97,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setDiasPreferidos,
         setDuracionSesionMinutos,
         setEntornoEntrenamiento,
+        setEdad,
         setEquipamientoIds,
         setNivelExperiencia,
         setObjetivo,
