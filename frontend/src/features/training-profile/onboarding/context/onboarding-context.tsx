@@ -33,6 +33,7 @@ type OnboardingContextValue = {
   setEquipamientoIds: (equipamientoIds: string[] | undefined) => void;
   setNivelExperiencia: (nivelExperiencia: NivelExperiencia) => void;
   setObjetivo: (objetivo: ObjetivoEntrenamiento) => void;
+  setPesoKg: (pesoKg: number | null | undefined) => void;
 };
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
@@ -89,6 +90,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setDraft((currentDraft) => ({ ...currentDraft, objetivo }));
   };
 
+  const setPesoKg = (pesoKg: number | null | undefined) => {
+    setDraft((currentDraft) => ({ ...currentDraft, pesoKg }));
+  };
+
   return (
     <OnboardingContext
       value={{
@@ -101,6 +106,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setEquipamientoIds,
         setNivelExperiencia,
         setObjetivo,
+        setPesoKg,
       }}
     >
       {children}

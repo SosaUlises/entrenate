@@ -59,4 +59,5 @@ export type OnboardingDraft = {
   entornoEntrenamiento?: EntornoEntrenamiento;
   nivelExperiencia?: NivelExperiencia;
   objetivo?: ObjetivoEntrenamiento;
+  pesoKg?: number | null;
 };
