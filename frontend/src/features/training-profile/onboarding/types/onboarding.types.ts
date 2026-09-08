@@ -50,6 +50,14 @@ export const EntornoEntrenamiento = {
 export type EntornoEntrenamiento =
   (typeof EntornoEntrenamiento)[keyof typeof EntornoEntrenamiento];
 
+export const Sexo = {
+  Femenino: 2,
+  Masculino: 1,
+  PrefieroNoInformarlo: 3,
+} as const;
+
+export type Sexo = (typeof Sexo)[keyof typeof Sexo];
+
 export type OnboardingDraft = {
   diasEntrenamientoPorSemana?: DiasEntrenamientoPorSemana;
   diasPreferidos?: DiaSemana[];
@@ -60,4 +68,5 @@ export type OnboardingDraft = {
   nivelExperiencia?: NivelExperiencia;
   objetivo?: ObjetivoEntrenamiento;
   pesoKg?: number | null;
+  sexo?: Sexo;
 };

@@ -15,6 +15,7 @@ import type {
   NivelExperiencia,
   ObjetivoEntrenamiento,
   OnboardingDraft,
+  Sexo,
 } from "../types/onboarding.types";
 
 type OnboardingContextValue = {
@@ -34,6 +35,7 @@ type OnboardingContextValue = {
   setNivelExperiencia: (nivelExperiencia: NivelExperiencia) => void;
   setObjetivo: (objetivo: ObjetivoEntrenamiento) => void;
   setPesoKg: (pesoKg: number | null | undefined) => void;
+  setSexo: (sexo: Sexo) => void;
 };
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
@@ -94,6 +96,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setDraft((currentDraft) => ({ ...currentDraft, pesoKg }));
   };
 
+  const setSexo = (sexo: Sexo) => {
+    setDraft((currentDraft) => ({ ...currentDraft, sexo }));
+  };
+
   return (
     <OnboardingContext
       value={{
@@ -107,6 +113,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setNivelExperiencia,
         setObjetivo,
         setPesoKg,
+        setSexo,
       }}
     >
       {children}

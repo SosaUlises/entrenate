@@ -45,12 +45,14 @@ export function WeightStep() {
 
     setPesoKg(validWeight);
     normalizeInput();
+    router.push("/onboarding/sex");
   };
 
   const handleSkip = () => {
     setInputValue("");
     setHasBlurred(false);
     setPesoKg(null);
+    router.push("/onboarding/sex");
   };
 
   return (
