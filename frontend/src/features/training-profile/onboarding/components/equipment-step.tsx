@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, PackageX, RefreshCw } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
 import { getEquipmentAction } from "../actions/get-equipment.action";
 import { useOnboarding } from "../context/onboarding-context";
 import { getEquipmentImagePath } from "../equipment-images";
+import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
 import {
   CategoriaEquipamiento,
   type CategoriaEquipamiento as CategoriaEquipamientoValue,
@@ -33,8 +33,11 @@ const categoryDefinitions: ReadonlyArray<{
 ];
 
 export function EquipmentStep() {
-  const router = useRouter();
   const { draft, setEquipamientoIds } = useOnboarding();
+  const { goBack, goNext } = useOnboardingStepNavigation({
+    backPath: "/onboarding/environment",
+    nextPath: "/onboarding/age",
+  });
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const selectedIds = draft.equipamientoIds;
@@ -105,7 +108,7 @@ export function EquipmentStep() {
     <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[560px] flex-col sm:min-h-[calc(100dvh-4rem)]">
       <OnboardingStepHeader
         currentStep={7}
-        onBack={() => router.push("/onboarding/environment")}
+        onBack={goBack}
       />
 
       <div className="mt-7 sm:mt-8">
@@ -299,7 +302,7 @@ export function EquipmentStep() {
           className="min-h-14"
           disabled={!canContinue}
           fullWidth
-          onClick={() => router.push("/onboarding/age")}
+          onClick={goNext}
           type="button"
           variant="gradient"
         >

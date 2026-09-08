@@ -2,10 +2,10 @@
 
 import type { CSSProperties } from "react";
 import { EyeOff, Mars, Venus, type LucideIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
 import { useOnboarding } from "../context/onboarding-context";
+import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
 import {
   Sexo,
   type Sexo as SexoValue,
@@ -33,13 +33,17 @@ const primaryOptions: ReadonlyArray<{
 ];
 
 export function SexStep() {
-  const router = useRouter();
   const { draft, setSexo } = useOnboarding();
+  const { goBack, goNext } = useOnboardingStepNavigation({
+    backPath: "/onboarding/weight",
+    nextPath: "/onboarding/summary",
+  });
   const selectedSex = draft.sexo;
 
   const handleContinue = () => {
     if (selectedSex !== undefined) {
       setSexo(selectedSex);
+      goNext();
     }
   };
 
@@ -55,7 +59,7 @@ export function SexStep() {
     >
       <OnboardingStepHeader
         currentStep={10}
-        onBack={() => router.push("/onboarding/weight")}
+        onBack={goBack}
       />
 
       <div className="mt-7 sm:mt-8">

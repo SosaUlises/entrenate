@@ -1,8 +1,8 @@
 "use client";
 
 import { BicepsFlexed, Dumbbell, HeartPulse, TrendingUp } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useOnboarding } from "../context/onboarding-context";
+import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
 import {
   ObjetivoEntrenamiento,
   type ObjetivoEntrenamiento as ObjetivoEntrenamientoValue,
@@ -42,17 +42,20 @@ const objectiveOptions: ReadonlyArray<
 ];
 
 export function ObjectiveStep() {
-  const router = useRouter();
   const { draft, setObjetivo } = useOnboarding();
+  const { goBack, goNext } = useOnboardingStepNavigation({
+    backPath: "/onboarding",
+    nextPath: "/onboarding/experience",
+  });
 
   return (
     <OnboardingChoiceStep
       currentStep={1}
       legend="Objetivo principal"
       name="objetivo"
-      onBack={() => router.push("/onboarding")}
+      onBack={goBack}
       onChange={setObjetivo}
-      onContinue={() => router.push("/onboarding/experience")}
+      onContinue={goNext}
       options={objectiveOptions}
       question="¿Cuál es tu objetivo principal?"
       selectedValue={draft.objetivo}

@@ -1,18 +1,21 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
 import { useOnboarding } from "../context/onboarding-context";
+import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
 import { OnboardingStepHeader } from "./onboarding-step-header";
 
 const minimumAge = 1;
 const maximumAge = 120;
 
 export function AgeStep() {
-  const router = useRouter();
   const { draft, setEdad } = useOnboarding();
+  const { goBack, goNext } = useOnboardingStepNavigation({
+    backPath: "/onboarding/equipment",
+    nextPath: "/onboarding/weight",
+  });
   const [inputValue, setInputValue] = useState(
     draft.edad?.toString() ?? "",
   );
@@ -42,7 +45,7 @@ export function AgeStep() {
     <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[560px] flex-col sm:min-h-[calc(100dvh-4rem)] md:justify-center">
       <OnboardingStepHeader
         currentStep={8}
-        onBack={() => router.push("/onboarding/equipment")}
+        onBack={goBack}
       />
 
       <div className="mt-7 sm:mt-8">
@@ -109,7 +112,7 @@ export function AgeStep() {
           className="min-h-14"
           disabled={validAge === undefined}
           fullWidth
-          onClick={() => router.push("/onboarding/weight")}
+          onClick={goNext}
           type="button"
           variant="gradient"
         >

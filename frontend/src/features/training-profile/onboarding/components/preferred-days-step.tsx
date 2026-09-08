@@ -1,10 +1,10 @@
 "use client";
 
 import { CalendarOff, Check } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
 import { useOnboarding } from "../context/onboarding-context";
+import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
 import { DiaSemana, type DiaSemana as DiaSemanaValue } from "../types/onboarding.types";
 import { OnboardingStepHeader } from "./onboarding-step-header";
 
@@ -22,8 +22,11 @@ const dayOptions: ReadonlyArray<{
 ];
 
 export function PreferredDaysStep() {
-  const router = useRouter();
   const { draft, setDiasPreferidos } = useOnboarding();
+  const { goBack, goNext } = useOnboardingStepNavigation({
+    backPath: "/onboarding/training-days",
+    nextPath: "/onboarding/duration",
+  });
   const maximumDays = draft.diasEntrenamientoPorSemana;
   const selectedDays = draft.diasPreferidos;
   const selectedCount = selectedDays?.length ?? 0;
@@ -59,7 +62,7 @@ export function PreferredDaysStep() {
     <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[560px] flex-col sm:min-h-[calc(100dvh-4rem)] md:justify-center">
       <OnboardingStepHeader
         currentStep={4}
-        onBack={() => router.push("/onboarding/training-days")}
+        onBack={goBack}
       />
 
       <div className="mt-7 sm:mt-8">
@@ -165,7 +168,7 @@ export function PreferredDaysStep() {
           className="min-h-14"
           disabled={!isAnswerValid}
           fullWidth
-          onClick={() => router.push("/onboarding/duration")}
+          onClick={goNext}
           type="button"
           variant="gradient"
         >

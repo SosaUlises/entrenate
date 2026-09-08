@@ -9,10 +9,10 @@ import {
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
 import { useOnboarding } from "../context/onboarding-context";
+import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
 import {
   EntornoEntrenamiento,
   type EntornoEntrenamiento as EntornoEntrenamientoValue,
@@ -78,15 +78,18 @@ const environmentOptions: ReadonlyArray<{
 ];
 
 export function EnvironmentStep() {
-  const router = useRouter();
   const { draft, setEntornoEntrenamiento } = useOnboarding();
+  const { goBack, goNext } = useOnboardingStepNavigation({
+    backPath: "/onboarding/duration",
+    nextPath: "/onboarding/equipment",
+  });
   const selectedEnvironment = draft.entornoEntrenamiento;
 
   return (
     <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[560px] flex-col sm:min-h-[calc(100dvh-4rem)] md:justify-center">
       <OnboardingStepHeader
         currentStep={6}
-        onBack={() => router.push("/onboarding/duration")}
+        onBack={goBack}
       />
 
       <div className="mt-7 sm:mt-8">
@@ -166,7 +169,7 @@ export function EnvironmentStep() {
           className="min-h-14"
           disabled={selectedEnvironment === undefined}
           fullWidth
-          onClick={() => router.push("/onboarding/equipment")}
+          onClick={goNext}
           type="button"
           variant="gradient"
         >

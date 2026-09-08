@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
 import { useOnboarding } from "../context/onboarding-context";
+import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
 import { OnboardingStepHeader } from "./onboarding-step-header";
 
 export function WeightStep() {
-  const router = useRouter();
   const { draft, setPesoKg } = useOnboarding();
+  const { goBack, goNext } = useOnboardingStepNavigation({
+    backPath: "/onboarding/age",
+    nextPath: "/onboarding/sex",
+  });
   const [inputValue, setInputValue] = useState(
     typeof draft.pesoKg === "number" ? draft.pesoKg.toString() : "",
   );
@@ -45,21 +48,21 @@ export function WeightStep() {
 
     setPesoKg(validWeight);
     normalizeInput();
-    router.push("/onboarding/sex");
+    goNext();
   };
 
   const handleSkip = () => {
     setInputValue("");
     setHasBlurred(false);
     setPesoKg(null);
-    router.push("/onboarding/sex");
+    goNext();
   };
 
   return (
     <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[560px] flex-col sm:min-h-[calc(100dvh-4rem)] md:justify-center">
       <OnboardingStepHeader
         currentStep={9}
-        onBack={() => router.push("/onboarding/age")}
+        onBack={goBack}
       />
 
       <div className="mt-7 sm:mt-8">

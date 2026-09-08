@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 type OnboardingStepHeaderProps = {
   currentStep: number;
+  label?: string;
   onBack: () => void;
 };
 
@@ -11,6 +12,7 @@ const totalSteps = 10;
 
 export function OnboardingStepHeader({
   currentStep,
+  label,
   onBack,
 }: OnboardingStepHeaderProps) {
   const progressPercentage = (currentStep / totalSteps) * 100;
@@ -41,7 +43,7 @@ export function OnboardingStepHeader({
           />
         </div>
         <span className="shrink-0 text-xs font-medium text-text-secondary">
-          {currentStep} de {totalSteps}
+          {label ?? `${currentStep} de ${totalSteps}`}
         </span>
       </div>
     </header>

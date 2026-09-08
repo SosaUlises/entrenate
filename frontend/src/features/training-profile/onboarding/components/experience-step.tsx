@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useOnboarding } from "../context/onboarding-context";
+import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
 import {
   NivelExperiencia,
   type NivelExperiencia as NivelExperienciaValue,
@@ -43,17 +43,20 @@ const experienceOptions: ReadonlyArray<
 ];
 
 export function ExperienceStep() {
-  const router = useRouter();
   const { draft, setNivelExperiencia } = useOnboarding();
+  const { goBack, goNext } = useOnboardingStepNavigation({
+    backPath: "/onboarding/objective",
+    nextPath: "/onboarding/training-days",
+  });
 
   return (
     <OnboardingChoiceStep
       currentStep={2}
       legend="Nivel de experiencia"
       name="nivelExperiencia"
-      onBack={() => router.push("/onboarding/objective")}
+      onBack={goBack}
       onChange={setNivelExperiencia}
-      onContinue={() => router.push("/onboarding/training-days")}
+      onContinue={goNext}
       options={experienceOptions}
       question="¿Cuánta experiencia tenés entrenando?"
       selectedValue={draft.nivelExperiencia}

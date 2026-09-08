@@ -1,23 +1,26 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
 import { useOnboarding } from "../context/onboarding-context";
+import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
 import { duracionSesionMinutosValues } from "../types/onboarding.types";
 import { OnboardingStepHeader } from "./onboarding-step-header";
 
 export function DurationStep() {
-  const router = useRouter();
   const { draft, setDuracionSesionMinutos } = useOnboarding();
+  const { goBack, goNext } = useOnboardingStepNavigation({
+    backPath: "/onboarding/preferred-days",
+    nextPath: "/onboarding/environment",
+  });
   const selectedDuration = draft.duracionSesionMinutos;
 
   return (
     <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[560px] flex-col sm:min-h-[calc(100dvh-4rem)] md:justify-center">
       <OnboardingStepHeader
         currentStep={5}
-        onBack={() => router.push("/onboarding/preferred-days")}
+        onBack={goBack}
       />
 
       <div className="mt-7 sm:mt-8">
@@ -88,7 +91,7 @@ export function DurationStep() {
           className="min-h-14"
           disabled={selectedDuration === undefined}
           fullWidth
-          onClick={() => router.push("/onboarding/environment")}
+          onClick={goNext}
           type="button"
           variant="gradient"
         >
