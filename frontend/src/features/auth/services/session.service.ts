@@ -17,3 +17,9 @@ export async function createAuthSession(response: AuthResponse): Promise<void> {
     value: response.token,
   });
 }
+
+export async function getAuthToken(): Promise<string | undefined> {
+  const cookieStore = await cookies();
+
+  return cookieStore.get(authTokenCookieName)?.value;
+}

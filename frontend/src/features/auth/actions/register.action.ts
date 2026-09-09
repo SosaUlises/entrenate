@@ -1,23 +1,29 @@
 "use server";
 
 import { ApiClientError } from "@/services/api-client";
+import { resolvePostAuthDestination } from "@/features/training-profile/gate/training-profile-gate.service";
+import type { TrainingProfilePresence } from "@/features/training-profile/gate/training-profile-navigation";
 import {
   registerSchema,
   type RegisterFormValues,
 } from "../schemas/auth.schemas";
 import { register as registerUser } from "../services/auth.service";
 import { createAuthSession } from "../services/session.service";
+import type { AuthResponse } from "../types/auth.types";
 
 type RegisterFieldErrors = Partial<Record<keyof RegisterFormValues, string>>;
 
 export type RegisterActionResult =
   | {
+      destination: string | null;
       ok: true;
+      profilePresence: TrainingProfilePresence;
     }
   | {
       fieldErrors?: RegisterFieldErrors;
       message: string;
       ok: false;
+      profileCheckFailed?: true;
     };
 
 export async function registerAction(
@@ -35,23 +41,46 @@ export async function registerAction(
     };
   }
 
-  const { email, password } = parsedValues.data;
+  const { nombre, email, password } = parsedValues.data;
+
+  let authResponse: AuthResponse;
 
   try {
-    const response = await registerUser({ email, password });
-    await createAuthSession(response);
-
-    return { ok: true };
+    authResponse = await registerUser({ nombre, email, password });
+    await createAuthSession(authResponse);
   } catch (error) {
     return getRegisterErrorResult(error);
   }
+
+  const destinationResolution = await resolvePostAuthDestination(
+    authResponse.token,
+  );
+
+  if (destinationResolution.status === "error") {
+    return {
+      message: "No pudimos verificar tu perfil. Intentá nuevamente.",
+      ok: false,
+      profileCheckFailed: true,
+    };
+  }
+
+  return {
+    destination: destinationResolution.destination,
+    ok: true,
+    profilePresence: destinationResolution.presence,
+  };
 }
 
 function flattenRegisterFieldErrors(
   errors: Partial<Record<keyof RegisterFormValues, string[]>>,
 ): RegisterFieldErrors {
   const fieldErrors: RegisterFieldErrors = {};
-  const fields = ["email", "password", "confirmPassword"] as const;
+  const fields = [
+    "nombre",
+    "email",
+    "password",
+    "confirmPassword",
+  ] as const;
 
   for (const field of fields) {
     const message = errors[field]?.[0];
@@ -113,8 +142,10 @@ function mapApiValidationErrors(details: unknown): RegisterFieldErrors {
   const fieldErrors: RegisterFieldErrors = {};
   const fieldMap = {
     Email: "email",
+    Nombre: "nombre",
     Password: "password",
     email: "email",
+    nombre: "nombre",
     password: "password",
   } as const;
 

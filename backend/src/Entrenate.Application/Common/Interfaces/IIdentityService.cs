@@ -13,6 +13,10 @@
             string password,
             CancellationToken cancellationToken = default);
 
+        Task<global::Entrenate.Application.Auth.DTOs.CurrentUserDto?> GetUserByIdAsync(
+            string userId,
+            CancellationToken cancellationToken = default);
+
         Task ChangePasswordAsync(
             string userId,
             string currentPassword,

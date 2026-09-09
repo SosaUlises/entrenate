@@ -14,6 +14,12 @@ const backendPasswordSchema = z
   .regex(/[a-z]/, "La contraseña debe contener al menos una letra minúscula.")
   .regex(/[0-9]/, "La contraseña debe contener al menos un número.");
 
+const nombreSchema = z
+  .string()
+  .trim()
+  .min(1, "El nombre es obligatorio.")
+  .max(100, "El nombre no puede superar los 100 caracteres.");
+
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "La contraseña es obligatoria."),
@@ -30,9 +36,10 @@ const passwordConfirmationFields = {
 
 export const registerSchema = z
   .object({
-    confirmPassword: z.string().min(1, "Confirmá tu contraseña."),
+    nombre: nombreSchema,
     email: emailSchema,
     password: backendPasswordSchema,
+    confirmPassword: z.string().min(1, "Confirmá tu contraseña."),
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: "Las contraseñas no coinciden.",

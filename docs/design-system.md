@@ -461,16 +461,17 @@ Recommended hierarchy:
 2. logo;
 3. "Creá tu cuenta";
 4. concise supporting copy;
-5. first name;
-6. last name;
-7. email;
-8. password;
-9. confirm password if required by UX;
-10. password requirements;
-11. create-account CTA;
-12. login link.
+5. name;
+6. email;
+7. password;
+8. confirm password if required by UX;
+9. password requirements;
+10. create-account CTA;
+11. login link.
 
 Do not request sports-profile information during registration.
+
+The name belongs to the user account. Do not split it into first name and last name.
 
 Sports profile setup belongs to onboarding.
 

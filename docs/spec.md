@@ -79,11 +79,13 @@ El usuario podrá crear una cuenta proporcionando los datos necesarios.
 
 Como mínimo:
 
+* nombre;
 * correo electrónico;
 * contraseña.
 
-El nombre, apellido y demás datos personales no formarán parte del registro inicial
-mientras el contrato real del backend no los solicite.
+El nombre pertenece al usuario y forma parte del registro inicial. El apellido y los
+datos deportivos, como edad, peso, sexo, objetivo y experiencia, no forman parte del
+registro. Estos últimos pertenecen al onboarding y al perfil de entrenamiento.
 
 La autenticación será administrada mediante **ASP.NET Core Identity**.
 

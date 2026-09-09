@@ -4,6 +4,7 @@ export type LoginRequest = {
 };
 
 export type RegisterRequest = {
+  nombre: string;
   email: string;
   password: string;
 };
@@ -29,5 +30,11 @@ export type ResetPasswordResponse = {
 export type AuthResponse = {
   email: string;
   token: string;
+  userId: string;
+};
+
+export type CurrentUser = {
+  email: string;
+  nombre: string;
   userId: string;
 };
