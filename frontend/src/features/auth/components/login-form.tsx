@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import {
+  TrainingProfileGateStatus,
+  usePostAuthTrainingProfileGate,
+} from "@/features/training-profile/gate/training-profile-gate";
 import { loginAction } from "../actions/login.action";
 import {
   loginSchema,
@@ -29,6 +33,10 @@ export function LoginForm() {
   const [submitFeedback, setSubmitFeedback] = useState<SubmitFeedback | null>(
     null,
   );
+  const [profileCheckFailed, setProfileCheckFailed] = useState(false);
+  const [isRetryingProfile, setIsRetryingProfile] = useState(false);
+  const { complete, isProfileReady, retry } =
+    usePostAuthTrainingProfileGate();
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
@@ -43,18 +51,46 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
+  const handleProfileCheckRetry = async () => {
+    setSubmitFeedback(null);
+    setIsRetryingProfile(true);
+
+    try {
+      const status = await retry();
+
+      if (status === "error") {
+        setSubmitFeedback({
+          message: "No pudimos verificar tu perfil. Intentá nuevamente.",
+          variant: "error",
+        });
+        return;
+      }
+
+      setProfileCheckFailed(false);
+    } finally {
+      setIsRetryingProfile(false);
+    }
+  };
+
   const onSubmit = handleSubmit(async (values) => {
+    if (profileCheckFailed) {
+      await handleProfileCheckRetry();
+      return;
+    }
+
     setSubmitFeedback(null);
 
     const result = await loginAction(values);
 
     if (result.ok) {
-      setSubmitFeedback({
-        message: "Sesión iniciada correctamente.",
-        variant: "success",
+      complete({
+        destination: result.destination,
+        presence: result.profilePresence,
       });
       return;
     }
+
+    setProfileCheckFailed(result.profileCheckFailed === true);
 
     if (result.fieldErrors) {
       for (const [field, message] of Object.entries(result.fieldErrors)) {
@@ -75,6 +111,23 @@ export function LoginForm() {
   const passwordMessageId = errors.password
     ? `${passwordFieldId}-message`
     : undefined;
+
+  if (isRetryingProfile) {
+    return <TrainingProfileGateStatus type="loading" />;
+  }
+
+  if (profileCheckFailed) {
+    return (
+      <TrainingProfileGateStatus
+        onRetry={() => void handleProfileCheckRetry()}
+        type="error"
+      />
+    );
+  }
+
+  if (isProfileReady) {
+    return <TrainingProfileGateStatus type="ready" />;
+  }
 
   return (
     <div className="space-y-8 sm:space-y-9">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Raleway } from "next/font/google";
 import type { ReactNode } from "react";
+import { TrainingProfileGateProvider } from "@/features/training-profile/gate/training-profile-gate";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -29,7 +30,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${manrope.variable} ${raleway.variable} h-full bg-background antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-text-primary">
-        {children}
+        <TrainingProfileGateProvider>{children}</TrainingProfileGateProvider>
       </body>
     </html>
   );

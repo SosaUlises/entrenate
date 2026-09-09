@@ -1,20 +1,26 @@
 "use server";
 
 import { ApiClientError } from "@/services/api-client";
+import { resolvePostAuthDestination } from "@/features/training-profile/gate/training-profile-gate.service";
+import type { TrainingProfilePresence } from "@/features/training-profile/gate/training-profile-navigation";
 import { loginSchema, type LoginFormValues } from "../schemas/auth.schemas";
 import { login } from "../services/auth.service";
 import { createAuthSession } from "../services/session.service";
+import type { AuthResponse } from "../types/auth.types";
 
 type LoginFieldErrors = Partial<Record<keyof LoginFormValues, string>>;
 
 export type LoginActionResult =
   | {
+      destination: string | null;
       ok: true;
+      profilePresence: TrainingProfilePresence;
     }
   | {
       fieldErrors?: LoginFieldErrors;
       message: string;
       ok: false;
+      profileCheckFailed?: true;
     };
 
 export async function loginAction(
@@ -32,17 +38,35 @@ export async function loginAction(
     };
   }
 
-  try {
-    const response = await login(parsedValues.data);
-    await createAuthSession(response);
+  let authResponse: AuthResponse;
 
-    return { ok: true };
+  try {
+    authResponse = await login(parsedValues.data);
+    await createAuthSession(authResponse);
   } catch (error) {
     return {
       message: getLoginErrorMessage(error),
       ok: false,
     };
   }
+
+  const destinationResolution = await resolvePostAuthDestination(
+    authResponse.token,
+  );
+
+  if (destinationResolution.status === "error") {
+    return {
+      message: "No pudimos verificar tu perfil. Intentá nuevamente.",
+      ok: false,
+      profileCheckFailed: true,
+    };
+  }
+
+  return {
+    destination: destinationResolution.destination,
+    ok: true,
+    profilePresence: destinationResolution.presence,
+  };
 }
 
 function flattenLoginFieldErrors(

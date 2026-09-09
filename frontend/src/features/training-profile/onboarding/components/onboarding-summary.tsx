@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { createTrainingProfileAction } from "../actions/create-training-profile.action";
 import { useOnboarding } from "../context/onboarding-context";
 import {
@@ -40,6 +41,7 @@ export function OnboardingSummary({
 }: OnboardingSummaryProps) {
   const router = useRouter();
   const { draft } = useOnboarding();
+  const { markProfileCreated } = useTrainingProfileGate();
   const isSubmittingRef = useRef(false);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [errorMessage, setErrorMessage] = useState<string>();
@@ -85,11 +87,13 @@ export function OnboardingSummary({
       const result = await createTrainingProfileAction(request);
 
       if (result.ok) {
+        markProfileCreated();
         setSubmitState("success");
         return;
       }
 
       if (result.kind === "already_exists") {
+        markProfileCreated();
         setSubmitState("already-exists");
         return;
       }

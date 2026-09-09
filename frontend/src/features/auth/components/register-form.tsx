@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import {
+  TrainingProfileGateStatus,
+  usePostAuthTrainingProfileGate,
+} from "@/features/training-profile/gate/training-profile-gate";
 import { registerAction } from "../actions/register.action";
 import {
   registerSchema,
@@ -32,6 +36,10 @@ export function RegisterForm() {
   const [submitFeedback, setSubmitFeedback] = useState<SubmitFeedback | null>(
     null,
   );
+  const [profileCheckFailed, setProfileCheckFailed] = useState(false);
+  const [isRetryingProfile, setIsRetryingProfile] = useState(false);
+  const { complete, isProfileReady, retry } =
+    usePostAuthTrainingProfileGate();
   const {
     control,
     formState: { errors, isSubmitting },
@@ -54,18 +62,46 @@ export function RegisterForm() {
     name: "password",
   });
 
+  const handleProfileCheckRetry = async () => {
+    setSubmitFeedback(null);
+    setIsRetryingProfile(true);
+
+    try {
+      const status = await retry();
+
+      if (status === "error") {
+        setSubmitFeedback({
+          message: "No pudimos verificar tu perfil. Intentá nuevamente.",
+          variant: "error",
+        });
+        return;
+      }
+
+      setProfileCheckFailed(false);
+    } finally {
+      setIsRetryingProfile(false);
+    }
+  };
+
   const onSubmit = handleSubmit(async (values) => {
+    if (profileCheckFailed) {
+      await handleProfileCheckRetry();
+      return;
+    }
+
     setSubmitFeedback(null);
 
     const result = await registerAction(values);
 
     if (result.ok) {
-      setSubmitFeedback({
-        message: "Cuenta creada correctamente.",
-        variant: "success",
+      complete({
+        destination: result.destination,
+        presence: result.profilePresence,
       });
       return;
     }
+
+    setProfileCheckFailed(result.profileCheckFailed === true);
 
     if (result.fieldErrors) {
       for (const [field, message] of Object.entries(result.fieldErrors)) {
@@ -95,6 +131,23 @@ export function RegisterForm() {
   const passwordDescribedBy = [passwordMessageId, passwordRequirementsId]
     .filter(Boolean)
     .join(" ");
+
+  if (isRetryingProfile) {
+    return <TrainingProfileGateStatus type="loading" />;
+  }
+
+  if (profileCheckFailed) {
+    return (
+      <TrainingProfileGateStatus
+        onRetry={() => void handleProfileCheckRetry()}
+        type="error"
+      />
+    );
+  }
+
+  if (isProfileReady) {
+    return <TrainingProfileGateStatus type="ready" />;
+  }
 
   return (
     <div className="space-y-8 sm:space-y-9">
