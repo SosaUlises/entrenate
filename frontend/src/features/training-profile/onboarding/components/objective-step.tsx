@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  BicepsFlexed,
-  Check,
-  Dumbbell,
-  HeartPulse,
-  TrendingUp,
-  type LucideIcon,
-} from "lucide-react";
+import type { ComponentType } from "react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
 import { useOnboarding } from "../context/onboarding-context";
@@ -16,37 +10,44 @@ import {
   ObjetivoEntrenamiento,
   type ObjetivoEntrenamiento as ObjetivoEntrenamientoValue,
 } from "../types/onboarding.types";
+import {
+  GeneralConditioningIllustration,
+  MuscleAndStrengthIllustration,
+  MuscleGainIllustration,
+  StrengthIllustration,
+  type ObjectiveIllustrationProps,
+} from "./objective-illustrations";
 import { OnboardingStepHeader } from "./onboarding-step-header";
 
 const objectiveOptions: ReadonlyArray<
   {
     description: string;
-    icon: LucideIcon;
+    illustration: ComponentType<ObjectiveIllustrationProps>;
     title: string;
     value: ObjetivoEntrenamientoValue;
   }
 > = [
   {
     description: "Aumentar tamaño y desarrollo muscular",
-    icon: BicepsFlexed,
+    illustration: MuscleGainIllustration,
     title: "Ganar masa muscular",
     value: ObjetivoEntrenamiento.GanarMasaMuscular,
   },
   {
     description: "Mejorar tu rendimiento y mover más peso",
-    icon: Dumbbell,
+    illustration: StrengthIllustration,
     title: "Ganar fuerza",
     value: ObjetivoEntrenamiento.GanarFuerza,
   },
   {
     description: "Progresar en ambos objetivos",
-    icon: TrendingUp,
+    illustration: MuscleAndStrengthIllustration,
     title: "Masa muscular y fuerza",
     value: ObjetivoEntrenamiento.GanarmasaMuscularYFuerza,
   },
   {
     description: "Mejorar tu estado físico general",
-    icon: HeartPulse,
+    illustration: GeneralConditioningIllustration,
     title: "Acondicionamiento general",
     value: ObjetivoEntrenamiento.AcondicionamientoGeneral,
   },
@@ -73,14 +74,17 @@ export function ObjectiveStep() {
         </p>
       </div>
 
-      <fieldset className="mx-auto mt-6 grid w-full max-w-[520px] auto-rows-fr grid-cols-2 gap-3 md:mt-8">
+      <fieldset className="mx-auto mt-6 grid w-full max-w-[520px] auto-rows-[180px] grid-cols-2 gap-3 md:mt-8">
         <legend className="sr-only">Objetivo principal</legend>
         {objectiveOptions.map((option) => {
           const isSelected = selectedObjective === option.value;
-          const Icon = option.icon;
+          const Illustration = option.illustration;
 
           return (
-            <label className="block h-full cursor-pointer" key={option.value}>
+            <label
+              className="block h-full min-w-0 cursor-pointer"
+              key={option.value}
+            >
               <input
                 checked={isSelected}
                 className="peer sr-only"
@@ -91,37 +95,38 @@ export function ObjectiveStep() {
               />
               <span
                 className={cn(
-                  "relative flex h-full min-h-[168px] flex-col items-center justify-center rounded-card border px-3 py-4 text-center transition-[background-color,border-color,box-shadow,transform] duration-200 hover:border-border-strong active:scale-[0.99] peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
+                  "relative flex h-full w-full min-w-0 flex-col items-center justify-center rounded-card border px-3 py-3 text-center transition-[background-color,border-color,box-shadow,transform] duration-200 hover:border-border-strong active:scale-[0.99] peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
                   isSelected
-                    ? "border-primary bg-primary/5"
+                    ? "border-primary bg-[color-mix(in_srgb,var(--primary)_7%,var(--surface))]"
                     : "border-border bg-surface",
                 )}
               >
                 {isSelected ? (
-                  <Check
-                    aria-hidden="true"
-                    className="absolute top-3 right-3 text-primary"
-                    size={16}
-                    strokeWidth={2.5}
-                  />
+                  <span className="absolute top-3 right-3 flex size-[22px] items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary">
+                    <Check
+                      aria-hidden="true"
+                      size={13}
+                      strokeWidth={2.5}
+                    />
+                  </span>
                 ) : null}
 
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "flex size-12 shrink-0 items-center justify-center rounded-control bg-surface-elevated transition-colors",
+                    "flex h-16 w-full shrink-0 items-center justify-center transition-colors",
                     isSelected
-                      ? "bg-[color-mix(in_srgb,var(--primary)_7%,var(--surface-elevated))] text-primary"
+                      ? "text-[color-mix(in_srgb,var(--primary)_72%,var(--text-secondary))]"
                       : "text-text-secondary",
                   )}
                 >
-                  <Icon size={34} strokeWidth={2} />
+                  <Illustration isSelected={isSelected} />
                 </span>
 
-                <span className="mt-3 text-[15px] leading-5 font-semibold text-text-primary sm:text-base">
+                <span className="mt-3 flex min-h-10 items-center justify-center text-[15px] leading-5 font-semibold text-text-primary sm:text-base">
                   {option.title}
                 </span>
-                <span className="mt-1 text-xs leading-[18px] text-text-secondary sm:text-[13px]">
+                <span className="mt-1.5 flex min-h-9 max-w-36 items-start justify-center text-[13px] leading-[18px] text-text-secondary">
                   {option.description}
                 </span>
               </span>
@@ -130,7 +135,7 @@ export function ObjectiveStep() {
         })}
       </fieldset>
 
-      <div className="mx-auto mt-6 w-full max-w-[520px]">
+      <div className="mx-auto mt-7 w-full max-w-[520px]">
         <Button
           className="min-h-14"
           disabled={selectedObjective === undefined}

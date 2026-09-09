@@ -1,14 +1,7 @@
 "use client";
 
-import { forwardRef } from "react";
-import {
-  Check,
-  Dumbbell,
-  House,
-  PersonStanding,
-  type LucideIcon,
-  type LucideProps,
-} from "lucide-react";
+import type { ComponentType } from "react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
 import { useOnboarding } from "../context/onboarding-context";
@@ -17,61 +10,42 @@ import {
   EntornoEntrenamiento,
   type EntornoEntrenamiento as EntornoEntrenamientoValue,
 } from "../types/onboarding.types";
+import {
+  CalisthenicsIllustration,
+  CommercialGymIllustration,
+  HomeWorkoutIllustration,
+  SmallGymIllustration,
+  type EnvironmentIllustrationProps,
+} from "./environment-illustrations";
 import { OnboardingStepHeader } from "./onboarding-step-header";
-
-const GymRackIcon = forwardRef<SVGSVGElement, LucideProps>(
-  ({ color = "currentColor", size = 24, strokeWidth = 2, ...props }, ref) => (
-    <svg
-      fill="none"
-      height={size}
-      ref={ref}
-      stroke={color}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={strokeWidth}
-      viewBox="0 0 24 24"
-      width={size}
-      xmlns="http://www.w3.org/2000/svg"
-      {...props}
-    >
-      <path d="M5 21V4h14v17" />
-      <path d="M3 21h5M16 21h5" />
-      <path d="M2 9h20" />
-      <path d="M3 7v4M5 6.5v5M19 6.5v5M21 7v4" />
-      <path d="M5 14h3M16 14h3" />
-    </svg>
-  ),
-);
-
-GymRackIcon.displayName = "GymRackIcon";
 
 const environmentOptions: ReadonlyArray<{
   description: string;
-  icon: LucideIcon;
+  illustration: ComponentType<EnvironmentIllustrationProps>;
   title: string;
   value: EntornoEntrenamientoValue;
 }> = [
   {
     description: "Entreno principalmente en casa",
-    icon: House,
+    illustration: HomeWorkoutIllustration,
     title: "Casa",
     value: EntornoEntrenamiento.Casa,
   },
   {
     description: "Equipamiento básico",
-    icon: Dumbbell,
+    illustration: SmallGymIllustration,
     title: "Gimnasio pequeño",
     value: EntornoEntrenamiento.GimnasioPequeno,
   },
   {
     description: "Entrenamiento con peso corporal",
-    icon: PersonStanding,
+    illustration: CalisthenicsIllustration,
     title: "Calistenia",
     value: EntornoEntrenamiento.Calistenia,
   },
   {
     description: "Gran variedad de equipos",
-    icon: GymRackIcon,
+    illustration: CommercialGymIllustration,
     title: "Gimnasio comercial",
     value: EntornoEntrenamiento.GimnasioComercial,
   },
@@ -101,14 +75,14 @@ export function EnvironmentStep() {
         </p>
       </div>
 
-      <fieldset className="mt-6 space-y-3 md:mt-8">
+      <fieldset className="mx-auto mt-6 grid w-full max-w-[520px] auto-rows-fr grid-cols-2 gap-3 md:mt-8">
         <legend className="sr-only">Entorno principal de entrenamiento</legend>
         {environmentOptions.map((option) => {
           const isSelected = selectedEnvironment === option.value;
-          const Icon = option.icon;
+          const Illustration = option.illustration;
 
           return (
-            <label className="block cursor-pointer" key={option.value}>
+            <label className="block h-full cursor-pointer" key={option.value}>
               <input
                 checked={isSelected}
                 className="peer sr-only"
@@ -119,40 +93,37 @@ export function EnvironmentStep() {
               />
               <span
                 className={cn(
-                  "relative flex min-h-20 items-center gap-4 rounded-card border px-4 py-3 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:border-border-strong peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
+                  "relative flex h-[196px] flex-col items-center justify-center rounded-card border px-3 py-3 text-center transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-border-strong active:scale-[0.99] peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
                   isSelected
-                    ? "border-primary bg-[color-mix(in_srgb,var(--primary)_7%,var(--surface))]"
+                    ? "border-primary bg-primary/5"
                     : "border-border bg-surface",
                 )}
               >
                 {isSelected ? (
-                  <Check
-                    aria-hidden="true"
-                    className="absolute top-1/2 right-4 -translate-y-1/2 text-primary"
-                    size={16}
-                    strokeWidth={2.5}
-                  />
+                  <span className="absolute top-3 right-3 flex size-[22px] items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary">
+                    <Check
+                      aria-hidden="true"
+                      size={13}
+                      strokeWidth={2.5}
+                    />
+                  </span>
                 ) : null}
 
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "flex size-[46px] shrink-0 items-center justify-center rounded-control-sm border border-border transition-colors",
-                    isSelected
-                      ? "bg-[color-mix(in_srgb,var(--primary)_7%,var(--surface-elevated))] text-primary"
-                      : "bg-surface-elevated text-text-secondary",
+                    "flex h-16 w-full shrink-0 items-center justify-center transition-colors",
+                    isSelected ? "text-primary" : "text-text-secondary",
                   )}
                 >
-                  <Icon size={27} strokeWidth={2} />
+                  <Illustration isSelected={isSelected} />
                 </span>
 
-                <span className="min-w-0 flex-1 pr-6">
-                  <span className="block text-base leading-5 font-semibold text-text-primary">
-                    {option.title}
-                  </span>
-                  <span className="mt-1 block text-[13px] leading-5 text-text-secondary sm:text-sm">
-                    {option.description}
-                  </span>
+                <span className="mt-3 flex min-h-10 items-center justify-center text-[15px] leading-5 font-semibold text-text-primary sm:text-base">
+                  {option.title}
+                </span>
+                <span className="mt-1.5 flex min-h-9 max-w-36 items-start justify-center text-xs leading-[18px] text-text-secondary sm:text-[13px]">
+                  {option.description}
                 </span>
               </span>
             </label>
@@ -160,11 +131,11 @@ export function EnvironmentStep() {
         })}
       </fieldset>
 
-      <p className="mt-5 text-sm leading-6 text-text-secondary">
+      <p className="mx-auto mt-5 w-full max-w-[520px] text-sm leading-6 text-text-secondary">
         Después elegimos qué equipamiento tenés disponible.
       </p>
 
-      <div className="mt-6 md:mt-8">
+      <div className="mx-auto mt-6 w-full max-w-[520px]">
         <Button
           className="min-h-14"
           disabled={selectedEnvironment === undefined}
