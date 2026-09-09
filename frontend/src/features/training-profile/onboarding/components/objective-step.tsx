@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType } from "react";
+import Image from "next/image";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
@@ -10,44 +10,37 @@ import {
   ObjetivoEntrenamiento,
   type ObjetivoEntrenamiento as ObjetivoEntrenamientoValue,
 } from "../types/onboarding.types";
-import {
-  GeneralConditioningIllustration,
-  MuscleAndStrengthIllustration,
-  MuscleGainIllustration,
-  StrengthIllustration,
-  type ObjectiveIllustrationProps,
-} from "./objective-illustrations";
 import { OnboardingStepHeader } from "./onboarding-step-header";
 
 const objectiveOptions: ReadonlyArray<
   {
     description: string;
-    illustration: ComponentType<ObjectiveIllustrationProps>;
+    imageSrc: string;
     title: string;
     value: ObjetivoEntrenamientoValue;
   }
 > = [
   {
     description: "Aumentar tamaño y desarrollo muscular",
-    illustration: MuscleGainIllustration,
+    imageSrc: "/onboarding/objectives/goal-ganar-masa-muscular.png",
     title: "Ganar masa muscular",
     value: ObjetivoEntrenamiento.GanarMasaMuscular,
   },
   {
     description: "Mejorar tu rendimiento y mover más peso",
-    illustration: StrengthIllustration,
+    imageSrc: "/onboarding/objectives/goal-ganar-fuerza.png",
     title: "Ganar fuerza",
     value: ObjetivoEntrenamiento.GanarFuerza,
   },
   {
     description: "Progresar en ambos objetivos",
-    illustration: MuscleAndStrengthIllustration,
+    imageSrc: "/onboarding/objectives/goal-masa-muscular-y-fuerza.png",
     title: "Masa muscular y fuerza",
     value: ObjetivoEntrenamiento.GanarmasaMuscularYFuerza,
   },
   {
     description: "Mejorar tu estado físico general",
-    illustration: GeneralConditioningIllustration,
+    imageSrc: "/onboarding/objectives/goal-acondicionamiento-general.png",
     title: "Acondicionamiento general",
     value: ObjetivoEntrenamiento.AcondicionamientoGeneral,
   },
@@ -78,7 +71,6 @@ export function ObjectiveStep() {
         <legend className="sr-only">Objetivo principal</legend>
         {objectiveOptions.map((option) => {
           const isSelected = selectedObjective === option.value;
-          const Illustration = option.illustration;
 
           return (
             <label
@@ -111,16 +103,16 @@ export function ObjectiveStep() {
                   </span>
                 ) : null}
 
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "flex h-16 w-full shrink-0 items-center justify-center transition-colors",
-                    isSelected
-                      ? "text-[color-mix(in_srgb,var(--primary)_72%,var(--text-secondary))]"
-                      : "text-text-secondary",
-                  )}
-                >
-                  <Illustration isSelected={isSelected} />
+                <span className="flex h-20 w-full shrink-0 items-center justify-center md:h-22">
+                  <Image
+                    alt=""
+                    className="h-22 w-22 object-contain md:h-24 md:w-24"
+                    height={96}
+                    sizes="(min-width: 768px) 96px, 88px"
+                    src={option.imageSrc}
+                    unoptimized
+                    width={96}
+                  />
                 </span>
 
                 <span className="mt-3 flex min-h-10 items-center justify-center text-[15px] leading-5 font-semibold text-text-primary sm:text-base">

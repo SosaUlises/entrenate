@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType } from "react";
+import Image from "next/image";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
@@ -10,42 +10,35 @@ import {
   EntornoEntrenamiento,
   type EntornoEntrenamiento as EntornoEntrenamientoValue,
 } from "../types/onboarding.types";
-import {
-  CalisthenicsIllustration,
-  CommercialGymIllustration,
-  HomeWorkoutIllustration,
-  SmallGymIllustration,
-  type EnvironmentIllustrationProps,
-} from "./environment-illustrations";
 import { OnboardingStepHeader } from "./onboarding-step-header";
 
 const environmentOptions: ReadonlyArray<{
   description: string;
-  illustration: ComponentType<EnvironmentIllustrationProps>;
+  imageSrc: string;
   title: string;
   value: EntornoEntrenamientoValue;
 }> = [
   {
     description: "Entreno principalmente en casa",
-    illustration: HomeWorkoutIllustration,
+    imageSrc: "/onboarding/environment/environment-casa.png",
     title: "Casa",
     value: EntornoEntrenamiento.Casa,
   },
   {
     description: "Equipamiento básico",
-    illustration: SmallGymIllustration,
+    imageSrc: "/onboarding/environment/environment-gimnasio-pequeno.png",
     title: "Gimnasio pequeño",
     value: EntornoEntrenamiento.GimnasioPequeno,
   },
   {
     description: "Entrenamiento con peso corporal",
-    illustration: CalisthenicsIllustration,
+    imageSrc: "/onboarding/environment/environment-calistenia.png",
     title: "Calistenia",
     value: EntornoEntrenamiento.Calistenia,
   },
   {
     description: "Gran variedad de equipos",
-    illustration: CommercialGymIllustration,
+    imageSrc: "/onboarding/environment/environment-gimnasio-comercial.png",
     title: "Gimnasio comercial",
     value: EntornoEntrenamiento.GimnasioComercial,
   },
@@ -75,14 +68,16 @@ export function EnvironmentStep() {
         </p>
       </div>
 
-      <fieldset className="mx-auto mt-6 grid w-full max-w-[520px] auto-rows-fr grid-cols-2 gap-3 md:mt-8">
+      <fieldset className="mx-auto mt-6 grid w-full max-w-[520px] auto-rows-[196px] grid-cols-2 gap-3 md:mt-8">
         <legend className="sr-only">Entorno principal de entrenamiento</legend>
         {environmentOptions.map((option) => {
           const isSelected = selectedEnvironment === option.value;
-          const Illustration = option.illustration;
 
           return (
-            <label className="block h-full cursor-pointer" key={option.value}>
+            <label
+              className="block h-full min-w-0 cursor-pointer"
+              key={option.value}
+            >
               <input
                 checked={isSelected}
                 className="peer sr-only"
@@ -93,9 +88,9 @@ export function EnvironmentStep() {
               />
               <span
                 className={cn(
-                  "relative flex h-[196px] flex-col items-center justify-center rounded-card border px-3 py-3 text-center transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-border-strong active:scale-[0.99] peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
+                  "relative flex h-full w-full min-w-0 flex-col items-center justify-center rounded-card border px-3 py-3 text-center transition-[background-color,border-color,box-shadow,transform] duration-200 hover:border-border-strong active:scale-[0.99] peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
                   isSelected
-                    ? "border-primary bg-primary/5"
+                    ? "border-primary bg-[color-mix(in_srgb,var(--primary)_7%,var(--surface))]"
                     : "border-border bg-surface",
                 )}
               >
@@ -109,14 +104,16 @@ export function EnvironmentStep() {
                   </span>
                 ) : null}
 
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "flex h-16 w-full shrink-0 items-center justify-center transition-colors",
-                    isSelected ? "text-primary" : "text-text-secondary",
-                  )}
-                >
-                  <Illustration isSelected={isSelected} />
+                <span className="flex h-20 w-full shrink-0 items-center justify-center md:h-22">
+                  <Image
+                    alt=""
+                    className="h-22 w-22 object-contain md:h-24 md:w-24"
+                    height={96}
+                    sizes="(min-width: 768px) 96px, 88px"
+                    src={option.imageSrc}
+                    unoptimized
+                    width={96}
+                  />
                 </span>
 
                 <span className="mt-3 flex min-h-10 items-center justify-center text-[15px] leading-5 font-semibold text-text-primary sm:text-base">
