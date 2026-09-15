@@ -10,5 +10,9 @@ namespace Entrenate.Application.Common.Interfaces
         Task<Ejercicio?> GetActiveByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyCollection<Guid>> GetValidActiveIdsAsync(
+            IEnumerable<Guid> ids,
+            CancellationToken cancellationToken = default);
     }
 }

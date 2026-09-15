@@ -39,5 +39,21 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                     x => x.Id == id && x.Activo,
                     cancellationToken);
         }
+
+        public async Task<IReadOnlyCollection<Guid>> GetValidActiveIdsAsync(
+            IEnumerable<Guid> ids,
+            CancellationToken cancellationToken = default)
+        {
+            var exerciseIds = ids
+                .Distinct()
+                .ToList();
+
+            return await _context
+                .Ejercicios
+                .AsNoTracking()
+                .Where(x => exerciseIds.Contains(x.Id) && x.Activo)
+                .Select(x => x.Id)
+                .ToListAsync(cancellationToken);
+        }
     }
 }
