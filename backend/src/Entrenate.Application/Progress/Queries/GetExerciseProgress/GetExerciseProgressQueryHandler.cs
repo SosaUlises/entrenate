@@ -1,5 +1,6 @@
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
+using Entrenate.Application.Progress;
 using Entrenate.Application.Progress.DTOs;
 using MediatR;
 
@@ -52,7 +53,9 @@ namespace Entrenate.Application.Progress.Queries.GetExerciseProgress
             return new ExerciseProgressDto(
                 exercise.Id,
                 exercise.Nombre,
-                entries);
+                entries
+                    .Select(ExerciseProgressMetricsCalculator.Calculate)
+                    .ToList());
         }
     }
 }
