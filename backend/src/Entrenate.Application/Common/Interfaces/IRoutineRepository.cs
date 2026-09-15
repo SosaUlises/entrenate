@@ -18,6 +18,11 @@ namespace Entrenate.Application.Common.Interfaces
             string userId,
             CancellationToken cancellationToken = default);
 
+        Task<DiaRutina?> GetDayByIdAndUserIdAsync(
+            Guid dayId,
+            string userId,
+            CancellationToken cancellationToken = default);
+
         Task AddAsync(
             Rutina rutina,
             CancellationToken cancellationToken = default);

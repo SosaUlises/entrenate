@@ -4,13 +4,15 @@ namespace Entrenate.Domain.Entidades
 {
     public class SesionEntrenamiento
     {
-        public Guid Id { get; set; }
+        private readonly List<EjercicioSesion> _ejercicios = [];
 
-        public string UsuarioId { get; set; } = string.Empty;
+        public Guid Id { get; private set; }
 
-        public Guid? DiaRutinaId { get; set; }
+        public string UsuarioId { get; private set; } = string.Empty;
 
-        public DateTime Fecha { get; set; }
+        public Guid? DiaRutinaId { get; private set; }
+
+        public DateTime Fecha { get; private set; }
 
         public DateTime HoraInicio { get; private set; }
 
@@ -18,18 +20,58 @@ namespace Entrenate.Domain.Entidades
 
         public EstadoSesionEntrenamiento Estado { get; private set; }
 
-        public string? Notas { get; set; }
+        public string? Notas { get; private set; }
 
-        public DiaRutina? DiaRutina { get; set; }
+        public DiaRutina? DiaRutina { get; private set; }
 
-        public ICollection<EjercicioSesion> Ejercicios { get; set; }
-            = new List<EjercicioSesion>();
+        public IReadOnlyCollection<EjercicioSesion> Ejercicios
+            => _ejercicios.AsReadOnly();
 
-        public void Iniciar(DateTime fechaHora)
+        private SesionEntrenamiento()
         {
-            HoraInicio = fechaHora;
-            Fecha = fechaHora.Date;
+        }
+
+        public SesionEntrenamiento(
+            string usuarioId,
+            Guid diaRutinaId,
+            DateTime fechaHoraInicio,
+            IEnumerable<EjercicioRutina> ejerciciosRutina)
+        {
+            if (string.IsNullOrWhiteSpace(usuarioId))
+            {
+                throw new ArgumentException(
+                    "El usuario es obligatorio.",
+                    nameof(usuarioId));
+            }
+
+            if (diaRutinaId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "El día de rutina es obligatorio.",
+                    nameof(diaRutinaId));
+            }
+
+            if (fechaHoraInicio.Kind != DateTimeKind.Utc)
+            {
+                throw new ArgumentException(
+                    "La fecha y hora de inicio debe estar expresada en UTC.",
+                    nameof(fechaHoraInicio));
+            }
+
+            ArgumentNullException.ThrowIfNull(ejerciciosRutina);
+
+            UsuarioId = usuarioId;
+            DiaRutinaId = diaRutinaId;
+            HoraInicio = fechaHoraInicio;
+            Fecha = fechaHoraInicio.Date;
+            HoraFin = null;
             Estado = EstadoSesionEntrenamiento.EnCurso;
+
+            foreach (var ejercicioRutina in ejerciciosRutina
+                .OrderBy(x => x.Orden))
+            {
+                _ejercicios.Add(new EjercicioSesion(ejercicioRutina));
+            }
         }
 
         public void Completar(DateTime fechaHoraFin)

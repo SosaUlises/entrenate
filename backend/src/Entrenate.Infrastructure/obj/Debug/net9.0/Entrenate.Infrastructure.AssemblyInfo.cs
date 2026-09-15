@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Entrenate.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b8b0821c71336897560d78b9c7ffadf92bfa7199")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+78cc45cbf6411cd716989853bf6d5a36678427c4")]
 [assembly: System.Reflection.AssemblyProductAttribute("Entrenate.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Entrenate.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

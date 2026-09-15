@@ -58,6 +58,23 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                     cancellationToken);
         }
 
+        public async Task<DiaRutina?> GetDayByIdAndUserIdAsync(
+            Guid dayId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context
+                .DiasRutina
+                .AsNoTracking()
+                .Include(x => x.Rutina)
+                .Include(x => x.Ejercicios)
+                    .ThenInclude(x => x.Ejercicio)
+                .FirstOrDefaultAsync(
+                    x => x.Id == dayId &&
+                        x.Rutina.UsuarioId == userId,
+                    cancellationToken);
+        }
+
         public async Task AddAsync(
             Rutina rutina,
             CancellationToken cancellationToken = default)
