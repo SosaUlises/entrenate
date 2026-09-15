@@ -24,6 +24,22 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                 cancellationToken);
         }
 
+        public Task<SesionEntrenamiento?> GetActiveByUserIdAsync(
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            return _context.SesionesEntrenamiento
+                .AsNoTracking()
+                .Include(x => x.Ejercicios.OrderBy(y => y.Orden))
+                    .ThenInclude(x => x.Ejercicio)
+                .Where(x =>
+                    x.UsuarioId == userId &&
+                    x.Estado == EstadoSesionEntrenamiento.EnCurso)
+                .OrderByDescending(x => x.HoraInicio)
+                .ThenByDescending(x => x.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         public async Task AddAsync(
             SesionEntrenamiento session,
             CancellationToken cancellationToken = default)

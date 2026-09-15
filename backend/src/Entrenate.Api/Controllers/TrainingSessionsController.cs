@@ -1,4 +1,5 @@
 using Entrenate.Application.TrainingSessions.Commands.StartTrainingSession;
+using Entrenate.Application.TrainingSessions.Queries.GetActiveTrainingSession;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,6 +30,17 @@ namespace Entrenate.Api.Controllers
             return Created(
                 $"api/training-sessions/{session.Id}",
                 session);
+        }
+
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActive(
+            CancellationToken cancellationToken)
+        {
+            var session = await _sender.Send(
+                new GetActiveTrainingSessionQuery(),
+                cancellationToken);
+
+            return Ok(session);
         }
     }
 }
