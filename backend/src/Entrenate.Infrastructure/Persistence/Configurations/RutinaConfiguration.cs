@@ -38,6 +38,10 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 .HasForeignKey(x => x.RutinaId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.Navigation(x => x.Dias)
+                .HasField("_dias")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+
             builder.HasIndex(x => x.UsuarioId);
         }
     }

@@ -29,6 +29,9 @@ namespace Entrenate.Infrastructure.Persistence
         public DbSet<Ejercicio> Ejercicios =>
             Set<Ejercicio>();
 
+        public DbSet<EjercicioEquipamiento> EjercicioEquipamientos =>
+            Set<EjercicioEquipamiento>();
+
         public DbSet<Rutina> Rutinas =>
             Set<Rutina>();
 

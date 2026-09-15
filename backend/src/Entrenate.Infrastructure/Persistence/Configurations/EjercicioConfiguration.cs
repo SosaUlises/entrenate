@@ -24,9 +24,6 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasMaxLength(100);
 
-            builder.Property(x => x.Equipamiento)
-                .HasMaxLength(100);
-
             builder.Property(x => x.WorkoutGuideId)
                 .HasMaxLength(200);
 
@@ -38,6 +35,15 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
 
             builder.HasIndex(x => x.WorkoutGuideId)
                 .IsUnique();
+
+            builder.HasMany(x => x.Equipamientos)
+                .WithOne()
+                .HasForeignKey(x => x.EjercicioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Navigation(x => x.Equipamientos)
+                .HasField("_equipamientos")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }
 }

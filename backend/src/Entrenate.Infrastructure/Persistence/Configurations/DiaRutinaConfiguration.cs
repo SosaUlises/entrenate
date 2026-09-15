@@ -28,6 +28,10 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 .HasForeignKey(x => x.DiaRutinaId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.Navigation(x => x.Ejercicios)
+                .HasField("_ejercicios")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+
             builder.HasIndex(x => new
             {
                 x.RutinaId,

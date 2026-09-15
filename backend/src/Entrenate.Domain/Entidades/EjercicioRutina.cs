@@ -2,11 +2,11 @@
 {
     public class EjercicioRutina
     {
-        public Guid Id { get; set; }
+        public Guid Id { get; private set; }
 
-        public Guid DiaRutinaId { get; set; }
+        public Guid DiaRutinaId { get; private set; }
 
-        public Guid EjercicioId { get; set; }
+        public Guid EjercicioId { get; private set; }
 
         public int CantidadSeries { get; private set; }
 
@@ -20,13 +20,68 @@
 
         public int DescansoSegundos { get; private set; }
 
-        public int Orden { get; set; }
+        public int Orden { get; private set; }
 
-        public string? Notas { get; set; }
+        public string? Notas { get; private set; }
 
-        public DiaRutina DiaRutina { get; set; } = null!;
+        public DiaRutina DiaRutina { get; private set; } = null!;
 
-        public Ejercicio Ejercicio { get; set; } = null!;
+        public Ejercicio Ejercicio { get; private set; } = null!;
+
+        private EjercicioRutina()
+        {
+        }
+
+        internal EjercicioRutina(
+            Guid diaRutinaId,
+            Guid ejercicioId,
+            int cantidadSeries,
+            int repeticionesMinimas,
+            int repeticionesMaximas,
+            int rirObjetivoMinimo,
+            int rirObjetivoMaximo,
+            int descansoSegundos,
+            int orden,
+            string? notas)
+        {
+            DiaRutinaId = diaRutinaId;
+
+            Actualizar(
+                ejercicioId,
+                cantidadSeries,
+                repeticionesMinimas,
+                repeticionesMaximas,
+                rirObjetivoMinimo,
+                rirObjetivoMaximo,
+                descansoSegundos,
+                orden,
+                notas);
+        }
+
+        public void Actualizar(
+            Guid ejercicioId,
+            int cantidadSeries,
+            int repeticionesMinimas,
+            int repeticionesMaximas,
+            int rirObjetivoMinimo,
+            int rirObjetivoMaximo,
+            int descansoSegundos,
+            int orden,
+            string? notas)
+        {
+            ConfigurarSeries(cantidadSeries);
+            ConfigurarRepeticiones(
+                repeticionesMinimas,
+                repeticionesMaximas);
+            ConfigurarRirObjetivo(
+                rirObjetivoMinimo,
+                rirObjetivoMaximo);
+            ConfigurarDescanso(descansoSegundos);
+
+            EjercicioId = ejercicioId;
+            Orden = orden;
+            Notas = notas?.Trim();
+        }
 
         public void ConfigurarSeries(int cantidad)
         {

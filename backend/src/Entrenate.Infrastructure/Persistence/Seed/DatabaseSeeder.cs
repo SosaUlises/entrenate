@@ -22,6 +22,7 @@ namespace Entrenate.Infrastructure.Persistence.Seed
             CancellationToken cancellationToken = default)
         {
             await SeedEquipamientosAsync(cancellationToken);
+            await SeedEjerciciosAsync(cancellationToken);
         }
 
         private async Task SeedEquipamientosAsync(
@@ -157,6 +158,182 @@ namespace Entrenate.Infrastructure.Persistence.Seed
             _logger.LogInformation(
                 "Se agregaron {Cantidad} equipamientos al catálogo.",
                 nuevosEquipamientos.Count);
+        }
+
+        private async Task SeedEjerciciosAsync(
+            CancellationToken cancellationToken)
+        {
+            var definiciones = new[]
+            {
+                ("Press banca con barra", "Pecho", new[]
+                {
+                    "Barra olímpica", "Discos", "Banco plano", "Rack"
+                }),
+                ("Press banca con mancuernas", "Pecho", new[]
+                {
+                    "Mancuernas", "Banco plano"
+                }),
+                ("Press inclinado con mancuernas", "Pecho", new[]
+                {
+                    "Mancuernas", "Banco ajustable"
+                }),
+                ("Aperturas con mancuernas", "Pecho", new[]
+                {
+                    "Mancuernas", "Banco plano"
+                }),
+                ("Peck deck", "Pecho", new[] { "Peck deck" }),
+                ("Flexiones", "Pecho", Array.Empty<string>()),
+                ("Dominadas", "Espalda", new[] { "Barra de dominadas" }),
+                ("Remo con barra", "Espalda", new[]
+                {
+                    "Barra olímpica", "Discos"
+                }),
+                ("Remo con mancuerna", "Espalda", new[] { "Mancuernas" }),
+                ("Jalón al pecho", "Espalda", new[] { "Polea alta" }),
+                ("Remo en polea baja", "Espalda", new[] { "Polea baja" }),
+                ("Press militar con barra", "Hombros", new[]
+                {
+                    "Barra olímpica", "Discos"
+                }),
+                ("Press de hombros con mancuernas", "Hombros", new[]
+                {
+                    "Mancuernas"
+                }),
+                ("Elevaciones laterales con mancuernas", "Hombros", new[]
+                {
+                    "Mancuernas"
+                }),
+                ("Face pull", "Hombros", new[] { "Polea alta" }),
+                ("Pike push-up", "Hombros", Array.Empty<string>()),
+                ("Curl con mancuernas", "Bíceps", new[] { "Mancuernas" }),
+                ("Curl con barra EZ", "Bíceps", new[]
+                {
+                    "Barra EZ", "Discos"
+                }),
+                ("Curl en polea", "Bíceps", new[] { "Polea baja" }),
+                ("Extensión de tríceps en polea", "Tríceps", new[]
+                {
+                    "Polea alta"
+                }),
+                ("Press francés con barra EZ", "Tríceps", new[]
+                {
+                    "Barra EZ", "Discos"
+                }),
+                ("Fondos en paralelas", "Tríceps", new[] { "Paralelas" }),
+                ("Sentadilla con barra", "Cuádriceps", new[]
+                {
+                    "Barra olímpica", "Discos", "Rack"
+                }),
+                ("Sentadilla goblet", "Cuádriceps", new[] { "Mancuernas" }),
+                ("Sentadilla con peso corporal", "Cuádriceps",
+                    Array.Empty<string>()),
+                ("Prensa de piernas", "Cuádriceps", new[]
+                {
+                    "Prensa de piernas"
+                }),
+                ("Hack squat", "Cuádriceps", new[] { "Hack squat" }),
+                ("Extensión de cuádriceps", "Cuádriceps", new[]
+                {
+                    "Extensión de cuádriceps"
+                }),
+                ("Zancadas con mancuernas", "Cuádriceps", new[]
+                {
+                    "Mancuernas"
+                }),
+                ("Peso muerto rumano con barra", "Isquiotibiales", new[]
+                {
+                    "Barra olímpica", "Discos"
+                }),
+                ("Curl femoral", "Isquiotibiales", new[] { "Curl femoral" }),
+                ("Hip thrust con barra", "Glúteos", new[]
+                {
+                    "Barra olímpica", "Discos", "Banco plano"
+                }),
+                ("Puente de glúteos", "Glúteos", Array.Empty<string>()),
+                ("Elevación de gemelos en máquina", "Gemelos", new[]
+                {
+                    "Máquina de gemelos"
+                }),
+                ("Elevación de gemelos de pie", "Gemelos",
+                    Array.Empty<string>()),
+                ("Plancha", "Core", Array.Empty<string>()),
+                ("Crunch abdominal", "Core", Array.Empty<string>())
+            };
+
+            var equipamientos = await _context
+                .Equipamientos
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            var equipamientosPorNombre = equipamientos.ToDictionary(
+                x => x.Nombre,
+                StringComparer.OrdinalIgnoreCase);
+
+            var equipamientosFaltantes = definiciones
+                .SelectMany(x => x.Item3)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Where(x => !equipamientosPorNombre.ContainsKey(x))
+                .OrderBy(x => x)
+                .ToList();
+
+            if (equipamientosFaltantes.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "No se pueden sembrar los ejercicios porque faltan " +
+                    "equipamientos en el catálogo: " +
+                    string.Join(", ", equipamientosFaltantes));
+            }
+
+            var nombresExistentes = await _context
+                .Ejercicios
+                .Select(x => x.Nombre)
+                .ToListAsync(cancellationToken);
+
+            var nombresSet = new HashSet<string>(
+                nombresExistentes,
+                StringComparer.OrdinalIgnoreCase);
+
+            var nuevosEjercicios = definiciones
+                .Where(x => !nombresSet.Contains(x.Item1))
+                .Select(definicion =>
+                {
+                    var ejercicio = new Ejercicio
+                    {
+                        Id = Guid.NewGuid(),
+                        Nombre = definicion.Item1,
+                        Descripcion = null,
+                        GrupoMuscularPrincipal = definicion.Item2,
+                        WorkoutGuideId = null,
+                        ImagenPrincipalUrl = null,
+                        Activo = true
+                    };
+
+                    var equipamientoIds = definicion.Item3
+                        .Select(x => equipamientosPorNombre[x].Id);
+
+                    ejercicio.DefinirEquipamientos(equipamientoIds);
+
+                    return ejercicio;
+                })
+                .ToList();
+
+            if (nuevosEjercicios.Count == 0)
+            {
+                _logger.LogInformation(
+                    "El catálogo de ejercicios ya está actualizado.");
+
+                return;
+            }
+
+            await _context.Ejercicios.AddRangeAsync(
+                nuevosEjercicios,
+                cancellationToken);
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Se agregaron {Cantidad} ejercicios al catálogo.",
+                nuevosEjercicios.Count);
         }
     }
 }

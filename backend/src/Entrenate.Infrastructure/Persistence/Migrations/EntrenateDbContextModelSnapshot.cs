@@ -83,10 +83,6 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<string>("Equipamiento")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<string>("GrupoMuscularPrincipal")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -111,6 +107,27 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Ejercicios", (string)null);
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.EjercicioEquipamiento", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EjercicioId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EquipamientoId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EquipamientoId");
+
+                    b.HasIndex("EjercicioId", "EquipamientoId")
+                        .IsUnique();
+
+                    b.ToTable("EjercicioEquipamientos", (string)null);
                 });
 
             modelBuilder.Entity("Entrenate.Domain.Entidades.EjercicioRutina", b =>
@@ -635,6 +652,21 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.Navigation("Rutina");
                 });
 
+            modelBuilder.Entity("Entrenate.Domain.Entidades.EjercicioEquipamiento", b =>
+                {
+                    b.HasOne("Entrenate.Domain.Entidades.Ejercicio", null)
+                        .WithMany("Equipamientos")
+                        .HasForeignKey("EjercicioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Entrenate.Domain.Entidades.Equipamiento", null)
+                        .WithMany()
+                        .HasForeignKey("EquipamientoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Entrenate.Domain.Entidades.EjercicioRutina", b =>
                 {
                     b.HasOne("Entrenate.Domain.Entidades.DiaRutina", "DiaRutina")
@@ -772,6 +804,11 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Entrenate.Domain.Entidades.DiaRutina", b =>
                 {
                     b.Navigation("Ejercicios");
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.Ejercicio", b =>
+                {
+                    b.Navigation("Equipamientos");
                 });
 
             modelBuilder.Entity("Entrenate.Domain.Entidades.EjercicioSesion", b =>

@@ -47,6 +47,10 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 .HasForeignKey(x => x.EjercicioSesionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.Navigation(x => x.Series)
+                .HasField("_series")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+
             builder.HasIndex(x => new
             {
                 x.SesionEntrenamientoId,
