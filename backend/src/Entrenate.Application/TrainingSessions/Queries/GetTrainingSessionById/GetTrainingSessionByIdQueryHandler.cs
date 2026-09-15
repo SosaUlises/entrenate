@@ -4,15 +4,15 @@ using Entrenate.Application.TrainingSessions.DTOs;
 using Entrenate.Domain.Entidades;
 using MediatR;
 
-namespace Entrenate.Application.TrainingSessions.Queries.GetActiveTrainingSession
+namespace Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById
 {
-    public class GetActiveTrainingSessionQueryHandler
-        : IRequestHandler<GetActiveTrainingSessionQuery, TrainingSessionDto>
+    public class GetTrainingSessionByIdQueryHandler
+        : IRequestHandler<GetTrainingSessionByIdQuery, TrainingSessionDto>
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly ITrainingSessionRepository _sessionRepository;
 
-        public GetActiveTrainingSessionQueryHandler(
+        public GetTrainingSessionByIdQueryHandler(
             ICurrentUserService currentUserService,
             ITrainingSessionRepository sessionRepository)
         {
@@ -21,7 +21,7 @@ namespace Entrenate.Application.TrainingSessions.Queries.GetActiveTrainingSessio
         }
 
         public async Task<TrainingSessionDto> Handle(
-            GetActiveTrainingSessionQuery request,
+            GetTrainingSessionByIdQuery request,
             CancellationToken cancellationToken)
         {
             var userId = _currentUserService.UserId;
@@ -33,14 +33,15 @@ namespace Entrenate.Application.TrainingSessions.Queries.GetActiveTrainingSessio
             }
 
             var session = await _sessionRepository
-                .GetActiveByUserIdAsync(
+                .GetByIdAndUserIdAsNoTrackingAsync(
+                    request.SessionId,
                     userId,
                     cancellationToken);
 
             if (session is null)
             {
                 throw new NotFoundException(
-                    "No existe una sesión de entrenamiento en curso.");
+                    "La sesión de entrenamiento no existe.");
             }
 
             return MapToDto(session);

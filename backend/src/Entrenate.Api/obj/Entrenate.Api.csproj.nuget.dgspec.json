@@ -10,7 +10,7 @@
         "projectUniqueName": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Api\\Entrenate.Api.csproj",
         "projectName": "Entrenate.Api",
         "projectPath": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Api\\Entrenate.Api.csproj",
-        "packagesPath": ".nuget\\packages\\",
+        "packagesPath": "C:\\Users\\Ulises\\.nuget\\packages",
         "outputPath": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Api\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
@@ -47,7 +47,7 @@
           ]
         },
         "restoreAuditProperties": {
-          "enableAudit": "true",
+          "enableAudit": "false",
           "auditLevel": "low",
           "auditMode": "direct"
         },
@@ -101,7 +101,7 @@
         "projectUniqueName": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Application\\Entrenate.Application.csproj",
         "projectName": "Entrenate.Application",
         "projectPath": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Application\\Entrenate.Application.csproj",
-        "packagesPath": ".nuget\\packages\\",
+        "packagesPath": "C:\\Users\\Ulises\\.nuget\\packages",
         "outputPath": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Application\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
@@ -135,7 +135,7 @@
           ]
         },
         "restoreAuditProperties": {
-          "enableAudit": "true",
+          "enableAudit": "false",
           "auditLevel": "low",
           "auditMode": "direct"
         },
@@ -194,7 +194,7 @@
         "projectUniqueName": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Domain\\Entrenate.Domain.csproj",
         "projectName": "Entrenate.Domain",
         "projectPath": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Domain\\Entrenate.Domain.csproj",
-        "packagesPath": ".nuget\\packages\\",
+        "packagesPath": "C:\\Users\\Ulises\\.nuget\\packages",
         "outputPath": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
@@ -224,7 +224,7 @@
           ]
         },
         "restoreAuditProperties": {
-          "enableAudit": "true",
+          "enableAudit": "false",
           "auditLevel": "low",
           "auditMode": "direct"
         },
@@ -267,7 +267,7 @@
         "projectUniqueName": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj",
         "projectName": "Entrenate.Infrastructure",
         "projectPath": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\Entrenate.Infrastructure.csproj",
-        "packagesPath": ".nuget\\packages\\",
+        "packagesPath": "C:\\Users\\Ulises\\.nuget\\packages",
         "outputPath": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
@@ -304,7 +304,7 @@
           ]
         },
         "restoreAuditProperties": {
-          "enableAudit": "true",
+          "enableAudit": "false",
           "auditLevel": "low",
           "auditMode": "direct"
         },

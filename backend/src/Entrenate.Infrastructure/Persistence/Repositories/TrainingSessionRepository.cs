@@ -1,4 +1,5 @@
 using Entrenate.Application.Common.Interfaces;
+using Entrenate.Application.TrainingSessions.DTOs;
 using Entrenate.Domain.Entidades;
 using Entrenate.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +51,50 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
             return _context.SesionesEntrenamiento
                 .Include(x => x.Ejercicios)
                     .ThenInclude(x => x.Series)
+                .FirstOrDefaultAsync(
+                    x => x.Id == sessionId &&
+                        x.UsuarioId == userId,
+                    cancellationToken);
+        }
+
+        public async Task<IReadOnlyCollection<TrainingSessionHistorySummaryDto>>
+            GetHistoryByUserIdAsync(
+                string userId,
+                CancellationToken cancellationToken = default)
+        {
+            return await _context.SesionesEntrenamiento
+                .AsNoTracking()
+                .Where(x =>
+                    x.UsuarioId == userId &&
+                    (x.Estado == EstadoSesionEntrenamiento.Completada ||
+                        x.Estado == EstadoSesionEntrenamiento.Cancelada))
+                .OrderByDescending(x => x.HoraInicio)
+                .ThenByDescending(x => x.Id)
+                .Select(x => new TrainingSessionHistorySummaryDto(
+                    x.Id,
+                    x.DiaRutinaId,
+                    x.Fecha,
+                    x.HoraInicio,
+                    x.HoraFin,
+                    x.Estado,
+                    x.Ejercicios.Count,
+                    x.Ejercicios
+                        .SelectMany(y => y.Series)
+                        .Count(y => y.Completada)))
+                .ToListAsync(cancellationToken);
+        }
+
+        public Task<SesionEntrenamiento?> GetByIdAndUserIdAsNoTrackingAsync(
+            Guid sessionId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            return _context.SesionesEntrenamiento
+                .AsNoTracking()
+                .Include(x => x.Ejercicios.OrderBy(y => y.Orden))
+                    .ThenInclude(x => x.Ejercicio)
+                .Include(x => x.Ejercicios.OrderBy(y => y.Orden))
+                    .ThenInclude(x => x.Series.OrderBy(y => y.NumeroSerie))
                 .FirstOrDefaultAsync(
                     x => x.Id == sessionId &&
                         x.UsuarioId == userId,

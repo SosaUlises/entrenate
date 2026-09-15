@@ -1,4 +1,5 @@
 using Entrenate.Domain.Entidades;
+using Entrenate.Application.TrainingSessions.DTOs;
 
 namespace Entrenate.Application.Common.Interfaces
 {
@@ -13,6 +14,16 @@ namespace Entrenate.Application.Common.Interfaces
             CancellationToken cancellationToken = default);
 
         Task<SesionEntrenamiento?> GetByIdAndUserIdAsync(
+            Guid sessionId,
+            string userId,
+            CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyCollection<TrainingSessionHistorySummaryDto>>
+            GetHistoryByUserIdAsync(
+                string userId,
+                CancellationToken cancellationToken = default);
+
+        Task<SesionEntrenamiento?> GetByIdAndUserIdAsNoTrackingAsync(
             Guid sessionId,
             string userId,
             CancellationToken cancellationToken = default);

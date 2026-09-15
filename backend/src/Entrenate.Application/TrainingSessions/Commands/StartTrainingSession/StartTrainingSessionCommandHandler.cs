@@ -75,6 +75,7 @@ namespace Entrenate.Application.TrainingSessions.Commands.StartTrainingSession
                 session.DiaRutinaId,
                 session.Fecha,
                 session.HoraInicio,
+                session.HoraFin,
                 session.Estado,
                 session.Ejercicios
                     .OrderBy(x => x.Orden)

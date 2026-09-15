@@ -4,6 +4,8 @@ using Entrenate.Application.TrainingSessions.Commands.CompleteTrainingSession;
 using Entrenate.Application.TrainingSessions.Commands.StartTrainingSession;
 using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
 using Entrenate.Application.TrainingSessions.Queries.GetActiveTrainingSession;
+using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById;
+using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionHistory;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,6 +44,29 @@ namespace Entrenate.Api.Controllers
         {
             var session = await _sender.Send(
                 new GetActiveTrainingSessionQuery(),
+                cancellationToken);
+
+            return Ok(session);
+        }
+
+        [HttpGet("history")]
+        public async Task<IActionResult> GetHistory(
+            CancellationToken cancellationToken)
+        {
+            var sessions = await _sender.Send(
+                new GetTrainingSessionHistoryQuery(),
+                cancellationToken);
+
+            return Ok(sessions);
+        }
+
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> GetById(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var session = await _sender.Send(
+                new GetTrainingSessionByIdQuery(id),
                 cancellationToken);
 
             return Ok(session);
