@@ -40,6 +40,18 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                     cancellationToken);
         }
 
+        public async Task<Ejercicio?> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context
+                .Ejercicios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    x => x.Id == id,
+                    cancellationToken);
+        }
+
         public async Task<IReadOnlyCollection<Guid>> GetValidActiveIdsAsync(
             IEnumerable<Guid> ids,
             CancellationToken cancellationToken = default)

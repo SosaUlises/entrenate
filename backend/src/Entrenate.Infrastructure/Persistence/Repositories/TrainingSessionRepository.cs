@@ -1,4 +1,5 @@
 using Entrenate.Application.Common.Interfaces;
+using Entrenate.Application.Progress.DTOs;
 using Entrenate.Application.TrainingSessions.DTOs;
 using Entrenate.Domain.Entidades;
 using Entrenate.Domain.Enums;
@@ -99,6 +100,43 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                     x => x.Id == sessionId &&
                         x.UsuarioId == userId,
                     cancellationToken);
+        }
+
+        public async Task<IReadOnlyCollection<ExerciseProgressEntryDto>>
+            GetCompletedExerciseProgressByUserIdAsync(
+                Guid exerciseId,
+                string userId,
+                CancellationToken cancellationToken = default)
+        {
+            return await _context.SesionesEntrenamiento
+                .AsNoTracking()
+                .Where(x =>
+                    x.UsuarioId == userId &&
+                    x.Estado == EstadoSesionEntrenamiento.Completada &&
+                    x.Ejercicios.Any(y =>
+                        y.EjercicioId == exerciseId &&
+                        y.Series.Any(z => z.Completada)))
+                .OrderBy(x => x.HoraInicio)
+                .ThenBy(x => x.Id)
+                .Select(x => new ExerciseProgressEntryDto(
+                    x.Id,
+                    x.Fecha,
+                    x.HoraInicio,
+                    x.Ejercicios
+                        .Where(y => y.EjercicioId == exerciseId)
+                        .SelectMany(y => y.Series)
+                        .Where(y => y.Completada)
+                        .OrderBy(y => y.NumeroSerie)
+                        .Select(y => new TrainingSetDto(
+                            y.Id,
+                            y.NumeroSerie,
+                            y.Peso,
+                            y.Repeticiones,
+                            y.Rir,
+                            y.Completada,
+                            y.FechaHoraRegistro))
+                        .ToList()))
+                .ToListAsync(cancellationToken);
         }
 
         public async Task AddAsync(
