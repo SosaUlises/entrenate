@@ -1,4 +1,6 @@
 using Entrenate.Api.Requests.TrainingSessions;
+using Entrenate.Application.TrainingSessions.Commands.CancelTrainingSession;
+using Entrenate.Application.TrainingSessions.Commands.CompleteTrainingSession;
 using Entrenate.Application.TrainingSessions.Commands.StartTrainingSession;
 using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
 using Entrenate.Application.TrainingSessions.Queries.GetActiveTrainingSession;
@@ -43,6 +45,30 @@ namespace Entrenate.Api.Controllers
                 cancellationToken);
 
             return Ok(session);
+        }
+
+        [HttpPost("{id:guid}/complete")]
+        public async Task<IActionResult> Complete(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            await _sender.Send(
+                new CompleteTrainingSessionCommand(id),
+                cancellationToken);
+
+            return NoContent();
+        }
+
+        [HttpPost("{id:guid}/cancel")]
+        public async Task<IActionResult> Cancel(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            await _sender.Send(
+                new CancelTrainingSessionCommand(id),
+                cancellationToken);
+
+            return NoContent();
         }
 
         [HttpPut(

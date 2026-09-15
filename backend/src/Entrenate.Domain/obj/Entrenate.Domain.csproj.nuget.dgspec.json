@@ -10,7 +10,7 @@
         "projectUniqueName": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Domain\\Entrenate.Domain.csproj",
         "projectName": "Entrenate.Domain",
         "projectPath": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Domain\\Entrenate.Domain.csproj",
-        "packagesPath": "C:\\Users\\Ulises\\.nuget\\packages\\",
+        "packagesPath": ".nuget\\packages\\",
         "outputPath": "C:\\Users\\Ulises\\source\\repos\\entrenate\\backend\\src\\Entrenate.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
