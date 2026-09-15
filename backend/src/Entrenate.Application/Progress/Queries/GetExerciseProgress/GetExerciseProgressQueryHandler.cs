@@ -50,12 +50,16 @@ namespace Entrenate.Application.Progress.Queries.GetExerciseProgress
                     userId,
                     cancellationToken);
 
+            var entriesWithMetrics = entries
+                .Select(ExerciseProgressMetricsCalculator.Calculate)
+                .ToList();
+
             return new ExerciseProgressDto(
                 exercise.Id,
                 exercise.Nombre,
-                entries
-                    .Select(ExerciseProgressMetricsCalculator.Calculate)
-                    .ToList());
+                entriesWithMetrics,
+                ExerciseProgressSummaryCalculator.Calculate(
+                    entriesWithMetrics));
         }
     }
 }
