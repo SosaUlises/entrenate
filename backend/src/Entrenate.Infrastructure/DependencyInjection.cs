@@ -145,6 +145,7 @@ namespace Entrenate.Infrastructure
 
             services.AddScoped<ITrainingProfileRepository,TrainingProfileRepository>();
             services.AddScoped<IEquipmentRepository, EquipmentRepository>();
+            services.AddScoped<IExerciseRepository, ExerciseRepository>();
 
 
 
