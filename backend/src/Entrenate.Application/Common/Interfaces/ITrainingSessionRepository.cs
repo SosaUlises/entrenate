@@ -12,6 +12,11 @@ namespace Entrenate.Application.Common.Interfaces
             string userId,
             CancellationToken cancellationToken = default);
 
+        Task<SesionEntrenamiento?> GetByIdAndUserIdAsync(
+            Guid sessionId,
+            string userId,
+            CancellationToken cancellationToken = default);
+
         Task AddAsync(
             SesionEntrenamiento session,
             CancellationToken cancellationToken = default);

@@ -54,5 +54,40 @@
             DescansoObjetivoSegundos = ejercicioRutina.DescansoSegundos;
             Notas = ejercicioRutina.Notas;
         }
+
+        public SerieEntrenamiento RegistrarOActualizarSerie(
+            int numeroSerie,
+            decimal peso,
+            int repeticiones,
+            int? rir,
+            DateTime fechaHoraRegistro)
+        {
+            var serie = _series.FirstOrDefault(
+                x => x.NumeroSerie == numeroSerie);
+
+            if (serie is null)
+            {
+                serie = new SerieEntrenamiento();
+                serie.ConfigurarNumeroSerie(numeroSerie);
+                serie.RegistrarRendimiento(
+                    peso,
+                    repeticiones,
+                    rir,
+                    fechaHoraRegistro);
+                serie.MarcarComoCompletada();
+
+                _series.Add(serie);
+
+                return serie;
+            }
+
+            serie.RegistrarRendimiento(
+                peso,
+                repeticiones,
+                rir,
+                fechaHoraRegistro);
+
+            return serie;
+        }
     }
 }

@@ -1,4 +1,6 @@
+using Entrenate.Api.Requests.TrainingSessions;
 using Entrenate.Application.TrainingSessions.Commands.StartTrainingSession;
+using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
 using Entrenate.Application.TrainingSessions.Queries.GetActiveTrainingSession;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -41,6 +43,29 @@ namespace Entrenate.Api.Controllers
                 cancellationToken);
 
             return Ok(session);
+        }
+
+        [HttpPut(
+            "{sessionId:guid}/exercises/{exerciseSessionId:guid}/" +
+            "sets/{setNumber:int}")]
+        public async Task<IActionResult> UpsertSet(
+            Guid sessionId,
+            Guid exerciseSessionId,
+            int setNumber,
+            UpsertTrainingSetRequest request,
+            CancellationToken cancellationToken)
+        {
+            var trainingSet = await _sender.Send(
+                new UpsertTrainingSetCommand(
+                    sessionId,
+                    exerciseSessionId,
+                    setNumber,
+                    request.Peso,
+                    request.Repeticiones,
+                    request.Rir),
+                cancellationToken);
+
+            return Ok(trainingSet);
         }
     }
 }

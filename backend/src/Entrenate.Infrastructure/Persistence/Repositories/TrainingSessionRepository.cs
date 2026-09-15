@@ -32,12 +32,28 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .Include(x => x.Ejercicios.OrderBy(y => y.Orden))
                     .ThenInclude(x => x.Ejercicio)
+                .Include(x => x.Ejercicios.OrderBy(y => y.Orden))
+                    .ThenInclude(x => x.Series.OrderBy(y => y.NumeroSerie))
                 .Where(x =>
                     x.UsuarioId == userId &&
                     x.Estado == EstadoSesionEntrenamiento.EnCurso)
                 .OrderByDescending(x => x.HoraInicio)
                 .ThenByDescending(x => x.Id)
                 .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public Task<SesionEntrenamiento?> GetByIdAndUserIdAsync(
+            Guid sessionId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            return _context.SesionesEntrenamiento
+                .Include(x => x.Ejercicios)
+                    .ThenInclude(x => x.Series)
+                .FirstOrDefaultAsync(
+                    x => x.Id == sessionId &&
+                        x.UsuarioId == userId,
+                    cancellationToken);
         }
 
         public async Task AddAsync(

@@ -11,5 +11,6 @@ namespace Entrenate.Application.TrainingSessions.DTOs
         int RirObjetivoMinimo,
         int RirObjetivoMaximo,
         int DescansoObjetivoSegundos,
-        string? Notas);
+        string? Notas,
+        IReadOnlyCollection<TrainingSetDto> Series);
 }

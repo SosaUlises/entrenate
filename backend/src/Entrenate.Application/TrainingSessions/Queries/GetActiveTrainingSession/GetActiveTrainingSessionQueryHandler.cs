@@ -68,7 +68,18 @@ namespace Entrenate.Application.TrainingSessions.Queries.GetActiveTrainingSessio
                         x.RirObjetivoMinimo,
                         x.RirObjetivoMaximo,
                         x.DescansoObjetivoSegundos,
-                        x.Notas))
+                        x.Notas,
+                        x.Series
+                            .OrderBy(y => y.NumeroSerie)
+                            .Select(y => new TrainingSetDto(
+                                y.Id,
+                                y.NumeroSerie,
+                                y.Peso,
+                                y.Repeticiones,
+                                y.Rir,
+                                y.Completada,
+                                y.FechaHoraRegistro))
+                            .ToList()))
                     .ToList());
         }
     }
