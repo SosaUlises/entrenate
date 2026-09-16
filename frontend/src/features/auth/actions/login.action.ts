@@ -12,7 +12,7 @@ type LoginFieldErrors = Partial<Record<keyof LoginFormValues, string>>;
 
 export type LoginActionResult =
   | {
-      destination: string | null;
+      destination: string;
       ok: true;
       profilePresence: TrainingProfilePresence;
     }
@@ -21,6 +21,7 @@ export type LoginActionResult =
       message: string;
       ok: false;
       profileCheckFailed?: true;
+      sessionExpired?: true;
     };
 
 export async function loginAction(
@@ -59,6 +60,14 @@ export async function loginAction(
       message: "No pudimos verificar tu perfil. Intentá nuevamente.",
       ok: false,
       profileCheckFailed: true,
+    };
+  }
+
+  if (destinationResolution.status === "unauthenticated") {
+    return {
+      message: "Tu sesión venció. Iniciá sesión nuevamente.",
+      ok: false,
+      sessionExpired: true,
     };
   }
 

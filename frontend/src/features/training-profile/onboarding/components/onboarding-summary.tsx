@@ -41,7 +41,7 @@ export function OnboardingSummary({
 }: OnboardingSummaryProps) {
   const router = useRouter();
   const { draft } = useOnboarding();
-  const { markProfileCreated } = useTrainingProfileGate();
+  const { invalidateSession, markProfileCreated } = useTrainingProfileGate();
   const isSubmittingRef = useRef(false);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [errorMessage, setErrorMessage] = useState<string>();
@@ -88,13 +88,19 @@ export function OnboardingSummary({
 
       if (result.ok) {
         markProfileCreated();
-        setSubmitState("success");
+        router.replace("/home");
         return;
       }
 
       if (result.kind === "already_exists") {
         markProfileCreated();
         setSubmitState("already-exists");
+        return;
+      }
+
+      if (result.kind === "unauthenticated") {
+        invalidateSession();
+        router.replace("/login");
         return;
       }
 

@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import {
   TrainingProfileGateStatus,
   usePostAuthTrainingProfileGate,
+  useTrainingProfileGate,
 } from "@/features/training-profile/gate/training-profile-gate";
 import { registerAction } from "../actions/register.action";
 import {
@@ -33,13 +35,15 @@ type SubmitFeedback = {
 };
 
 export function RegisterForm() {
+  const router = useRouter();
   const [submitFeedback, setSubmitFeedback] = useState<SubmitFeedback | null>(
     null,
   );
   const [profileCheckFailed, setProfileCheckFailed] = useState(false);
   const [isRetryingProfile, setIsRetryingProfile] = useState(false);
-  const { complete, isProfileReady, retry } =
+  const { complete, retry } =
     usePostAuthTrainingProfileGate();
+  const { invalidateSession } = useTrainingProfileGate();
   const {
     control,
     formState: { errors, isSubmitting },
@@ -101,6 +105,12 @@ export function RegisterForm() {
       return;
     }
 
+    if (result.sessionExpired) {
+      invalidateSession();
+      router.replace("/login");
+      return;
+    }
+
     setProfileCheckFailed(result.profileCheckFailed === true);
 
     if (result.fieldErrors) {
@@ -143,10 +153,6 @@ export function RegisterForm() {
         type="error"
       />
     );
-  }
-
-  if (isProfileReady) {
-    return <TrainingProfileGateStatus type="ready" />;
   }
 
   return (

@@ -12,6 +12,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import {
   TrainingProfileGateStatus,
   usePostAuthTrainingProfileGate,
+  useTrainingProfileGate,
 } from "@/features/training-profile/gate/training-profile-gate";
 import { loginAction } from "../actions/login.action";
 import {
@@ -35,8 +36,9 @@ export function LoginForm() {
   );
   const [profileCheckFailed, setProfileCheckFailed] = useState(false);
   const [isRetryingProfile, setIsRetryingProfile] = useState(false);
-  const { complete, isProfileReady, retry } =
+  const { complete, retry } =
     usePostAuthTrainingProfileGate();
+  const { invalidateSession } = useTrainingProfileGate();
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
@@ -90,6 +92,10 @@ export function LoginForm() {
       return;
     }
 
+    if (result.sessionExpired) {
+      invalidateSession();
+    }
+
     setProfileCheckFailed(result.profileCheckFailed === true);
 
     if (result.fieldErrors) {
@@ -123,10 +129,6 @@ export function LoginForm() {
         type="error"
       />
     );
-  }
-
-  if (isProfileReady) {
-    return <TrainingProfileGateStatus type="ready" />;
   }
 
   return (
