@@ -2,46 +2,119 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronRight, Plus, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getExerciseImage } from "@/features/exercises/components/exercise-catalog";
+import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
+import { createRoutineAction } from "../actions/create-routine.action";
+import { updateRoutineAction } from "../actions/update-routine.action";
+import { mapRoutineDraftToRequest } from "../map-routine-draft";
 import { RoutineExerciseEditor } from "./routine-exercise-editor";
 import { useRoutineDraft, type RoutineDraftDay } from "../context/routine-draft-context";
-import { validateRoutineExerciseConfig } from "../types/routine-draft-exercise";
 
 export function NewRoutineForm() {
-  const { nombre, setNombre, dias, addDay, renameDay, removeDay, removeDayExercise, updateDayExercise } = useRoutineDraft();
+  return <RoutineForm />;
+}
+
+export function RoutineForm({ routineId }: { routineId?: string }) {
+  const router = useRouter();
+  const { invalidateSession } = useTrainingProfileGate();
+  const { nombre, setNombre, descripcion, dias, addDay, renameDay, removeDay, removeDayExercise, updateDayExercise, resetDraft } = useRoutineDraft();
   const [editing, setEditing] = useState<{ dayId: string; exerciseId: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [submitError, setSubmitError] = useState<{ message: string; details?: string[] } | null>(null);
+  const submittingRef = useRef(false);
   const editingExercise = editing
     ? dias.find((day) => day.id === editing.dayId)?.exercises.find((exercise) => exercise.exerciseId === editing.exerciseId)
     : undefined;
-  const canCreate = nombre.trim().length > 0 && nombre.length <= 100 &&
-    dias.length > 0 && dias.every((day) => day.nombre.trim().length > 0 && day.nombre.length <= 100) &&
-    dias.some((day) => day.exercises.length > 0) &&
-    dias.every((day) => day.exercises.every((exercise) =>
-      Object.keys(validateRoutineExerciseConfig(exercise)).length === 0));
+  const canSubmit = mapRoutineDraftToRequest({ nombre, descripcion, dias }) !== null;
+  const basePath = routineId ? `/routines/${routineId}/edit` : "/routines/new";
+  const backHref = routineId ? `/routines/${routineId}` : "/routines";
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submittingRef.current) return;
+
+    const request = mapRoutineDraftToRequest({ nombre, descripcion, dias });
+    if (!request) {
+      setSubmitError({ message: routineId ? "Revisá los datos antes de guardar." : "Revisá los datos de la rutina antes de crearla." });
+      return;
+    }
+
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    let succeeded = false;
+
+    try {
+      const result = routineId
+        ? await updateRoutineAction(routineId, request)
+        : await createRoutineAction(request);
+      if (result.status === "created" || result.status === "updated") {
+        succeeded = true;
+        resetDraft();
+        router.replace(routineId ? `/routines/${routineId}` : "/routines");
+        return;
+      }
+      if (result.status === "unauthenticated") {
+        invalidateSession();
+        router.replace("/login");
+        return;
+      }
+      if (result.status === "validation-error") {
+        setSubmitError({ message: routineId ? "No pudimos guardar los cambios." : "No pudimos crear la rutina.", details: result.messages });
+        return;
+      }
+      if (result.status === "not-found") {
+        setNotFound(true);
+        return;
+      }
+      setSubmitError({ message: routineId ? "No pudimos guardar los cambios. Intentá nuevamente." : "No pudimos crear la rutina. Intentá nuevamente." });
+    } catch {
+      setSubmitError({ message: routineId ? "No pudimos guardar los cambios. Intentá nuevamente." : "No pudimos crear la rutina. Intentá nuevamente." });
+    } finally {
+      if (!succeeded) {
+        submittingRef.current = false;
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  if (notFound) {
+    return (
+      <section className="mx-auto w-full max-w-xl rounded-card border border-border bg-surface p-5">
+        <p className="text-sm text-text-primary">No encontramos esta rutina.</p>
+        <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline-primary" href="/routines">
+          Volver a mis rutinas
+        </Link>
+      </section>
+    );
+  }
 
   return (
     <section aria-labelledby="new-routine-title" className="mx-auto w-full max-w-xl">
       <div className="flex items-center gap-1">
         <Link
-          aria-label="Volver a mis rutinas"
+          aria-label={routineId ? "Volver al detalle de la rutina" : "Volver a mis rutinas"}
           className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary"
-          href="/routines"
+          href={backHref}
         >
           <ArrowLeft aria-hidden="true" size={20} />
         </Link>
         <h1 className="font-brand text-xl font-bold text-text-primary" id="new-routine-title">
-          Nueva rutina
+          {routineId ? "Editar rutina" : "Nueva rutina"}
         </h1>
       </div>
       <p className="mt-1 pl-12 text-sm leading-6 text-text-secondary">
-        Armá una rutina adaptada a tu forma de entrenar.
+        {routineId ? "Modificá la estructura y configuración de tu rutina." : "Armá una rutina adaptada a tu forma de entrenar."}
       </p>
 
-      <form className="mt-9" onSubmit={(event) => event.preventDefault()}>
+      <form className="mt-9" onSubmit={(event) => void handleSubmit(event)}>
         <div>
           <label className="text-sm font-semibold text-text-primary" htmlFor="routine-name">
             Nombre de la rutina
@@ -71,6 +144,7 @@ export function NewRoutineForm() {
                 onRemoveExercise={removeDayExercise}
                 onRename={renameDay}
                 onEditExercise={(exerciseId) => setEditing({ dayId: day.id, exerciseId })}
+                basePath={basePath}
               />
             ))}
           </div>
@@ -84,8 +158,17 @@ export function NewRoutineForm() {
           </button>
         </div>
 
-        <Button className="mt-10 w-full sm:w-auto" disabled={!canCreate} type="button">
-          Crear rutina
+        {submitError ? (
+          <Alert className="mt-6" title={submitError.message} variant="error">
+            {submitError.details?.length ? (
+              <ul className="list-disc pl-5">
+                {submitError.details.map((message, index) => <li key={`${index}-${message}`}>{message}</li>)}
+              </ul>
+            ) : null}
+          </Alert>
+        ) : null}
+        <Button className="mt-10 w-full sm:w-auto" disabled={!canSubmit || isSubmitting} isLoading={isSubmitting} type="submit">
+          {isSubmitting ? (routineId ? "Guardando..." : "Creando rutina...") : (routineId ? "Guardar cambios" : "Crear rutina")}
         </Button>
       </form>
       {editing && editingExercise ? (
@@ -104,7 +187,7 @@ export function NewRoutineForm() {
 }
 
 function RoutineDayCard({
-  day, canRemove, onRename, onRemove, onRemoveExercise, onEditExercise,
+  day, canRemove, onRename, onRemove, onRemoveExercise, onEditExercise, basePath,
 }: {
   day: RoutineDraftDay;
   canRemove: boolean;
@@ -112,6 +195,7 @@ function RoutineDayCard({
   onRemove: (dayId: string) => void;
   onRemoveExercise: (dayId: string, exerciseId: string) => void;
   onEditExercise: (exerciseId: string) => void;
+  basePath: string;
 }) {
   return (
     <section aria-label={`Día de entrenamiento ${day.orden}`} className="rounded-card border border-border/60 bg-surface/45 p-4">
@@ -181,16 +265,16 @@ function RoutineDayCard({
           })}
         </ul>
       )}
-      <AddExercisesLink dayId={day.id} />
+      <AddExercisesLink basePath={basePath} dayId={day.id} />
     </section>
   );
 }
 
-function AddExercisesLink({ dayId }: { dayId: string }) {
+function AddExercisesLink({ basePath, dayId }: { basePath: string; dayId: string }) {
   return (
     <Link
       className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-control-sm border border-primary/30 bg-primary/10 px-4 text-sm font-semibold text-primary hover:border-primary/60 hover:bg-primary/15 focus-visible:outline-primary"
-      href={`/routines/new/exercises?day=${encodeURIComponent(dayId)}`}
+      href={`${basePath}/exercises?day=${encodeURIComponent(dayId)}`}
     >
       <Plus aria-hidden="true" size={17} />
       Agregar ejercicios

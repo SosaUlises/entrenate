@@ -98,19 +98,21 @@ export function RoutinesContent() {
       ) : (
         <ul className="mt-8 space-y-3">
           {state.routines.map((routine) => (
-            <li
-              className="flex min-h-22 items-center justify-between gap-4 rounded-card border border-border bg-surface px-5 py-4"
-              key={routine.id}
-            >
-              <div className="min-w-0">
-                <h2 className="font-brand text-base font-bold text-text-primary">
-                  {routine.nombre}
-                </h2>
-                <p className="mt-1 text-sm text-text-secondary">
-                  {routine.cantidadEjercicios} {routine.cantidadEjercicios === 1 ? "ejercicio" : "ejercicios"}
-                </p>
-              </div>
-              <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/65" size={20} />
+            <li key={routine.id}>
+              <Link
+                className="flex min-h-22 items-center justify-between gap-4 rounded-card border border-border bg-surface px-5 py-4 hover:border-border-strong focus-visible:outline-primary"
+                href={`/routines/${routine.id}`}
+              >
+                <div className="min-w-0">
+                  <h2 className="font-brand text-base font-bold text-text-primary">
+                    {routine.nombre}
+                  </h2>
+                  <p className="mt-1 text-sm text-text-secondary">
+                    {routine.cantidadEjercicios} {routine.cantidadEjercicios === 1 ? "ejercicio" : "ejercicios"}
+                  </p>
+                </div>
+                <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/65" size={20} />
+              </Link>
             </li>
           ))}
         </ul>

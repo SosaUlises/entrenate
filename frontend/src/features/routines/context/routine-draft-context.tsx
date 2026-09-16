@@ -1,12 +1,14 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 import type { Exercise } from "@/features/exercises/types/exercise.types";
 import { createRoutineDraftExercise, type RoutineDraftExercise, type RoutineExerciseConfig } from "../types/routine-draft-exercise";
+import type { RoutineDetail } from "../types/routine.types";
 
 export type RoutineDraftDay = {
   id: string;
   nombre: string;
+  descripcion: string | null;
   orden: number;
   exercises: RoutineDraftExercise[];
 };
@@ -14,28 +16,57 @@ export type RoutineDraftDay = {
 type RoutineDraftContextValue = {
   nombre: string;
   setNombre: (nombre: string) => void;
+  descripcion: string | null;
   dias: RoutineDraftDay[];
+  hydratedRoutineId: string | null;
+  hydrateDraft: (routine: RoutineDetail) => void;
   addDay: () => void;
   renameDay: (dayId: string, nombre: string) => void;
   removeDay: (dayId: string) => void;
   setDayExercises: (dayId: string, exercises: Exercise[]) => void;
   removeDayExercise: (dayId: string, exerciseId: string) => void;
   updateDayExercise: (dayId: string, exerciseId: string, config: RoutineExerciseConfig) => void;
+  resetDraft: () => void;
 };
 
 const RoutineDraftContext = createContext<RoutineDraftContextValue | null>(null);
 
 export function RoutineDraftProvider({ children }: { children: ReactNode }) {
   const [nombre, setNombre] = useState("");
+  const [descripcion, setDescripcion] = useState<string | null>(null);
+  const [hydratedRoutineId, setHydratedRoutineId] = useState<string | null>(null);
   const [dias, setDias] = useState<RoutineDraftDay[]>([
-    { id: "day-1", nombre: "Día 1", orden: 1, exercises: [] },
+    { id: "day-1", nombre: "Día 1", descripcion: null, orden: 1, exercises: [] },
   ]);
+
+  const hydrateDraft = useCallback((routine: RoutineDetail) => {
+    setNombre(routine.nombre);
+    setDescripcion(routine.descripcion);
+    setDias([...routine.dias].sort((first, second) => first.orden - second.orden).map((day) => ({
+      id: day.id,
+      nombre: day.nombre,
+      descripcion: day.descripcion,
+      orden: day.orden,
+      exercises: [...day.ejercicios].sort((first, second) => first.orden - second.orden).map((exercise) => ({
+        exerciseId: exercise.ejercicioId,
+        nombre: exercise.nombre,
+        cantidadSeries: exercise.cantidadSeries,
+        repeticionesMinimas: exercise.repeticionesMinimas,
+        repeticionesMaximas: exercise.repeticionesMaximas,
+        rirObjetivoMinimo: exercise.rirObjetivoMinimo,
+        rirObjetivoMaximo: exercise.rirObjetivoMaximo,
+        descansoSegundos: exercise.descansoSegundos,
+        notas: exercise.notas,
+      })),
+    })));
+    setHydratedRoutineId(routine.id);
+  }, []);
 
   const addDay = () => {
     const id = crypto.randomUUID();
     setDias((current) => {
       const orden = current.length + 1;
-      return [...current, { id, nombre: `Día ${orden}`, orden, exercises: [] }];
+      return [...current, { id, nombre: `Día ${orden}`, descripcion: null, orden, exercises: [] }];
     });
   };
 
@@ -64,8 +95,12 @@ export function RoutineDraftProvider({ children }: { children: ReactNode }) {
       const existing = new Map(day.exercises.map((exercise) => [exercise.exerciseId, exercise]));
       return {
         ...day,
-        exercises: uniqueExercises.map((exercise) =>
-          existing.get(exercise.id) ?? createRoutineDraftExercise(exercise)),
+        exercises: uniqueExercises.map((exercise) => {
+          const previous = existing.get(exercise.id);
+          return previous
+            ? { ...previous, nombre: exercise.nombre, grupoMuscularPrincipal: exercise.grupoMuscularPrincipal, equipamientos: exercise.equipamientos }
+            : createRoutineDraftExercise(exercise);
+        }),
       };
     }));
   };
@@ -88,9 +123,17 @@ export function RoutineDraftProvider({ children }: { children: ReactNode }) {
     ));
   };
 
+  const resetDraft = () => {
+    setNombre("");
+    setDescripcion(null);
+    setHydratedRoutineId(null);
+    setDias([{ id: "day-1", nombre: "Día 1", descripcion: null, orden: 1, exercises: [] }]);
+  };
+
   return (
     <RoutineDraftContext.Provider value={{
-      nombre, setNombre, dias, addDay, renameDay, removeDay, setDayExercises, removeDayExercise, updateDayExercise,
+      nombre, setNombre, descripcion, dias, hydratedRoutineId, hydrateDraft,
+      addDay, renameDay, removeDay, setDayExercises, removeDayExercise, updateDayExercise, resetDraft,
     }}>
       {children}
     </RoutineDraftContext.Provider>

@@ -90,7 +90,7 @@ export function RoutineExerciseEditor({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="font-brand text-xl font-bold text-text-primary" id={`${id}-title`}>{exercise.nombre}</h2>
-            <p className="mt-1 text-sm text-primary">{exercise.grupoMuscularPrincipal}</p>
+            {exercise.grupoMuscularPrincipal ? <p className="mt-1 text-sm text-primary">{exercise.grupoMuscularPrincipal}</p> : null}
           </div>
           <button
             aria-label="Cerrar sin guardar"

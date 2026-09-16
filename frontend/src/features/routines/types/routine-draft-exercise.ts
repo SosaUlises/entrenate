@@ -10,7 +10,8 @@ export type RoutineExerciseConfig = {
   notas: string | null;
 };
 
-export type RoutineDraftExercise = Pick<Exercise, "nombre" | "grupoMuscularPrincipal" | "equipamientos"> &
+export type RoutineDraftExercise = Pick<Exercise, "nombre"> &
+  Partial<Pick<Exercise, "grupoMuscularPrincipal" | "equipamientos">> &
   RoutineExerciseConfig & { exerciseId: string };
 
 export function createRoutineDraftExercise(exercise: Exercise): RoutineDraftExercise {

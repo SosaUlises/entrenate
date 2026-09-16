@@ -8,11 +8,58 @@ export type RoutineSummary = {
   fechaUltimaModificacion: string;
 };
 
-// GET /api/routines/{id} supplies the nested exercises needed for this count.
 export type RoutineDetail = {
-  dias: { ejercicios: { ejercicioId: string }[] }[];
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  activa: boolean;
+  fechaCreacion: string;
+  fechaUltimaModificacion: string;
+  dias: {
+    id: string;
+    nombre: string;
+    descripcion: string | null;
+    orden: number;
+    ejercicios: {
+      ejercicioId: string;
+      nombre: string;
+      cantidadSeries: number;
+      repeticionesMinimas: number;
+      repeticionesMaximas: number;
+      rirObjetivoMinimo: number;
+      rirObjetivoMaximo: number;
+      descansoSegundos: number;
+      orden: number;
+      notas: string | null;
+    }[];
+  }[];
 };
 
 export type RoutineListItem = RoutineSummary & {
   cantidadEjercicios: number;
 };
+
+export type CreateRoutineRequest = {
+  nombre: string;
+  descripcion: string | null;
+  dias: {
+    nombre: string;
+    descripcion: string | null;
+    orden: number;
+    ejercicios: {
+      ejercicioId: string;
+      cantidadSeries: number;
+      repeticionesMinimas: number;
+      repeticionesMaximas: number;
+      rirObjetivoMinimo: number;
+      rirObjetivoMaximo: number;
+      descansoSegundos: number;
+      orden: number;
+      notas: string | null;
+    }[];
+  }[];
+};
+
+export type UpdateRoutineRequest = CreateRoutineRequest;
+
+export type CreateRoutineResponse = { id: string };
