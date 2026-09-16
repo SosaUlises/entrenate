@@ -60,15 +60,36 @@ const exerciseImages: Record<string, string> = {
   "crunch abdominal": "/exercises/exercise-crunch-abdominal.png",
 };
 
-function getExerciseImage(nombre: string): string | undefined {
+export function getExerciseImage(nombre: string): string | undefined {
   return exerciseImages[normalize(nombre).trim().replace(/\s+/g, " ")];
 }
 
-export function ExerciseCatalog() {
+type ExerciseCatalogProps = {
+  backHref?: string;
+  backLabel?: string;
+  description?: string;
+  initialSelectedIds?: string[];
+  onConfirmSelection?: (exercises: Exercise[]) => void;
+  title?: string;
+};
+
+export function ExerciseCatalog({
+  backHref = "/home",
+  backLabel = "Volver a inicio",
+  description = "Elegí los ejercicios que querés agregar.",
+  initialSelectedIds = [],
+  onConfirmSelection,
+  title = "Ejercicios",
+}: ExerciseCatalogProps) {
   const router = useRouter();
   const { invalidateSession } = useTrainingProfileGate();
   const [state, setState] = useState<CatalogState>({ status: "loading" });
   const [requestKey, setRequestKey] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<string[]>(initialSelectedIds);
+  const selectedIdSet = new Set(selectedIds);
+  const selectedExercises = state.status === "ready"
+    ? state.exercises.filter((exercise) => selectedIdSet.has(exercise.id))
+    : [];
 
   useEffect(() => {
     let active = true;
@@ -93,21 +114,21 @@ export function ExerciseCatalog() {
   }, [invalidateSession, requestKey, router]);
 
   return (
-    <section aria-labelledby="exercises-title" className="mx-auto w-full max-w-xl">
+    <section aria-labelledby="exercises-title" className={`mx-auto w-full max-w-xl ${onConfirmSelection ? "pb-20" : ""}`}>
       <div className="flex items-center gap-1">
         <Link
-          aria-label="Volver a inicio"
+          aria-label={backLabel}
           className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary"
-          href="/home"
+          href={backHref}
         >
           <ArrowLeft aria-hidden="true" size={20} />
         </Link>
         <h2 className="font-brand text-xl font-bold text-text-primary" id="exercises-title">
-          Ejercicios
+          {title}
         </h2>
       </div>
       <p className="mt-1 pl-12 text-sm text-text-secondary">
-        Elegí los ejercicios que querés agregar.
+        {description}
       </p>
 
       {state.status === "loading" ? (
@@ -129,21 +150,46 @@ export function ExerciseCatalog() {
           </Button>
         </div>
       ) : (
-        <ExerciseSelector exercises={state.exercises} />
+        <ExerciseSelector
+          exercises={state.exercises}
+          initialSelectedIds={initialSelectedIds}
+          onSelectionChange={setSelectedIds}
+        />
       )}
+
+      {onConfirmSelection && state.status === "ready" ? (
+        <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 border-t border-border bg-surface/95 backdrop-blur-md">
+          <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3 sm:px-0">
+            <p aria-live="polite" className="text-sm font-medium text-text-secondary">
+              {selectedExercises.length === 1
+                ? "1 seleccionado"
+                : `${selectedExercises.length} seleccionados`}
+            </p>
+            <Button
+              disabled={selectedExercises.length === 0}
+              onClick={() => onConfirmSelection(selectedExercises)}
+            >
+              {selectedExercises.length === 1
+                ? "Agregar 1 ejercicio"
+                : `Agregar ${selectedExercises.length} ejercicios`}
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
 
 type ExerciseSelectorProps = {
   exercises: Exercise[];
+  initialSelectedIds?: string[];
   onSelectionChange?: (selectedIds: string[]) => void;
 };
 
-export function ExerciseSelector({ exercises, onSelectionChange }: ExerciseSelectorProps) {
+export function ExerciseSelector({ exercises, initialSelectedIds = [], onSelectionChange }: ExerciseSelectorProps) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<string | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(initialSelectedIds));
   const [preview, setPreview] = useState<{ exercise: Exercise; imageSrc: string } | null>(null);
   const [filterEdges, setFilterEdges] = useState({ left: false, right: false });
   const filterRef = useRef<HTMLDivElement>(null);

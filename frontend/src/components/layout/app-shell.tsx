@@ -23,6 +23,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isExercisesPage = pathname === "/exercises";
+  const isRoutinesPage = pathname === "/routines" || pathname.startsWith("/routines/");
+  const isContextualPage = isExercisesPage || isRoutinesPage;
   const { invalidateSession } = useTrainingProfileGate();
   const [userState, setUserState] = useState<UserState>({ status: "loading" });
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -124,7 +126,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh w-full bg-background">
       <div className="mx-auto w-full max-w-2xl px-8">
-        {!isExercisesPage ? (
+        {!isContextualPage ? (
         <header className="flex items-start justify-between gap-4 pt-9 sm:pt-12">
           <div className="min-w-0">
             <h1 className="font-brand text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
@@ -163,7 +165,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
 
-        <main className={`mx-auto w-full pb-[calc(7.5rem+env(safe-area-inset-bottom))] ${isExercisesPage ? "pt-5 sm:pt-8" : "pt-10 sm:pt-12"}`}>
+        <main className={`mx-auto w-full pb-[calc(7.5rem+env(safe-area-inset-bottom))] ${isContextualPage ? "pt-5 sm:pt-8" : "pt-10 sm:pt-12"}`}>
           {children}
         </main>
       </div>
@@ -174,14 +176,21 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         <div className="mx-auto grid max-w-2xl grid-cols-4 px-2 sm:px-8">
           <Link
-            aria-current="page"
-            className="flex min-h-18 flex-col items-center justify-center gap-1.5 rounded-control-sm bg-primary/10 text-primary"
+            aria-current={isRoutinesPage ? undefined : "page"}
+            className={`flex min-h-18 flex-col items-center justify-center gap-1.5 rounded-control-sm ${isRoutinesPage ? "text-text-secondary hover:text-text-primary" : "bg-primary/10 text-primary"}`}
             href="/home"
           >
             <Home aria-hidden="true" size={22} strokeWidth={2} />
             <span className="text-xs font-semibold">Inicio</span>
           </Link>
-          <DisabledDestination icon={<ClipboardList size={22} />} label="Rutinas" />
+          <Link
+            aria-current={isRoutinesPage ? "page" : undefined}
+            className={`flex min-h-18 flex-col items-center justify-center gap-1.5 rounded-control-sm ${isRoutinesPage ? "bg-primary/10 text-primary" : "text-text-secondary hover:text-text-primary"}`}
+            href="/routines"
+          >
+            <ClipboardList aria-hidden="true" size={22} />
+            <span className="text-xs font-semibold">Rutinas</span>
+          </Link>
           <DisabledDestination icon={<History size={22} />} label="Historial" />
           <DisabledDestination icon={<TrendingUp size={22} />} label="Progreso" />
         </div>
