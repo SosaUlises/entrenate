@@ -24,7 +24,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const isExercisesPage = pathname === "/exercises";
   const isRoutinesPage = pathname === "/routines" || pathname.startsWith("/routines/");
-  const isContextualPage = isExercisesPage || isRoutinesPage;
+  const isContextualPage = isExercisesPage || isRoutinesPage || pathname === "/training";
   const { invalidateSession } = useTrainingProfileGate();
   const [userState, setUserState] = useState<UserState>({ status: "loading" });
   const [isSigningOut, setIsSigningOut] = useState(false);

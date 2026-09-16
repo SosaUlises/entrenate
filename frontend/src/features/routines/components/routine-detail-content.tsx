@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { getExerciseImage } from "@/features/exercises/components/exercise-catalog";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
+import { startTrainingSessionAction } from "@/features/training/actions/training.actions";
 import { getRoutineDetailAction, type GetRoutineDetailActionResult } from "../actions/get-routine-detail.action";
 
 type DetailState = { status: "loading" } | GetRoutineDetailActionResult;
@@ -18,6 +19,31 @@ export function RoutineDetailContent({ id }: { id: string }) {
   const { invalidateSession } = useTrainingProfileGate();
   const [state, setState] = useState<DetailState>({ status: "loading" });
   const [requestKey, setRequestKey] = useState(0);
+  const [startingDayId, setStartingDayId] = useState<string | null>(null);
+  const [startError, setStartError] = useState<{ dayId: string; conflict: boolean } | null>(null);
+
+  async function handleStart(dayId: string) {
+    if (startingDayId) return;
+    setStartingDayId(dayId);
+    setStartError(null);
+    try {
+      const result = await startTrainingSessionAction(dayId);
+      if (result.status === "success") {
+        router.push("/training");
+        return;
+      }
+      if (result.status === "unauthenticated") {
+        invalidateSession();
+        router.replace("/login");
+        return;
+      }
+      setStartError({ dayId, conflict: result.status === "conflict" });
+    } catch {
+      setStartError({ dayId, conflict: false });
+    } finally {
+      setStartingDayId(null);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -120,6 +146,15 @@ export function RoutineDetailContent({ id }: { id: string }) {
                       })}
                     </ul>
                   )}
+                  <Button className="mt-3 min-h-10" disabled={Boolean(startingDayId) || day.ejercicios.length === 0} isLoading={startingDayId === day.id} onClick={() => void handleStart(day.id)}>
+                    {startingDayId === day.id ? "Iniciando..." : "Iniciar entrenamiento"}
+                  </Button>
+                  {startError?.dayId === day.id ? (
+                    <div className="mt-3 text-sm" role="alert">
+                      <p className="text-text-secondary">{startError.conflict ? "Ya tenés un entrenamiento en curso." : "No pudimos iniciar el entrenamiento. Intentá nuevamente."}</p>
+                      {startError.conflict ? <Link className="mt-2 inline-flex min-h-11 items-center font-semibold text-primary" href="/training">Continuar entrenamiento</Link> : null}
+                    </div>
+                  ) : null}
                 </section>
               );
             })}
