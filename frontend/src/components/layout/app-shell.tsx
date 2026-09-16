@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ClipboardList, History, Home, LogOut, TrendingUp } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
@@ -15,11 +15,14 @@ import { logoutAction } from "@/features/auth/actions/logout.action";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 
 type UserState =
-  | { status: "loading" | "error" }
+  | { status: "loading" }
+  | { status: "error" }
   | { status: "ready"; nombre: string };
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const router = useRouter();
+  const isExercisesPage = pathname === "/exercises";
   const { invalidateSession } = useTrainingProfileGate();
   const [userState, setUserState] = useState<UserState>({ status: "loading" });
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -121,6 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh w-full bg-background">
       <div className="mx-auto w-full max-w-2xl px-8">
+        {!isExercisesPage ? (
         <header className="flex items-start justify-between gap-4 pt-9 sm:pt-12">
           <div className="min-w-0">
             <h1 className="font-brand text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
@@ -151,6 +155,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </details>
         </header>
+        ) : null}
 
         {signOutFailed ? (
           <div className="mt-5">
@@ -158,7 +163,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
 
-        <main className="mx-auto w-full pt-10 pb-[calc(7.5rem+env(safe-area-inset-bottom))] sm:pt-12">
+        <main className={`mx-auto w-full pb-[calc(7.5rem+env(safe-area-inset-bottom))] ${isExercisesPage ? "pt-5 sm:pt-8" : "pt-10 sm:pt-12"}`}>
           {children}
         </main>
       </div>

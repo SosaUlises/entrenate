@@ -55,15 +55,15 @@ export async function loginAction(
     authResponse.token,
   );
 
-  if (destinationResolution.status === "error") {
-    return {
-      message: "No pudimos verificar tu perfil. Intentá nuevamente.",
-      ok: false,
-      profileCheckFailed: true,
-    };
-  }
+  if (destinationResolution.status !== "resolved") {
+    if (destinationResolution.status === "error") {
+      return {
+        message: "No pudimos verificar tu perfil. Intentá nuevamente.",
+        ok: false,
+        profileCheckFailed: true,
+      };
+    }
 
-  if (destinationResolution.status === "unauthenticated") {
     return {
       message: "Tu sesión venció. Iniciá sesión nuevamente.",
       ok: false,
