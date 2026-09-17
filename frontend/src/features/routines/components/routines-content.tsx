@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ClipboardList, Plus } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -50,19 +50,15 @@ export function RoutinesContent() {
 
   return (
     <section aria-labelledby="routines-title" className="mx-auto w-full max-w-xl">
-      <div className="flex flex-wrap items-start justify-between gap-5">
-        <div>
-          <h1 className="font-brand text-2xl font-bold text-text-primary" id="routines-title">
-            Mis rutinas
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-text-secondary">
-            Organizá y prepará tus entrenamientos.
-          </p>
-        </div>
-        {state.status === "ready" && state.routines.length > 0 ? (
-          <CreateRoutineLink label="Crear rutina" withIcon />
-        ) : null}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-brand text-2xl font-bold text-text-primary" id="routines-title">
+          Mis rutinas
+        </h1>
+        {state.status === "ready" && state.routines.length > 0 ? <CreateRoutineLink label="Crear rutina" withIcon /> : null}
       </div>
+      <p className="mt-2 text-sm leading-6 text-text-secondary">
+        Organizá y prepará tus entrenamientos.
+      </p>
 
       {state.status === "loading" ? (
         <div className="flex min-h-48 items-center justify-center">
@@ -83,9 +79,8 @@ export function RoutinesContent() {
           </Button>
         </div>
       ) : state.routines.length === 0 ? (
-        <div className="mt-6 rounded-card border border-border/60 bg-surface/45 px-4 py-5 sm:px-5">
-          <ClipboardList aria-hidden="true" className="text-primary/60" size={19} />
-          <h2 className="mt-3 font-brand text-lg font-bold text-text-primary">
+        <div className="mt-7 pt-6">
+          <h2 className="font-brand text-lg font-bold text-text-primary">
             Todavía no tenés rutinas
           </h2>
           <p className="mt-1 max-w-sm text-sm leading-6 text-text-secondary">
@@ -96,22 +91,25 @@ export function RoutinesContent() {
           </div>
         </div>
       ) : (
-        <ul className="mt-8 space-y-3">
-          {state.routines.map((routine) => (
+        <ul className="mt-7 divide-y divide-border/60 border-b border-border/60">
+          {state.routines.map((routine, index) => (
             <li key={routine.id}>
               <Link
-                className="flex min-h-22 items-center justify-between gap-4 rounded-card border border-border bg-surface px-5 py-4 hover:border-border-strong focus-visible:outline-primary"
+                className="flex min-h-21 items-center gap-3 py-4.5 transition-colors hover:bg-surface/40 focus-visible:outline-primary"
                 href={`/routines/${routine.id}`}
               >
-                <div className="min-w-0">
-                  <h2 className="font-brand text-base font-bold text-text-primary">
+                <span aria-hidden="true" className="w-8 shrink-0 self-start pt-1 font-brand text-sm font-semibold text-primary/65">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-brand text-lg font-bold leading-tight text-text-primary">
                     {routine.nombre}
                   </h2>
-                  <p className="mt-1 text-sm text-text-secondary">
-                    {routine.cantidadEjercicios} {routine.cantidadEjercicios === 1 ? "ejercicio" : "ejercicios"}
+                  <p className="mt-1 text-xs leading-5 text-text-secondary">
+                    {routine.cantidadDias} {routine.cantidadDias === 1 ? "día" : "días"} · {routine.cantidadEjercicios} {routine.cantidadEjercicios === 1 ? "ejercicio" : "ejercicios"}
                   </p>
                 </div>
-                <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/65" size={20} />
+                <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/55" size={18} />
               </Link>
             </li>
           ))}
@@ -124,7 +122,7 @@ export function RoutinesContent() {
 function CreateRoutineLink({ label, withIcon = false }: { label: string; withIcon?: boolean }) {
   return (
     <Link
-      className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-control-sm border border-primary/30 bg-primary/10 px-3.5 text-sm font-semibold text-primary transition-colors hover:border-primary/60 hover:bg-primary/15 focus-visible:outline-primary"
+      className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-control-sm border px-3.5 text-sm font-semibold text-primary transition-colors focus-visible:outline-primary ${withIcon ? "border-primary/20 bg-primary/5 hover:border-primary/40 hover:bg-primary/10" : "border-primary/30 bg-primary/10 hover:border-primary/60 hover:bg-primary/15"}`}
       href="/routines/new"
     >
       {withIcon ? <Plus aria-hidden="true" size={16} /> : null}

@@ -64,6 +64,7 @@ export function RoutineDetailContent({ id }: { id: string }) {
   }, [id, invalidateSession, requestKey, router]);
 
   const routine = state.status === "ready" ? state.routine : null;
+  const exerciseCount = routine?.dias.reduce((total, day) => total + day.ejercicios.length, 0) ?? 0;
 
   return (
     <section aria-labelledby="routine-detail-title" className="mx-auto w-full max-w-xl">
@@ -75,15 +76,20 @@ export function RoutineDetailContent({ id }: { id: string }) {
         >
           <ArrowLeft aria-hidden="true" size={20} />
         </Link>
-        <h1 className="min-w-0 truncate font-brand text-xl font-bold text-text-primary" id="routine-detail-title" title={routine?.nombre}>
+        <h1 className="min-w-0 truncate font-brand text-2xl font-bold text-text-primary" id="routine-detail-title" title={routine?.nombre}>
           {routine?.nombre ?? "Rutina"}
         </h1>
         {routine ? (
-          <Link className="ml-auto inline-flex min-h-11 shrink-0 items-center rounded-control-sm px-2 text-sm font-semibold text-primary hover:bg-primary/10 focus-visible:outline-primary" href={`/routines/${routine.id}/edit`}>
+          <Link className="ml-auto inline-flex min-h-11 shrink-0 items-center rounded-control-sm px-2 text-sm font-semibold text-text-secondary hover:text-primary focus-visible:outline-primary" href={`/routines/${routine.id}/edit`}>
             Editar
           </Link>
         ) : null}
       </div>
+      {routine ? (
+        <p className="mt-1 pl-12 text-sm text-text-secondary">
+          {routine.dias.length} {routine.dias.length === 1 ? "día" : "días"} · {exerciseCount} {exerciseCount === 1 ? "ejercicio" : "ejercicios"}
+        </p>
+      ) : null}
 
       {state.status === "loading" || state.status === "unauthenticated" ? (
         <div className="flex min-h-48 items-center justify-center">
@@ -115,30 +121,27 @@ export function RoutineDetailContent({ id }: { id: string }) {
           {state.routine.descripcion?.trim() ? (
             <p className="mt-2 pl-12 text-sm leading-6 text-text-secondary">{state.routine.descripcion}</p>
           ) : null}
-          <div className="mt-7 space-y-4">
+          <div className="mt-8 space-y-8">
             {[...state.routine.dias].sort((first, second) => first.orden - second.orden).map((day) => {
-              const positionLabel = `Día ${day.orden}`;
-              const showPosition = day.nombre.trim().toLocaleLowerCase("es-AR") !== positionLabel.toLocaleLowerCase("es-AR");
               return (
-                <section aria-label={showPosition ? `${positionLabel}: ${day.nombre}` : day.nombre} className="rounded-card border border-border/60 bg-surface/45 p-4" key={day.id}>
-                  {showPosition ? <p className="text-xs font-semibold text-primary">{positionLabel}</p> : null}
-                  <h2 className="font-brand text-base font-bold text-text-primary">{day.nombre}</h2>
+                <section aria-label={day.nombre} className="border-t border-border/40 pt-6 first:border-t-0 first:pt-0" key={day.id}>
+                  <h2 className="font-brand text-xl font-bold leading-tight text-text-primary">{day.nombre}</h2>
                   {day.descripcion?.trim() ? <p className="mt-1 text-sm text-text-secondary">{day.descripcion}</p> : null}
                   {day.ejercicios.length === 0 ? (
                     <p className="mt-3 text-sm text-text-secondary">Sin ejercicios.</p>
                   ) : (
-                    <ul className="mt-3 divide-y divide-border/50">
+                    <ul className="mt-4 divide-y divide-border/35">
                       {[...day.ejercicios].sort((first, second) => first.orden - second.orden).map((exercise) => {
                         const imageSrc = getExerciseImage(exercise.nombre);
                         return (
-                          <li className="flex min-w-0 items-start gap-3 py-3" key={`${exercise.ejercicioId}-${exercise.orden}`}>
+                          <li className="flex min-w-0 items-start gap-4 py-4" key={`${exercise.ejercicioId}-${exercise.orden}`}>
                             {imageSrc ? (
-                              <Image alt="" className="size-12 shrink-0 rounded-control-sm object-cover" height={48} src={imageSrc} width={48} />
+                              <Image alt="" className="size-14 shrink-0 rounded-control-sm object-cover" height={56} src={imageSrc} width={56} />
                             ) : null}
                             <div className="min-w-0 flex-1">
-                              <h3 className="font-brand text-sm font-bold text-text-primary">{exercise.nombre}</h3>
-                              <p className="mt-1 text-xs text-text-secondary">{exercise.cantidadSeries} series · {exercise.repeticionesMinimas}–{exercise.repeticionesMaximas} reps</p>
-                              <p className="mt-0.5 text-xs text-text-secondary">RIR {exercise.rirObjetivoMinimo}–{exercise.rirObjetivoMaximo} · {exercise.descansoSegundos} s</p>
+                              <h3 className="font-brand text-base font-bold leading-snug text-text-primary">{exercise.nombre}</h3>
+                              <p className="mt-1 text-sm leading-5 text-text-secondary">{exercise.cantidadSeries} series · {exercise.repeticionesMinimas}–{exercise.repeticionesMaximas} reps</p>
+                              <p className="text-sm leading-5 text-text-secondary">RIR {exercise.rirObjetivoMinimo}–{exercise.rirObjetivoMaximo} · {exercise.descansoSegundos} s</p>
                               {exercise.notas?.trim() ? <p className="mt-2 text-xs leading-5 text-text-secondary">{exercise.notas}</p> : null}
                             </div>
                           </li>
@@ -146,7 +149,7 @@ export function RoutineDetailContent({ id }: { id: string }) {
                       })}
                     </ul>
                   )}
-                  <Button className="mt-3 min-h-10" disabled={Boolean(startingDayId) || day.ejercicios.length === 0} isLoading={startingDayId === day.id} onClick={() => void handleStart(day.id)}>
+                  <Button className="mt-5 min-h-11! px-4!" disabled={Boolean(startingDayId) || day.ejercicios.length === 0} isLoading={startingDayId === day.id} onClick={() => void handleStart(day.id)}>
                     {startingDayId === day.id ? "Iniciando..." : "Iniciar entrenamiento"}
                   </Button>
                   {startError?.dayId === day.id ? (

@@ -22,6 +22,7 @@ type UserState =
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const isHomePage = pathname === "/" || pathname === "/home";
   const isExercisesPage = pathname === "/exercises";
   const isRoutinesPage = pathname === "/routines" || pathname.startsWith("/routines/");
   const isContextualPage = isExercisesPage || isRoutinesPage || pathname === "/training";
@@ -125,7 +126,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh w-full bg-background">
-      <div className="mx-auto w-full max-w-2xl px-8">
+      <div className="mx-auto w-full max-w-2xl px-4 sm:px-12">
         {!isContextualPage ? (
         <header className="flex items-start justify-between gap-4 pt-9 sm:pt-12">
           <div className="min-w-0">
@@ -172,27 +173,31 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <nav
         aria-label="Navegación principal"
-        className="fixed inset-x-0 bottom-0 z-10 border-t border-border-strong bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
+        className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-10 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-border/40 bg-surface-elevated/90 p-1 shadow-sm backdrop-blur-md"
       >
-        <div className="mx-auto grid max-w-2xl grid-cols-4 px-2 sm:px-8">
+        <div className="grid grid-cols-4 gap-1">
           <Link
-            aria-current={isRoutinesPage ? undefined : "page"}
-            className={`flex min-h-18 flex-col items-center justify-center gap-1.5 rounded-control-sm ${isRoutinesPage ? "text-text-secondary hover:text-text-primary" : "bg-primary/10 text-primary"}`}
+            aria-current={isHomePage ? "page" : undefined}
+            className={`group flex min-h-12 min-w-0 items-center justify-center rounded-full text-xs font-semibold transition-colors focus-visible:outline-primary ${isHomePage ? "text-primary" : "text-text-primary/75 hover:text-text-primary"}`}
             href="/home"
           >
-            <Home aria-hidden="true" size={22} strokeWidth={2} />
-            <span className="text-xs font-semibold">Inicio</span>
+            <span className={`flex flex-col items-center gap-0.5 rounded-full px-3 py-1 transition-colors ${isHomePage ? "bg-primary/10" : "group-hover:bg-surface"}`}>
+              <Home aria-hidden="true" size={18} strokeWidth={2} />
+              <span>Inicio</span>
+            </span>
           </Link>
           <Link
             aria-current={isRoutinesPage ? "page" : undefined}
-            className={`flex min-h-18 flex-col items-center justify-center gap-1.5 rounded-control-sm ${isRoutinesPage ? "bg-primary/10 text-primary" : "text-text-secondary hover:text-text-primary"}`}
+            className={`group flex min-h-12 min-w-0 items-center justify-center rounded-full text-xs font-semibold transition-colors focus-visible:outline-primary ${isRoutinesPage ? "text-primary" : "text-text-primary/75 hover:text-text-primary"}`}
             href="/routines"
           >
-            <ClipboardList aria-hidden="true" size={22} />
-            <span className="text-xs font-semibold">Rutinas</span>
+            <span className={`flex flex-col items-center gap-0.5 rounded-full px-3 py-1 transition-colors ${isRoutinesPage ? "bg-primary/10" : "group-hover:bg-surface"}`}>
+              <ClipboardList aria-hidden="true" size={18} strokeWidth={2} />
+              <span>Rutinas</span>
+            </span>
           </Link>
-          <DisabledDestination icon={<History size={22} />} label="Historial" />
-          <DisabledDestination icon={<TrendingUp size={22} />} label="Progreso" />
+          <DisabledDestination icon={<History size={18} />} label="Historial" />
+          <DisabledDestination icon={<TrendingUp size={18} />} label="Progreso" />
         </div>
       </nav>
     </div>
@@ -203,7 +208,7 @@ function DisabledDestination({ icon, label }: { icon: ReactNode; label: string }
   return (
     <span
       aria-disabled="true"
-      className="flex min-h-18 flex-col items-center justify-center gap-1.5 text-text-secondary/65"
+      className="flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-full text-text-secondary/60"
       title={`${label}: próximamente`}
     >
       <span aria-hidden="true">{icon}</span>
