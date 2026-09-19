@@ -9,8 +9,10 @@ import {
 
 type DemoView = "movement" | "arms";
 
-const movementSequence = [0, 1, 2, 1] as const;
-const armSequence = [0, 1] as const;
+function createPlaybackSequence(frameCount: number): number[] {
+  const forward = Array.from({ length: frameCount }, (_, index) => index);
+  return [...forward, ...forward.slice(1, -1).reverse()];
+}
 
 export function EntrenateExerciseDemo({ exerciseName }: { exerciseName: string }) {
   const [definition, setDefinition] = useState<EntrenateExerciseDemoDefinition | null>(null);
@@ -38,50 +40,59 @@ export function EntrenateExerciseDemo({ exerciseName }: { exerciseName: string }
   }, []);
 
   const currentFrames = useMemo(
-    () => definition ? (view === "movement" ? definition.movementFrames : definition.armPositionFrames) : [],
+    () => definition
+      ? (view === "movement" ? definition.movementFrames : (definition.armPositionFrames ?? []))
+      : [],
     [definition, view],
+  );
+  const playbackSequence = useMemo(
+    () => createPlaybackSequence(currentFrames.length),
+    [currentFrames.length],
   );
   const framesReady = currentFrames.length > 0 && currentFrames.every((frame) => loadedFrames.has(frame));
 
   useEffect(() => {
     if (!framesReady || reducedMotion || failed) return;
-    const sequence = view === "movement" ? movementSequence : armSequence;
     const interval = window.setInterval(() => {
-      setSequenceIndex((index) => (index + 1) % sequence.length);
+      setSequenceIndex((index) => (index + 1) % playbackSequence.length);
     }, view === "movement" ? 650 : 1100);
     return () => window.clearInterval(interval);
-  }, [failed, framesReady, reducedMotion, view]);
+  }, [failed, framesReady, playbackSequence.length, reducedMotion, view]);
 
   const activeFrame = reducedMotion
-    ? view === "movement" ? 1 : 0
-    : (view === "movement" ? movementSequence : armSequence)[sequenceIndex];
+    ? view === "movement" ? Math.floor((currentFrames.length - 1) / 2) : 0
+    : playbackSequence[sequenceIndex];
+
+  const hasArmPositionView = Boolean(definition?.armPositionFrames?.length);
 
   return (
     <section aria-label="Demostración Entrenate" className="mt-3">
-      <div aria-label="Vista de la demostración" className="grid grid-cols-2 rounded-full bg-surface/70 p-1" role="group">
-        <button
-          aria-pressed={view === "movement"}
-          className={`min-h-10 rounded-full px-3 text-xs font-semibold transition-colors focus-visible:outline-primary ${view === "movement" ? "bg-primary/15 text-primary" : "text-text-secondary hover:text-text-primary"}`}
-          onClick={() => {
-            setView("movement");
-            setSequenceIndex(0);
-          }}
-          type="button"
-        >
-          Movimiento
-        </button>
-        <button
-          aria-pressed={view === "arms"}
-          className={`min-h-10 rounded-full px-3 text-xs font-semibold transition-colors focus-visible:outline-primary ${view === "arms" ? "bg-primary/15 text-primary" : "text-text-secondary hover:text-text-primary"}`}
-          onClick={() => {
-            setView("arms");
-            setSequenceIndex(0);
-          }}
-          type="button"
-        >
-          Posición de brazos
-        </button>
-      </div>
+      {hasArmPositionView ? (
+        <div aria-label="Vista de la demostración" className="grid grid-cols-2 rounded-full bg-surface/70 p-1" role="group">
+          <button
+            aria-pressed={view === "movement"}
+            className={`min-h-10 rounded-full px-3 text-xs font-semibold transition-colors focus-visible:outline-primary ${view === "movement" ? "bg-primary/15 text-primary" : "text-text-secondary hover:text-text-primary"}`}
+            onClick={() => {
+              setView("movement");
+              setSequenceIndex(0);
+            }}
+            type="button"
+          >
+            Movimiento
+          </button>
+          <button
+            aria-pressed={view === "arms"}
+            className={`min-h-10 rounded-full px-3 text-xs font-semibold transition-colors focus-visible:outline-primary ${view === "arms" ? "bg-primary/15 text-primary" : "text-text-secondary hover:text-text-primary"}`}
+            onClick={() => {
+              setView("arms");
+              setSequenceIndex(0);
+            }}
+            type="button"
+          >
+            Posición de brazos
+          </button>
+        </div>
+      ) : null}
 
       <div className="relative mx-auto mt-3 flex aspect-square w-full max-w-84 items-center justify-center overflow-hidden bg-surface/20 p-1">
         {failed ? (
@@ -89,7 +100,7 @@ export function EntrenateExerciseDemo({ exerciseName }: { exerciseName: string }
         ) : definition ? (
           reducedMotion && view === "arms" ? (
             <div className="grid size-full grid-cols-2 items-center gap-1">
-              {definition.armPositionFrames.map((source) => (
+              {definition.armPositionFrames?.map((source) => (
                 <Image
                   alt=""
                   className="h-auto w-full object-contain"
