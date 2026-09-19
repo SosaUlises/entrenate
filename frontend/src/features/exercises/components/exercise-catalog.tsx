@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Plus, Search, X } from "lucide-react";
@@ -10,6 +11,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { getExercisesAction, type GetExercisesActionResult } from "../actions/get-exercises.action";
 import type { Exercise } from "../types/exercise.types";
+import { hasEntrenateExerciseDemo } from "./exercise-demo-registry";
+
+const ExerciseMovementDemo = dynamic(() => import("./exercise-movement-demo"), { ssr: false });
 
 type CatalogState =
   | { status: "loading" }
@@ -417,6 +421,13 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], onSelecti
                 ? preview.exercise.equipamientos.map((item) => item.nombre).join(" · ")
                 : "Sin equipamiento externo"}
             </p>
+            {hasEntrenateExerciseDemo(preview.exercise.nombre) || preview.exercise.workoutGuideId ? (
+              <ExerciseMovementDemo
+                exerciseName={preview.exercise.nombre}
+                key={preview.exercise.id}
+                workoutGuideId={preview.exercise.workoutGuideId}
+              />
+            ) : null}
           </div>
         ) : null}
       </dialog>

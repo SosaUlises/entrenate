@@ -12,4 +12,5 @@ export type Exercise = {
   descripcion: string | null;
   grupoMuscularPrincipal: string;
   equipamientos: ExerciseEquipment[];
+  workoutGuideId: string | null;
 };

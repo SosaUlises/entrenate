@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { getExercisesAction } from "@/features/exercises/actions/get-exercises.action";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import {
   cancelTrainingSessionAction, completeTrainingSessionAction,
@@ -30,6 +31,8 @@ export function ActiveTrainingContent() {
   const [finishPending, setFinishPending] = useState(false);
   const [finishError, setFinishError] = useState(false);
   const [sessionNotice, setSessionNotice] = useState<string | null>(null);
+  const [workoutGuideIds, setWorkoutGuideIds] = useState<Record<string, string>>({});
+  const catalogRequestedRef = useRef(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const finishPendingRef = useRef(false);
   const actionsRef = useRef<HTMLDetailsElement>(null);
@@ -72,6 +75,26 @@ export function ActiveTrainingContent() {
     }, () => { if (active) setView({ status: "error" }); });
     return () => { active = false; };
   }, [invalidateSession, requestKey, router]);
+
+  useEffect(() => {
+    if (mode !== "guided" || view.status !== "ready" || catalogRequestedRef.current) return;
+    catalogRequestedRef.current = true;
+
+    void getExercisesAction().then((result) => {
+      if (result.status === "unauthenticated") {
+        invalidateSession();
+        router.replace("/login");
+      } else if (result.status === "ready") {
+        const ids: Record<string, string> = {};
+        for (const exercise of result.exercises) {
+          if (exercise.workoutGuideId) ids[exercise.id] = exercise.workoutGuideId;
+        }
+        setWorkoutGuideIds(ids);
+      }
+    }, () => {
+      // Technique is optional; a catalog failure must not interrupt the session.
+    });
+  }, [invalidateSession, mode, router, view.status]);
 
   function reload() {
     setView({ status: "loading" });
@@ -199,6 +222,7 @@ export function ActiveTrainingContent() {
               onSaved={recordSet}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
               session={session}
+              workoutGuideIds={workoutGuideIds}
             />
           ) : null}
           {mode === "guided" && hasIncompleteTargets ? <Button className="mt-2 min-h-11 text-xs font-medium text-text-secondary hover:text-text-primary" fullWidth onClick={() => openFinish("complete")} variant="text">Finalizar entrenamiento</Button> : null}

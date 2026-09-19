@@ -260,6 +260,40 @@ namespace Entrenate.Infrastructure.Persistence.Seed
                 ("Crunch abdominal", "Core", Array.Empty<string>())
             };
 
+            var workoutGuideIdsPorNombre = new Dictionary<string, string>(
+                StringComparer.OrdinalIgnoreCase)
+            {
+                ["Press banca con barra"] = "exercise-bench-press",
+                ["Press banca con mancuernas"] = "exercise-dumbbell-bench-press",
+                ["Press inclinado con mancuernas"] = "exercise-incline-dumbbell-press",
+                ["Aperturas con mancuernas"] = "exercise-dumbbell-fly",
+                ["Peck deck"] = "exercise-pec-deck",
+                ["Flexiones"] = "exercise-push-up",
+                ["Dominadas"] = "exercise-pull-up",
+                ["Remo con barra"] = "exercise-barbell-row",
+                ["Jalón al pecho"] = "exercise-lat-pulldown",
+                ["Press militar con barra"] = "exercise-overhead-press",
+                ["Elevaciones laterales con mancuernas"] = "exercise-lateral-raise",
+                ["Face pull"] = "exercise-face-pull",
+                ["Pike push-up"] = "exercise-pike-push-up",
+                ["Curl con mancuernas"] = "exercise-bicep-curl",
+                ["Curl con barra EZ"] = "exercise-ez-bar-curl",
+                ["Curl en polea"] = "exercise-cable-curl",
+                ["Fondos en paralelas"] = "exercise-dip",
+                ["Sentadilla con barra"] = "exercise-squat",
+                ["Sentadilla goblet"] = "exercise-goblet-squat",
+                ["Sentadilla con peso corporal"] = "exercise-bodyweight-squat",
+                ["Prensa de piernas"] = "exercise-leg-press",
+                ["Hack squat"] = "exercise-hack-squat",
+                ["Extensión de cuádriceps"] = "exercise-leg-extension",
+                ["Peso muerto rumano con barra"] = "exercise-romanian-deadlift",
+                ["Hip thrust con barra"] = "exercise-hip-thrust",
+                ["Puente de glúteos"] = "exercise-glute-bridge",
+                ["Elevación de gemelos de pie"] = "exercise-calf-raise",
+                ["Plancha"] = "exercise-plank",
+                ["Crunch abdominal"] = "exercise-crunch"
+            };
+
             var equipamientos = await _context
                 .Equipamientos
                 .AsNoTracking()
@@ -284,40 +318,57 @@ namespace Entrenate.Infrastructure.Persistence.Seed
                     string.Join(", ", equipamientosFaltantes));
             }
 
-            var nombresExistentes = await _context
+            var ejerciciosExistentes = await _context
                 .Ejercicios
-                .Select(x => x.Nombre)
                 .ToListAsync(cancellationToken);
 
-            var nombresSet = new HashSet<string>(
-                nombresExistentes,
+            var ejerciciosPorNombre = ejerciciosExistentes.ToDictionary(
+                x => x.Nombre,
                 StringComparer.OrdinalIgnoreCase);
 
-            var nuevosEjercicios = definiciones
-                .Where(x => !nombresSet.Contains(x.Item1))
-                .Select(definicion =>
+            var nuevosEjercicios = new List<Ejercicio>();
+            var ejerciciosActualizados = 0;
+
+            foreach (var definicion in definiciones)
+            {
+                workoutGuideIdsPorNombre.TryGetValue(
+                    definicion.Item1,
+                    out var workoutGuideId);
+
+                if (ejerciciosPorNombre.TryGetValue(
+                    definicion.Item1,
+                    out var existente))
                 {
-                    var ejercicio = new Ejercicio
+                    if (workoutGuideId is not null &&
+                        existente.WorkoutGuideId != workoutGuideId)
                     {
-                        Id = Guid.NewGuid(),
-                        Nombre = definicion.Item1,
-                        Descripcion = null,
-                        GrupoMuscularPrincipal = definicion.Item2,
-                        WorkoutGuideId = null,
-                        ImagenPrincipalUrl = null,
-                        Activo = true
-                    };
+                        existente.WorkoutGuideId = workoutGuideId;
+                        ejerciciosActualizados++;
+                    }
 
-                    var equipamientoIds = definicion.Item3
-                        .Select(x => equipamientosPorNombre[x].Id);
+                    continue;
+                }
 
-                    ejercicio.DefinirEquipamientos(equipamientoIds);
+                var ejercicio = new Ejercicio
+                {
+                    Id = Guid.NewGuid(),
+                    Nombre = definicion.Item1,
+                    Descripcion = null,
+                    GrupoMuscularPrincipal = definicion.Item2,
+                    WorkoutGuideId = workoutGuideId,
+                    ImagenPrincipalUrl = null,
+                    Activo = true
+                };
 
-                    return ejercicio;
-                })
-                .ToList();
+                var equipamientoIds = definicion.Item3
+                    .Select(x => equipamientosPorNombre[x].Id);
 
-            if (nuevosEjercicios.Count == 0)
+                ejercicio.DefinirEquipamientos(equipamientoIds);
+                nuevosEjercicios.Add(ejercicio);
+            }
+
+            if (nuevosEjercicios.Count == 0 &&
+                ejerciciosActualizados == 0)
             {
                 _logger.LogInformation(
                     "El catálogo de ejercicios ya está actualizado.");
@@ -325,15 +376,19 @@ namespace Entrenate.Infrastructure.Persistence.Seed
                 return;
             }
 
-            await _context.Ejercicios.AddRangeAsync(
-                nuevosEjercicios,
-                cancellationToken);
+            if (nuevosEjercicios.Count > 0)
+            {
+                await _context.Ejercicios.AddRangeAsync(
+                    nuevosEjercicios,
+                    cancellationToken);
+            }
 
             await _context.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
-                "Se agregaron {Cantidad} ejercicios al catálogo.",
-                nuevosEjercicios.Count);
+                "Se agregaron {Nuevos} ejercicios y se actualizaron {Actualizados} mappings de Workout Guide.",
+                nuevosEjercicios.Count,
+                ejerciciosActualizados);
         }
     }
 }

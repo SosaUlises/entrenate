@@ -5,5 +5,6 @@ namespace Entrenate.Application.Exercises.DTOs
         string Nombre,
         string? Descripcion,
         string GrupoMuscularPrincipal,
-        IReadOnlyCollection<ExerciseEquipmentDto> Equipamientos);
+        IReadOnlyCollection<ExerciseEquipmentDto> Equipamientos,
+        string? WorkoutGuideId);
 }

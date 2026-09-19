@@ -1,12 +1,20 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
+import { ScanEye, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { getExerciseImage } from "@/features/exercises/components/exercise-catalog";
+import { hasEntrenateExerciseDemo } from "@/features/exercises/components/exercise-demo-registry";
 import { upsertTrainingSetAction } from "../actions/training.actions";
 import { getFirstMissingTarget, type TrainingTarget } from "../training-position";
 import type { TrainingSession, TrainingSessionExercise, TrainingSet, TrainingSetInput } from "../types/training.types";
+
+const ExerciseMovementDemo = dynamic(
+  () => import("@/features/exercises/components/exercise-movement-demo"),
+  { ssr: false },
+);
 
 type RestState = {
   remaining: number;
@@ -17,12 +25,13 @@ function formatTime(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-export function GuidedTrainingView({ session, onFinish, onMissing, onSaved, onUnauthenticated }: {
+export function GuidedTrainingView({ session, onFinish, onMissing, onSaved, onUnauthenticated, workoutGuideIds }: {
   session: TrainingSession;
   onFinish: () => void;
   onMissing: () => void;
   onSaved: (exerciseId: string, set: TrainingSet) => void;
   onUnauthenticated: () => void;
+  workoutGuideIds: Record<string, string>;
 }) {
   const [rest, setRest] = useState<RestState | null>(null);
   const target = getFirstMissingTarget(session);
@@ -86,6 +95,13 @@ export function GuidedTrainingView({ session, onFinish, onMissing, onSaved, onUn
         {image ? <Image alt="" className="size-16 shrink-0 rounded-control-sm object-cover" height={64} src={image} width={64} /> : null}
         <h2 className="min-w-0 font-brand text-2xl font-bold leading-tight text-text-primary">{exercise.nombre}</h2>
       </div>
+      {hasEntrenateExerciseDemo(exercise.nombre) || workoutGuideIds[exercise.ejercicioId] ? (
+        <GuidedTechniquePreview
+          exerciseName={exercise.nombre}
+          key={exercise.ejercicioId}
+          workoutGuideId={workoutGuideIds[exercise.ejercicioId]}
+        />
+      ) : null}
 
       <GuidedSetForm
         exercise={exercise}
@@ -98,6 +114,67 @@ export function GuidedTrainingView({ session, onFinish, onMissing, onSaved, onUn
         sessionId={session.id}
       />
     </div>
+  );
+}
+
+function GuidedTechniquePreview({ exerciseName, workoutGuideId }: {
+  exerciseName: string;
+  workoutGuideId?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  return (
+    <>
+      <button
+        className="mt-1 inline-flex min-h-11 items-center gap-2 rounded-control-sm px-1 text-sm font-medium text-text-secondary hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
+        onClick={() => {
+          setOpen(true);
+          dialogRef.current?.showModal();
+        }}
+        ref={triggerRef}
+        type="button"
+      >
+        <ScanEye aria-hidden="true" size={16} strokeWidth={1.75} />
+        Ver técnica
+      </button>
+      <dialog
+        aria-labelledby="guided-technique-title"
+        aria-modal="true"
+        className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[calc(100dvh-0.75rem)] w-full max-w-none overflow-y-auto rounded-t-card border border-border/70 bg-surface-elevated p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-text-primary shadow-elevated backdrop:bg-black/75 sm:inset-0 sm:m-auto sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100%-2rem)] sm:max-w-[420px] sm:rounded-card sm:p-5"
+        onClick={(event) => {
+          const bounds = event.currentTarget.getBoundingClientRect();
+          if (
+            event.clientX < bounds.left || event.clientX > bounds.right ||
+            event.clientY < bounds.top || event.clientY > bounds.bottom
+          ) event.currentTarget.close();
+        }}
+        onClose={() => {
+          setOpen(false);
+          triggerRef.current?.focus();
+        }}
+        ref={dialogRef}
+      >
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-surface-elevated pb-2">
+          <h2 className="min-w-0 font-brand text-lg font-bold text-text-primary" id="guided-technique-title">{exerciseName}</h2>
+          <button
+            aria-label="Cerrar técnica"
+            className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary"
+            onClick={() => dialogRef.current?.close()}
+            type="button"
+          >
+            <X aria-hidden="true" size={20} />
+          </button>
+        </div>
+        {open ? (
+          <ExerciseMovementDemo
+            exerciseName={exerciseName}
+            workoutGuideId={workoutGuideId ?? null}
+          />
+        ) : null}
+      </dialog>
+    </>
   );
 }
 
