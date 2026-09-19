@@ -24,6 +24,24 @@ const demoLoaders: Record<string, DemoLoader> = {
     .then((module) => module.pressInclinadoMancuernasDemo),
   "aperturas con mancuernas": () => import("./exercise-demos/aperturas-mancuernas.demo")
     .then((module) => module.aperturasMancuernasDemo),
+  "peck deck": () => import("./exercise-demos/peck-deck.demo")
+    .then((module) => module.peckDeckDemo),
+  "flexiones": () => import("./exercise-demos/flexiones.demo")
+    .then((module) => module.flexionesDemo),
+  "dominadas": () => import("./exercise-demos/dominadas.demo")
+    .then((module) => module.dominadasDemo),
+  "remo con barra": () => import("./exercise-demos/remo-barra.demo")
+    .then((module) => module.remoBarraDemo),
+  "remo con mancuerna": () => import("./exercise-demos/remo-mancuerna.demo")
+    .then((module) => module.remoMancuernaDemo),
+  "jalon al pecho": () => import("./exercise-demos/jalon-pecho.demo")
+    .then((module) => module.jalonPechoDemo),
+  "remo en polea baja": () => import("./exercise-demos/remo-polea-baja.demo")
+    .then((module) => module.remoPoleaBajaDemo),
+  "press militar con barra": () => import("./exercise-demos/press-militar-barra.demo")
+    .then((module) => module.pressMilitarBarraDemo),
+  "press de hombros con mancuernas": () => import("./exercise-demos/press-militar-mancuerna.demo")
+    .then((module) => module.pressMilitarMancuernaDemo),
 };
 
 export function hasEntrenateExerciseDemo(exerciseName: string): boolean {
