@@ -50,6 +50,14 @@ const demoLoaders: Record<string, DemoLoader> = {
     .then((module) => module.pikePushupDemo),
   "curl con mancuernas": () => import("./exercise-demos/curl-mancuerna.demo")
     .then((module) => module.curlMancuernaDemo),
+  "curl con barra ez": () => import("./exercise-demos/curl-barra-ez.demo")
+    .then((module) => module.curlBarraEzDemo),
+  "curl en polea": () => import("./exercise-demos/curl-polea.demo")
+    .then((module) => module.curlPoleaDemo),
+  "extension de triceps en polea": () => import("./exercise-demos/extension-tricep-polea.demo")
+    .then((module) => module.extensionTricepPoleaDemo),
+  "press frances con barra ez": () => import("./exercise-demos/press-frances-barra-ez.demo")
+    .then((module) => module.pressFrancesBarraEzDemo),
 };
 
 export function hasEntrenateExerciseDemo(exerciseName: string): boolean {
