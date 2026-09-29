@@ -42,6 +42,14 @@ const demoLoaders: Record<string, DemoLoader> = {
     .then((module) => module.pressMilitarBarraDemo),
   "press de hombros con mancuernas": () => import("./exercise-demos/press-militar-mancuerna.demo")
     .then((module) => module.pressMilitarMancuernaDemo),
+  "elevaciones laterales con mancuernas": () => import("./exercise-demos/elevaciones-laterales-mancuerna.demo")
+    .then((module) => module.elevacionesLateralesMancuernaDemo),
+  "face pull": () => import("./exercise-demos/face-pull.demo")
+    .then((module) => module.facePullDemo),
+  "pike push-up": () => import("./exercise-demos/pike-pushup.demo")
+    .then((module) => module.pikePushupDemo),
+  "curl con mancuernas": () => import("./exercise-demos/curl-mancuerna.demo")
+    .then((module) => module.curlMancuernaDemo),
 };
 
 export function hasEntrenateExerciseDemo(exerciseName: string): boolean {
