@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ClipboardList, History, Home, LogOut, TrendingUp } from "lucide-react";
+import { ClipboardList, Dumbbell, Home, LogOut } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -23,9 +23,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isHomePage = pathname === "/" || pathname === "/home";
-  const isExercisesPage = pathname === "/exercises";
+  const isExercisesPage = pathname === "/exercises" || pathname.startsWith("/exercises/");
   const isRoutinesPage = pathname === "/routines" || pathname.startsWith("/routines/");
-  const isContextualPage = isExercisesPage || isRoutinesPage || pathname === "/training";
+  const isTrainingPage = pathname === "/training" || pathname.startsWith("/training/");
+  const isContextualPage = isExercisesPage || isRoutinesPage || isTrainingPage;
   const { invalidateSession } = useTrainingProfileGate();
   const [userState, setUserState] = useState<UserState>({ status: "loading" });
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -125,8 +126,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const initial = nombre.charAt(0).toLocaleUpperCase("es-AR") || "?";
 
   return (
-    <div className="min-h-dvh w-full bg-background">
-      <div className="mx-auto w-full max-w-2xl px-4 sm:px-12">
+    <div className={`min-h-dvh w-full bg-background ${isTrainingPage ? "overflow-x-clip" : ""}`}>
+      <div className="mx-auto min-w-0 w-full max-w-2xl px-4 sm:px-12">
         {!isContextualPage ? (
         <header className="flex items-start justify-between gap-4 pt-9 sm:pt-12">
           <div className="min-w-0">
@@ -166,16 +167,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
 
-        <main className={`mx-auto w-full pb-[calc(7.5rem+env(safe-area-inset-bottom))] ${isContextualPage ? "pt-5 sm:pt-8" : "pt-10 sm:pt-12"}`}>
+        <main className={`mx-auto min-w-0 w-full max-w-full ${isTrainingPage ? "pb-[calc(2rem+env(safe-area-inset-bottom))]" : "pb-[calc(7.5rem+env(safe-area-inset-bottom))]"} ${isContextualPage ? "pt-5 sm:pt-8" : "pt-10 sm:pt-12"}`}>
           {children}
         </main>
       </div>
 
-      <nav
+      {!isTrainingPage ? <nav
         aria-label="Navegación principal"
         className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-10 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-border/40 bg-surface-elevated/90 p-1 shadow-sm backdrop-blur-md"
       >
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-3 gap-1">
           <Link
             aria-current={isHomePage ? "page" : undefined}
             className={`group flex min-h-12 min-w-0 items-center justify-center rounded-full text-xs font-semibold transition-colors focus-visible:outline-primary ${isHomePage ? "text-primary" : "text-text-primary/75 hover:text-text-primary"}`}
@@ -196,23 +197,18 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span>Rutinas</span>
             </span>
           </Link>
-          <DisabledDestination icon={<History size={18} />} label="Historial" />
-          <DisabledDestination icon={<TrendingUp size={18} />} label="Progreso" />
+          <Link
+            aria-current={isExercisesPage ? "page" : undefined}
+            className={`group flex min-h-12 min-w-0 items-center justify-center rounded-full text-xs font-semibold transition-colors focus-visible:outline-primary ${isExercisesPage ? "text-primary" : "text-text-primary/75 hover:text-text-primary"}`}
+            href="/exercises"
+          >
+            <span className={`flex flex-col items-center gap-0.5 rounded-full px-3 py-1 transition-colors ${isExercisesPage ? "bg-primary/10" : "group-hover:bg-surface"}`}>
+              <Dumbbell aria-hidden="true" size={18} strokeWidth={2} />
+              <span>Ejercicios</span>
+            </span>
+          </Link>
         </div>
-      </nav>
+      </nav> : null}
     </div>
-  );
-}
-
-function DisabledDestination({ icon, label }: { icon: ReactNode; label: string }) {
-  return (
-    <span
-      aria-disabled="true"
-      className="flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-full text-text-secondary/60"
-      title={`${label}: próximamente`}
-    >
-      <span aria-hidden="true">{icon}</span>
-      <span className="text-xs font-medium">{label}</span>
-    </span>
   );
 }

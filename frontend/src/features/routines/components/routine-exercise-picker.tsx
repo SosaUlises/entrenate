@@ -25,6 +25,7 @@ export function RoutineExercisePicker({ dayId, returnHref = "/routines/new" }: {
   return (
     <ExerciseCatalog
       key={day.id}
+      mode="select"
       backHref={returnHref}
       backLabel={backLabel}
       description={`Elegí los ejercicios que querés sumar a ${day.nombre}.`}

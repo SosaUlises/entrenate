@@ -66,12 +66,12 @@ export function EntrenateExerciseDemo({ exerciseName }: { exerciseName: string }
   const hasArmPositionView = Boolean(definition?.armPositionFrames?.length);
 
   return (
-    <section aria-label="Demostración Entrenate" className="mt-3">
+    <section aria-label="Demostración Entrenate" className="mt-1 min-w-0 w-full max-w-full">
       {hasArmPositionView ? (
-        <div aria-label="Vista de la demostración" className="grid grid-cols-2 rounded-full bg-surface/70 p-1" role="group">
+        <div aria-label="Vista de la demostración" className="grid min-w-0 grid-cols-2 gap-1 rounded-control-sm bg-background/45 p-1" role="group">
           <button
             aria-pressed={view === "movement"}
-            className={`min-h-10 rounded-full px-3 text-xs font-semibold transition-colors focus-visible:outline-primary ${view === "movement" ? "bg-primary/15 text-primary" : "text-text-secondary hover:text-text-primary"}`}
+            className={`min-h-11 min-w-0 rounded-control-sm px-3 text-[0.8125rem] font-semibold transition-colors focus-visible:outline-primary ${view === "movement" ? "bg-primary/12 text-primary" : "text-text-secondary hover:bg-surface/60 hover:text-text-primary"}`}
             onClick={() => {
               setView("movement");
               setSequenceIndex(0);
@@ -82,7 +82,7 @@ export function EntrenateExerciseDemo({ exerciseName }: { exerciseName: string }
           </button>
           <button
             aria-pressed={view === "arms"}
-            className={`min-h-10 rounded-full px-3 text-xs font-semibold transition-colors focus-visible:outline-primary ${view === "arms" ? "bg-primary/15 text-primary" : "text-text-secondary hover:text-text-primary"}`}
+            className={`min-h-11 min-w-0 rounded-control-sm px-3 text-[0.8125rem] font-semibold transition-colors focus-visible:outline-primary ${view === "arms" ? "bg-primary/12 text-primary" : "text-text-secondary hover:bg-surface/60 hover:text-text-primary"}`}
             onClick={() => {
               setView("arms");
               setSequenceIndex(0);
@@ -94,7 +94,7 @@ export function EntrenateExerciseDemo({ exerciseName }: { exerciseName: string }
         </div>
       ) : null}
 
-      <div className="relative mx-auto mt-3 flex aspect-square w-full max-w-84 items-center justify-center overflow-hidden bg-surface/20 p-1">
+      <div className="relative mx-auto mt-3 flex aspect-square w-full max-w-full items-center justify-center overflow-hidden rounded-control-sm bg-background/25">
         {failed ? (
           <p className="px-4 text-center text-sm text-text-secondary" role="status">No pudimos cargar la demostración.</p>
         ) : definition ? (

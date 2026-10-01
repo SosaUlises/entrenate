@@ -6,5 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default function ExercisesPage() {
-  return <ExerciseCatalog />;
+  return <ExerciseCatalog mode="browse" />;
 }

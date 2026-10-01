@@ -37,12 +37,16 @@ export async function updateRoutine(id: string, request: UpdateRoutineRequest, a
   });
 }
 
-export async function getRoutines(authToken: string): Promise<RoutineListItem[]> {
-  const routines = await apiRequest<RoutineSummary[]>("/api/routines", {
+export function getRoutineSummaries(authToken: string): Promise<RoutineSummary[]> {
+  return apiRequest<RoutineSummary[]>("/api/routines", {
     authToken,
     cache: "no-store",
     method: "GET",
   });
+}
+
+export async function getRoutines(authToken: string): Promise<RoutineListItem[]> {
+  const routines = await getRoutineSummaries(authToken);
 
   return Promise.all(
     routines.map(async (routine) => {

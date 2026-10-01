@@ -68,23 +68,32 @@ export function getExerciseImage(nombre: string): string | undefined {
   return exerciseImages[normalize(nombre).trim().replace(/\s+/g, " ")];
 }
 
-type ExerciseCatalogProps = {
+type ExerciseCatalogBaseProps = {
   backHref?: string;
   backLabel?: string;
   description?: string;
-  initialSelectedIds?: string[];
-  onConfirmSelection?: (exercises: Exercise[]) => void;
   title?: string;
 };
 
-export function ExerciseCatalog({
-  backHref = "/home",
-  backLabel = "Volver a inicio",
-  description = "Elegí los ejercicios que querés agregar.",
-  initialSelectedIds = [],
-  onConfirmSelection,
-  title = "Ejercicios",
-}: ExerciseCatalogProps) {
+type ExerciseCatalogProps = ExerciseCatalogBaseProps & (
+  | { mode: "browse" }
+  | {
+      mode: "select";
+      initialSelectedIds?: string[];
+      onConfirmSelection: (exercises: Exercise[]) => void;
+    }
+);
+
+export function ExerciseCatalog(props: ExerciseCatalogProps) {
+  const {
+    backHref = "/home",
+    backLabel = "Volver a inicio",
+    description = props.mode === "browse"
+      ? "Explorá ejercicios, equipamiento y técnica."
+      : "Elegí los ejercicios que querés agregar.",
+    title = "Ejercicios",
+  } = props;
+  const initialSelectedIds = props.mode === "select" ? (props.initialSelectedIds ?? []) : [];
   const router = useRouter();
   const { invalidateSession } = useTrainingProfileGate();
   const [state, setState] = useState<CatalogState>({ status: "loading" });
@@ -118,20 +127,26 @@ export function ExerciseCatalog({
   }, [invalidateSession, requestKey, router]);
 
   return (
-    <section aria-labelledby="exercises-title" className={`mx-auto w-full max-w-xl ${onConfirmSelection ? "pb-20" : ""}`}>
-      <div className="flex items-center gap-1">
-        <Link
-          aria-label={backLabel}
-          className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary"
-          href={backHref}
-        >
-          <ArrowLeft aria-hidden="true" size={20} />
-        </Link>
-        <h2 className="font-brand text-xl font-bold text-text-primary" id="exercises-title">
+    <section aria-labelledby="exercises-title" className={`mx-auto w-full max-w-xl ${props.mode === "select" ? "pb-20" : ""}`}>
+      {props.mode === "select" ? (
+        <div className="flex items-center gap-1">
+          <Link
+            aria-label={backLabel}
+            className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary"
+            href={backHref}
+          >
+            <ArrowLeft aria-hidden="true" size={20} />
+          </Link>
+          <h1 className="font-brand text-xl font-bold text-text-primary" id="exercises-title">
+            {title}
+          </h1>
+        </div>
+      ) : (
+        <h1 className="font-brand text-2xl font-bold text-text-primary" id="exercises-title">
           {title}
-        </h2>
-      </div>
-      <p className="mt-1 pl-12 text-sm text-text-secondary">
+        </h1>
+      )}
+      <p className={`text-sm text-text-secondary ${props.mode === "select" ? "mt-1 pl-12" : "mt-2 leading-6"}`}>
         {description}
       </p>
 
@@ -157,11 +172,12 @@ export function ExerciseCatalog({
         <ExerciseSelector
           exercises={state.exercises}
           initialSelectedIds={initialSelectedIds}
-          onSelectionChange={setSelectedIds}
+          mode={props.mode}
+          onSelectionChange={props.mode === "select" ? setSelectedIds : undefined}
         />
       )}
 
-      {onConfirmSelection && state.status === "ready" ? (
+      {props.mode === "select" && state.status === "ready" ? (
         <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 border-t border-border bg-surface/95 backdrop-blur-md">
           <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3 sm:px-0">
             <p aria-live="polite" className="text-sm font-medium text-text-secondary">
@@ -171,7 +187,7 @@ export function ExerciseCatalog({
             </p>
             <Button
               disabled={selectedExercises.length === 0}
-              onClick={() => onConfirmSelection(selectedExercises)}
+              onClick={() => props.onConfirmSelection(selectedExercises)}
             >
               {selectedExercises.length === 1
                 ? "Agregar 1 ejercicio"
@@ -187,10 +203,11 @@ export function ExerciseCatalog({
 type ExerciseSelectorProps = {
   exercises: Exercise[];
   initialSelectedIds?: string[];
+  mode: "browse" | "select";
   onSelectionChange?: (selectedIds: string[]) => void;
 };
 
-export function ExerciseSelector({ exercises, initialSelectedIds = [], onSelectionChange }: ExerciseSelectorProps) {
+export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onSelectionChange }: ExerciseSelectorProps) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(initialSelectedIds));
@@ -322,7 +339,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], onSelecti
       ) : (
         <ul className="mt-2 space-y-1.5">
           {visibleExercises.map((exercise) => {
-            const selected = selectedIds.has(exercise.id);
+            const selected = mode === "select" && selectedIds.has(exercise.id);
             const imageSrc = getExerciseImage(exercise.nombre);
             return (
               <li
@@ -356,17 +373,19 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], onSelecti
                       : "Sin equipamiento externo"}
                   </p>
                 </div>
-                <button
-                  aria-label={`${selected ? "Quitar" : "Seleccionar"} ${exercise.nombre}`}
-                  aria-pressed={selected}
-                  className="relative z-20 flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-primary"
-                  onClick={() => toggleSelection(exercise.id)}
-                  type="button"
-                >
-                  <span className={`flex size-9 items-center justify-center rounded-full border transition-colors ${selected ? "border-primary/40 bg-primary/12 text-primary" : "border-border bg-surface-elevated/70 text-text-secondary hover:border-primary/40 hover:text-text-primary"}`}>
-                    {selected ? <Check aria-hidden="true" size={17} /> : <Plus aria-hidden="true" size={17} />}
-                  </span>
-                </button>
+                {mode === "select" ? (
+                  <button
+                    aria-label={`${selected ? "Quitar" : "Seleccionar"} ${exercise.nombre}`}
+                    aria-pressed={selected}
+                    className="relative z-20 flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-primary"
+                    onClick={() => toggleSelection(exercise.id)}
+                    type="button"
+                  >
+                    <span className={`flex size-9 items-center justify-center rounded-full border transition-colors ${selected ? "border-primary/40 bg-primary/12 text-primary" : "border-border bg-surface-elevated/70 text-text-secondary hover:border-primary/40 hover:text-text-primary"}`}>
+                      {selected ? <Check aria-hidden="true" size={17} /> : <Plus aria-hidden="true" size={17} />}
+                    </span>
+                  </button>
+                ) : null}
               </li>
             );
           })}

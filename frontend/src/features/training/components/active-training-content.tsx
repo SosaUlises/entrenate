@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, ClipboardList, Ellipsis, Play } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, Check, ChevronRight, ClipboardList, Ellipsis, Play, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -20,6 +20,7 @@ import { GuidedTrainingView } from "./guided-training-view";
 type ViewState = { status: "loading" | "empty" | "error" } | { status: "ready"; session: TrainingSession };
 type FinishMode = "complete" | "cancel";
 type TrainingMode = "guided" | "free" | null;
+type PendingNavigation = "home" | "mode";
 
 export function ActiveTrainingContent() {
   const router = useRouter();
@@ -30,10 +31,13 @@ export function ActiveTrainingContent() {
   const [finishMode, setFinishMode] = useState<FinishMode | null>(null);
   const [finishPending, setFinishPending] = useState(false);
   const [finishError, setFinishError] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
   const [sessionNotice, setSessionNotice] = useState<string | null>(null);
   const [workoutGuideIds, setWorkoutGuideIds] = useState<Record<string, string>>({});
   const catalogRequestedRef = useRef(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const navigationDialogRef = useRef<HTMLDialogElement>(null);
   const finishPendingRef = useRef(false);
   const actionsRef = useRef<HTMLDetailsElement>(null);
   const actionsTriggerRef = useRef<HTMLElement>(null);
@@ -59,6 +63,12 @@ export function ActiveTrainingContent() {
       document.removeEventListener("keydown", closeOnEscape);
     };
   }, []);
+
+  useEffect(() => {
+    if (pendingNavigation && !navigationDialogRef.current?.open) {
+      navigationDialogRef.current?.showModal();
+    }
+  }, [pendingNavigation]);
 
   useEffect(() => {
     let active = true;
@@ -97,6 +107,7 @@ export function ActiveTrainingContent() {
   }, [invalidateSession, mode, router, view.status]);
 
   function reload() {
+    setIsDirty(false);
     setView({ status: "loading" });
     setRequestKey((key) => key + 1);
   }
@@ -106,6 +117,28 @@ export function ActiveTrainingContent() {
     setFinishError(false);
     setFinishMode(mode);
     dialogRef.current?.showModal();
+  }
+
+  function completeNavigation(action: PendingNavigation) {
+    navigationDialogRef.current?.close();
+    setIsDirty(false);
+
+    if (action === "home") {
+      router.push("/home");
+    } else {
+      setMode(null);
+    }
+  }
+
+  function requestNavigation(action: PendingNavigation) {
+    actionsRef.current?.removeAttribute("open");
+
+    if (isDirty) {
+      setPendingNavigation(action);
+      return;
+    }
+
+    completeNavigation(action);
   }
 
   async function finish() {
@@ -159,22 +192,42 @@ export function ActiveTrainingContent() {
 
   const session = view.status === "ready" ? view.session : null;
   const hasIncompleteTargets = session ? !areTargetSetsComplete(session) : false;
+  const targetsComplete = Boolean(session && !hasIncompleteTargets);
+  const shouldShowRecoveredFinalState = targetsComplete && mode === null;
 
   return (
-    <section className={`mx-auto w-full max-w-xl ${mode === "guided" ? "pb-10" : ""}`} aria-labelledby="training-title">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-brand text-xl font-bold text-text-primary" id="training-title">Entrenamiento en curso</h1>
+    <section className={`mx-auto min-w-0 w-full max-w-xl ${mode === "guided" ? "pb-10" : ""}`} aria-labelledby="training-title">
+      <div className="flex min-w-0 max-w-full items-start gap-1">
+        <button
+          aria-label="Salir y continuar después"
+          className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary"
+          onClick={() => requestNavigation("home")}
+          type="button"
+        >
+          <ArrowLeft aria-hidden="true" size={20} />
+        </button>
+        <div className={`min-w-0 flex-1 ${mode === "guided" ? "pt-3" : "pt-2"}`}>
+          <h1 className={mode === "guided" ? "text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.1em] text-text-secondary" : "font-brand text-xl font-bold text-text-primary"} id="training-title">Entrenamiento en curso</h1>
         </div>
-        {session && mode === "guided" ? (
-          <details className="relative shrink-0" ref={actionsRef}>
-            <summary aria-label="Acciones del entrenamiento" className="flex size-11 cursor-pointer list-none items-center justify-center rounded-control-sm text-text-secondary hover:bg-surface/50 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden" ref={actionsTriggerRef}>
+        {session && mode === "guided" && !targetsComplete ? (
+          <details className="group relative shrink-0" ref={actionsRef}>
+            <summary aria-label="Acciones del entrenamiento" className="flex size-11 cursor-pointer list-none items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface/50 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary group-open:bg-primary/10 group-open:text-primary [&::-webkit-details-marker]:hidden" ref={actionsTriggerRef}>
               <Ellipsis aria-hidden="true" size={20} strokeWidth={1.75} />
             </summary>
-            <div className="absolute right-0 z-20 mt-1 w-48 rounded-control border border-border bg-surface-elevated p-1 shadow-elevated">
-              <button className="flex min-h-11 w-full items-center rounded-control-sm px-3 text-left text-sm text-text-primary hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { actionsRef.current?.removeAttribute("open"); setMode(null); }} type="button">Cambiar modo</button>
+            <div className="absolute right-0 z-20 mt-1.5 w-56 max-w-[calc(100vw-2rem)] rounded-control border border-border/60 bg-surface-elevated p-2 shadow-elevated">
+              <button className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary" onClick={() => requestNavigation("mode")} type="button">
+                <ArrowLeftRight aria-hidden="true" className="shrink-0 text-text-secondary" size={17} strokeWidth={1.75} />
+                Cambiar modo
+              </button>
+              <button className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary transition-colors hover:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { actionsRef.current?.removeAttribute("open"); openFinish("complete"); }} type="button">
+                <Check aria-hidden="true" className="shrink-0 text-primary" size={17} strokeWidth={2} />
+                Finalizar entrenamiento
+              </button>
               <div className="my-1 border-t border-border/60" />
-              <button className="flex min-h-11 w-full items-center rounded-control-sm px-3 text-left text-sm text-text-secondary hover:bg-surface hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { actionsRef.current?.removeAttribute("open"); openFinish("cancel"); }} type="button">Cancelar entrenamiento</button>
+              <button className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-error/85 transition-colors hover:bg-error/8 hover:text-error focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { actionsRef.current?.removeAttribute("open"); openFinish("cancel"); }} type="button">
+                <X aria-hidden="true" className="shrink-0" size={17} strokeWidth={1.9} />
+                Cancelar entrenamiento
+              </button>
             </div>
           </details>
         ) : session ? <button className="min-h-11 shrink-0 px-2 text-xs text-text-secondary hover:text-text-primary focus-visible:outline-primary" onClick={() => openFinish("cancel")} type="button">Cancelar</button> : null}
@@ -187,12 +240,22 @@ export function ActiveTrainingContent() {
 
       {session ? (
         <>
-          {mode === null ? (
-            <div className="mt-8">
+          {shouldShowRecoveredFinalState ? (
+            <GuidedTrainingView
+              onDirtyChange={setIsDirty}
+              onFinish={() => openFinish("complete")}
+              onMissing={reload}
+              onSaved={recordSet}
+              onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
+              session={session}
+              workoutGuideIds={workoutGuideIds}
+            />
+          ) : mode === null ? (
+            <div className="mt-8 min-w-0 max-w-full">
               <h2 className="font-brand text-xl font-bold text-text-primary">¿Cómo querés entrenar hoy?</h2>
               <p className="mt-2 text-sm text-text-secondary">Elegí cómo querés registrar tus series.</p>
               <div className="mt-6 space-y-3">
-                <button className="flex min-h-24 w-full items-center gap-4 rounded-card border border-primary/25 bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setMode("guided")} type="button">
+                <button className="flex min-h-24 min-w-0 w-full max-w-full items-center gap-4 rounded-card border border-primary/25 bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setMode("guided")} type="button">
                   <Play aria-hidden="true" className="size-5 shrink-0 text-primary" strokeWidth={1.75} />
                   <span className="min-w-0 flex-1">
                     <span className="block font-brand text-base font-bold text-text-primary">Modo guiado</span>
@@ -200,7 +263,7 @@ export function ActiveTrainingContent() {
                   </span>
                   <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-text-secondary" strokeWidth={1.75} />
                 </button>
-                <button className="flex min-h-24 w-full items-center gap-4 rounded-card border border-border/60 bg-surface/50 p-4 text-left transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setMode("free")} type="button">
+                <button className="flex min-h-24 min-w-0 w-full max-w-full items-center gap-4 rounded-card border border-border/60 bg-surface/50 p-4 text-left transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setMode("free")} type="button">
                   <ClipboardList aria-hidden="true" className="size-5 shrink-0 text-text-secondary" strokeWidth={1.75} />
                   <span className="min-w-0 flex-1">
                     <span className="block font-brand text-base font-bold text-text-primary">Carga libre</span>
@@ -212,11 +275,12 @@ export function ActiveTrainingContent() {
             </div>
           ) : mode === "free" ? (
             <div className="mt-4 text-right">
-              <button className="min-h-11 px-1 text-sm text-text-secondary hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setMode(null)} type="button">Cambiar modo</button>
+              <button className="min-h-11 px-1 text-sm text-text-secondary hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary" onClick={() => requestNavigation("mode")} type="button">Cambiar modo</button>
             </div>
           ) : null}
           {mode === "guided" ? (
             <GuidedTrainingView
+              onDirtyChange={setIsDirty}
               onFinish={() => openFinish("complete")}
               onMissing={reload}
               onSaved={recordSet}
@@ -225,9 +289,9 @@ export function ActiveTrainingContent() {
               workoutGuideIds={workoutGuideIds}
             />
           ) : null}
-          {mode === "guided" && hasIncompleteTargets ? <Button className="mt-2 min-h-11 text-xs font-medium text-text-secondary hover:text-text-primary" fullWidth onClick={() => openFinish("complete")} variant="text">Finalizar entrenamiento</Button> : null}
           {mode === "free" ? (
             <FreeTrainingView
+              onDirtyChange={setIsDirty}
               onMissing={reload}
               onSaved={recordSet}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
@@ -238,7 +302,7 @@ export function ActiveTrainingContent() {
         </>
       ) : null}
 
-      <dialog aria-labelledby="finish-title" aria-modal="true" className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-card border border-border bg-surface-elevated p-5 text-text-primary shadow-elevated backdrop:bg-black/75" onCancel={(event) => { if (finishPendingRef.current) event.preventDefault(); }} onClick={(event) => { if (event.target === event.currentTarget && !finishPendingRef.current) event.currentTarget.close(); }} onClose={() => setFinishMode(null)} ref={dialogRef}>
+      <dialog aria-labelledby="finish-title" aria-modal="true" className="m-auto w-[calc(100%-2rem)] max-w-[calc(100vw-2rem)] rounded-card border border-border bg-surface-elevated p-5 text-text-primary shadow-elevated backdrop:bg-black/75 sm:max-w-sm" onCancel={(event) => { if (finishPendingRef.current) event.preventDefault(); }} onClick={(event) => { if (event.target === event.currentTarget && !finishPendingRef.current) event.currentTarget.close(); }} onClose={() => setFinishMode(null)} ref={dialogRef}>
         <h2 className="font-brand text-lg font-bold" id="finish-title">{finishMode === "cancel" ? "¿Cancelar entrenamiento?" : "¿Finalizar entrenamiento?"}</h2>
         <p className="mt-2 text-sm leading-6 text-text-secondary">{finishMode === "cancel" ? "La sesión se guardará como cancelada." : "Las series registradas quedarán guardadas en tu historial."}</p>
         {finishMode === "complete" && hasIncompleteTargets ? <p className="mt-2 text-sm text-warning">Todavía hay series sin completar.</p> : null}
@@ -246,6 +310,28 @@ export function ActiveTrainingContent() {
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <Button disabled={finishPending} onClick={() => dialogRef.current?.close()} variant="secondary">Seguir entrenando</Button>
           <Button isLoading={finishPending} onClick={() => void finish()}>{finishMode === "cancel" ? "Cancelar sesión" : "Finalizar"}</Button>
+        </div>
+      </dialog>
+
+      <dialog
+        aria-labelledby="discard-input-title"
+        aria-modal="true"
+        className="m-auto w-[calc(100%-2rem)] max-w-[calc(100vw-2rem)] rounded-card border border-border bg-surface-elevated p-5 text-text-primary shadow-elevated backdrop:bg-black/75 sm:max-w-sm"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) event.currentTarget.close();
+        }}
+        onClose={() => setPendingNavigation(null)}
+        ref={navigationDialogRef}
+      >
+        <h2 className="font-brand text-lg font-bold" id="discard-input-title">¿Descartar cambios sin guardar?</h2>
+        <p className="mt-2 text-sm leading-6 text-text-secondary">
+          Los datos que escribiste en esta serie todavía no se guardaron.
+        </p>
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          <Button onClick={() => navigationDialogRef.current?.close()} variant="secondary">Seguir entrenando</Button>
+          <Button onClick={() => pendingNavigation && completeNavigation(pendingNavigation)}>
+            {pendingNavigation === "mode" ? "Descartar y cambiar" : "Descartar y salir"}
+          </Button>
         </div>
       </dialog>
     </section>
