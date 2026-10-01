@@ -58,6 +58,18 @@ const demoLoaders: Record<string, DemoLoader> = {
     .then((module) => module.extensionTricepPoleaDemo),
   "press frances con barra ez": () => import("./exercise-demos/press-frances-barra-ez.demo")
     .then((module) => module.pressFrancesBarraEzDemo),
+  "fondos en paralelas": () => import("./exercise-demos/fondo-paralelas.demo")
+    .then((module) => module.fondoParalelasDemo),
+  "sentadilla con barra": () => import("./exercise-demos/sentadilla-barra.demo")
+    .then((module) => module.sentadillaBarraDemo),
+  "sentadilla goblet": () => import("./exercise-demos/sentadilla-goblet.demo")
+    .then((module) => module.sentadillaGobletDemo),
+  "sentadilla con peso corporal": () => import("./exercise-demos/sentadilla-peso-corporal.demo")
+    .then((module) => module.sentadillaPesoCorporalDemo),
+  "prensa de piernas": () => import("./exercise-demos/prensa-pierna.demo")
+    .then((module) => module.prensaPiernaDemo),
+  "hack squat": () => import("./exercise-demos/hack-squat.demo")
+    .then((module) => module.hackSquatDemo),
 };
 
 export function hasEntrenateExerciseDemo(exerciseName: string): boolean {
