@@ -194,6 +194,7 @@ export function ActiveTrainingContent() {
   const hasIncompleteTargets = session ? !areTargetSetsComplete(session) : false;
   const targetsComplete = Boolean(session && !hasIncompleteTargets);
   const shouldShowRecoveredFinalState = targetsComplete && mode === null;
+  const showTrainingActions = Boolean(session && (mode === "free" || (mode === "guided" && !targetsComplete)));
 
   return (
     <section className={`mx-auto min-w-0 w-full max-w-xl ${mode === "guided" ? "pb-10" : ""}`} aria-labelledby="training-title">
@@ -206,10 +207,10 @@ export function ActiveTrainingContent() {
         >
           <ArrowLeft aria-hidden="true" size={20} />
         </button>
-        <div className={`min-w-0 flex-1 ${mode === "guided" ? "pt-3" : "pt-2"}`}>
-          <h1 className={mode === "guided" ? "text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.1em] text-text-secondary" : "font-brand text-xl font-bold text-text-primary"} id="training-title">Entrenamiento en curso</h1>
+        <div className={`min-w-0 flex-1 ${mode === "guided" || mode === "free" ? "pt-3" : "pt-2"}`}>
+          <h1 className={mode === "guided" || mode === "free" ? "text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.1em] text-text-secondary" : "font-brand text-xl font-bold text-text-primary"} id="training-title">Entrenamiento en curso</h1>
         </div>
-        {session && mode === "guided" && !targetsComplete ? (
+        {showTrainingActions ? (
           <details className="group relative shrink-0" ref={actionsRef}>
             <summary aria-label="Acciones del entrenamiento" className="flex size-11 cursor-pointer list-none items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface/50 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary group-open:bg-primary/10 group-open:text-primary [&::-webkit-details-marker]:hidden" ref={actionsTriggerRef}>
               <Ellipsis aria-hidden="true" size={20} strokeWidth={1.75} />
@@ -273,10 +274,6 @@ export function ActiveTrainingContent() {
                 </button>
               </div>
             </div>
-          ) : mode === "free" ? (
-            <div className="mt-4 text-right">
-              <button className="min-h-11 px-1 text-sm text-text-secondary hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary" onClick={() => requestNavigation("mode")} type="button">Cambiar modo</button>
-            </div>
           ) : null}
           {mode === "guided" ? (
             <GuidedTrainingView
@@ -292,13 +289,13 @@ export function ActiveTrainingContent() {
           {mode === "free" ? (
             <FreeTrainingView
               onDirtyChange={setIsDirty}
+              onFinish={() => openFinish("complete")}
               onMissing={reload}
               onSaved={recordSet}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
               session={session}
             />
           ) : null}
-          {mode === "free" ? <Button className="mt-7" fullWidth onClick={() => openFinish("complete")}>Finalizar entrenamiento</Button> : null}
         </>
       ) : null}
 
