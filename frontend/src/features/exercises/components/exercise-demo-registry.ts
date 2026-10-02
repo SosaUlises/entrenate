@@ -70,6 +70,16 @@ const demoLoaders: Record<string, DemoLoader> = {
     .then((module) => module.prensaPiernaDemo),
   "hack squat": () => import("./exercise-demos/hack-squat.demo")
     .then((module) => module.hackSquatDemo),
+  "extension de cuadriceps": () => import("./exercise-demos/extension-cuadricep.demo")
+    .then((module) => module.extensionCuadricepDemo),
+  "zancadas con mancuernas": () => import("./exercise-demos/zancadas-mancuerna.demo")
+    .then((module) => module.zancadasMancuernaDemo),
+  "curl femoral": () => import("./exercise-demos/curl-femoral.demo")
+    .then((module) => module.curlFemoralDemo),
+  "hip thrust con barra": () => import("./exercise-demos/hip-thrust-barra.demo")
+    .then((module) => module.hipThrustBarraDemo),
+  "puente de gluteos": () => import("./exercise-demos/puente-gluteos.demo")
+    .then((module) => module.puenteGluteosDemo),
 };
 
 export function hasEntrenateExerciseDemo(exerciseName: string): boolean {
