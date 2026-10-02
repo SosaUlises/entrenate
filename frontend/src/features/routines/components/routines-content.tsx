@@ -54,9 +54,9 @@ export function RoutinesContent() {
         <h1 className="font-brand text-2xl font-bold text-text-primary" id="routines-title">
           Mis rutinas
         </h1>
-        {state.status === "ready" && state.routines.length > 0 ? <CreateRoutineLink label="Crear rutina" withIcon /> : null}
+        {state.status === "ready" && state.routines.length > 0 ? <CreateRoutineLink label="Crear" variant="header" /> : null}
       </div>
-      <p className="mt-2 text-sm leading-6 text-text-secondary">
+      <p className="mt-1.5 text-sm leading-6 text-text-secondary">
         Organizá y prepará tus entrenamientos.
       </p>
 
@@ -65,10 +65,10 @@ export function RoutinesContent() {
           <Spinner className="size-6 text-primary" label="Cargando rutinas" />
         </div>
       ) : state.status === "error" ? (
-        <div className="mt-8 rounded-card border border-border bg-surface p-5">
+        <div className="mt-8">
           <p className="text-sm text-text-primary">No pudimos cargar tus rutinas.</p>
           <Button
-            className="mt-5"
+            className="mt-4"
             onClick={() => {
               setState({ status: "loading" });
               setRequestKey((key) => key + 1);
@@ -79,37 +79,36 @@ export function RoutinesContent() {
           </Button>
         </div>
       ) : state.routines.length === 0 ? (
-        <div className="mt-7 pt-6">
-          <h2 className="font-brand text-lg font-bold text-text-primary">
-            Todavía no tenés rutinas
+        <div className="mt-10 max-w-sm">
+          <h2 className="font-brand text-2xl font-bold leading-tight text-text-primary">
+            No tenés rutinas todavía.
           </h2>
-          <p className="mt-1 max-w-sm text-sm leading-6 text-text-secondary">
+          <p className="mt-3 text-sm leading-6 text-text-secondary">
             Creá tu primera rutina y empezá a organizar tus entrenamientos.
           </p>
-          <div className="mt-4">
-            <CreateRoutineLink label="Crear mi primera rutina" />
+          <div className="mt-6">
+            <CreateRoutineLink label="Crear mi primera rutina" variant="empty" />
           </div>
         </div>
       ) : (
-        <ul className="mt-7 divide-y divide-border/60 border-b border-border/60">
-          {state.routines.map((routine, index) => (
+        <ul className="mt-7 divide-y divide-border/50 border-y border-border/50">
+          {state.routines.map((routine) => (
             <li key={routine.id}>
               <Link
-                className="flex min-h-21 items-center gap-3 py-4.5 transition-colors hover:bg-surface/40 focus-visible:outline-primary"
+                className="group flex min-h-20 min-w-0 items-center gap-3 rounded-control-sm px-1 py-4 transition-colors hover:bg-surface/35 active:bg-surface/60 focus-visible:outline-2 focus-visible:outline-primary"
                 href={`/routines/${routine.id}`}
               >
-                <span aria-hidden="true" className="w-8 shrink-0 self-start pt-1 font-brand text-sm font-semibold text-primary/65">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-brand text-lg font-bold leading-tight text-text-primary">
+                  <h2 className="break-words font-brand text-[1.125rem] font-bold leading-6 text-text-primary">
                     {routine.nombre}
                   </h2>
-                  <p className="mt-1 text-xs leading-5 text-text-secondary">
+                  <p className="mt-1 text-sm font-medium leading-5 text-text-secondary">
                     {routine.cantidadDias} {routine.cantidadDias === 1 ? "día" : "días"} · {routine.cantidadEjercicios} {routine.cantidadEjercicios === 1 ? "ejercicio" : "ejercicios"}
                   </p>
                 </div>
-                <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/55" size={18} />
+                <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center text-text-secondary/75 transition-colors group-hover:text-primary group-active:text-primary">
+                  <ChevronRight size={20} strokeWidth={1.8} />
+                </span>
               </Link>
             </li>
           ))}
@@ -119,13 +118,13 @@ export function RoutinesContent() {
   );
 }
 
-function CreateRoutineLink({ label, withIcon = false }: { label: string; withIcon?: boolean }) {
+function CreateRoutineLink({ label, variant }: { label: string; variant: "header" | "empty" }) {
   return (
     <Link
-      className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-control-sm border px-3.5 text-sm font-semibold text-primary transition-colors focus-visible:outline-primary ${withIcon ? "border-primary/20 bg-primary/5 hover:border-primary/40 hover:bg-primary/10" : "border-primary/30 bg-primary/10 hover:border-primary/60 hover:bg-primary/15"}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-control-sm text-sm font-semibold transition-colors focus-visible:outline-primary ${variant === "header" ? "min-h-11 px-2 text-primary hover:bg-primary/8 hover:text-text-primary active:bg-primary/12" : "min-h-12 bg-primary-strong px-4 text-text-primary hover:bg-primary active:bg-primary/90"}`}
       href="/routines/new"
     >
-      {withIcon ? <Plus aria-hidden="true" size={16} /> : null}
+      <Plus aria-hidden="true" size={variant === "header" ? 17 : 16} strokeWidth={1.9} />
       {label}
     </Link>
   );

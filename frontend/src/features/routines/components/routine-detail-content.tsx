@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -19,6 +19,7 @@ export function RoutineDetailContent({ id }: { id: string }) {
   const { invalidateSession } = useTrainingProfileGate();
   const [state, setState] = useState<DetailState>({ status: "loading" });
   const [requestKey, setRequestKey] = useState(0);
+  const [expandedDayId, setExpandedDayId] = useState<string | null>(null);
   const [startingDayId, setStartingDayId] = useState<string | null>(null);
   const [startError, setStartError] = useState<{ dayId: string; conflict: boolean } | null>(null);
 
@@ -54,6 +55,10 @@ export function RoutineDetailContent({ id }: { id: string }) {
         invalidateSession();
         router.replace("/login");
         return;
+      }
+      if (result.status === "ready") {
+        const firstDay = [...result.routine.dias].sort((first, second) => first.orden - second.orden)[0];
+        setExpandedDayId(firstDay?.id ?? null);
       }
       setState(result);
     }, () => {
@@ -96,14 +101,14 @@ export function RoutineDetailContent({ id }: { id: string }) {
           <Spinner className="size-6 text-primary" label="Cargando rutina" />
         </div>
       ) : state.status === "not-found" ? (
-        <div className="mt-8 rounded-card border border-border bg-surface p-5">
+        <div className="mt-8">
           <p className="text-sm text-text-primary">No encontramos esta rutina.</p>
           <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline-primary" href="/routines">
             Volver a mis rutinas
           </Link>
         </div>
       ) : state.status === "error" ? (
-        <div className="mt-8 rounded-card border border-border bg-surface p-5">
+        <div className="mt-8">
           <p className="text-sm text-text-primary">No pudimos cargar la rutina.</p>
           <Button
             className="mt-5"
@@ -121,43 +126,64 @@ export function RoutineDetailContent({ id }: { id: string }) {
           {state.routine.descripcion?.trim() ? (
             <p className="mt-2 pl-12 text-sm leading-6 text-text-secondary">{state.routine.descripcion}</p>
           ) : null}
-          <div className="mt-8 space-y-8">
+          <div className="mt-8 border-t border-border/60">
             {[...state.routine.dias].sort((first, second) => first.orden - second.orden).map((day) => {
+              const expanded = expandedDayId === day.id;
+              const contentId = `routine-day-${day.id}`;
+
               return (
-                <section aria-label={day.nombre} className="border-t border-border/40 pt-6 first:border-t-0 first:pt-0" key={day.id}>
-                  <h2 className="font-brand text-xl font-bold leading-tight text-text-primary">{day.nombre}</h2>
-                  {day.descripcion?.trim() ? <p className="mt-1 text-sm text-text-secondary">{day.descripcion}</p> : null}
-                  {day.ejercicios.length === 0 ? (
-                    <p className="mt-3 text-sm text-text-secondary">Sin ejercicios.</p>
-                  ) : (
-                    <ul className="mt-4 divide-y divide-border/35">
-                      {[...day.ejercicios].sort((first, second) => first.orden - second.orden).map((exercise) => {
-                        const imageSrc = getExerciseImage(exercise.nombre);
-                        return (
-                          <li className="flex min-w-0 items-start gap-4 py-4" key={`${exercise.ejercicioId}-${exercise.orden}`}>
-                            {imageSrc ? (
-                              <Image alt="" className="size-14 shrink-0 rounded-control-sm object-cover" height={56} src={imageSrc} width={56} />
-                            ) : null}
-                            <div className="min-w-0 flex-1">
-                              <h3 className="font-brand text-base font-bold leading-snug text-text-primary">{exercise.nombre}</h3>
-                              <p className="mt-1 text-sm leading-5 text-text-secondary">{exercise.cantidadSeries} series · {exercise.repeticionesMinimas}–{exercise.repeticionesMaximas} reps</p>
-                              <p className="text-sm leading-5 text-text-secondary">RIR {exercise.rirObjetivoMinimo}–{exercise.rirObjetivoMaximo} · {exercise.descansoSegundos} s</p>
-                              {exercise.notas?.trim() ? <p className="mt-2 text-xs leading-5 text-text-secondary">{exercise.notas}</p> : null}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                  <Button className="mt-5 min-h-11! px-4!" disabled={Boolean(startingDayId) || day.ejercicios.length === 0} isLoading={startingDayId === day.id} onClick={() => void handleStart(day.id)}>
-                    {startingDayId === day.id ? "Iniciando..." : "Iniciar entrenamiento"}
-                  </Button>
-                  {startError?.dayId === day.id ? (
-                    <div className="mt-3 text-sm" role="alert">
-                      <p className="text-text-secondary">{startError.conflict ? "Ya tenés un entrenamiento en curso." : "No pudimos iniciar el entrenamiento. Intentá nuevamente."}</p>
-                      {startError.conflict ? <Link className="mt-2 inline-flex min-h-11 items-center font-semibold text-primary" href="/training">Continuar entrenamiento</Link> : null}
-                    </div>
-                  ) : null}
+                <section aria-label={day.nombre} className="min-w-0 border-b border-border/60" key={day.id}>
+                  <button
+                    aria-controls={contentId}
+                    aria-expanded={expanded}
+                    className="flex min-h-14 w-full min-w-0 items-center gap-3 py-2 text-left focus-visible:outline-primary"
+                    onClick={() => setExpandedDayId((current) => current === day.id ? null : day.id)}
+                    type="button"
+                  >
+                    <h2 className="min-w-0 flex-1 truncate font-brand text-base font-bold text-text-primary">{day.nombre}</h2>
+                    <span className="shrink-0 text-xs font-medium text-info/80">
+                      {day.ejercicios.length} {day.ejercicios.length === 1 ? "ejercicio" : "ejercicios"}
+                    </span>
+                    <ChevronDown aria-hidden="true" className={`shrink-0 text-text-secondary/75 transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} size={16} strokeWidth={1.75} />
+                  </button>
+
+                  <div className="pb-6" hidden={!expanded} id={contentId}>
+                    {day.descripcion?.trim() ? <p className="mb-3 text-sm leading-6 text-text-secondary">{day.descripcion}</p> : null}
+                    {day.ejercicios.length === 0 ? (
+                      <p className="text-sm leading-6 text-text-secondary">Todavía no hay ejercicios.</p>
+                    ) : (
+                      <ul className="divide-y divide-border/40 border-y border-border/40">
+                        {[...day.ejercicios].sort((first, second) => first.orden - second.orden).map((exercise) => {
+                          const imageSrc = getExerciseImage(exercise.nombre);
+                          return (
+                            <li className="flex min-w-0 items-start gap-3 py-3" key={`${exercise.ejercicioId}-${exercise.orden}`}>
+                              {imageSrc ? (
+                                <Image alt="" className="size-12 shrink-0 rounded-control-sm object-cover" height={48} src={imageSrc} width={48} />
+                              ) : null}
+                              <div className="min-w-0 flex-1">
+                                <h3 className="break-words font-brand text-base font-bold leading-5 text-text-primary">{exercise.nombre}</h3>
+                                <p className="mt-1 break-words text-sm leading-5 text-text-secondary">
+                                  {exercise.cantidadSeries}×{exercise.repeticionesMinimas}–{exercise.repeticionesMaximas} · RIR {exercise.rirObjetivoMinimo}–{exercise.rirObjetivoMaximo} · {exercise.descansoSegundos} s
+                                </p>
+                                {exercise.notas?.trim() ? <p className="mt-1 text-xs leading-5 text-text-secondary">{exercise.notas}</p> : null}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                    {day.ejercicios.length > 0 ? (
+                      <Button className="mt-5 min-h-[3.25rem] rounded-control-sm text-[0.9375rem] font-bold sm:max-w-sm" disabled={Boolean(startingDayId)} fullWidth isLoading={startingDayId === day.id} onClick={() => void handleStart(day.id)}>
+                        {startingDayId === day.id ? "Iniciando..." : `Iniciar ${day.nombre}`}
+                      </Button>
+                    ) : null}
+                    {startError?.dayId === day.id ? (
+                      <div className="mt-3 text-sm" role="alert">
+                        <p className="text-text-secondary">{startError.conflict ? "Ya tenés un entrenamiento en curso." : "No pudimos iniciar el entrenamiento. Intentá nuevamente."}</p>
+                        {startError.conflict ? <Link className="mt-2 inline-flex min-h-11 items-center font-semibold text-primary" href="/training">Continuar entrenamiento</Link> : null}
+                      </div>
+                    ) : null}
+                  </div>
                 </section>
               );
             })}

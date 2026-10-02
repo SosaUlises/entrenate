@@ -24,7 +24,7 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
   const { invalidateSession } = useTrainingProfileGate();
   const { nombre, setNombre, descripcion, dias, addDay, renameDay, removeDay, removeDayExercise, updateDayExercise, resetDraft } = useRoutineDraft();
   const [editing, setEditing] = useState<{ dayId: string; exerciseId: string } | null>(null);
-  const [expandedDayId, setExpandedDayId] = useState<string | null>(() => dias[0]?.id ?? null);
+  const [expandedDayId, setExpandedDayId] = useState<string | null>(() => routineId ? null : (dias[0]?.id ?? null));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [submitError, setSubmitError] = useState<{ message: string; details?: string[] } | null>(null);
@@ -163,7 +163,7 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
             ))}
           </div>
           <button
-            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-control-sm px-1 text-sm font-medium text-text-secondary transition-colors hover:text-primary focus-visible:outline-primary"
+            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-control-sm px-1 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-primary"
             onClick={handleAddDay}
             type="button"
           >
@@ -221,7 +221,7 @@ function RoutineDaySection({
         <button
           aria-controls={contentId}
           aria-expanded={expanded}
-          className="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 text-left focus-visible:outline-primary"
+          className="group flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 text-left focus-visible:outline-primary"
           onClick={onToggle}
           type="button"
         >
@@ -229,12 +229,12 @@ function RoutineDaySection({
           <span className="shrink-0 text-xs font-medium text-info/80">
             {day.exercises.length} {day.exercises.length === 1 ? "ejercicio" : "ejercicios"}
           </span>
-          <ChevronDown aria-hidden="true" className={`shrink-0 text-text-secondary/75 transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} size={16} strokeWidth={1.75} />
+          <ChevronDown aria-hidden="true" className={`shrink-0 text-text-secondary/70 transition-[color,transform] group-hover:text-text-primary motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} size={16} strokeWidth={1.75} />
         </button>
         {canRemove ? (
           <button
             aria-label={`Eliminar día ${day.orden}: ${day.nombre}`}
-            className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:text-error focus-visible:outline-primary"
+            className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary/65 transition-colors hover:bg-error/10 hover:text-error focus-visible:text-error focus-visible:outline-primary"
             onClick={() => onRemove(day.id)}
             type="button"
           >
@@ -258,14 +258,14 @@ function RoutineDaySection({
         {day.exercises.length === 0 ? (
           <p className="mt-4 text-sm leading-6 text-text-secondary">Todavía no agregaste ejercicios.</p>
         ) : (
-          <ul className="mt-4 divide-y divide-border/50 border-y border-border/50">
+          <ul className="mt-4 divide-y divide-border/45 border-y border-border/45">
             {day.exercises.map((exercise) => {
               const imageSrc = getExerciseImage(exercise.nombre);
               return (
-                <li className="flex min-w-0 items-center gap-1 py-1" key={exercise.exerciseId}>
+                <li className="flex min-w-0 items-center gap-1 py-1.5" key={exercise.exerciseId}>
                   <button
                     aria-label={`Configurar ${exercise.nombre} en ${day.nombre}`}
-                    className="flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-control-sm py-2 text-left focus-visible:outline-primary"
+                    className="group flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-control-sm py-2 text-left transition-colors focus-visible:outline-primary"
                     onClick={() => onEditExercise(exercise.exerciseId)}
                     type="button"
                   >
@@ -273,16 +273,16 @@ function RoutineDaySection({
                       <Image alt="" className="size-12 shrink-0 rounded-control-sm object-cover" height={48} src={imageSrc} width={48} />
                     ) : null}
                     <span className="min-w-0 flex-1">
-                      <span className="block break-words font-brand text-sm font-bold leading-5 text-text-primary">{exercise.nombre}</span>
-                      <span className="mt-1 block text-xs leading-5 text-text-secondary">
+                      <span className="block break-words font-brand text-base font-bold leading-5 text-text-primary">{exercise.nombre}</span>
+                      <span className="mt-1 block break-words text-sm leading-5 text-text-secondary">
                         {exercise.cantidadSeries}×{exercise.repeticionesMinimas}–{exercise.repeticionesMaximas} · RIR {exercise.rirObjetivoMinimo}–{exercise.rirObjetivoMaximo} · {exercise.descansoSegundos} s
                       </span>
                     </span>
-                    <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary" size={17} />
+                    <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/65 transition-colors group-hover:text-primary" size={17} />
                   </button>
                   <button
                     aria-label={`Quitar ${exercise.nombre} de ${day.nombre}`}
-                    className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:text-error focus-visible:outline-primary"
+                    className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary/60 transition-colors hover:bg-error/10 hover:text-error focus-visible:text-error focus-visible:outline-primary"
                     onClick={() => onRemoveExercise(day.id, exercise.exerciseId)}
                     type="button"
                   >
@@ -302,7 +302,7 @@ function RoutineDaySection({
 function AddExercisesLink({ basePath, dayId }: { basePath: string; dayId: string }) {
   return (
     <Link
-      className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-control-sm bg-primary/5 px-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 hover:text-text-primary focus-visible:outline-primary"
+      className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-control-sm bg-primary/8 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/12 hover:text-text-primary focus-visible:outline-primary"
       href={`${basePath}/exercises?day=${encodeURIComponent(dayId)}`}
     >
       <Plus aria-hidden="true" size={17} />

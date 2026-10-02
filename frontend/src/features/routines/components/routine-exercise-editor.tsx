@@ -19,9 +19,7 @@ const helpText = {
   Descanso: "Tiempo de recuperación entre una serie y la siguiente.",
 } as const;
 
-export function RoutineExerciseEditor({
-  exercise, onSave, onClose,
-}: {
+export function RoutineExerciseEditor({ exercise, onSave, onClose }: {
   exercise: RoutineDraftExercise;
   onSave: (config: RoutineExerciseConfig) => void;
   onClose: () => void;
@@ -72,7 +70,7 @@ export function RoutineExerciseEditor({
     <dialog
       aria-labelledby={`${id}-title`}
       aria-modal="true"
-      className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[calc(100dvh-1rem)] w-full max-w-none overflow-y-auto rounded-t-card border border-border bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:inset-0 sm:m-auto sm:max-h-[calc(100dvh-3rem)] sm:max-w-lg sm:rounded-card"
+      className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[calc(100dvh-0.5rem)] w-full max-w-none overflow-hidden rounded-t-card border border-border/80 bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:inset-0 sm:m-auto sm:max-h-[calc(100dvh-3rem)] sm:max-w-lg sm:rounded-card"
       onClick={(event) => {
         const bounds = event.currentTarget.getBoundingClientRect();
         if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) {
@@ -86,72 +84,63 @@ export function RoutineExerciseEditor({
       }}
       ref={dialogRef}
     >
-      <form className="space-y-5 p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:p-6" noValidate onSubmit={save}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
+      <form className="flex max-h-[calc(100dvh-0.5rem)] flex-col sm:max-h-[calc(100dvh-3rem)]" noValidate onSubmit={save}>
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/60 px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
+          <div className="min-w-0">
             <h2 className="font-brand text-xl font-bold text-text-primary" id={`${id}-title`}>{exercise.nombre}</h2>
-            {exercise.grupoMuscularPrincipal ? <p className="mt-1 text-sm text-primary">{exercise.grupoMuscularPrincipal}</p> : null}
+            {exercise.grupoMuscularPrincipal ? <p className="mt-1 text-sm text-info/85">{exercise.grupoMuscularPrincipal}</p> : null}
           </div>
-          <button
-            aria-label="Cerrar sin guardar"
-            className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary hover:bg-surface hover:text-text-primary focus-visible:outline-primary"
-            onClick={() => dialogRef.current?.close()}
-            type="button"
-          >
+          <button aria-label="Cerrar sin guardar" className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-primary focus-visible:outline-primary" onClick={() => dialogRef.current?.close()} type="button">
             <X aria-hidden="true" size={20} />
           </button>
         </div>
 
-        <div>
-          <FieldHeading label="Series" text={helpText.Series} />
-          <div className="mt-2 flex items-center gap-3">
-            <button aria-label="Quitar una serie" className="flex size-11 items-center justify-center rounded-control-sm border border-border bg-surface text-text-primary disabled:opacity-40 focus-visible:outline-primary" disabled={series <= 1} onClick={() => setSeries((value) => Math.max(1, value - 1))} type="button"><Minus aria-hidden="true" size={18} /></button>
-            <output aria-label="Cantidad de series" className="min-w-8 text-center text-base font-semibold">{series}</output>
-            <button aria-label="Agregar una serie" className="flex size-11 items-center justify-center rounded-control-sm border border-border bg-surface text-text-primary disabled:opacity-40 focus-visible:outline-primary" disabled={series >= 20} onClick={() => setSeries((value) => Math.min(20, value + 1))} type="button"><Plus aria-hidden="true" size={18} /></button>
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
+          <div>
+            <FieldHeading label="Series" text={helpText.Series} />
+            <div className="mt-2 inline-grid grid-cols-[2.75rem_4.5rem_2.75rem] items-center rounded-control-sm bg-surface/70">
+              <button aria-label="Quitar una serie" className="flex size-11 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-primary disabled:opacity-40 focus-visible:outline-primary" disabled={series <= 1} onClick={() => setSeries((value) => Math.max(1, value - 1))} type="button"><Minus aria-hidden="true" size={18} /></button>
+              <output aria-label="Cantidad de series" className="font-brand text-center text-2xl font-bold tabular-nums text-text-primary">{series}</output>
+              <button aria-label="Agregar una serie" className="flex size-11 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-primary disabled:opacity-40 focus-visible:outline-primary" disabled={series >= 20} onClick={() => setSeries((value) => Math.min(20, value + 1))} type="button"><Plus aria-hidden="true" size={18} /></button>
+            </div>
+          </div>
+
+          <div>
+            <FieldHeading label="Repeticiones" text={helpText.Repeticiones} />
+            <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-3">
+              <NumberInput error={errors.repeticionesMinimas} id={`${id}-reps-min`} label="Repeticiones mínimas" max={100} min={1} onChange={(value) => setNumeric("repeticionesMinimas", value)} rangeLabel="Mínimo" value={values.repeticionesMinimas} />
+              <span aria-hidden="true" className="pb-3 text-text-secondary/70">—</span>
+              <NumberInput error={errors.repeticionesMaximas} id={`${id}-reps-max`} label="Repeticiones máximas" max={100} min={1} onChange={(value) => setNumeric("repeticionesMaximas", value)} rangeLabel="Máximo" value={values.repeticionesMaximas} />
+            </div>
+          </div>
+
+          <div>
+            <FieldHeading label="RIR" text={helpText.RIR} />
+            <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-3">
+              <NumberInput error={errors.rirObjetivoMinimo} id={`${id}-rir-min`} label="RIR mínimo" max={5} min={0} onChange={(value) => setNumeric("rirObjetivoMinimo", value)} rangeLabel="Mínimo" value={values.rirObjetivoMinimo} />
+              <span aria-hidden="true" className="pb-3 text-text-secondary/70">—</span>
+              <NumberInput error={errors.rirObjetivoMaximo} id={`${id}-rir-max`} label="RIR máximo" max={5} min={0} onChange={(value) => setNumeric("rirObjetivoMaximo", value)} rangeLabel="Máximo" value={values.rirObjetivoMaximo} />
+            </div>
+          </div>
+
+          <div>
+            <FieldHeading label="Descanso" text={helpText.Descanso} />
+            <div className="mt-2 flex items-end gap-3">
+              <NumberInput className="max-w-36" error={errors.descansoSegundos} id={`${id}-rest`} label="Descanso en segundos" max={900} min={15} onChange={(value) => setNumeric("descansoSegundos", value)} value={values.descansoSegundos} />
+              <span className="pb-3 text-sm font-medium text-text-secondary">segundos</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold text-text-primary" htmlFor={`${id}-notes`}>Notas</label>
+            <textarea aria-invalid={Boolean(errors.notas)} className="mt-2 min-h-20 w-full resize-y rounded-control-sm border border-border/70 bg-surface/70 p-3 text-sm leading-5 text-text-primary outline-none transition-[background-color,border-color,box-shadow] placeholder:text-text-secondary/60 hover:border-border-strong focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 focus-visible:outline-primary" id={`${id}-notes`} maxLength={500} onChange={(event) => setNotas(event.target.value)} placeholder="Ej. priorizar técnica, agarre neutro..." value={notas} />
+            {errors.notas ? <p className="mt-1 text-xs text-error" role="alert">{errors.notas}</p> : null}
           </div>
         </div>
 
-        <div>
-          <FieldHeading label="Repeticiones" text={helpText.Repeticiones} />
-          <div className="mt-2 flex items-center gap-3">
-            <NumberInput error={errors.repeticionesMinimas} id={`${id}-reps-min`} label="Repeticiones mínimas" max={100} min={1} onChange={(value) => setNumeric("repeticionesMinimas", value)} value={values.repeticionesMinimas} />
-            <span aria-hidden="true" className="text-text-secondary">—</span>
-            <NumberInput error={errors.repeticionesMaximas} id={`${id}-reps-max`} label="Repeticiones máximas" max={100} min={1} onChange={(value) => setNumeric("repeticionesMaximas", value)} value={values.repeticionesMaximas} />
-          </div>
+        <div className="shrink-0 border-t border-border/60 bg-surface-elevated px-5 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-5">
+          <Button className="min-h-[3.25rem] w-full rounded-control-sm text-[0.9375rem] font-bold" type="submit">Guardar cambios</Button>
         </div>
-
-        <div>
-          <FieldHeading label="RIR" text={helpText.RIR} />
-          <div className="mt-2 flex items-center gap-3">
-            <NumberInput error={errors.rirObjetivoMinimo} id={`${id}-rir-min`} label="RIR mínimo" max={5} min={0} onChange={(value) => setNumeric("rirObjetivoMinimo", value)} value={values.rirObjetivoMinimo} />
-            <span aria-hidden="true" className="text-text-secondary">—</span>
-            <NumberInput error={errors.rirObjetivoMaximo} id={`${id}-rir-max`} label="RIR máximo" max={5} min={0} onChange={(value) => setNumeric("rirObjetivoMaximo", value)} value={values.rirObjetivoMaximo} />
-          </div>
-        </div>
-
-        <div>
-          <FieldHeading label="Descanso" text={helpText.Descanso} />
-          <div className="mt-2 flex items-center gap-3">
-            <NumberInput error={errors.descansoSegundos} id={`${id}-rest`} label="Descanso en segundos" max={900} min={15} onChange={(value) => setNumeric("descansoSegundos", value)} value={values.descansoSegundos} />
-            <span className="text-sm text-text-secondary">segundos</span>
-          </div>
-        </div>
-
-        <div>
-          <label className="text-sm font-semibold text-text-primary" htmlFor={`${id}-notes`}>Notas</label>
-          <textarea
-            aria-invalid={Boolean(errors.notas)}
-            className="mt-2 min-h-20 w-full resize-y rounded-control-sm border border-border bg-surface p-3 text-sm text-text-primary outline-none placeholder:text-text-secondary/70 focus:border-primary focus-visible:outline-primary"
-            id={`${id}-notes`}
-            maxLength={500}
-            onChange={(event) => setNotas(event.target.value)}
-            placeholder="Ej. priorizar técnica, agarre neutro..."
-            value={notas}
-          />
-          {errors.notas ? <p className="mt-1 text-xs text-error" role="alert">{errors.notas}</p> : null}
-        </div>
-
-        <Button className="w-full" type="submit">Guardar cambios</Button>
       </form>
     </dialog>
   );
@@ -161,20 +150,9 @@ function FieldHeading({ label, text }: { label: string; text: string }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   return (
-    <div className="relative flex items-center gap-1.5" onBlur={(event) => {
-      if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
-    }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+    <div className="relative flex items-center gap-1.5" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <span className="text-sm font-semibold text-text-primary">{label}</span>
-      <button
-        aria-controls={open ? id : undefined}
-        aria-describedby={open ? id : undefined}
-        aria-expanded={open}
-        aria-label={`Ayuda sobre ${label}`}
-        className="flex size-8 items-center justify-center rounded-full text-text-secondary hover:text-primary focus-visible:outline-primary"
-        onClick={() => setOpen(true)}
-        onFocus={() => setOpen(true)}
-        type="button"
-      >
+      <button aria-controls={open ? id : undefined} aria-describedby={open ? id : undefined} aria-expanded={open} aria-label={`Ayuda sobre ${label}`} className="flex size-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-primary focus-visible:outline-primary" onClick={() => setOpen((current) => !current)} onFocus={() => setOpen(true)} type="button">
         <CircleHelp aria-hidden="true" size={16} />
       </button>
       {open ? (
@@ -187,31 +165,22 @@ function FieldHeading({ label, text }: { label: string; text: string }) {
   );
 }
 
-function NumberInput({ id, label, value, min, max, error, onChange }: {
+function NumberInput({ id, label, value, min, max, error, rangeLabel, className = "", onChange }: {
   id: string;
   label: string;
   value: string;
   min: number;
   max: number;
   error?: string;
+  rangeLabel?: string;
+  className?: string;
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="max-w-28 min-w-0 flex-1">
+    <div className={`min-w-0 ${className}`}>
       <label className="sr-only" htmlFor={id}>{label}</label>
-      <input
-        aria-describedby={error ? `${id}-error` : undefined}
-        aria-invalid={Boolean(error)}
-        className="h-11 w-full rounded-control-sm border border-border bg-surface px-3 text-center text-sm text-text-primary outline-none focus:border-primary focus-visible:outline-primary"
-        id={id}
-        inputMode="numeric"
-        max={max}
-        min={min}
-        onChange={(event) => onChange(event.target.value)}
-        step={1}
-        type="number"
-        value={value}
-      />
+      {rangeLabel ? <span aria-hidden="true" className="mb-1.5 block text-[0.6875rem] font-semibold tracking-[0.08em] text-text-secondary/75 uppercase">{rangeLabel}</span> : null}
+      <input aria-describedby={error ? `${id}-error` : undefined} aria-invalid={Boolean(error)} className="h-12 w-full rounded-control-sm border border-border/70 bg-surface/70 px-3 text-center font-brand text-lg font-bold tabular-nums text-text-primary outline-none transition-[background-color,border-color,box-shadow] hover:border-border-strong focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 focus-visible:outline-primary" id={id} inputMode="numeric" max={max} min={min} onChange={(event) => onChange(event.target.value)} step={1} type="number" value={value} />
       {error ? <p className="mt-1 text-xs text-error" id={`${id}-error`} role="alert">{error}</p> : null}
     </div>
   );
