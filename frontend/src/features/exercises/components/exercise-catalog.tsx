@@ -155,7 +155,7 @@ export function ExerciseCatalog(props: ExerciseCatalogProps) {
           <Spinner className="size-6 text-primary" label="Cargando ejercicios" />
         </div>
       ) : state.status === "error" ? (
-        <div className="mt-8 rounded-card border border-border bg-surface p-5">
+        <div className={props.mode === "select" ? "mt-8" : "mt-8 rounded-card border border-border bg-surface p-5"}>
           <p className="text-sm text-text-primary">No pudimos cargar los ejercicios.</p>
           <Button
             className="mt-5"
@@ -178,18 +178,21 @@ export function ExerciseCatalog(props: ExerciseCatalogProps) {
       )}
 
       {props.mode === "select" && state.status === "ready" ? (
-        <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 border-t border-border bg-surface/95 backdrop-blur-md">
-          <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3 sm:px-0">
+        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border/60 bg-background/95 backdrop-blur-md">
+          <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-0">
             <p aria-live="polite" className="text-sm font-medium text-text-secondary">
               {selectedExercises.length === 1
                 ? "1 seleccionado"
                 : `${selectedExercises.length} seleccionados`}
             </p>
             <Button
+              className="min-h-12 rounded-control-sm disabled:border disabled:border-border/60 disabled:bg-surface/70 disabled:text-text-secondary disabled:opacity-100"
               disabled={selectedExercises.length === 0}
               onClick={() => props.onConfirmSelection(selectedExercises)}
             >
-              {selectedExercises.length === 1
+              {selectedExercises.length === 0
+                ? "Agregar ejercicios"
+                : selectedExercises.length === 1
                 ? "Agregar 1 ejercicio"
                 : `Agregar ${selectedExercises.length} ejercicios`}
             </Button>
@@ -279,7 +282,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
   };
 
   return (
-    <div className="mt-5 min-w-0">
+    <div className={`${mode === "select" ? "mt-4" : "mt-5"} min-w-0`}>
       <label className="sr-only" htmlFor="exercise-search">
         Buscar ejercicio
       </label>
@@ -287,7 +290,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
         <Search aria-hidden="true" className="absolute top-1/2 left-3 -translate-y-1/2 text-text-secondary" size={16} />
         <input
           autoComplete="off"
-          className="h-10.5 w-full rounded-control-sm border border-border/70 bg-surface/70 pr-3 pl-9 text-sm text-text-primary outline-none transition-colors placeholder:text-text-secondary/70 hover:border-border-strong focus:border-primary focus:ring-2 focus:ring-primary/25 focus-visible:outline-primary"
+          className={`w-full rounded-control-sm border pr-3 pl-9 text-sm text-text-primary outline-none transition-colors placeholder:text-text-secondary/70 hover:border-border-strong focus:border-primary focus:ring-2 focus:ring-primary/25 focus-visible:outline-primary ${mode === "select" ? "h-11 border-border/60 bg-surface/50" : "h-10.5 border-border/70 bg-surface/70"}`}
           id="exercise-search"
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Buscar ejercicio..."
@@ -313,7 +316,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                 onClick={() => setGroup(item)}
                 type="button"
               >
-                <span className={`flex h-8 items-center rounded-full border px-3 text-xs font-semibold transition-colors ${group === item ? "border-primary/40 bg-primary/12 text-primary" : "border-border/50 bg-surface/60 text-text-secondary hover:border-border hover:text-text-primary"}`}>
+                <span className={`flex items-center rounded-full px-3 text-xs font-semibold transition-colors ${mode === "select" ? `h-7 ${group === item ? "bg-primary/10 text-primary" : "bg-transparent text-text-secondary hover:bg-surface/50 hover:text-text-primary"}` : `h-8 border ${group === item ? "border-primary/40 bg-primary/12 text-primary" : "border-border/50 bg-surface/60 text-text-secondary hover:border-border hover:text-text-primary"}`}`}>
                   {item ?? "Todos"}
                 </span>
               </button>
@@ -337,13 +340,63 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
             : "No hay ejercicios disponibles."}
         </p>
       ) : (
-        <ul className="mt-2 space-y-1.5">
+        <ul className={mode === "select" ? "mt-2" : "mt-2 space-y-1.5"}>
           {visibleExercises.map((exercise) => {
             const selected = mode === "select" && selectedIds.has(exercise.id);
             const imageSrc = getExerciseImage(exercise.nombre);
+
+            if (mode === "select") {
+              return (
+                <li
+                  className={`flex min-w-0 items-stretch gap-3 border-b border-border/50 transition-colors first:border-t ${selected ? "bg-primary/5" : "bg-transparent"}`}
+                  key={exercise.id}
+                >
+                  {imageSrc ? (
+                    <button
+                      aria-label={`Ver imagen de ${exercise.nombre}`}
+                      className="flex min-h-18 w-14 shrink-0 items-center justify-center py-2 focus-visible:outline-primary"
+                      onClick={() => setPreview({ exercise, imageSrc })}
+                      type="button"
+                    >
+                      <Image
+                        alt=""
+                        className="size-14 rounded-control-sm object-cover"
+                        height={56}
+                        sizes="56px"
+                        src={imageSrc}
+                        width={56}
+                      />
+                    </button>
+                  ) : null}
+                  <button
+                    aria-label={`${selected ? "Quitar" : "Seleccionar"} ${exercise.nombre}`}
+                    aria-pressed={selected}
+                    className="flex min-h-18 min-w-0 flex-1 items-center gap-2 py-2 text-left focus-visible:outline-primary"
+                    onClick={() => toggleSelection(exercise.id)}
+                    type="button"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className={`block break-words font-brand text-base font-bold leading-5 ${selected ? "text-primary" : "text-text-primary"}`}>
+                        {exercise.nombre}
+                      </span>
+                      <span className="mt-1 block text-xs font-medium leading-4 text-info">{exercise.grupoMuscularPrincipal}</span>
+                      <span className="mt-0.5 block break-words text-xs leading-4 text-text-secondary">
+                        {exercise.equipamientos.length
+                          ? exercise.equipamientos.map((item) => item.nombre).join(" · ")
+                          : "Sin equipamiento externo"}
+                      </span>
+                    </span>
+                    <span className={`flex size-11 shrink-0 items-center justify-center ${selected ? "text-primary" : "text-text-secondary"}`}>
+                      {selected ? <Check aria-hidden="true" size={19} strokeWidth={2.25} /> : <Plus aria-hidden="true" size={19} strokeWidth={1.75} />}
+                    </span>
+                  </button>
+                </li>
+              );
+            }
+
             return (
               <li
-                className={`relative isolate flex min-w-0 items-center gap-2.5 rounded-control-sm border px-3 py-2 transition-colors ${selected ? "border-primary/30 bg-primary/5" : "border-border/60 bg-surface/55"}`}
+                className="relative isolate flex min-w-0 items-center gap-2.5 rounded-control-sm border border-border/60 bg-surface/55 px-3 py-2 transition-colors"
                 key={exercise.id}
               >
                 {imageSrc ? (
@@ -373,19 +426,6 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                       : "Sin equipamiento externo"}
                   </p>
                 </div>
-                {mode === "select" ? (
-                  <button
-                    aria-label={`${selected ? "Quitar" : "Seleccionar"} ${exercise.nombre}`}
-                    aria-pressed={selected}
-                    className="relative z-20 flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-primary"
-                    onClick={() => toggleSelection(exercise.id)}
-                    type="button"
-                  >
-                    <span className={`flex size-9 items-center justify-center rounded-full border transition-colors ${selected ? "border-primary/40 bg-primary/12 text-primary" : "border-border bg-surface-elevated/70 text-text-secondary hover:border-primary/40 hover:text-text-primary"}`}>
-                      {selected ? <Check aria-hidden="true" size={17} /> : <Plus aria-hidden="true" size={17} />}
-                    </span>
-                  </button>
-                ) : null}
               </li>
             );
           })}

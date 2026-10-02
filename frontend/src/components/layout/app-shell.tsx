@@ -26,7 +26,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isExercisesPage = pathname === "/exercises" || pathname.startsWith("/exercises/");
   const isRoutinesPage = pathname === "/routines" || pathname.startsWith("/routines/");
   const isTrainingPage = pathname === "/training" || pathname.startsWith("/training/");
+  const isRoutineExercisePickerPage = pathname === "/routines/new/exercises" || /^\/routines\/[^/]+\/edit\/exercises$/.test(pathname);
   const isContextualPage = isExercisesPage || isRoutinesPage || isTrainingPage;
+  const showBottomNav = !isTrainingPage && !isRoutineExercisePickerPage;
   const { invalidateSession } = useTrainingProfileGate();
   const [userState, setUserState] = useState<UserState>({ status: "loading" });
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -172,7 +174,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      {!isTrainingPage ? <nav
+      {showBottomNav ? <nav
         aria-label="Navegación principal"
         className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-10 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-border/40 bg-surface-elevated/90 p-1 shadow-sm backdrop-blur-md"
       >

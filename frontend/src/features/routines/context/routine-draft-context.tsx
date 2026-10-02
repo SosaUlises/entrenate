@@ -20,7 +20,7 @@ type RoutineDraftContextValue = {
   dias: RoutineDraftDay[];
   hydratedRoutineId: string | null;
   hydrateDraft: (routine: RoutineDetail) => void;
-  addDay: () => void;
+  addDay: () => string;
   renameDay: (dayId: string, nombre: string) => void;
   removeDay: (dayId: string) => void;
   setDayExercises: (dayId: string, exercises: Exercise[]) => void;
@@ -68,6 +68,7 @@ export function RoutineDraftProvider({ children }: { children: ReactNode }) {
       const orden = current.length + 1;
       return [...current, { id, nombre: `Día ${orden}`, descripcion: null, orden, exercises: [] }];
     });
+    return id;
   };
 
   const renameDay = (dayId: string, nextNombre: string) => {
