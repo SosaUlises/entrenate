@@ -143,18 +143,20 @@ export function ActiveTrainingContent() {
 
   async function finish() {
     if (view.status !== "ready" || !finishMode || finishPendingRef.current) return;
+    const sessionId = view.session.id;
+    const requestedFinishMode = finishMode;
     finishPendingRef.current = true;
     setFinishPending(true);
     setFinishError(false);
     try {
-      const result = finishMode === "complete"
-        ? await completeTrainingSessionAction(view.session.id)
-        : await cancelTrainingSessionAction(view.session.id);
+      const result = requestedFinishMode === "complete"
+        ? await completeTrainingSessionAction(sessionId)
+        : await cancelTrainingSessionAction(sessionId);
       if (result.status === "success") {
         dialogRef.current?.close();
         setView({ status: "empty" });
         setSessionNotice(null);
-        router.replace("/home");
+        router.replace(requestedFinishMode === "complete" ? `/history/${sessionId}` : "/home");
       } else if (result.status === "unauthenticated") {
         invalidateSession();
         router.replace("/login");

@@ -104,6 +104,7 @@ function ActiveSessionState({ state }: { state: Extract<HomeState, { status: "ac
         <PrimaryLink className="mt-8" href="/training">
           Continuar entrenamiento
         </PrimaryLink>
+        <HistoryLink />
       </section>
     );
   }
@@ -135,6 +136,7 @@ function ActiveSessionState({ state }: { state: Extract<HomeState, { status: "ac
       <PrimaryLink className="mt-8" href="/training">
         Continuar entrenamiento
       </PrimaryLink>
+      <HistoryLink />
     </section>
   );
 }
@@ -167,6 +169,7 @@ function NoRoutinesState() {
       <PrimaryLink className="mt-6 max-w-full" compactOnMobile href="/routines/new">
         Crear mi primera rutina
       </PrimaryLink>
+      <HistoryLink />
     </section>
   );
 }
@@ -191,7 +194,16 @@ function RoutinesAvailableState({ routineCount }: { routineCount: number }) {
       <PrimaryLink className="mt-8" href="/routines">
         Elegir entrenamiento
       </PrimaryLink>
+      <HistoryLink />
     </section>
+  );
+}
+
+function HistoryLink() {
+  return (
+    <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-text-secondary transition-colors hover:text-primary focus-visible:outline-primary" href="/history">
+      Ver historial
+    </Link>
   );
 }
 

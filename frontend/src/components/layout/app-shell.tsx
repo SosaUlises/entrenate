@@ -26,9 +26,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isExercisesPage = pathname === "/exercises" || pathname.startsWith("/exercises/");
   const isRoutinesPage = pathname === "/routines" || pathname.startsWith("/routines/");
   const isTrainingPage = pathname === "/training" || pathname.startsWith("/training/");
+  const isHistoryPage = pathname === "/history" || pathname.startsWith("/history/");
+  const isHistoryDetailPage = /^\/history\/[^/]+$/.test(pathname);
   const isRoutineExercisePickerPage = pathname === "/routines/new/exercises" || /^\/routines\/[^/]+\/edit\/exercises$/.test(pathname);
-  const isContextualPage = isExercisesPage || isRoutinesPage || isTrainingPage;
-  const showBottomNav = !isTrainingPage && !isRoutineExercisePickerPage;
+  const isContextualPage = isExercisesPage || isRoutinesPage || isTrainingPage || isHistoryPage;
+  const showBottomNav = !isTrainingPage && !isRoutineExercisePickerPage && !isHistoryDetailPage;
   const { invalidateSession } = useTrainingProfileGate();
   const [userState, setUserState] = useState<UserState>({ status: "loading" });
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -169,7 +171,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
 
-        <main className={`mx-auto min-w-0 w-full max-w-full ${isTrainingPage ? "pb-[calc(2rem+env(safe-area-inset-bottom))]" : "pb-[calc(7.5rem+env(safe-area-inset-bottom))]"} ${isContextualPage ? "pt-5 sm:pt-8" : "pt-10 sm:pt-12"}`}>
+        <main className={`mx-auto min-w-0 w-full max-w-full ${isTrainingPage || isHistoryDetailPage ? "pb-[calc(2rem+env(safe-area-inset-bottom))]" : "pb-[calc(7.5rem+env(safe-area-inset-bottom))]"} ${isContextualPage ? "pt-5 sm:pt-8" : "pt-10 sm:pt-12"}`}>
           {children}
         </main>
       </div>
