@@ -11,6 +11,25 @@ export type TrainingSessionHistorySummary = {
   cantidadSeriesCompletadas: number;
 };
 
+export type TrainingActivityDay = {
+  date: string;
+  sessionCount: number;
+};
+
+export type TrainingActivity = {
+  from: string;
+  to: string;
+  totalSessions: number;
+  activeDays: number;
+  days: TrainingActivityDay[];
+};
+
+export type TrainingActivityRequest = {
+  from: string;
+  to: string;
+  timeZone: string;
+};
+
 export const TRAINING_SESSION_STATUS = {
   inProgress: 1,
   completed: 2,

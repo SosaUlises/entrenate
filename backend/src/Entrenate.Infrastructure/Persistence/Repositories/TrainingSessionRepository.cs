@@ -85,6 +85,25 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyCollection<DateTime>>
+            GetCompletedSessionStartTimesByUserIdAsync(
+                string userId,
+                DateTime fromUtc,
+                DateTime toUtcExclusive,
+                CancellationToken cancellationToken = default)
+        {
+            return await _context.SesionesEntrenamiento
+                .AsNoTracking()
+                .Where(x =>
+                    x.UsuarioId == userId &&
+                    x.Estado == EstadoSesionEntrenamiento.Completada &&
+                    x.HoraInicio >= fromUtc &&
+                    x.HoraInicio < toUtcExclusive)
+                .OrderBy(x => x.HoraInicio)
+                .Select(x => x.HoraInicio)
+                .ToListAsync(cancellationToken);
+        }
+
         public Task<SesionEntrenamiento?> GetByIdAndUserIdAsNoTrackingAsync(
             Guid sessionId,
             string userId,

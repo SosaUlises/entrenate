@@ -24,6 +24,13 @@ namespace Entrenate.Application.Common.Interfaces
                 string userId,
                 CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyCollection<DateTime>>
+            GetCompletedSessionStartTimesByUserIdAsync(
+                string userId,
+                DateTime fromUtc,
+                DateTime toUtcExclusive,
+                CancellationToken cancellationToken = default);
+
         Task<SesionEntrenamiento?> GetByIdAndUserIdAsNoTrackingAsync(
             Guid sessionId,
             string userId,

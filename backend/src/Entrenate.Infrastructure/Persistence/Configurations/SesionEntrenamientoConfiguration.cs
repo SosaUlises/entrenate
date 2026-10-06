@@ -49,6 +49,13 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 x.UsuarioId,
                 x.Fecha
             });
+
+            builder.HasIndex(x => new
+            {
+                x.UsuarioId,
+                x.Estado,
+                x.HoraInicio
+            });
         }
     }
 }

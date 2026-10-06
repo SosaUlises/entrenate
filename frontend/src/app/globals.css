@@ -93,3 +93,21 @@ a {
   outline: 2px solid var(--primary);
   outline-offset: 3px;
 }
+
+.activity-scrollbar {
+  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+.activity-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.activity-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.activity-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
