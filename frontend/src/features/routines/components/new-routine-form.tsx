@@ -15,6 +15,7 @@ import { updateRoutineAction } from "../actions/update-routine.action";
 import { mapRoutineDraftToRequest } from "../map-routine-draft";
 import { RoutineExerciseEditor } from "./routine-exercise-editor";
 import { useRoutineDraft, type RoutineDraftDay } from "../context/routine-draft-context";
+import { useRoutineDraftPersistence } from "../context/routine-draft-persistence";
 
 export function NewRoutineForm() {
   return <RoutineForm />;
@@ -23,6 +24,7 @@ export function NewRoutineForm() {
 export function RoutineForm({ routineId }: { routineId?: string }) {
   const router = useRouter();
   const { invalidateSession } = useTrainingProfileGate();
+  const { clearPersistedDraft } = useRoutineDraftPersistence();
   const { nombre, setNombre, descripcion, dias, addDay, renameDay, removeDay, removeDayExercise, updateDayExercise, resetDraft } = useRoutineDraft();
   const [editing, setEditing] = useState<{ dayId: string; exerciseId: string } | null>(null);
   const [expandedDayId, setExpandedDayId] = useState<string | null>(() => routineId ? null : (dias[0]?.id ?? null));
@@ -73,6 +75,7 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
         : await createRoutineAction(request);
       if (result.status === "created" || result.status === "updated") {
         succeeded = true;
+        if (!routineId) clearPersistedDraft();
         resetDraft();
         router.replace(routineId ? `/routines/${routineId}` : "/routines");
         return;

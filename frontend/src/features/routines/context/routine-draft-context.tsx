@@ -13,6 +13,12 @@ export type RoutineDraftDay = {
   exercises: RoutineDraftExercise[];
 };
 
+export type RoutineDraft = {
+  nombre: string;
+  descripcion: string | null;
+  dias: RoutineDraftDay[];
+};
+
 type RoutineDraftContextValue = {
   nombre: string;
   setNombre: (nombre: string) => void;
@@ -20,6 +26,7 @@ type RoutineDraftContextValue = {
   dias: RoutineDraftDay[];
   hydratedRoutineId: string | null;
   hydrateDraft: (routine: RoutineDetail) => void;
+  replaceDraft: (draft: RoutineDraft) => void;
   addDay: () => string;
   renameDay: (dayId: string, nombre: string) => void;
   removeDay: (dayId: string) => void;
@@ -31,13 +38,27 @@ type RoutineDraftContextValue = {
 
 const RoutineDraftContext = createContext<RoutineDraftContextValue | null>(null);
 
+export function createInitialRoutineDraft(): RoutineDraft {
+  return {
+    nombre: "",
+    descripcion: null,
+    dias: [{ id: "day-1", nombre: "Día 1", descripcion: null, orden: 1, exercises: [] }],
+  };
+}
+
 export function RoutineDraftProvider({ children }: { children: ReactNode }) {
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState<string | null>(null);
+  const initialDraft = createInitialRoutineDraft();
+  const [nombre, setNombre] = useState(initialDraft.nombre);
+  const [descripcion, setDescripcion] = useState<string | null>(initialDraft.descripcion);
   const [hydratedRoutineId, setHydratedRoutineId] = useState<string | null>(null);
-  const [dias, setDias] = useState<RoutineDraftDay[]>([
-    { id: "day-1", nombre: "Día 1", descripcion: null, orden: 1, exercises: [] },
-  ]);
+  const [dias, setDias] = useState<RoutineDraftDay[]>(initialDraft.dias);
+
+  const replaceDraft = useCallback((draft: RoutineDraft) => {
+    setNombre(draft.nombre);
+    setDescripcion(draft.descripcion);
+    setDias(draft.dias);
+    setHydratedRoutineId(null);
+  }, []);
 
   const hydrateDraft = useCallback((routine: RoutineDetail) => {
     setNombre(routine.nombre);
@@ -125,15 +146,16 @@ export function RoutineDraftProvider({ children }: { children: ReactNode }) {
   };
 
   const resetDraft = () => {
-    setNombre("");
-    setDescripcion(null);
+    const initial = createInitialRoutineDraft();
+    setNombre(initial.nombre);
+    setDescripcion(initial.descripcion);
     setHydratedRoutineId(null);
-    setDias([{ id: "day-1", nombre: "Día 1", descripcion: null, orden: 1, exercises: [] }]);
+    setDias(initial.dias);
   };
 
   return (
     <RoutineDraftContext.Provider value={{
-      nombre, setNombre, descripcion, dias, hydratedRoutineId, hydrateDraft,
+      nombre, setNombre, descripcion, dias, hydratedRoutineId, hydrateDraft, replaceDraft,
       addDay, renameDay, removeDay, setDayExercises, removeDayExercise, updateDayExercise, resetDraft,
     }}>
       {children}

@@ -12,12 +12,14 @@ import {
   type GetCurrentUserActionResult,
 } from "@/features/auth/actions/get-current-user.action";
 import { logoutAction } from "@/features/auth/actions/logout.action";
+import { AuthenticatedUserProvider } from "@/features/auth/context/authenticated-user-context";
+import type { CurrentUser } from "@/features/auth/types/auth.types";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 
 type UserState =
   | { status: "loading" }
   | { status: "error" }
-  | { status: "ready"; nombre: string };
+  | { status: "ready"; user: CurrentUser };
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -48,7 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     setUserState(
       result.status === "ready"
-        ? { status: "ready", nombre: result.user.nombre }
+        ? { status: "ready", user: result.user }
         : { status: "error" },
     );
   }, [invalidateSession, router]);
@@ -129,10 +131,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
 
-  const nombre = userState.nombre.trim();
+  const nombre = userState.user.nombre.trim();
   const initial = nombre.charAt(0).toLocaleUpperCase("es-AR") || "?";
 
   return (
+    <AuthenticatedUserProvider user={userState.user}>
     <div className={`min-h-dvh w-full bg-background ${isTrainingPage ? "overflow-x-clip" : ""}`}>
       <div className="mx-auto min-w-0 w-full max-w-2xl px-4 sm:px-12">
         {!isContextualPage ? (
@@ -234,5 +237,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </nav> : null}
     </div>
+    </AuthenticatedUserProvider>
   );
 }

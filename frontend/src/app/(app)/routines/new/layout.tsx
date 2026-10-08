@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { RoutineDraftProvider } from "@/features/routines/context/routine-draft-context";
+import { CreateRoutineDraftProvider } from "@/features/routines/context/routine-draft-persistence";
 
 export default function NewRoutineLayout({ children }: { children: ReactNode }) {
-  return <RoutineDraftProvider>{children}</RoutineDraftProvider>;
+  return <CreateRoutineDraftProvider>{children}</CreateRoutineDraftProvider>;
 }
