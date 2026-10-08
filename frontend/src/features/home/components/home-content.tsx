@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
+import { isStaleActiveSession, formatActiveSessionStart } from "@/features/training/active-session-time";
+import { ActiveSessionRecoveryDialog } from "@/features/training/components/active-session-recovery-dialog";
 import { getHomeStateAction, type HomeState } from "../actions/get-home-state.action";
 
 type HomeViewState = { status: "loading" } | HomeState;
@@ -78,7 +80,19 @@ export function HomeContent() {
   }
 
   if (state.status === "active-session") {
-    return <ActiveSessionState state={state} />;
+    return (
+      <ActiveSessionState
+        onResolved={() => {
+          setState({ status: "loading" });
+          setRequestKey((key) => key + 1);
+        }}
+        onUnauthenticated={() => {
+          invalidateSession();
+          router.replace("/login");
+        }}
+        state={state}
+      />
+    );
   }
 
   if (state.status === "no-routines") {
@@ -88,7 +102,55 @@ export function HomeContent() {
   return <RoutinesAvailableState routineCount={state.routineCount} />;
 }
 
-function ActiveSessionState({ state }: { state: Extract<HomeState, { status: "active-session" }> }) {
+function ActiveSessionState({
+  onResolved,
+  onUnauthenticated,
+  state,
+}: {
+  onResolved: () => void;
+  onUnauthenticated: () => void;
+  state: Extract<HomeState, { status: "active-session" }>;
+}) {
+  const [confirmingCancellation, setConfirmingCancellation] = useState(false);
+
+  if (isStaleActiveSession(state.horaInicio)) {
+    return (
+      <section aria-labelledby="active-training-title" className="max-w-lg py-2">
+        <p className="text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.12em] text-info">
+          ENTRENAMIENTO PENDIENTE
+        </p>
+        <h2 className="mt-5 break-words font-brand text-3xl font-bold leading-[1.08] text-text-primary sm:text-4xl" id="active-training-title">
+          {state.exerciseName ?? "Tu entrenamiento"}
+        </h2>
+        <p className="mt-3 text-[0.9375rem] font-medium leading-6 text-text-primary">
+          {formatActiveSessionStart(state.horaInicio)}
+        </p>
+        <p className="mt-1 text-sm leading-6 text-text-secondary">
+          {state.registeredSetCount} {state.registeredSetCount === 1 ? "serie registrada" : "series registradas"}
+        </p>
+        <PrimaryLink className="mt-7" href="/training">
+          Continuar entrenamiento
+        </PrimaryLink>
+        <button
+          className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-text-secondary transition-colors hover:text-error focus-visible:outline-primary"
+          onClick={() => setConfirmingCancellation(true)}
+          type="button"
+        >
+          Cancelar sesión
+        </button>
+        {confirmingCancellation ? (
+          <ActiveSessionRecoveryDialog
+            initialStep="cancel"
+            onClose={() => setConfirmingCancellation(false)}
+            onResolved={onResolved}
+            onUnauthenticated={onUnauthenticated}
+            session={{ id: state.sessionId, horaInicio: state.horaInicio }}
+          />
+        ) : null}
+      </section>
+    );
+  }
+
   if (state.readyToFinish) {
     return (
       <section aria-labelledby="active-training-title" className="max-w-lg py-2">

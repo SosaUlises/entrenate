@@ -273,10 +273,23 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                 cancellationToken);
         }
 
-        public Task SaveChangesAsync(
+        public async Task SaveChangesAsync(
             CancellationToken cancellationToken = default)
         {
-            return _context.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException exception) when (
+                exception.InnerException is Npgsql.PostgresException
+                {
+                    SqlState: Npgsql.PostgresErrorCodes.UniqueViolation,
+                    ConstraintName: "IX_SesionesEntrenamiento_UsuarioId_Active"
+                })
+            {
+                throw new Entrenate.Application.Common.Exceptions.ConflictException(
+                    "Ya existe una sesión de entrenamiento en curso.");
+            }
         }
     }
 }

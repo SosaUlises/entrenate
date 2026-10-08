@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { getExerciseImage } from "@/features/exercises/components/exercise-catalog";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
-import { startTrainingSessionAction } from "@/features/training/actions/training.actions";
+import { getActiveTrainingSessionAction, startTrainingSessionAction } from "@/features/training/actions/training.actions";
+import { ActiveSessionRecoveryDialog } from "@/features/training/components/active-session-recovery-dialog";
+import type { TrainingSession } from "@/features/training/types/training.types";
 import { getRoutineDetailAction, type GetRoutineDetailActionResult } from "../actions/get-routine-detail.action";
 
 type DetailState = { status: "loading" } | GetRoutineDetailActionResult;
@@ -21,26 +23,59 @@ export function RoutineDetailContent({ id }: { id: string }) {
   const [requestKey, setRequestKey] = useState(0);
   const [expandedDayId, setExpandedDayId] = useState<string | null>(null);
   const [startingDayId, setStartingDayId] = useState<string | null>(null);
-  const [startError, setStartError] = useState<{ dayId: string; conflict: boolean } | null>(null);
+  const [startError, setStartError] = useState<{ dayId: string; kind: "verification" | "start" } | null>(null);
+  const [recoverySession, setRecoverySession] = useState<TrainingSession | null>(null);
+  const [startNotice, setStartNotice] = useState<string | null>(null);
+
+  function handleUnauthenticated() {
+    invalidateSession();
+    router.replace("/login");
+  }
+
+  async function recoverActiveSession(dayId: string): Promise<"none" | "blocked" | "unauthenticated" | "error"> {
+    const activeResult = await getActiveTrainingSessionAction();
+    if (activeResult.status === "success") {
+      setRecoverySession(activeResult.data);
+      return "blocked";
+    }
+    if (activeResult.status === "unauthenticated") {
+      handleUnauthenticated();
+      return "unauthenticated";
+    }
+    if (activeResult.status === "not-found") return "none";
+
+    setStartError({ dayId, kind: "verification" });
+    return "error";
+  }
 
   async function handleStart(dayId: string) {
     if (startingDayId) return;
     setStartingDayId(dayId);
     setStartError(null);
+    setStartNotice(null);
     try {
+      const activeState = await recoverActiveSession(dayId);
+      if (activeState !== "none") return;
+
       const result = await startTrainingSessionAction(dayId);
       if (result.status === "success") {
         router.push("/training");
         return;
       }
       if (result.status === "unauthenticated") {
-        invalidateSession();
-        router.replace("/login");
+        handleUnauthenticated();
         return;
       }
-      setStartError({ dayId, conflict: result.status === "conflict" });
+      if (result.status === "conflict") {
+        const recoveryState = await recoverActiveSession(dayId);
+        if (recoveryState === "none") {
+          setStartError({ dayId, kind: "start" });
+        }
+        return;
+      }
+      setStartError({ dayId, kind: "start" });
     } catch {
-      setStartError({ dayId, conflict: false });
+      setStartError({ dayId, kind: "verification" });
     } finally {
       setStartingDayId(null);
     }
@@ -95,6 +130,7 @@ export function RoutineDetailContent({ id }: { id: string }) {
           {routine.dias.length} {routine.dias.length === 1 ? "día" : "días"} · {exerciseCount} {exerciseCount === 1 ? "ejercicio" : "ejercicios"}
         </p>
       ) : null}
+      {startNotice ? <p className="mt-4 text-sm text-success" role="status">{startNotice}</p> : null}
 
       {state.status === "loading" || state.status === "unauthenticated" ? (
         <div className="flex min-h-48 items-center justify-center">
@@ -179,8 +215,11 @@ export function RoutineDetailContent({ id }: { id: string }) {
                     ) : null}
                     {startError?.dayId === day.id ? (
                       <div className="mt-3 text-sm" role="alert">
-                        <p className="text-text-secondary">{startError.conflict ? "Ya tenés un entrenamiento en curso." : "No pudimos iniciar el entrenamiento. Intentá nuevamente."}</p>
-                        {startError.conflict ? <Link className="mt-2 inline-flex min-h-11 items-center font-semibold text-primary" href="/training">Continuar entrenamiento</Link> : null}
+                        <p className="text-text-secondary">
+                          {startError.kind === "verification"
+                            ? "No pudimos verificar si ya tenés un entrenamiento en curso. Intentá nuevamente."
+                            : "No pudimos iniciar el entrenamiento. Intentá nuevamente."}
+                        </p>
                       </div>
                     ) : null}
                   </div>
@@ -190,6 +229,17 @@ export function RoutineDetailContent({ id }: { id: string }) {
           </div>
         </>
       )}
+      {recoverySession ? (
+        <ActiveSessionRecoveryDialog
+          onClose={() => setRecoverySession(null)}
+          onResolved={() => {
+            setRecoverySession(null);
+            setStartNotice("Entrenamiento cancelado. Ya podés iniciar esta sesión.");
+          }}
+          onUnauthenticated={handleUnauthenticated}
+          session={recoverySession}
+        />
+      ) : null}
     </section>
   );
 }

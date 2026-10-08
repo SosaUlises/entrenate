@@ -10,14 +10,21 @@ export type HomeState =
   | {
       status: "active-session";
       readyToFinish: true;
+      sessionId: string;
+      horaInicio: string;
       exerciseCount: number;
+      exerciseName: string | null;
+      registeredSetCount: number;
     }
   | {
       status: "active-session";
       readyToFinish: false;
+      sessionId: string;
+      horaInicio: string;
       exerciseCount: number;
       exerciseName: string;
       exercisePosition: number;
+      registeredSetCount: number;
       setNumber: number;
       targetSetCount: number;
     }
@@ -36,21 +43,33 @@ export async function getHomeStateAction(): Promise<HomeState> {
   try {
     const session = await getActiveTrainingSession(token);
     const target = getFirstMissingTarget(session);
+    const orderedExercises = [...session.ejercicios].sort((first, second) => first.orden - second.orden);
+    const registeredSetCount = session.ejercicios.reduce(
+      (total, exercise) => total + exercise.series.filter((set) => set.completada).length,
+      0,
+    );
 
     if (!target) {
       return {
         status: "active-session",
         readyToFinish: true,
+        sessionId: session.id,
+        horaInicio: session.horaInicio,
         exerciseCount: session.ejercicios.length,
+        exerciseName: orderedExercises[0]?.nombre ?? null,
+        registeredSetCount,
       };
     }
 
     return {
       status: "active-session",
       readyToFinish: false,
+      sessionId: session.id,
+      horaInicio: session.horaInicio,
       exerciseCount: session.ejercicios.length,
       exerciseName: target.exercise.nombre,
       exercisePosition: target.exercisePosition,
+      registeredSetCount,
       setNumber: target.setNumber,
       targetSetCount: target.exercise.seriesObjetivo,
     };
