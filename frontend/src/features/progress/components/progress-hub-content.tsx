@@ -1,13 +1,15 @@
 "use client";
 
 import { ArrowDown, ArrowRight, ArrowUp, ChevronRight, Search, X } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { getExerciseImage } from "@/features/exercises/components/exercise-catalog";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { getExerciseProgressHubAction } from "../actions/get-exercise-progress-hub.action";
-import { formatCompactProgressDate, formatProgressValue } from "../progress-formatters";
+import { formatCompactProgressDate, formatProgressDate, formatProgressValue } from "../progress-formatters";
 import type { ExerciseProgressBestSet, ExerciseProgressHub, ExerciseProgressHubItem } from "../types/progress.types";
 
 type HubState =
@@ -84,7 +86,7 @@ export function ProgressHubContent() {
         <EmptyHub />
       ) : (
         <>
-          <div className="relative mt-6">
+          <div className="relative mt-5">
             <Search aria-hidden="true" className="absolute top-1/2 left-3.5 -translate-y-1/2 text-text-secondary" size={19} />
             <label className="sr-only" htmlFor="progress-search">Buscar ejercicio</label>
             <input
@@ -108,7 +110,7 @@ export function ProgressHubContent() {
             ) : null}
           </div>
 
-          <div aria-label="Filtrar por grupo muscular" className="mt-3 flex min-w-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group">
+          <div aria-label="Filtrar por grupo muscular" className="mt-2 flex min-w-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group">
             {[null, ...muscleGroups].map((group) => {
               const selected = muscleGroup === group;
               return (
@@ -125,10 +127,10 @@ export function ProgressHubContent() {
             })}
           </div>
 
-          <div className="mt-7">
+          <div className="mt-5">
             <h2 className="text-sm font-semibold uppercase tracking-[0.09em] text-text-secondary">Tu progreso</h2>
-            <p className="mt-2 max-w-md text-sm leading-5 text-text-secondary">
-              La flecha compara tu e1RM estimado con el primer registro.
+            <p className="mt-1.5 max-w-md text-sm leading-5 text-text-secondary">
+              La tendencia compara tu 1RM estimado con tu primer registro.
             </p>
             {visibleExercises.length === 0 ? (
               <div className="mt-6">
@@ -144,7 +146,7 @@ export function ProgressHubContent() {
                 ) : null}
               </div>
             ) : (
-              <div className="mt-3 divide-y divide-border/60 border-y border-border/60">
+              <div className="mt-2 divide-y divide-border/60 border-y border-border/60">
                 {visibleExercises.map((exercise) => <ProgressRow exercise={exercise} key={exercise.ejercicioId} />)}
               </div>
             )}
@@ -157,47 +159,76 @@ export function ProgressHubContent() {
 
 function ProgressRow({ exercise }: { exercise: ExerciseProgressHubItem }) {
   const displaySet = exercise.mejorSerieUltimaSesion ?? exercise.ultimaSerieRegistrada;
+  const imageSrc = getExerciseImage(exercise.nombre);
 
   return (
     <Link
-      className="group flex min-h-24 min-w-0 items-center gap-3 py-4 active:bg-surface/35 focus-visible:outline-primary"
+      aria-label={formatProgressRowLabel(exercise, displaySet)}
+      className="group flex min-h-24 min-w-0 items-center gap-3 py-3 transition-colors hover:bg-surface/25 active:bg-surface/40 motion-reduce:transition-none focus-visible:outline-primary"
       href={`/exercises/${exercise.ejercicioId}/progress`}
     >
-      <span className="min-w-0 flex-1">
-        <span className="block break-words font-brand text-lg font-bold leading-6 text-text-primary transition-colors group-hover:text-primary">
+      {imageSrc ? (
+        <span aria-hidden="true" className="flex size-16 shrink-0 items-center justify-center rounded-control-sm bg-surface/45 p-1">
+          <Image alt="" className="size-full object-contain" height={64} sizes="64px" src={imageSrc} width={64} />
+        </span>
+      ) : null}
+      <span aria-hidden="true" className="min-w-0 flex-1 self-stretch py-0.5">
+        <span className="block break-words font-brand text-[1.0625rem] font-bold leading-[1.35] text-text-primary transition-colors group-hover:text-primary">
           {exercise.nombre}
         </span>
-        <span className="mt-2 flex min-w-0 items-center justify-between gap-3">
-          {displaySet ? (
-            <span className="min-w-0 break-words font-brand text-lg font-bold leading-6 tabular-nums text-text-primary">
-              {formatSet(displaySet)}
-            </span>
-          ) : <span />}
-          {exercise.cambioPorcentual !== null ? <ProgressChange value={exercise.cambioPorcentual} /> : null}
-        </span>
-        <span className="mt-1.5 block text-sm font-medium leading-5 text-text-secondary">
+        {displaySet ? (
+          <span className="mt-1 block break-words font-brand text-lg font-bold leading-6 tabular-nums text-text-primary">
+            {formatSet(displaySet)}
+          </span>
+        ) : null}
+        <span className="mt-1 block text-sm font-medium leading-5 text-text-secondary">
           Último · {formatCompactProgressDate(exercise.ultimoEntrenamiento)}
         </span>
       </span>
-      <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary transition-colors group-hover:text-primary" size={22} strokeWidth={2} />
+      <span aria-hidden="true" className="flex w-18 shrink-0 self-stretch flex-col items-end justify-between py-0.5">
+        <ProgressChange value={exercise.cambioPorcentual} />
+        <MiniTrend points={exercise.recentTrend} />
+        <ChevronRight className="text-text-secondary transition-colors group-hover:text-primary" size={21} strokeWidth={2} />
+      </span>
     </Link>
   );
 }
 
-function ProgressChange({ value }: { value: number }) {
+function ProgressChange({ value }: { value: number | null }) {
+  if (value === null) {
+    return <span className="font-brand text-base font-bold text-text-secondary" title="Sin comparación disponible">—</span>;
+  }
+
   const formattedValue = formatProgressValue(Math.abs(value));
-  const label = value > 0
-    ? `Cambio de e1RM estimado desde el primer registro: más ${formattedValue} por ciento.`
-    : value < 0
-      ? `Cambio de e1RM estimado desde el primer registro: menos ${formattedValue} por ciento.`
-      : "Cambio de e1RM estimado desde el primer registro: sin cambios.";
   const Icon = value > 0 ? ArrowUp : value < 0 ? ArrowDown : ArrowRight;
 
   return (
-    <span aria-label={label} className="flex shrink-0 items-center gap-1 font-brand text-base font-bold tabular-nums text-info">
+    <span className="flex shrink-0 items-center gap-1 font-brand text-base font-bold tabular-nums text-info">
       <Icon aria-hidden="true" size={17} strokeWidth={2.25} />
       {formattedValue}%
     </span>
+  );
+}
+
+function MiniTrend({ points }: { points: ExerciseProgressHubItem["recentTrend"] }) {
+  if (!points || points.length < 2) return <span className="h-5" />;
+
+  const width = 64;
+  const height = 20;
+  const values = points.map((point) => point.value);
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+  const range = maximum - minimum;
+  const coordinates = values.map((value, index) => {
+    const x = points.length === 1 ? width / 2 : (index / (points.length - 1)) * width;
+    const y = range === 0 ? height / 2 : height - ((value - minimum) / range) * (height - 4) - 2;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <svg className="h-5 w-16 text-info/75" fill="none" viewBox={`0 0 ${width} ${height}`}>
+      <polyline points={coordinates} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+    </svg>
   );
 }
 
@@ -230,10 +261,17 @@ function HubSkeleton() {
       <div className="mt-3 h-3 w-72 max-w-full rounded bg-surface-elevated" />
       <div className="mt-4 divide-y divide-border/50 border-y border-border/50">
         {[0, 1, 2].map((item) => (
-          <div className="py-4" key={item}>
-            <div className="h-5 w-2/3 rounded bg-surface-elevated" />
-            <div className="mt-3 h-5 w-36 rounded bg-surface-elevated" />
-            <div className="mt-2 h-4 w-24 rounded bg-surface-elevated" />
+          <div className="flex min-h-24 items-center gap-3 py-3" key={item}>
+            <div className="size-16 shrink-0 rounded-control-sm bg-surface-elevated" />
+            <div className="min-w-0 flex-1">
+              <div className="h-5 w-4/5 rounded bg-surface-elevated" />
+              <div className="mt-2 h-5 w-32 rounded bg-surface-elevated" />
+              <div className="mt-2 h-4 w-24 rounded bg-surface-elevated" />
+            </div>
+            <div className="w-16 shrink-0">
+              <div className="ml-auto h-4 w-14 rounded bg-surface-elevated" />
+              <div className="mt-3 h-5 w-16 rounded bg-surface-elevated" />
+            </div>
           </div>
         ))}
       </div>
@@ -245,6 +283,26 @@ function formatSet(set: ExerciseProgressBestSet): string {
   return set.peso > 0
     ? `${formatProgressValue(set.peso)} kg × ${set.repeticiones}`
     : `${set.repeticiones} ${set.repeticiones === 1 ? "rep" : "reps"}`;
+}
+
+function formatProgressRowLabel(
+  exercise: ExerciseProgressHubItem,
+  displaySet: ExerciseProgressBestSet | null,
+): string {
+  const performance = displaySet
+    ? displaySet.peso > 0
+      ? `${formatProgressValue(displaySet.peso)} kilos por ${displaySet.repeticiones} repeticiones`
+      : `${displaySet.repeticiones} repeticiones`
+    : "sin rendimiento disponible";
+  const change = exercise.cambioPorcentual === null
+    ? "sin comparación de tendencia"
+    : exercise.cambioPorcentual > 0
+      ? `más ${formatProgressValue(Math.abs(exercise.cambioPorcentual))} por ciento`
+      : exercise.cambioPorcentual < 0
+        ? `menos ${formatProgressValue(Math.abs(exercise.cambioPorcentual))} por ciento`
+        : "sin cambios";
+
+  return `${exercise.nombre}. Último rendimiento: ${performance}. Cambio de 1RM estimado desde el primer registro: ${change}. Último entrenamiento: ${formatProgressDate(exercise.ultimoEntrenamiento)}.`;
 }
 
 function normalize(value: string): string {

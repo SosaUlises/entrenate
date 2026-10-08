@@ -12,5 +12,10 @@ namespace Entrenate.Application.Progress.DTOs
         BestTrainingSetDto? MejorSerieUltimaSesion,
         BestTrainingSetDto? UltimaSerieRegistrada,
         decimal? E1RmActual,
-        decimal? CambioPorcentual);
+        decimal? CambioPorcentual,
+        IReadOnlyCollection<ExerciseProgressHubTrendPointDto>? RecentTrend);
+
+    public record ExerciseProgressHubTrendPointDto(
+        DateTime HoraInicio,
+        decimal Value);
 }

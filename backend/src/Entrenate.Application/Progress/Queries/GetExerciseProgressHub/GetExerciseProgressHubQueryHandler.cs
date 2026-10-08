@@ -89,6 +89,13 @@ namespace Entrenate.Application.Progress.Queries.GetExerciseProgressHub
                 .ThenByDescending(x => x.NumeroSerie)
                 .ThenByDescending(x => x.Id)
                 .FirstOrDefault();
+            var recentTrend = entries
+                .Where(x => x.E1RmEstimado is > 0)
+                .TakeLast(7)
+                .Select(x => new ExerciseProgressHubTrendPointDto(
+                    x.HoraInicio,
+                    x.E1RmEstimado!.Value))
+                .ToList();
 
             return new ExerciseProgressHubItemDto(
                 exerciseId,
@@ -105,7 +112,8 @@ namespace Entrenate.Application.Progress.Queries.GetExerciseProgressHub
                         lastRegisteredSet.Repeticiones,
                         lastRegisteredSet.Rir),
                 summary.UltimoE1Rm,
-                summary.CambioPorcentual);
+                summary.CambioPorcentual,
+                recentTrend.Count >= 2 ? recentTrend : null);
         }
     }
 }

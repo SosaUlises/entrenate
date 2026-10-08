@@ -42,6 +42,10 @@ export type ExerciseProgressHubItem = {
   ultimaSerieRegistrada: ExerciseProgressBestSet | null;
   e1RmActual: number | null;
   cambioPorcentual: number | null;
+  recentTrend: Array<{
+    horaInicio: string;
+    value: number;
+  }> | null;
 };
 
 export type ExerciseProgressHub = {
