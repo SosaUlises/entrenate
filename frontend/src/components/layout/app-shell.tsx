@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ClipboardList, Dumbbell, Home, LogOut, TrendingUp } from "lucide-react";
+import { ClipboardList, Dumbbell, Home, LogOut, TrendingUp, UserRound } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -30,8 +30,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isTrainingPage = pathname === "/training" || pathname.startsWith("/training/");
   const isHistoryPage = pathname === "/history" || pathname.startsWith("/history/");
   const isHistoryDetailPage = /^\/history\/[^/]+$/.test(pathname);
+  const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
   const isRoutineExercisePickerPage = pathname === "/routines/new/exercises" || /^\/routines\/[^/]+\/edit\/exercises$/.test(pathname);
-  const isContextualPage = isExercisesPage || isRoutinesPage || isTrainingPage || isHistoryPage || isProgressPage;
+  const isContextualPage = isExercisesPage || isRoutinesPage || isTrainingPage || isHistoryPage || isProgressPage || isProfilePage;
   const showBottomNav = !isTrainingPage && !isRoutineExercisePickerPage && !isHistoryDetailPage;
   const { invalidateSession } = useTrainingProfileGate();
   const [userState, setUserState] = useState<UserState>({ status: "loading" });
@@ -153,6 +154,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               {initial}
             </summary>
             <div className="absolute right-0 z-20 mt-2 w-48 rounded-control border border-border bg-surface-elevated p-1 shadow-elevated">
+              <Link
+                className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary hover:bg-surface focus-visible:outline-primary"
+                href="/profile"
+              >
+                <UserRound aria-hidden="true" size={18} />
+                Perfil
+              </Link>
               <button
                 className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary hover:bg-surface"
                 disabled={isSigningOut}

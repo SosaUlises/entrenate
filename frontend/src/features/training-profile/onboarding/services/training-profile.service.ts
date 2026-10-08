@@ -3,6 +3,7 @@ import type {
   CreateTrainingProfileRequest,
   CreateTrainingProfileResponse,
   TrainingProfileResponse,
+  UpdateTrainingProfileRequest,
 } from "../types/training-profile.types";
 
 export function getMyTrainingProfile(
@@ -28,4 +29,16 @@ export function createTrainingProfile(
       method: "POST",
     },
   );
+}
+
+export function updateTrainingProfile(
+  authToken: string,
+  request: UpdateTrainingProfileRequest,
+): Promise<void> {
+  return apiRequest<void, UpdateTrainingProfileRequest>("/api/training-profile", {
+    authToken,
+    body: request,
+    cache: "no-store",
+    method: "PUT",
+  });
 }

@@ -9,28 +9,14 @@ import { cn } from "@/lib/class-names";
 import { getEquipmentAction } from "../actions/get-equipment.action";
 import { useOnboarding } from "../context/onboarding-context";
 import { getEquipmentImagePath } from "../equipment-images";
+import { equipmentCategoryDefinitions } from "../../shared/training-profile-options";
 import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
 import {
-  CategoriaEquipamiento,
-  type CategoriaEquipamiento as CategoriaEquipamientoValue,
   type Equipment,
 } from "../types/equipment.types";
 import { OnboardingStepHeader } from "./onboarding-step-header";
 
 type LoadState = "error" | "loading" | "success";
-
-const categoryDefinitions: ReadonlyArray<{
-  label: string;
-  value: CategoriaEquipamientoValue;
-}> = [
-  { label: "Pesas libres", value: CategoriaEquipamiento.PesasLibres },
-  { label: "Barras", value: CategoriaEquipamiento.Barras },
-  { label: "Bancos y racks", value: CategoriaEquipamiento.BancosYRacks },
-  { label: "Poleas", value: CategoriaEquipamiento.Poleas },
-  { label: "Máquinas", value: CategoriaEquipamiento.Maquinas },
-  { label: "Calistenia", value: CategoriaEquipamiento.Calistenia },
-  { label: "Otros", value: CategoriaEquipamiento.Otros },
-];
 
 export function EquipmentStep() {
   const { draft, setEquipamientoIds } = useOnboarding();
@@ -152,7 +138,7 @@ export function EquipmentStep() {
 
         {loadState === "success" && equipment.length > 0 ? (
           <div className="space-y-6">
-            {categoryDefinitions.map((category) => {
+            {equipmentCategoryDefinitions.map((category) => {
               const categoryEquipment = equipment.filter(
                 (item) => item.categoria === category.value,
               );

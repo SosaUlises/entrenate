@@ -64,8 +64,24 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
+export const changePasswordSchema = z
+  .object({
+    confirmPassword: z.string().min(1, "Confirmá tu nueva contraseña."),
+    currentPassword: z.string().min(1, "La contraseña actual es obligatoria."),
+    newPassword: backendPasswordSchema,
+  })
+  .refine((values) => values.newPassword !== values.currentPassword, {
+    message: "La nueva contraseña debe ser diferente de la contraseña actual.",
+    path: ["newPassword"],
+  })
+  .refine((values) => values.newPassword === values.confirmPassword, {
+    message: "Las contraseñas no coinciden.",
+    path: ["confirmPassword"],
+  });
+
 export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type ResetPasswordFormValues = z.infer<typeof resetPasswordFormSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
+export type ChangePasswordValues = z.infer<typeof changePasswordSchema>;

@@ -3,23 +3,11 @@
 import { CalendarOff, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
+import { dayOptions } from "../../shared/training-profile-options";
 import { useOnboarding } from "../context/onboarding-context";
 import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
-import { DiaSemana, type DiaSemana as DiaSemanaValue } from "../types/onboarding.types";
+import type { DiaSemana as DiaSemanaValue } from "../types/onboarding.types";
 import { OnboardingStepHeader } from "./onboarding-step-header";
-
-const dayOptions: ReadonlyArray<{
-  label: string;
-  value: DiaSemanaValue;
-}> = [
-  { label: "Lun", value: DiaSemana.Lunes },
-  { label: "Mar", value: DiaSemana.Martes },
-  { label: "Mié", value: DiaSemana.Miercoles },
-  { label: "Jue", value: DiaSemana.Jueves },
-  { label: "Vie", value: DiaSemana.Viernes },
-  { label: "Sáb", value: DiaSemana.Sabado },
-  { label: "Dom", value: DiaSemana.Domingo },
-];
 
 export function PreferredDaysStep() {
   const { draft, setDiasPreferidos } = useOnboarding();

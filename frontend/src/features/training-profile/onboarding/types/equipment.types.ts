@@ -1,18 +1,9 @@
-export const CategoriaEquipamiento = {
-  PesasLibres: 1,
-  Barras: 2,
-  BancosYRacks: 3,
-  Poleas: 4,
-  Maquinas: 5,
-  Calistenia: 6,
-  Otros: 7,
-} as const;
+import {
+  CategoriaEquipamiento as SharedCategoriaEquipamiento,
+  type CategoriaEquipamiento as CategoriaEquipamientoValue,
+  type Equipment as SharedEquipment,
+} from "../../shared/training-profile.types";
 
-export type CategoriaEquipamiento =
-  (typeof CategoriaEquipamiento)[keyof typeof CategoriaEquipamiento];
-
-export type Equipment = {
-  categoria: CategoriaEquipamiento;
-  id: string;
-  nombre: string;
-};
+export const CategoriaEquipamiento = SharedCategoriaEquipamiento;
+export type CategoriaEquipamiento = CategoriaEquipamientoValue;
+export type Equipment = SharedEquipment;

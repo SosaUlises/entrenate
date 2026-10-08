@@ -1,6 +1,7 @@
 import { apiRequest } from "@/services/api-client";
 import type {
   AuthResponse,
+  ChangePasswordRequest,
   CurrentUser,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
@@ -9,6 +10,18 @@ import type {
   ResetPasswordRequest,
   ResetPasswordResponse,
 } from "../types/auth.types";
+
+export function changePassword(
+  authToken: string,
+  request: ChangePasswordRequest,
+): Promise<void> {
+  return apiRequest<void, ChangePasswordRequest>("/api/auth/change-password", {
+    authToken,
+    body: request,
+    cache: "no-store",
+    method: "PUT",
+  });
+}
 
 export function login(request: LoginRequest): Promise<AuthResponse> {
   return apiRequest<AuthResponse, LoginRequest>("/api/auth/login", {
