@@ -9,6 +9,13 @@ using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (builder.Environment.IsDevelopment() && OperatingSystem.IsWindows())
+{
+    builder.Logging.AddFilter<
+        Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider>(
+        (_, _) => false);
+}
+
 builder.Services.AddControllers();
 
 builder.Services.AddApplication();
@@ -29,7 +36,7 @@ builder.Services.AddSwaggerGen(options =>
             Type = SecuritySchemeType.Http,
             Scheme = "bearer",
             BearerFormat = "JWT",
-            Description = "Ingresá el JWT obtenido en login."
+            Description = "IngresÃ¡ el JWT obtenido en login."
         });
 
     options.AddSecurityRequirement(document =>

@@ -158,6 +158,112 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyCollection<ExerciseProgressEntryDto>>
+            GetCompletedExerciseProgressTrendByUserIdAsync(
+                Guid exerciseId,
+                string userId,
+                DateTime? fromUtc,
+                DateTime? toUtcExclusive,
+                CancellationToken cancellationToken = default)
+        {
+            var sessions = _context.SesionesEntrenamiento
+                .AsNoTracking()
+                .Where(x =>
+                    x.UsuarioId == userId &&
+                    x.Estado == EstadoSesionEntrenamiento.Completada &&
+                    x.Ejercicios.Any(y =>
+                        y.EjercicioId == exerciseId &&
+                        y.Series.Any(z => z.Completada)));
+
+            if (fromUtc.HasValue)
+            {
+                sessions = sessions.Where(x => x.HoraInicio >= fromUtc.Value);
+            }
+
+            if (toUtcExclusive.HasValue)
+            {
+                sessions = sessions.Where(x => x.HoraInicio < toUtcExclusive.Value);
+            }
+
+            return await sessions
+                .OrderBy(x => x.HoraInicio)
+                .ThenBy(x => x.Id)
+                .Select(x => new ExerciseProgressEntryDto(
+                    x.Id,
+                    x.Fecha,
+                    x.HoraInicio,
+                    x.Ejercicios
+                        .Where(y => y.EjercicioId == exerciseId)
+                        .SelectMany(y => y.Series)
+                        .Where(y => y.Completada)
+                        .OrderBy(y => y.NumeroSerie)
+                        .ThenBy(y => y.Id)
+                        .Select(y => new TrainingSetDto(
+                            y.Id,
+                            y.NumeroSerie,
+                            y.Peso,
+                            y.Repeticiones,
+                            y.Rir,
+                            y.Completada,
+                            y.FechaHoraRegistro))
+                        .ToList()))
+                .ToListAsync(cancellationToken);
+        }
+
+        public Task<bool> HasCompletedExerciseProgressByUserIdAsync(
+            Guid exerciseId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            return _context.SesionesEntrenamiento
+                .AsNoTracking()
+                .AnyAsync(
+                    x => x.UsuarioId == userId &&
+                        x.Estado == EstadoSesionEntrenamiento.Completada &&
+                        x.Ejercicios.Any(y =>
+                            y.EjercicioId == exerciseId &&
+                            y.Series.Any(z => z.Completada)),
+                    cancellationToken);
+        }
+
+        public async Task<IReadOnlyCollection<ExerciseProgressHubSourceDto>>
+            GetCompletedExerciseProgressHubByUserIdAsync(
+                string userId,
+                CancellationToken cancellationToken = default)
+        {
+            return await _context.EjerciciosSesion
+                .AsNoTracking()
+                .Where(x =>
+                    x.SesionEntrenamiento.UsuarioId == userId &&
+                    x.SesionEntrenamiento.Estado ==
+                        EstadoSesionEntrenamiento.Completada &&
+                    x.Series.Any(y => y.Completada))
+                .OrderBy(x => x.SesionEntrenamiento.HoraInicio)
+                .ThenBy(x => x.SesionEntrenamientoId)
+                .ThenBy(x => x.EjercicioId)
+                .Select(x => new ExerciseProgressHubSourceDto(
+                    x.EjercicioId,
+                    x.Ejercicio.Nombre,
+                    x.Ejercicio.GrupoMuscularPrincipal,
+                    x.SesionEntrenamientoId,
+                    x.SesionEntrenamiento.Fecha,
+                    x.SesionEntrenamiento.HoraInicio,
+                    x.Series
+                        .Where(y => y.Completada)
+                        .OrderBy(y => y.NumeroSerie)
+                        .ThenBy(y => y.Id)
+                        .Select(y => new TrainingSetDto(
+                            y.Id,
+                            y.NumeroSerie,
+                            y.Peso,
+                            y.Repeticiones,
+                            y.Rir,
+                            y.Completada,
+                            y.FechaHoraRegistro))
+                        .ToList()))
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task AddAsync(
             SesionEntrenamiento session,
             CancellationToken cancellationToken = default)

@@ -4,7 +4,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, Plus, Search, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, Plus, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -480,6 +480,15 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                 ? preview.exercise.equipamientos.map((item) => item.nombre).join(" · ")
                 : "Sin equipamiento externo"}
             </p>
+            {mode === "browse" ? (
+              <Link
+                className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-primary hover:text-text-primary focus-visible:outline-primary"
+                href={`/exercises/${preview.exercise.id}/progress`}
+              >
+                Ver progreso
+                <ChevronRight aria-hidden="true" size={17} />
+              </Link>
+            ) : null}
             {hasEntrenateExerciseDemo(preview.exercise.nombre) || preview.exercise.workoutGuideId ? (
               <ExerciseMovementDemo
                 exerciseName={preview.exercise.nombre}

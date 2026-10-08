@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -117,6 +117,13 @@ function ExerciseResult({ exercise }: { exercise: TrainingSessionExercise }) {
       <h2 className="break-words font-brand text-xl font-bold leading-7 text-text-primary" id={`history-exercise-${exercise.id}`}>{exercise.nombre}</h2>
       <p className="mt-1.5 text-[0.9375rem] font-medium leading-6 text-text-secondary">{prescription}</p>
       {exercise.notas?.trim() ? <p className="mt-2 text-[0.8125rem] leading-5 text-text-secondary/85">{exercise.notas}</p> : null}
+      <Link
+        className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-primary hover:text-text-primary focus-visible:outline-primary"
+        href={`/exercises/${exercise.ejercicioId}/progress`}
+      >
+        Ver progreso
+        <ChevronRight aria-hidden="true" size={17} />
+      </Link>
 
       {sets.length === 0 ? (
         <p className="mt-5 text-sm text-text-secondary">Sin series registradas</p>

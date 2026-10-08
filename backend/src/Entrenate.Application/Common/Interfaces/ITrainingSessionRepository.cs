@@ -42,6 +42,24 @@ namespace Entrenate.Application.Common.Interfaces
                 string userId,
                 CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyCollection<ExerciseProgressEntryDto>>
+            GetCompletedExerciseProgressTrendByUserIdAsync(
+                Guid exerciseId,
+                string userId,
+                DateTime? fromUtc,
+                DateTime? toUtcExclusive,
+                CancellationToken cancellationToken = default);
+
+        Task<bool> HasCompletedExerciseProgressByUserIdAsync(
+            Guid exerciseId,
+            string userId,
+            CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyCollection<ExerciseProgressHubSourceDto>>
+            GetCompletedExerciseProgressHubByUserIdAsync(
+                string userId,
+                CancellationToken cancellationToken = default);
+
         Task AddAsync(
             SesionEntrenamiento session,
             CancellationToken cancellationToken = default);

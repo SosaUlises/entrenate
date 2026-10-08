@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ClipboardList, Dumbbell, Home, LogOut } from "lucide-react";
+import { ClipboardList, Dumbbell, Home, LogOut, TrendingUp } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -23,13 +23,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isHomePage = pathname === "/" || pathname === "/home";
-  const isExercisesPage = pathname === "/exercises" || pathname.startsWith("/exercises/");
+  const isExerciseProgressPage = /^\/exercises\/[^/]+\/progress$/.test(pathname);
+  const isProgressPage = pathname === "/progress" || isExerciseProgressPage;
+  const isExercisesPage = !isExerciseProgressPage && (pathname === "/exercises" || pathname.startsWith("/exercises/"));
   const isRoutinesPage = pathname === "/routines" || pathname.startsWith("/routines/");
   const isTrainingPage = pathname === "/training" || pathname.startsWith("/training/");
   const isHistoryPage = pathname === "/history" || pathname.startsWith("/history/");
   const isHistoryDetailPage = /^\/history\/[^/]+$/.test(pathname);
   const isRoutineExercisePickerPage = pathname === "/routines/new/exercises" || /^\/routines\/[^/]+\/edit\/exercises$/.test(pathname);
-  const isContextualPage = isExercisesPage || isRoutinesPage || isTrainingPage || isHistoryPage;
+  const isContextualPage = isExercisesPage || isRoutinesPage || isTrainingPage || isHistoryPage || isProgressPage;
   const showBottomNav = !isTrainingPage && !isRoutineExercisePickerPage && !isHistoryDetailPage;
   const { invalidateSession } = useTrainingProfileGate();
   const [userState, setUserState] = useState<UserState>({ status: "loading" });
@@ -180,7 +182,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Navegación principal"
         className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-10 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-border/40 bg-surface-elevated/90 p-1 shadow-sm backdrop-blur-md"
       >
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-4 gap-1">
           <Link
             aria-current={isHomePage ? "page" : undefined}
             className={`group flex min-h-12 min-w-0 items-center justify-center rounded-full text-xs font-semibold transition-colors focus-visible:outline-primary ${isHomePage ? "text-primary" : "text-text-primary/75 hover:text-text-primary"}`}
@@ -202,11 +204,21 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           </Link>
           <Link
+            aria-current={isProgressPage ? "page" : undefined}
+            className={`group flex min-h-12 min-w-0 items-center justify-center rounded-full text-xs font-semibold transition-colors focus-visible:outline-primary ${isProgressPage ? "text-primary" : "text-text-primary/75 hover:text-text-primary"}`}
+            href="/progress"
+          >
+            <span className={`flex flex-col items-center gap-0.5 rounded-full px-2 py-1 transition-colors sm:px-3 ${isProgressPage ? "bg-primary/10" : "group-hover:bg-surface"}`}>
+              <TrendingUp aria-hidden="true" size={18} strokeWidth={2} />
+              <span>Progreso</span>
+            </span>
+          </Link>
+          <Link
             aria-current={isExercisesPage ? "page" : undefined}
             className={`group flex min-h-12 min-w-0 items-center justify-center rounded-full text-xs font-semibold transition-colors focus-visible:outline-primary ${isExercisesPage ? "text-primary" : "text-text-primary/75 hover:text-text-primary"}`}
             href="/exercises"
           >
-            <span className={`flex flex-col items-center gap-0.5 rounded-full px-3 py-1 transition-colors ${isExercisesPage ? "bg-primary/10" : "group-hover:bg-surface"}`}>
+            <span className={`flex flex-col items-center gap-0.5 rounded-full px-2 py-1 transition-colors sm:px-3 ${isExercisesPage ? "bg-primary/10" : "group-hover:bg-surface"}`}>
               <Dumbbell aria-hidden="true" size={18} strokeWidth={2} />
               <span>Ejercicios</span>
             </span>
