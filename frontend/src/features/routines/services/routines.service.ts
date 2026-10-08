@@ -37,6 +37,14 @@ export async function updateRoutine(id: string, request: UpdateRoutineRequest, a
   });
 }
 
+export async function deleteRoutine(id: string, authToken: string): Promise<void> {
+  await apiRequest<void>(`/api/routines/${encodeURIComponent(id)}`, {
+    authToken,
+    cache: "no-store",
+    method: "DELETE",
+  });
+}
+
 export function getRoutineSummaries(authToken: string): Promise<RoutineSummary[]> {
   return apiRequest<RoutineSummary[]>("/api/routines", {
     authToken,

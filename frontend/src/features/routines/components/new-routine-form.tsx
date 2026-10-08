@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { getExerciseImage } from "@/features/exercises/components/exercise-catalog";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { createRoutineAction } from "../actions/create-routine.action";
+import { deleteRoutineAction } from "../actions/delete-routine.action";
 import { updateRoutineAction } from "../actions/update-routine.action";
 import { mapRoutineDraftToRequest } from "../map-routine-draft";
 import { RoutineExerciseEditor } from "./routine-exercise-editor";
@@ -26,9 +27,12 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
   const [editing, setEditing] = useState<{ dayId: string; exerciseId: string } | null>(null);
   const [expandedDayId, setExpandedDayId] = useState<string | null>(() => routineId ? null : (dias[0]?.id ?? null));
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteState, setDeleteState] = useState<"idle" | "deleting" | "conflict" | "error">("idle");
   const [notFound, setNotFound] = useState(false);
   const [submitError, setSubmitError] = useState<{ message: string; details?: string[] } | null>(null);
   const submittingRef = useRef(false);
+  const deletingRef = useRef(false);
+  const deleteDialogRef = useRef<HTMLDialogElement>(null);
   const editingExercise = editing
     ? dias.find((day) => day.id === editing.dayId)?.exercises.find((exercise) => exercise.exerciseId === editing.exerciseId)
     : undefined;
@@ -94,6 +98,38 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
         submittingRef.current = false;
         setIsSubmitting(false);
       }
+    }
+  };
+
+  const handleDeleteRoutine = async () => {
+    if (!routineId || deletingRef.current) return;
+
+    deletingRef.current = true;
+    setDeleteState("deleting");
+
+    try {
+      const result = await deleteRoutineAction(routineId);
+      if (result.status === "deleted") {
+        resetDraft();
+        router.replace("/routines");
+        router.refresh();
+        return;
+      }
+      if (result.status === "unauthenticated") {
+        invalidateSession();
+        router.replace("/login");
+        return;
+      }
+      if (result.status === "not-found") {
+        deleteDialogRef.current?.close();
+        setNotFound(true);
+        return;
+      }
+      setDeleteState(result.status);
+    } catch {
+      setDeleteState("error");
+    } finally {
+      deletingRef.current = false;
     }
   };
 
@@ -185,6 +221,21 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
           {isSubmitting ? (routineId ? "Guardando..." : "Creando rutina...") : (routineId ? "Guardar cambios" : "Crear rutina")}
         </Button>
       </form>
+      {routineId ? (
+        <div className="mt-10 border-t border-border/55 pt-6">
+          <button
+            className="inline-flex min-h-11 items-center gap-2 rounded-control-sm px-1 text-sm font-semibold text-error transition-colors hover:text-text-primary focus-visible:outline-error"
+            onClick={() => {
+              setDeleteState("idle");
+              deleteDialogRef.current?.showModal();
+            }}
+            type="button"
+          >
+            <Trash2 aria-hidden="true" size={17} />
+            Eliminar rutina
+          </button>
+        </div>
+      ) : null}
       {editing && editingExercise ? (
         <RoutineExerciseEditor
           exercise={editingExercise}
@@ -195,6 +246,67 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
             setEditing(null);
           }}
         />
+      ) : null}
+      {routineId ? (
+        <dialog
+          aria-describedby="delete-routine-description"
+          aria-labelledby="delete-routine-title"
+          aria-modal="true"
+          className="mt-auto w-full max-w-full rounded-t-container border border-border bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:m-auto sm:w-[calc(100%-2rem)] sm:max-w-md sm:rounded-container"
+          onCancel={(event) => {
+            if (deleteState === "deleting") event.preventDefault();
+          }}
+          onClick={(event) => {
+            if (event.target === event.currentTarget && deleteState !== "deleting") {
+              event.currentTarget.close();
+            }
+          }}
+          onClose={() => {
+            if (deleteState !== "deleting") setDeleteState("idle");
+          }}
+          ref={deleteDialogRef}
+        >
+          <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-border-strong sm:hidden" />
+          <div className="px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 sm:p-6">
+            {deleteState === "conflict" ? (
+              <>
+                <h2 className="font-brand text-xl font-bold text-text-primary" id="delete-routine-title">No se puede eliminar</h2>
+                <p className="mt-3 text-sm leading-6 text-text-secondary" id="delete-routine-description">
+                  No podés eliminar esta rutina mientras tenés un entrenamiento en curso.
+                </p>
+                <Button autoFocus className="mt-6" onClick={() => deleteDialogRef.current?.close()} variant="secondary">
+                  Volver
+                </Button>
+              </>
+            ) : (
+              <>
+                <h2 className="font-brand text-xl font-bold text-text-primary" id="delete-routine-title">¿Eliminar esta rutina?</h2>
+                <p className="mt-3 text-sm leading-6 text-text-secondary" id="delete-routine-description">
+                  Se eliminará la rutina y su configuración. Tus entrenamientos anteriores seguirán disponibles en Historial.
+                </p>
+                {deleteState === "error" ? (
+                  <p className="mt-4 text-sm leading-5 text-error" role="alert">
+                    No pudimos eliminar la rutina. Intentá nuevamente.
+                  </p>
+                ) : null}
+                <div className="mt-6 flex flex-wrap justify-end gap-3">
+                  <Button autoFocus disabled={deleteState === "deleting"} onClick={() => deleteDialogRef.current?.close()} variant="secondary">
+                    Cancelar
+                  </Button>
+                  <button
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-error px-5 text-sm font-semibold text-background transition-opacity hover:opacity-90 focus-visible:outline-error disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={deleteState === "deleting"}
+                    onClick={() => void handleDeleteRoutine()}
+                    type="button"
+                  >
+                    <Trash2 aria-hidden="true" size={17} />
+                    {deleteState === "deleting" ? "Eliminando..." : "Eliminar rutina"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </dialog>
       ) : null}
     </section>
   );
