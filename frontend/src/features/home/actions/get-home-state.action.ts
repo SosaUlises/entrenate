@@ -2,6 +2,7 @@
 
 import { clearAuthSession, getAuthToken } from "@/features/auth/services/session.service";
 import { getRoutineSummaries } from "@/features/routines/services/routines.service";
+import type { RoutineSummary } from "@/features/routines/types/routine.types";
 import { getActiveTrainingSession } from "@/features/training/services/training.service";
 import { getFirstMissingTarget } from "@/features/training/training-position";
 import { ApiClientError } from "@/services/api-client";
@@ -29,7 +30,7 @@ export type HomeState =
       targetSetCount: number;
     }
   | { status: "no-routines" }
-  | { status: "routines-available"; routineCount: number }
+  | { status: "routines-available"; routines: RoutineSummary[] }
   | { status: "unauthenticated" }
   | { status: "error" };
 
@@ -89,7 +90,7 @@ export async function getHomeStateAction(): Promise<HomeState> {
 
     return routines.length === 0
       ? { status: "no-routines" }
-      : { status: "routines-available", routineCount: routines.length };
+      : { status: "routines-available", routines };
   } catch (routinesError) {
     if (routinesError instanceof ApiClientError && routinesError.status === 401) {
       await clearAuthSession();

@@ -139,15 +139,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className={`min-h-dvh w-full bg-background ${isTrainingPage ? "overflow-x-clip" : ""}`}>
       <div className="mx-auto min-w-0 w-full max-w-2xl px-4 sm:px-12">
         {!isContextualPage ? (
-        <header className="flex items-start justify-between gap-4 pt-9 sm:pt-12">
-          <div className="min-w-0">
-            <h1 className="font-brand text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
-              Hola, {nombre}
-            </h1>
-            <p className="mt-2 text-sm text-text-secondary sm:text-base">
-              ¿Listo para entrenar?
-            </p>
-          </div>
+        <header className="flex items-center justify-between gap-4 pt-9 sm:pt-12">
+          <h1 className="min-w-0 break-words font-brand text-2xl font-bold leading-tight text-text-primary sm:text-3xl">
+            Hola, {nombre}.
+          </h1>
 
           <details className="group relative shrink-0">
             <summary
@@ -184,7 +179,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
 
-        <main className={`mx-auto min-w-0 w-full max-w-full ${isTrainingPage || isHistoryDetailPage ? "pb-[calc(2rem+env(safe-area-inset-bottom))]" : "pb-[calc(7.5rem+env(safe-area-inset-bottom))]"} ${isContextualPage ? "pt-5 sm:pt-8" : "pt-10 sm:pt-12"}`}>
+        <main className={`mx-auto min-w-0 w-full max-w-full ${isTrainingPage || isHistoryDetailPage ? "pb-[calc(2rem+env(safe-area-inset-bottom))]" : "pb-[calc(7.5rem+env(safe-area-inset-bottom))]"} ${isContextualPage ? "pt-5 sm:pt-8" : "pt-8 sm:pt-10"}`}>
           {children}
         </main>
       </div>
