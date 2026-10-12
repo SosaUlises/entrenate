@@ -56,14 +56,14 @@ export function ExerciseProgressChart({ metric, metricLabel, points }: {
     <div className="relative mt-4 min-w-0" key={metric}>
       <div aria-live="polite" className="pointer-events-none absolute top-0 right-0 z-10 rounded-control-sm border border-border/70 bg-surface-elevated/95 px-3 py-2 text-right shadow-elevated">
         <p className="font-brand text-base font-bold tabular-nums text-text-primary">{formatMetricValue(metric, selectedPoint.value)}</p>
-        <p className="mt-0.5 text-xs font-medium text-text-secondary">{formatShortProgressDate(selectedPoint.date)}</p>
+        <p className="mt-0.5 text-[0.8125rem] font-medium text-text-secondary">{formatShortProgressDate(selectedPoint.date)}</p>
       </div>
 
       <svg aria-label={description} className="h-[14.375rem] w-full max-w-full overflow-visible" preserveAspectRatio="xMidYMid meet" role="group" viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
         <title>{description}</title>
         <line className="stroke-border/55" strokeWidth="1" x1={HORIZONTAL_PADDING} x2={WIDTH - HORIZONTAL_PADDING} y1={HEIGHT - BOTTOM_PADDING} y2={HEIGHT - BOTTOM_PADDING} />
         {coordinates.length > 1 ? (
-          <polyline className="fill-none stroke-info" points={coordinates.map((point) => `${point.x},${point.y}`).join(" ")} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+          <polyline className="fill-none stroke-info transition-[stroke-dashoffset] duration-300 starting:[stroke-dashoffset:1] motion-reduce:transition-none" pathLength="1" points={coordinates.map((point) => `${point.x},${point.y}`).join(" ")} strokeDasharray="1" strokeDashoffset="0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
         ) : null}
         {coordinates.map((point) => {
           const selected = point.sessionId === selectedPoint.sessionId;
@@ -80,9 +80,9 @@ export function ExerciseProgressChart({ metric, metricLabel, points }: {
             </g>
           );
         })}
-        <text className="fill-text-secondary" fontSize="12" fontWeight="600" x={HORIZONTAL_PADDING} y={HEIGHT - 8}>{formatShortProgressDate(chartPoints[0].date)}</text>
+        <text className="fill-text-secondary" fontSize="13" fontWeight="600" x={HORIZONTAL_PADDING} y={HEIGHT - 8}>{formatShortProgressDate(chartPoints[0].date)}</text>
         {chartPoints.length > 1 ? (
-          <text className="fill-text-secondary" fontSize="12" fontWeight="600" textAnchor="end" x={WIDTH - HORIZONTAL_PADDING} y={HEIGHT - 8}>{formatShortProgressDate(chartPoints.at(-1)!.date)}</text>
+          <text className="fill-text-secondary" fontSize="13" fontWeight="600" textAnchor="end" x={WIDTH - HORIZONTAL_PADDING} y={HEIGHT - 8}>{formatShortProgressDate(chartPoints.at(-1)!.date)}</text>
         ) : null}
       </svg>
       <p className="sr-only">{description}</p>

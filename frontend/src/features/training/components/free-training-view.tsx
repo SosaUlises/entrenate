@@ -80,7 +80,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
               <button
                 aria-controls={contentId}
                 aria-expanded={isExpanded}
-                className="flex min-h-[4.5rem] w-full min-w-0 items-center gap-3 py-3 text-left focus-visible:outline-2 focus-visible:outline-primary"
+                className="group flex min-h-[5rem] w-full min-w-0 items-center gap-3 py-3 text-left transition-colors duration-150 hover:bg-surface/25 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none"
                 onClick={() => setExpandedExerciseId((current) => current === exercise.id ? null : exercise.id)}
                 type="button"
               >
@@ -91,19 +91,28 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                   </span>
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
-                  <span className={`inline-flex items-center gap-1 font-brand text-[1.0625rem] font-bold tabular-nums ${isComplete ? "text-success" : "text-info"}`}>
+                  <span
+                    aria-label={`${completedTargetCount} de ${exercise.seriesObjetivo} series objetivo completadas`}
+                    className={`inline-flex items-center gap-1 font-brand text-[1.0625rem] font-bold tabular-nums ${isComplete ? "text-success" : "text-info"}`}
+                  >
                     {isComplete ? <Check aria-hidden="true" size={17} strokeWidth={2.25} /> : null}
                     {completedTargetCount} / {exercise.seriesObjetivo}
                   </span>
-                  <span className={`flex size-10 items-center justify-center rounded-control-sm transition-colors ${isExpanded ? "bg-primary/5 text-primary" : "bg-transparent text-text-secondary/80"}`}>
-                    <ChevronDown aria-hidden="true" className={`transition-transform motion-reduce:transition-none ${isExpanded ? "rotate-180" : ""}`} size={20} strokeWidth={1.9} />
+                  <span className={`flex size-11 items-center justify-center rounded-control-sm transition-colors duration-150 motion-reduce:transition-none ${isExpanded ? "bg-primary/5 text-primary" : "bg-transparent text-text-secondary/80 group-hover:text-text-primary"}`}>
+                    <ChevronDown aria-hidden="true" className={`transition-transform duration-150 motion-reduce:transition-none ${isExpanded ? "rotate-180" : ""}`} size={20} strokeWidth={1.9} />
                   </span>
                 </span>
               </button>
 
-              <div className="min-w-0 pb-4" hidden={!isExpanded} id={contentId}>
+              <div
+                aria-hidden={!isExpanded}
+                className={`grid min-w-0 transition-[grid-template-rows,opacity] duration-200 motion-reduce:transition-none ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+                id={contentId}
+                inert={!isExpanded}
+              >
+                <div className="min-h-0 min-w-0 overflow-hidden pb-4">
                 {exercise.notas?.trim() ? <p className="mb-3 text-[0.8125rem] leading-5 text-text-secondary">{exercise.notas}</p> : null}
-                <div aria-hidden="true" className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1.05fr)_minmax(0,.85fr)_minmax(0,.65fr)_3rem] gap-1 border-b border-border/50 pb-2 text-[0.8125rem] font-semibold leading-4 tracking-[0.04em] text-text-secondary">
+                <div aria-hidden="true" className="grid min-w-0 grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,.8fr)_minmax(0,.62fr)_6.5rem] gap-1 border-b border-border/50 pb-2 text-[0.8125rem] font-semibold leading-4 text-text-secondary">
                   <span>SET</span>
                   <span className="text-center">KG</span>
                   <span className="text-center">REPS</span>
@@ -137,7 +146,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                   ))}
                 </div>
                 <button
-                  className="mt-2 inline-flex min-h-12 items-center rounded-control-sm px-1 text-[0.9375rem] font-medium text-text-secondary transition-colors hover:text-primary focus-visible:outline-primary"
+                  className="mt-2 inline-flex min-h-12 items-center rounded-control-sm px-1 text-[0.9375rem] font-semibold text-text-secondary transition-colors duration-150 hover:text-primary active:text-primary focus-visible:outline-primary motion-reduce:transition-none"
                   onClick={() => setExtraCounts((current) => ({
                     ...current,
                     [exercise.id]: Math.max(current[exercise.id] ?? 0, highestSaved - exercise.seriesObjetivo) + 1,
@@ -146,12 +155,13 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                 >
                   + Agregar serie
                 </button>
+                </div>
               </div>
             </section>
           );
         })}
       </div>
-      <div className="mt-6 border-t border-border/50 pt-4">
+      <div className="mt-8 border-t border-border/50 pt-6">
         <Button className="min-h-[3.25rem]" fullWidth onClick={onFinish}>Finalizar entrenamiento</Button>
       </div>
     </div>
@@ -239,7 +249,7 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
     }
   }
 
-  const fieldClass = "h-12 min-w-0 w-full max-w-full border-0 border-b border-border/45 bg-transparent px-1 text-center font-brand text-lg font-bold tabular-nums text-text-primary caret-primary placeholder:text-text-secondary/35 outline-none! transition-colors duration-150 focus:bg-primary/5 focus:outline-none! focus-visible:outline-none! motion-reduce:transition-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
+  const fieldClass = "h-12 min-w-0 w-full max-w-full border-0 border-b border-border/35 bg-transparent px-1 text-center font-brand text-lg font-bold tabular-nums text-text-primary caret-primary placeholder:text-text-secondary/35 outline-none! transition-colors duration-150 focus:bg-primary/5 focus:outline-none! focus-visible:outline-none! motion-reduce:transition-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
   const rowStateClass = error
     ? "bg-error/5"
@@ -250,10 +260,11 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
         : "";
 
   return (
-    <form className={`min-w-0 border-b border-border/35 px-1 py-2 transition-colors last:border-b-0 ${rowStateClass}`} onSubmit={(event) => void save(event)}>
-      <div className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1.05fr)_minmax(0,.85fr)_minmax(0,.65fr)_3rem] items-center gap-1">
+    <form className={`min-w-0 border-b border-border/35 px-1 py-2 transition-colors duration-150 last:border-b-0 motion-reduce:transition-none ${rowStateClass}`} onSubmit={(event) => void save(event)}>
+      <div className="grid min-w-0 grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,.8fr)_minmax(0,.62fr)_6.5rem] items-center gap-1">
         <span aria-label={`${isExtra ? "Serie extra" : "Serie"} ${number}${isNextPending ? ", próxima pendiente" : ""}`} className={`font-brand text-base font-bold tabular-nums ${isExtra || isNextPending ? "text-info" : "text-text-secondary"}`} title={isExtra ? "Serie extra" : isNextPending ? "Próxima serie pendiente" : undefined}>
-          {String(number).padStart(2, "0")}
+          <span className="block">{String(number).padStart(2, "0")}</span>
+          {isExtra ? <span className="mt-0.5 block font-sans text-[0.8125rem] font-semibold leading-4 text-info">Extra</span> : null}
         </span>
         <label className="min-w-0">
           <span className="sr-only">Peso de la serie {number} en kilogramos</span>
@@ -267,19 +278,22 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
           <span className="sr-only">RIR opcional de la serie {number}</span>
           <input aria-describedby={hasRirError ? errorId : undefined} aria-invalid={hasRirError} className={`${fieldClass} ${hasRirError ? "border-b-error" : ""}`} inputMode="numeric" max="5" min="0" onChange={(event) => setRir(event.target.value)} placeholder="—" step="1" type="number" value={rir} />
         </label>
-        <span className="flex size-12 items-center justify-center">
+        <span className="flex min-h-12 min-w-0 items-center justify-end">
           {pending ? (
-            <button aria-label={`Guardando serie ${number}`} className="flex size-12 items-center justify-center rounded-control-sm bg-primary/10 text-primary" disabled type="submit">
+            <button aria-label={`Guardando serie ${number}`} className="flex min-h-12 w-full items-center justify-center gap-1.5 rounded-control-sm bg-primary/10 px-2 text-[0.8125rem] font-semibold text-primary" disabled type="submit">
               <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={18} />
+              <span>Guardando</span>
             </button>
           ) : isDirty ? (
-            <button aria-label={`${isSaved ? "Guardar cambios de" : "Completar"} serie ${number}`} className="flex size-12 items-center justify-center rounded-control-sm bg-primary-strong text-text-primary transition-colors hover:bg-primary focus-visible:outline-primary" type="submit">
-              <Save aria-hidden="true" size={18} strokeWidth={2} />
+            <button aria-label={`${isSaved ? "Guardar cambios de" : "Completar"} serie ${number}`} className="flex min-h-12 w-full items-center justify-center gap-1.5 rounded-control-sm bg-primary/15 px-2 text-[0.8125rem] font-semibold text-primary transition-[background-color,color,transform] duration-150 hover:bg-primary/20 active:scale-[0.99] focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100" type="submit">
+              <Save aria-hidden="true" size={16} strokeWidth={2} />
+              <span>Guardar</span>
             </button>
           ) : isSaved ? (
-            <span className="flex size-12 items-center justify-center rounded-control-sm bg-success/10 text-success" role="status">
+            <span className="flex min-h-12 w-full items-center justify-center gap-2 rounded-control-sm px-2 text-sm font-semibold text-success transition-[color,opacity,transform] duration-200 starting:scale-[0.98] starting:opacity-0 motion-reduce:transition-none" role="status">
               <Check aria-hidden="true" size={18} strokeWidth={2.25} />
-              <span className="sr-only">Serie {number} guardada</span>
+              <span>Guardada</span>
+              <span className="sr-only">: serie {number}</span>
             </span>
           ) : (
             <span aria-hidden="true" className="text-text-secondary/40">—</span>
@@ -290,7 +304,7 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
       {canRemove ? (
         <button
           aria-label={`Quitar serie extra ${number}`}
-          className="ml-auto mt-1 flex min-h-12 items-center gap-2 rounded-control-sm px-2 text-[0.8125rem] font-medium text-text-secondary transition-colors hover:text-error focus-visible:outline-primary disabled:opacity-50"
+          className="ml-auto mt-1 flex min-h-12 items-center gap-2 rounded-control-sm px-2 text-[0.8125rem] font-semibold text-text-secondary transition-[background-color,color,transform] duration-150 hover:bg-error/5 hover:text-error active:scale-[0.99] active:text-error focus-visible:bg-error/5 focus-visible:text-error focus-visible:outline-primary disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100"
           disabled={pending}
           onClick={onRemove}
           type="button"

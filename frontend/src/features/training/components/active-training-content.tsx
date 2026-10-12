@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowLeftRight, Check, ClipboardList, Ellipsis, Play, X } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, Check, ChevronRight, Ellipsis, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -261,25 +261,30 @@ export function ActiveTrainingContent() {
           ) : mode === null ? (
             <div className="mt-6 min-w-0 max-w-full">
               <h2 className="font-brand text-3xl font-bold leading-tight text-text-primary">¿Cómo querés entrenar?</h2>
-              <p className="mt-2 text-[0.9375rem] leading-6 text-text-secondary">Elegí cómo registrar esta sesión.</p>
-              <div className="mt-6 border-y border-border/50">
-                <button className="flex min-h-24 min-w-0 w-full max-w-full items-center gap-4 border-b border-border/50 py-4 text-left transition-colors hover:bg-primary/5 active:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setMode("guided")} type="button">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <Play aria-hidden="true" size={20} strokeWidth={1.75} />
-                  </span>
+              <div className="mt-6">
+                <button
+                  aria-describedby="guided-mode-description"
+                  className="group flex min-h-[5.25rem] min-w-0 w-full max-w-full items-center gap-4 border-b border-border/50 px-1 py-4 text-left transition-[background-color,color,transform] duration-150 hover:bg-primary/5 active:scale-[0.99] active:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100"
+                  onClick={() => setMode("guided")}
+                  type="button"
+                >
                   <span className="min-w-0 flex-1">
-                    <span className="block font-brand text-lg font-bold leading-6 text-text-primary">Modo guiado</span>
-                    <span className="mt-1 block text-sm leading-5 text-text-secondary">Paso a paso, serie por serie, con descansos controlados.</span>
+                    <span className="block font-brand text-xl font-bold leading-6 text-text-primary">Modo guiado</span>
+                    <span className="mt-1 block text-sm leading-5 text-text-secondary" id="guided-mode-description">Paso a paso, serie por serie, con descansos controlados.</span>
                   </span>
+                  <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/70 transition-colors duration-150 group-hover:text-primary group-focus-visible:text-primary motion-reduce:transition-none" size={20} strokeWidth={1.75} />
                 </button>
-                <button className="flex min-h-24 min-w-0 w-full max-w-full items-center gap-4 py-4 text-left transition-colors hover:bg-primary/5 active:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setMode("free")} type="button">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <ClipboardList aria-hidden="true" size={20} strokeWidth={1.75} />
-                  </span>
+                <button
+                  aria-describedby="free-mode-description"
+                  className="group flex min-h-[5.25rem] min-w-0 w-full max-w-full items-center gap-4 px-1 py-4 text-left transition-[background-color,color,transform] duration-150 hover:bg-primary/5 active:scale-[0.99] active:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100"
+                  onClick={() => setMode("free")}
+                  type="button"
+                >
                   <span className="min-w-0 flex-1">
-                    <span className="block font-brand text-lg font-bold leading-6 text-text-primary">Carga libre</span>
-                    <span className="mt-1 block text-sm leading-5 text-text-secondary">Registrá tus series a tu ritmo, cuando quieras.</span>
+                    <span className="block font-brand text-xl font-bold leading-6 text-text-primary">Carga libre</span>
+                    <span className="mt-1 block text-sm leading-5 text-text-secondary" id="free-mode-description">Registrá tus series a tu ritmo, cuando quieras.</span>
                   </span>
+                  <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/70 transition-colors duration-150 group-hover:text-primary group-focus-visible:text-primary motion-reduce:transition-none" size={20} strokeWidth={1.75} />
                 </button>
               </div>
             </div>

@@ -1,12 +1,10 @@
 "use client";
 
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, ChevronRight, CircleHelp, X } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { getExerciseImage } from "@/features/exercises/components/exercise-catalog";
 import { formatHistoryGroupDate, formatHistoryTime, getLocalDateKey } from "@/features/history/history-formatters";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { getExerciseProgressTrendAction } from "../actions/get-exercise-progress-trend.action";
@@ -141,8 +139,6 @@ export function ExerciseProgressContent({ exerciseId }: { exerciseId: string }) 
 }
 
 function ProgressHeader({ name }: { name?: string }) {
-  const imageSrc = name ? getExerciseImage(name) : undefined;
-
   return (
     <header>
       <div className="flex min-w-0 items-center gap-1">
@@ -152,14 +148,7 @@ function ProgressHeader({ name }: { name?: string }) {
         <p className="text-sm font-semibold uppercase tracking-[0.1em] text-text-secondary">Progreso</p>
       </div>
       {name ? (
-        <div className="mt-2 flex min-w-0 items-center gap-3">
-          {imageSrc ? (
-            <div aria-hidden="true" className="flex size-18 shrink-0 items-center justify-center rounded-control-sm bg-surface/45 p-1">
-              <Image alt="" className="size-full object-contain" height={72} sizes="72px" src={imageSrc} width={72} />
-            </div>
-          ) : null}
-          <h1 className="min-w-0 break-words font-brand text-[1.625rem] font-bold leading-8 text-text-primary" id="exercise-progress-title">{name}</h1>
-        </div>
+        <h1 className="mt-2 min-w-0 break-words font-brand text-[1.625rem] font-bold leading-8 text-text-primary" id="exercise-progress-title">{name}</h1>
       ) : (
         <h1 className="sr-only" id="exercise-progress-title">Progreso del ejercicio</h1>
       )}
@@ -192,6 +181,7 @@ function TrendDetail({
   refreshing: boolean;
   sessionsDialogRef: React.RefObject<HTMLDialogElement | null>;
 }) {
+  const [showMetricHelp, setShowMetricHelp] = useState(false);
   const selectedMetric = availableMetrics.find((item) => item.key === metric) ?? availableMetrics[0];
   const validPoints = selectedMetric
     ? points.filter((point) => getMetricValue(point, selectedMetric.key) !== null)
@@ -206,13 +196,30 @@ function TrendDetail({
 
   return (
     <div className="mt-5 min-w-0">
-      <button className="flex min-h-12 w-full items-center justify-between gap-3 rounded-control-sm border border-border/60 bg-surface/45 px-4 text-left text-base font-semibold text-text-primary transition-colors hover:border-border-strong hover:bg-surface focus-visible:outline-primary" onClick={onOpenMetric} type="button">
-        <span>{selectedMetric.label}</span>
-        <ChevronDown aria-hidden="true" className="shrink-0 text-primary" size={20} />
-      </button>
+      <div className="flex min-w-0 items-center gap-2 border-y border-border/50 py-1">
+        <button className="flex min-h-12 min-w-0 flex-1 items-center justify-between gap-3 px-1 text-left text-base font-semibold text-text-primary transition-colors hover:text-primary focus-visible:outline-primary" onClick={onOpenMetric} type="button">
+          <span className="min-w-0 break-words">{selectedMetric.label}</span>
+          <ChevronDown aria-hidden="true" className="shrink-0 text-primary" size={20} />
+        </button>
+        <button
+          aria-controls="current-metric-help"
+          aria-expanded={showMetricHelp}
+          className="flex min-h-12 shrink-0 items-center gap-2 rounded-control-sm px-2 text-sm font-semibold text-text-secondary transition-colors hover:text-info focus-visible:outline-primary"
+          onClick={() => setShowMetricHelp((current) => !current)}
+          type="button"
+        >
+          <CircleHelp aria-hidden="true" size={18} />
+          Ayuda
+        </button>
+      </div>
+      {showMetricHelp ? (
+        <p className="mt-3 max-w-md text-[0.8125rem] leading-5 text-text-secondary" id="current-metric-help">
+          {selectedMetric.description}
+        </p>
+      ) : null}
 
       <div aria-live="polite" className="mt-6">
-        <p className="font-brand text-4xl font-bold leading-none tabular-nums text-text-primary">{formatMetricValue(selectedMetric.key, currentValue)}</p>
+        <p className="break-words font-brand text-[2.5rem] font-bold leading-none tabular-nums text-text-primary">{formatMetricValue(selectedMetric.key, currentValue)}</p>
         {change === null ? (
           <p className="mt-3 text-base leading-6 text-text-secondary">Necesitás otro registro para comparar.</p>
         ) : (
@@ -220,7 +227,7 @@ function TrendDetail({
         )}
       </div>
 
-      <div className={refreshing ? "opacity-55 transition-opacity" : "transition-opacity"}>
+      <div className={refreshing ? "opacity-55 transition-opacity duration-200 motion-reduce:transition-none" : "transition-opacity duration-200 motion-reduce:transition-none"}>
         <ExerciseProgressChart key={`${period}-${selectedMetric.key}-${points.at(-1)?.sessionId}`} metric={selectedMetric.key} metricLabel={selectedMetric.label} points={points} />
       </div>
       {refreshing ? <p aria-live="polite" className="sr-only">Actualizando evolución.</p> : null}
@@ -243,7 +250,7 @@ function MetricChange({ change, period }: { change: number; period: ProgressPeri
   const direction = change > 0 ? "aumentó" : change < 0 ? "disminuyó" : "no cambió";
   const value = formatCompactProgressPercentage(Math.abs(change));
   return (
-    <p aria-label={`La métrica ${direction} ${value} por ciento en ${getPeriodDescription(period)}.`} className="mt-3 flex items-center gap-2 text-base font-semibold text-info">
+    <p aria-label={`La métrica ${direction} ${value} por ciento en ${getPeriodDescription(period)}.`} className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-semibold text-info">
       <Icon aria-hidden="true" size={19} strokeWidth={2.25} />
       <span className="tabular-nums">{value}%</span>
       <span className="font-medium text-text-secondary">en {getPeriodDescription(period)}</span>
@@ -253,7 +260,7 @@ function MetricChange({ change, period }: { change: number; period: ProgressPeri
 
 function PeriodSelector({ onChange, selected }: { onChange: (period: ProgressPeriodKey) => void; selected: ProgressPeriodKey }) {
   return (
-    <div aria-label="Período de evolución" className="mt-3 grid grid-cols-5 gap-1 rounded-full border border-border/55 bg-surface/40 p-1" role="group">
+    <div aria-label="Período de evolución" className="mt-3 grid grid-cols-5 gap-1 border-y border-border/45 py-1" role="group">
       {progressPeriods.map((period) => (
         <button aria-pressed={selected === period.key} className={`min-h-11 rounded-full px-1 text-sm font-semibold transition-colors focus-visible:outline-primary ${selected === period.key ? "bg-primary/16 text-primary" : "text-text-secondary hover:text-text-primary"}`} key={period.key} onClick={() => onChange(period.key)} type="button">
           {period.label}
@@ -322,7 +329,7 @@ function SessionsDialog({ dialogRef, points }: { dialogRef: React.RefObject<HTML
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-6">
           {groups.map((group, groupIndex) => (
             <section className={groupIndex === 0 ? "" : "mt-4 border-t border-border/50 pt-4"} key={group.key}>
-              <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-text-secondary">{group.label}</h3>
+              <h3 className="text-[0.8125rem] font-semibold uppercase tracking-[0.08em] text-text-secondary">{group.label}</h3>
               <ul className="mt-1 divide-y divide-border/45">
                 {group.points.map((point) => (
                   <li key={point.sessionId}>
