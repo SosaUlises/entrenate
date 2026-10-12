@@ -200,51 +200,51 @@ export function ActiveTrainingContent() {
   const showModeSelectionActions = Boolean(session && mode === null && !targetsComplete);
 
   return (
-    <section className={`mx-auto min-w-0 w-full max-w-xl ${mode === "guided" ? "pb-10" : ""}`} aria-labelledby="training-title">
+    <section className={`mx-auto min-w-0 w-full max-w-xl overflow-x-clip ${mode === "guided" ? "pb-10" : "pb-4"}`} aria-labelledby="training-title">
       <div className="flex min-w-0 max-w-full items-start gap-1">
         <button
           aria-label="Salir y continuar después"
-          className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary"
+          className="flex size-12 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary"
           onClick={() => requestNavigation("home")}
           type="button"
         >
           <ArrowLeft aria-hidden="true" size={20} />
         </button>
         <div className="min-w-0 flex-1 pt-3">
-          <h1 className="text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.1em] text-text-secondary" id="training-title">Entrenamiento en curso</h1>
+          <h1 className="truncate text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.08em] text-text-secondary" id="training-title">Entrenamiento en curso</h1>
         </div>
         {showTrainingActions || showModeSelectionActions ? (
           <details className="group relative shrink-0" ref={actionsRef}>
-            <summary aria-label="Acciones del entrenamiento" className="flex size-11 cursor-pointer list-none items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface/50 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary group-open:bg-primary/10 group-open:text-primary [&::-webkit-details-marker]:hidden" ref={actionsTriggerRef}>
+            <summary aria-label="Acciones del entrenamiento" className="flex size-12 cursor-pointer list-none items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface/50 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary group-open:bg-primary/10 group-open:text-primary [&::-webkit-details-marker]:hidden" ref={actionsTriggerRef}>
               <Ellipsis aria-hidden="true" size={20} strokeWidth={1.75} />
             </summary>
             <div className="absolute right-0 z-20 mt-1.5 w-56 max-w-[calc(100vw-2rem)] rounded-control border border-border/60 bg-surface-elevated p-2 shadow-elevated">
               {showTrainingActions ? (
                 <>
-                  <button className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary" onClick={() => requestNavigation("mode")} type="button">
+                  <button className="flex min-h-12 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary" onClick={() => requestNavigation("mode")} type="button">
                     <ArrowLeftRight aria-hidden="true" className="shrink-0 text-text-secondary" size={17} strokeWidth={1.75} />
                     Cambiar modo
                   </button>
-                  <button className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary transition-colors hover:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { actionsRef.current?.removeAttribute("open"); openFinish("complete"); }} type="button">
+                  <button className="flex min-h-12 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary transition-colors hover:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { actionsRef.current?.removeAttribute("open"); openFinish("complete"); }} type="button">
                     <Check aria-hidden="true" className="shrink-0 text-primary" size={17} strokeWidth={2} />
                     Finalizar entrenamiento
                   </button>
                   <div className="my-1 border-t border-border/60" />
                 </>
               ) : null}
-              <button className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-error/85 transition-colors hover:bg-error/8 hover:text-error focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { actionsRef.current?.removeAttribute("open"); openFinish("cancel"); }} type="button">
+              <button className="flex min-h-12 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-error/85 transition-colors hover:bg-error/8 hover:text-error focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { actionsRef.current?.removeAttribute("open"); openFinish("cancel"); }} type="button">
                 <X aria-hidden="true" className="shrink-0" size={17} strokeWidth={1.9} />
                 Cancelar entrenamiento
               </button>
             </div>
           </details>
-        ) : session ? <button className="min-h-11 shrink-0 px-2 text-xs text-text-secondary hover:text-text-primary focus-visible:outline-primary" onClick={() => openFinish("cancel")} type="button">Cancelar</button> : null}
+        ) : session ? <button className="min-h-12 shrink-0 px-2 text-[0.8125rem] text-text-secondary hover:text-text-primary focus-visible:outline-primary" onClick={() => openFinish("cancel")} type="button">Cancelar</button> : null}
       </div>
 
       {sessionNotice ? <p className="mt-5 text-sm text-text-secondary" role="status">{sessionNotice}</p> : null}
       {view.status === "loading" ? <div className="grid min-h-48 place-items-center"><Spinner className="size-6 text-primary" label="Cargando entrenamiento" /></div> : null}
-      {view.status === "empty" ? <div className="mt-6 rounded-card border border-border bg-surface p-5"><p className="text-sm text-text-primary">No tenés un entrenamiento activo.</p><Link className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary" href="/routines">Ver mis rutinas</Link></div> : null}
-      {view.status === "error" ? <div className="mt-6 rounded-card border border-border bg-surface p-5"><p className="text-sm text-text-primary">No pudimos cargar tu entrenamiento.</p><Button className="mt-4" onClick={reload} variant="secondary">Reintentar</Button></div> : null}
+      {view.status === "empty" ? <div className="mt-7 border-t border-border/50 pt-6"><p className="text-sm text-text-primary">No tenés un entrenamiento activo.</p><Link className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary" href="/routines">Ver mis rutinas</Link></div> : null}
+      {view.status === "error" ? <div className="mt-7 border-t border-border/50 pt-6"><p className="text-sm text-text-primary">No pudimos cargar tu entrenamiento.</p><Button className="mt-4" onClick={reload} variant="secondary">Reintentar</Button></div> : null}
 
       {session ? (
         <>
@@ -262,16 +262,20 @@ export function ActiveTrainingContent() {
             <div className="mt-6 min-w-0 max-w-full">
               <h2 className="font-brand text-3xl font-bold leading-tight text-text-primary">¿Cómo querés entrenar?</h2>
               <p className="mt-2 text-[0.9375rem] leading-6 text-text-secondary">Elegí cómo registrar esta sesión.</p>
-              <div className="mt-5 space-y-3">
-                <button className="flex min-h-24 min-w-0 w-full max-w-full items-center gap-4 rounded-card border border-border/60 bg-surface/45 p-4 text-left transition-[background-color,border-color,transform] hover:border-border-strong hover:bg-surface/70 active:scale-[0.99] active:border-primary/45 active:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none" onClick={() => setMode("guided")} type="button">
-                  <Play aria-hidden="true" className="size-6 shrink-0 text-primary" strokeWidth={1.75} />
+              <div className="mt-6 border-y border-border/50">
+                <button className="flex min-h-24 min-w-0 w-full max-w-full items-center gap-4 border-b border-border/50 py-4 text-left transition-colors hover:bg-primary/5 active:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setMode("guided")} type="button">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Play aria-hidden="true" size={20} strokeWidth={1.75} />
+                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-brand text-lg font-bold leading-6 text-text-primary">Modo guiado</span>
                     <span className="mt-1 block text-sm leading-5 text-text-secondary">Paso a paso, serie por serie, con descansos controlados.</span>
                   </span>
                 </button>
-                <button className="flex min-h-24 min-w-0 w-full max-w-full items-center gap-4 rounded-card border border-border/60 bg-surface/45 p-4 text-left transition-[background-color,border-color,transform] hover:border-border-strong hover:bg-surface/70 active:scale-[0.99] active:border-primary/45 active:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none" onClick={() => setMode("free")} type="button">
-                  <ClipboardList aria-hidden="true" className="size-6 shrink-0 text-primary" strokeWidth={1.75} />
+                <button className="flex min-h-24 min-w-0 w-full max-w-full items-center gap-4 py-4 text-left transition-colors hover:bg-primary/5 active:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setMode("free")} type="button">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <ClipboardList aria-hidden="true" size={20} strokeWidth={1.75} />
+                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-brand text-lg font-bold leading-6 text-text-primary">Carga libre</span>
                     <span className="mt-1 block text-sm leading-5 text-text-secondary">Registrá tus series a tu ritmo, cuando quieras.</span>

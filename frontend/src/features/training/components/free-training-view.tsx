@@ -1,21 +1,12 @@
 "use client";
 
 import { Check, ChevronDown, LoaderCircle, Save, Trash2 } from "lucide-react";
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { getExerciseImage } from "@/features/exercises/components/exercise-catalog";
 import { upsertTrainingSetAction } from "../actions/training.actions";
-import { getOrderedExercises } from "../training-position";
+import { getCompletedTargetSetCount, getOrderedExercises } from "../training-position";
 import type { TrainingSession, TrainingSessionExercise, TrainingSet, TrainingSetInput } from "../types/training.types";
-
-function getCompletedTargetCount(exercise: TrainingSessionExercise): number {
-  return new Set(
-    exercise.series
-      .filter((set) => set.completada && set.numeroSerie >= 1 && set.numeroSerie <= exercise.seriesObjetivo)
-      .map((set) => set.numeroSerie),
-  ).size;
-}
+import { TrainingProgressRail } from "./training-progress-rail";
 
 function getFirstPendingTargetNumber(exercise: TrainingSessionExercise): number | null {
   const completedNumbers = new Set(
@@ -30,7 +21,7 @@ function getFirstPendingTargetNumber(exercise: TrainingSessionExercise): number 
 }
 
 function getInitialExpandedExerciseId(exercises: TrainingSessionExercise[]): string | null {
-  return exercises.find((exercise) => getCompletedTargetCount(exercise) < exercise.seriesObjetivo)?.id ?? null;
+  return exercises.find((exercise) => getCompletedTargetSetCount(exercise) < exercise.seriesObjetivo)?.id ?? null;
 }
 
 export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, onSaved, onUnauthenticated }: {
@@ -66,15 +57,17 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
 
   return (
     <div className="min-w-0 w-full max-w-full">
-      <header className="mt-4 min-w-0 max-w-full">
-        <h2 className="text-sm font-semibold uppercase leading-5 tracking-[0.11em] text-info">Carga libre</h2>
+      <div className="mt-3">
+        <TrainingProgressRail session={session} />
+      </div>
+      <header className="mt-4 min-w-0 max-w-full border-b border-border/45 pb-4">
+        <h2 className="font-brand text-xl font-bold leading-tight text-text-primary">Carga libre</h2>
         <p className="mt-1 text-[0.9375rem] leading-6 text-text-secondary">Registrá tus series a tu ritmo.</p>
       </header>
 
-      <div className="mt-4 min-w-0 max-w-full border-t border-border/50">
+      <div className="min-w-0 max-w-full">
         {orderedExercises.map((exercise) => {
-          const image = getExerciseImage(exercise.nombre);
-          const completedTargetCount = getCompletedTargetCount(exercise);
+          const completedTargetCount = getCompletedTargetSetCount(exercise);
           const isComplete = completedTargetCount === exercise.seriesObjetivo;
           const isExpanded = expandedExerciseId === exercise.id;
           const firstPendingTargetNumber = getFirstPendingTargetNumber(exercise);
@@ -83,18 +76,17 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
           const contentId = `free-exercise-${exercise.id}`;
 
           return (
-            <section className={`min-w-0 max-w-full border-b border-border/50 transition-colors ${isExpanded ? "rounded-control-sm bg-surface/40" : ""}`} key={exercise.id}>
+            <section className="min-w-0 max-w-full border-b border-border/50" key={exercise.id}>
               <button
                 aria-controls={contentId}
                 aria-expanded={isExpanded}
-                className={`flex min-h-20 w-full min-w-0 items-center gap-3 py-3 text-left focus-visible:outline-2 focus-visible:outline-primary ${isExpanded ? "px-2" : "px-1"}`}
+                className="flex min-h-[4.5rem] w-full min-w-0 items-center gap-3 py-3 text-left focus-visible:outline-2 focus-visible:outline-primary"
                 onClick={() => setExpandedExerciseId((current) => current === exercise.id ? null : exercise.id)}
                 type="button"
               >
-                {image ? <Image alt="" className="size-12 shrink-0 rounded-control-sm object-cover" height={48} src={image} width={48} /> : null}
                 <span className="min-w-0 flex-1">
                   <span className="block break-words font-brand text-[1.1875rem] font-bold leading-6 text-text-primary">{exercise.nombre}</span>
-                  <span className="mt-1 block text-sm leading-5 text-text-secondary">
+                  <span className="mt-1 block break-words text-[0.8125rem] leading-5 text-text-secondary">
                     {exercise.seriesObjetivo} {exercise.seriesObjetivo === 1 ? "serie" : "series"} · {exercise.repeticionesMinimasObjetivo}–{exercise.repeticionesMaximasObjetivo} reps · RIR {exercise.rirObjetivoMinimo}–{exercise.rirObjetivoMaximo} · {exercise.descansoObjetivoSegundos} s
                   </span>
                 </span>
@@ -109,9 +101,9 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                 </span>
               </button>
 
-              <div className="min-w-0 px-2 pb-4" hidden={!isExpanded} id={contentId}>
-                {exercise.notas?.trim() ? <p className="mb-3 text-xs leading-5 text-text-secondary">{exercise.notas}</p> : null}
-                <div aria-hidden="true" className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1.05fr)_minmax(0,.85fr)_minmax(0,.65fr)_2.75rem] gap-1 border-b border-border/50 pb-2 text-xs font-semibold leading-4 tracking-[0.06em] text-text-secondary">
+              <div className="min-w-0 pb-4" hidden={!isExpanded} id={contentId}>
+                {exercise.notas?.trim() ? <p className="mb-3 text-[0.8125rem] leading-5 text-text-secondary">{exercise.notas}</p> : null}
+                <div aria-hidden="true" className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1.05fr)_minmax(0,.85fr)_minmax(0,.65fr)_3rem] gap-1 border-b border-border/50 pb-2 text-[0.8125rem] font-semibold leading-4 tracking-[0.04em] text-text-secondary">
                   <span>SET</span>
                   <span className="text-center">KG</span>
                   <span className="text-center">REPS</span>
@@ -145,7 +137,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                   ))}
                 </div>
                 <button
-                  className="mt-2 inline-flex min-h-11 items-center rounded-control-sm px-1 text-[0.9375rem] font-medium text-text-secondary transition-colors hover:text-primary focus-visible:outline-primary"
+                  className="mt-2 inline-flex min-h-12 items-center rounded-control-sm px-1 text-[0.9375rem] font-medium text-text-secondary transition-colors hover:text-primary focus-visible:outline-primary"
                   onClick={() => setExtraCounts((current) => ({
                     ...current,
                     [exercise.id]: Math.max(current[exercise.id] ?? 0, highestSaved - exercise.seriesObjetivo) + 1,
@@ -160,7 +152,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
         })}
       </div>
       <div className="mt-6 border-t border-border/50 pt-4">
-        <Button fullWidth onClick={onFinish}>Finalizar entrenamiento</Button>
+        <Button className="min-h-[3.25rem]" fullWidth onClick={onFinish}>Finalizar entrenamiento</Button>
       </div>
     </div>
   );
@@ -191,6 +183,10 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
   const initialRir = saved?.rir != null ? String(saved.rir) : "";
   const isDirty = weight !== initialWeight || reps !== initialReps || rir !== initialRir;
   const isSaved = Boolean(saved?.completada);
+  const errorId = `free-set-${rowId.replace(":", "-")}-error`;
+  const hasWeightError = error.startsWith("Ingresá un peso");
+  const hasRepsError = error.startsWith("Ingresá entre");
+  const hasRirError = error.startsWith("El RIR");
 
   useEffect(() => {
     onDirtyChange(rowId, isDirty);
@@ -243,7 +239,7 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
     }
   }
 
-  const fieldClass = "h-11 min-w-0 w-full max-w-full rounded-control-sm border border-border/70 bg-background/75 px-1 text-center font-brand text-[1.0625rem] font-bold tabular-nums text-text-primary caret-primary outline-none transition-colors focus:border-primary/65 focus:bg-surface focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-1 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
+  const fieldClass = "h-12 min-w-0 w-full max-w-full border-0 border-b border-border/45 bg-transparent px-1 text-center font-brand text-lg font-bold tabular-nums text-text-primary caret-primary placeholder:text-text-secondary/35 outline-none! transition-colors duration-150 focus:bg-primary/5 focus:outline-none! focus-visible:outline-none! motion-reduce:transition-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
   const rowStateClass = error
     ? "bg-error/5"
@@ -255,33 +251,33 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
 
   return (
     <form className={`min-w-0 border-b border-border/35 px-1 py-2 transition-colors last:border-b-0 ${rowStateClass}`} onSubmit={(event) => void save(event)}>
-      <div className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1.05fr)_minmax(0,.85fr)_minmax(0,.65fr)_2.75rem] items-center gap-1">
+      <div className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1.05fr)_minmax(0,.85fr)_minmax(0,.65fr)_3rem] items-center gap-1">
         <span aria-label={`${isExtra ? "Serie extra" : "Serie"} ${number}${isNextPending ? ", próxima pendiente" : ""}`} className={`font-brand text-base font-bold tabular-nums ${isExtra || isNextPending ? "text-info" : "text-text-secondary"}`} title={isExtra ? "Serie extra" : isNextPending ? "Próxima serie pendiente" : undefined}>
           {String(number).padStart(2, "0")}
         </span>
         <label className="min-w-0">
           <span className="sr-only">Peso de la serie {number} en kilogramos</span>
-          <input className={fieldClass} inputMode="decimal" max="1000" min="0" onChange={(event) => setWeight(event.target.value)} step="0.01" type="number" value={weight} />
+          <input aria-describedby={hasWeightError ? errorId : undefined} aria-invalid={hasWeightError} className={`${fieldClass} ${hasWeightError ? "border-b-error" : ""}`} inputMode="decimal" max="1000" min="0" onChange={(event) => setWeight(event.target.value)} placeholder="—" step="0.01" type="number" value={weight} />
         </label>
         <label className="min-w-0">
           <span className="sr-only">Repeticiones de la serie {number}</span>
-          <input className={fieldClass} inputMode="numeric" max="200" min="1" onChange={(event) => setReps(event.target.value)} step="1" type="number" value={reps} />
+          <input aria-describedby={hasRepsError ? errorId : undefined} aria-invalid={hasRepsError} className={`${fieldClass} ${hasRepsError ? "border-b-error" : ""}`} inputMode="numeric" max="200" min="1" onChange={(event) => setReps(event.target.value)} placeholder="—" step="1" type="number" value={reps} />
         </label>
         <label className="min-w-0">
           <span className="sr-only">RIR opcional de la serie {number}</span>
-          <input className={fieldClass} inputMode="numeric" max="5" min="0" onChange={(event) => setRir(event.target.value)} step="1" type="number" value={rir} />
+          <input aria-describedby={hasRirError ? errorId : undefined} aria-invalid={hasRirError} className={`${fieldClass} ${hasRirError ? "border-b-error" : ""}`} inputMode="numeric" max="5" min="0" onChange={(event) => setRir(event.target.value)} placeholder="—" step="1" type="number" value={rir} />
         </label>
-        <span className="flex size-11 items-center justify-center">
+        <span className="flex size-12 items-center justify-center">
           {pending ? (
-            <button aria-label={`Guardando serie ${number}`} className="flex size-11 items-center justify-center rounded-control-sm bg-primary/10 text-primary" disabled type="submit">
+            <button aria-label={`Guardando serie ${number}`} className="flex size-12 items-center justify-center rounded-control-sm bg-primary/10 text-primary" disabled type="submit">
               <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={18} />
             </button>
           ) : isDirty ? (
-            <button aria-label={`${isSaved ? "Guardar cambios de" : "Completar"} serie ${number}`} className="flex size-11 items-center justify-center rounded-control-sm bg-primary-strong text-text-primary transition-colors hover:bg-primary focus-visible:outline-primary" type="submit">
+            <button aria-label={`${isSaved ? "Guardar cambios de" : "Completar"} serie ${number}`} className="flex size-12 items-center justify-center rounded-control-sm bg-primary-strong text-text-primary transition-colors hover:bg-primary focus-visible:outline-primary" type="submit">
               <Save aria-hidden="true" size={18} strokeWidth={2} />
             </button>
           ) : isSaved ? (
-            <span className="flex size-11 items-center justify-center rounded-control-sm bg-success/10 text-success" role="status">
+            <span className="flex size-12 items-center justify-center rounded-control-sm bg-success/10 text-success" role="status">
               <Check aria-hidden="true" size={18} strokeWidth={2.25} />
               <span className="sr-only">Serie {number} guardada</span>
             </span>
@@ -290,11 +286,11 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
           )}
         </span>
       </div>
-      {error ? <p className="mt-1.5 pl-9 text-xs leading-5 text-error" role="alert">{error}</p> : null}
+      {error ? <p className="mt-1.5 pl-9 text-[0.8125rem] leading-5 text-error" id={errorId} role="alert">{error}</p> : null}
       {canRemove ? (
         <button
           aria-label={`Quitar serie extra ${number}`}
-          className="ml-auto mt-1 flex min-h-11 items-center gap-2 rounded-control-sm px-2 text-xs font-medium text-text-secondary transition-colors hover:text-error focus-visible:outline-primary disabled:opacity-50"
+          className="ml-auto mt-1 flex min-h-12 items-center gap-2 rounded-control-sm px-2 text-[0.8125rem] font-medium text-text-secondary transition-colors hover:text-error focus-visible:outline-primary disabled:opacity-50"
           disabled={pending}
           onClick={onRemove}
           type="button"

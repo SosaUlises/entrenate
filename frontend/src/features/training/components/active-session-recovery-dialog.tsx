@@ -89,7 +89,7 @@ export function ActiveSessionRecoveryDialog({
       <div className="p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
         {step === "decision" ? (
           <>
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-info">
+            <p className="text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.1em] text-info">
               {stale ? "ENTRENAMIENTO PENDIENTE" : "ENTRENAMIENTO EN CURSO"}
             </p>
             <h2 className="mt-3 font-brand text-2xl font-bold leading-tight" id="active-session-recovery-title">

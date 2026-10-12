@@ -37,3 +37,29 @@ export function getFirstMissingTarget(
 export function areTargetSetsComplete(session: TrainingSession): boolean {
   return getFirstMissingTarget(session) === null;
 }
+
+export function getCompletedTargetSetCount(exercise: TrainingSessionExercise): number {
+  return new Set(
+    exercise.series
+      .filter(
+        (set) =>
+          set.completada &&
+          set.numeroSerie >= 1 &&
+          set.numeroSerie <= exercise.seriesObjetivo,
+      )
+      .map((set) => set.numeroSerie),
+  ).size;
+}
+
+export function getSessionTargetProgress(session: TrainingSession): {
+  completed: number;
+  total: number;
+} {
+  return getOrderedExercises(session).reduce(
+    (progress, exercise) => ({
+      completed: progress.completed + getCompletedTargetSetCount(exercise),
+      total: progress.total + exercise.seriesObjetivo,
+    }),
+    { completed: 0, total: 0 },
+  );
+}
