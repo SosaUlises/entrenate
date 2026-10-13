@@ -132,12 +132,12 @@ export function EntrenateExerciseDemo({ exerciseName }: { exerciseName: string }
                 />
               ))}
               {!loadedFrames.has(currentFrames[0]) ? (
-                <span className="relative z-10 text-xs text-text-secondary">Cargando demostración…</span>
+                <span className="relative z-10 text-[0.8125rem] text-text-secondary">Cargando demostración…</span>
               ) : null}
             </>
           )
         ) : (
-          <span className="text-xs text-text-secondary">Cargando demostración…</span>
+          <span className="text-[0.8125rem] text-text-secondary">Cargando demostración…</span>
         )}
       </div>
     </section>

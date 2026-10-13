@@ -81,11 +81,11 @@ export default function WorkoutGuideExerciseDemo({ workoutGuideId }: ExerciseMov
                 />
               ))}
               {!loadedFrames.has(0) ? (
-                <span className="relative z-10 text-xs text-text-secondary">Cargando demostración…</span>
+                <span className="relative z-10 text-[0.8125rem] text-text-secondary">Cargando demostración…</span>
               ) : null}
             </>
           ) : (
-            <span className="text-xs text-text-secondary">Cargando demostración…</span>
+            <span className="text-[0.8125rem] text-text-secondary">Cargando demostración…</span>
           )}
         </div>
       </div>
@@ -100,7 +100,7 @@ export default function WorkoutGuideExerciseDemo({ workoutGuideId }: ExerciseMov
         </div>
       ) : null}
       {frameSources && loadedFrames.has(0) && !framesFailed ? (
-        <footer className="mt-3 text-center text-xs leading-5 text-text-secondary/70">
+        <footer className="mt-3 text-center text-[0.8125rem] leading-5 text-text-secondary/70">
           <a className="hover:underline focus-visible:underline" href={attribution.creatorUrl} rel="noopener noreferrer" target="_blank">{attribution.creator}</a>
           {attribution.source ? (
             <> · base: <a className="hover:underline focus-visible:underline" href={attribution.source.url} rel="noopener noreferrer" target="_blank">{attribution.source.name}</a></>
