@@ -1,12 +1,23 @@
 const listDateFormatter = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
   month: "short",
+});
+
+const listDateWithYearFormatter = new Intl.DateTimeFormat("es-AR", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+const accessibleDateFormatter = new Intl.DateTimeFormat("es-AR", {
+  day: "numeric",
+  month: "long",
   year: "numeric",
 });
 
 const detailDateFormatter = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
-  month: "short",
+  month: "long",
   year: "numeric",
 });
 
@@ -44,7 +55,24 @@ export function getLocalDateKey(value: string): string {
 export function formatHistoryGroupDate(value: string): string {
   const date = parseDate(value);
   if (!date) return "FECHA NO DISPONIBLE";
-  return withoutMonthPeriod(listDateFormatter.format(date)).toLocaleUpperCase("es-AR");
+
+  const today = startOfLocalDay(new Date());
+  const sessionDay = startOfLocalDay(date);
+  const differenceInDays = Math.round((today.getTime() - sessionDay.getTime()) / 86_400_000);
+
+  if (differenceInDays === 0) return "HOY";
+  if (differenceInDays === 1) return "AYER";
+
+  const formatter = date.getFullYear() === today.getFullYear()
+    ? listDateFormatter
+    : listDateWithYearFormatter;
+
+  return withoutMonthPeriod(formatter.format(date)).toLocaleUpperCase("es-AR");
+}
+
+export function formatHistoryAccessibleDate(value: string): string | null {
+  const date = parseDate(value);
+  return date ? withoutMonthPeriod(accessibleDateFormatter.format(date)) : null;
 }
 
 export function formatHistoryDetailDate(value: string): string | null {
@@ -83,4 +111,12 @@ export function formatExerciseCount(value: number): string {
 
 export function formatSetCount(value: number): string {
   return `${value} ${value === 1 ? "serie registrada" : "series registradas"}`;
+}
+
+export function formatCompactSetCount(value: number): string {
+  return `${value} ${value === 1 ? "serie" : "series"}`;
+}
+
+function startOfLocalDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }

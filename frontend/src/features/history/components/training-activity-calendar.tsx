@@ -20,10 +20,10 @@ import {
   type CalendarDay,
 } from "../activity-calendar";
 import {
+  formatCompactSetCount,
   formatDuration,
   formatExerciseCount,
   formatHistoryTime,
-  formatSetCount,
   getLocalDateKey,
 } from "../history-formatters";
 import {
@@ -137,14 +137,14 @@ export function TrainingActivityCalendar({
   const nextYearDisabled = selectedYear >= today.getFullYear();
 
   return (
-    <section aria-labelledby="activity-title" className="mt-8 min-w-0 max-w-full overflow-x-hidden border-b border-border/50 pb-8 sm:mt-10 sm:pb-10">
-      <div className="flex min-w-0 max-w-full items-center justify-between gap-4">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary" id="activity-title">Actividad</h2>
+    <section aria-labelledby="activity-title" className="mt-6 min-w-0 max-w-full overflow-x-hidden">
+      <h2 className="sr-only" id="activity-title">Actividad</h2>
+      <div className="flex min-w-0 max-w-full justify-end">
         <div aria-label="Vista de actividad" className="inline-flex rounded-full border border-border/50 bg-surface/45 p-1" role="group">
           {(["month", "year"] as const).map((item) => (
             <button
               aria-pressed={mode === item}
-              className={`min-h-9 rounded-full px-3.5 text-xs font-semibold transition-colors focus-visible:outline-primary ${mode === item ? "bg-primary/15 text-primary" : "text-text-secondary hover:text-text-primary"}`}
+              className={`min-h-11 rounded-full px-4 text-[0.8125rem] font-semibold transition-colors duration-150 focus-visible:outline-primary motion-reduce:transition-none ${mode === item ? "bg-primary/15 text-primary" : "text-text-secondary hover:text-text-primary"}`}
               key={item}
               onClick={() => changeMode(item)}
               type="button"
@@ -223,11 +223,11 @@ function MonthView({
   const cells = buildMonthCells(month);
 
   return (
-    <div className="mt-4 min-w-0 w-full max-w-md overflow-hidden rounded-container border border-border/55 bg-surface/35 p-3 sm:mt-5 sm:p-5">
+    <div className="mt-4 min-w-0 w-full max-w-md overflow-hidden sm:mt-5">
       <CalendarNavigation label={getMonthLabel(month)} nextDisabled={nextDisabled} onNext={onNext} onPrevious={onPrevious} />
       <div aria-label={`Actividad de ${getMonthLabel(month)}`} className="mt-3 grid min-w-0 max-w-full grid-cols-7 gap-1.5 sm:mt-4 sm:gap-2" role="grid">
         {weekDayLabels.map((label) => (
-          <span className="pb-1 text-center text-xs font-semibold text-text-secondary" key={label} role="columnheader">{label}</span>
+          <span className="pb-1 text-center text-[0.8125rem] font-semibold text-text-secondary" key={label} role="columnheader">{label}</span>
         ))}
         {loading
           ? Array.from({ length: cells.length }, (_, index) => <span aria-hidden="true" className="aspect-square animate-pulse rounded-[0.625rem] bg-surface-elevated/55" key={index} />)
@@ -242,10 +242,13 @@ function MonthView({
 
 function MonthDayCell({ count, day, future, onSelect }: { count: number; day: CalendarDay; future: boolean; onSelect: (day: SelectedDay) => void }) {
   const label = getDayAriaLabel(day.date, count, future);
-  const className = `flex aspect-square min-w-0 items-center justify-center rounded-[0.625rem] border text-sm font-semibold tabular-nums transition-[background-color,border-color,color,transform] ${getActivityClasses(count, future)} ${count > 0 && !future ? "hover:border-primary active:scale-95 focus-visible:outline-primary" : ""}`;
+  const className = `relative flex aspect-square min-w-0 items-center justify-center rounded-[0.625rem] border text-sm font-semibold tabular-nums transition-[background-color,border-color,color,transform] duration-150 motion-reduce:transition-none motion-reduce:active:scale-100 ${getActivityClasses(count, future)} ${count > 0 && !future ? "hover:border-primary active:scale-[0.98] focus-visible:outline-primary" : ""}`;
 
   return count > 0 && !future ? (
-    <button aria-label={label} className={className} onClick={() => onSelect({ key: day.key, sessionCount: count })} title={label} type="button">{day.dayNumber}</button>
+    <button aria-label={label} className={className} onClick={() => onSelect({ key: day.key, sessionCount: count })} title={label} type="button">
+      {day.dayNumber}
+      <span aria-hidden="true" className="absolute bottom-1 size-1 rounded-full bg-text-primary" />
+    </button>
   ) : (
     <span aria-label={label} className={className} role="gridcell">{day.dayNumber}</span>
   );
@@ -275,29 +278,29 @@ function YearView({
   year: number;
 }) {
   const weeks = buildYearWeeks(year);
-  const columnTemplate = `repeat(${weeks.length}, 1.5rem)`;
+  const columnTemplate = `repeat(${weeks.length}, 2.75rem)`;
 
   return (
-    <div className="mt-4 min-w-0 w-full max-w-full overflow-hidden rounded-container border border-border/55 bg-surface/35 p-3 sm:mt-5 sm:p-5">
+    <div className="mt-4 min-w-0 w-full max-w-full overflow-hidden sm:mt-5">
       <CalendarNavigation label={String(year)} nextDisabled={nextDisabled} onNext={onNext} onPrevious={onPrevious} />
       <div className="mt-4 flex min-w-0 max-w-full gap-2 overflow-hidden sm:mt-5">
-        <div aria-hidden="true" className="grid shrink-0 grid-rows-7 gap-1 pt-6 text-[0.625rem] font-medium text-text-secondary">
-          {weekDayLabels.map((label) => <span className="flex h-6 items-center" key={label}>{label}</span>)}
+        <div aria-hidden="true" className="grid shrink-0 grid-rows-7 gap-1 pt-6 text-[0.8125rem] font-medium text-text-secondary">
+          {weekDayLabels.map((label) => <span className="flex h-11 items-center" key={label}>{label}</span>)}
         </div>
         <div aria-label={`Actividad de ${year}. Deslizá horizontalmente para recorrer el año.`} className="activity-scrollbar w-0 min-w-0 flex-1 overflow-x-auto overscroll-x-contain pb-2" ref={scrollRef} role="region" tabIndex={0}>
           <div className="w-max min-w-full">
-            <div aria-hidden="true" className="grid h-6 gap-1" style={{ gridTemplateColumns: columnTemplate }}>
+            <div aria-hidden="true" className="mb-1 grid h-6 gap-1" style={{ gridTemplateColumns: columnTemplate }}>
               {weeks.map((week, index) => {
                 const monthStart = week.find((day) => day?.dayNumber === 1);
-                return <span className="text-[0.625rem] font-semibold text-text-secondary" key={index}>{monthStart ? getShortMonthLabel(monthStart.date) : ""}</span>;
+                return <span className="text-[0.8125rem] font-semibold text-text-secondary" key={index}>{monthStart ? getShortMonthLabel(monthStart.date) : ""}</span>;
               })}
             </div>
             <div aria-label={`Días de actividad de ${year}`} className="grid grid-flow-col grid-rows-7 gap-1" role="grid" style={{ gridTemplateColumns: columnTemplate }}>
               {loading
-                ? Array.from({ length: weeks.length * 7 }, (_, index) => <span aria-hidden="true" className="size-6 animate-pulse rounded-[0.4rem] bg-surface-elevated/55" key={index} />)
+                ? Array.from({ length: weeks.length * 7 }, (_, index) => <span aria-hidden="true" className="size-11 animate-pulse rounded-[0.4rem] bg-surface-elevated/55" key={index} />)
                 : weeks.flatMap((week, weekIndex) => week.map((day, dayIndex) => day
                   ? <YearDayCell count={counts.get(day.key) ?? 0} day={day} future={day.key > todayKey} key={day.key} onSelect={onSelectDay} />
-                  : <span aria-hidden="true" className="size-6" key={`empty-${weekIndex}-${dayIndex}`} />))}
+                  : <span aria-hidden="true" className="size-11" key={`empty-${weekIndex}-${dayIndex}`} />))}
             </div>
           </div>
         </div>
@@ -309,10 +312,12 @@ function YearView({
 
 function YearDayCell({ count, day, future, onSelect }: { count: number; day: CalendarDay; future: boolean; onSelect: (day: SelectedDay) => void }) {
   const label = getDayAriaLabel(day.date, count, future);
-  const className = `size-6 rounded-[0.4rem] border transition-[background-color,border-color,transform] ${getActivityClasses(count, future)} ${count > 0 && !future ? "hover:border-primary active:scale-90 focus-visible:outline-primary" : ""}`;
+  const className = `flex size-11 items-center justify-center rounded-[0.4rem] border transition-[background-color,border-color,transform] duration-150 motion-reduce:transition-none motion-reduce:active:scale-100 ${getActivityClasses(count, future)} ${count > 0 && !future ? "hover:border-primary active:scale-[0.98] focus-visible:outline-primary" : ""}`;
 
   return count > 0 && !future ? (
-    <button aria-label={label} className={className} onClick={() => onSelect({ key: day.key, sessionCount: count })} title={label} type="button" />
+    <button aria-label={label} className={className} onClick={() => onSelect({ key: day.key, sessionCount: count })} title={label} type="button">
+      <span aria-hidden="true" className="size-1.5 rounded-full bg-text-primary" />
+    </button>
   ) : (
     <span aria-label={label} className={className} role="gridcell" title={label} />
   );
@@ -371,7 +376,7 @@ function DayDetailDialog({
       <div className="max-h-[calc(85dvh-0.75rem)] overflow-y-auto px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-6 sm:pt-5">
         <header className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="font-brand text-xl font-bold uppercase leading-7 text-text-primary" id="activity-day-title">{date ? formatAccessibleDate(date).toLocaleUpperCase("es-AR") : "Actividad"}</h3>
+            <h3 className="font-brand text-xl font-bold leading-7 text-text-primary" id="activity-day-title">{date ? formatAccessibleDate(date) : "Actividad"}</h3>
             {selectedDay ? <p className="mt-1 text-sm text-text-secondary">{selectedDay.sessionCount} {selectedDay.sessionCount === 1 ? "entrenamiento" : "entrenamientos"}</p> : null}
           </div>
           <button aria-label="Cerrar detalle del día" className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary hover:bg-surface hover:text-text-primary focus-visible:outline-primary" onClick={onClose} type="button"><X aria-hidden="true" size={20} /></button>
@@ -387,7 +392,7 @@ function DayDetailDialog({
           <ul className="mt-5 divide-y divide-border/50 border-y border-border/50">
             {daySessions.map((session) => {
               const duration = formatDuration(session.horaInicio, session.horaFin);
-              const metadata = [formatExerciseCount(session.cantidadEjercicios), formatSetCount(session.cantidadSeriesCompletadas), duration].filter((value): value is string => Boolean(value));
+              const metadata = [formatExerciseCount(session.cantidadEjercicios), formatCompactSetCount(session.cantidadSeriesCompletadas), duration].filter((value): value is string => Boolean(value));
               return (
                 <li key={session.id}>
                   <Link className="group flex min-h-20 items-center gap-3 py-3 focus-visible:outline-primary" href={`/history/${session.id}`}>
@@ -411,7 +416,7 @@ function DayDetailDialog({
 function getActivityClasses(count: number, future: boolean): string {
   if (future) return "border-border/25 bg-surface/20 text-text-secondary/35";
   if (count > 0) return "border-primary/65 bg-primary-strong/85 text-text-primary";
-  return "border-border/45 bg-surface-elevated/40 text-text-secondary";
+  return "border-border/60 bg-surface-elevated/50 text-text-primary/70";
 }
 
 function getDayAriaLabel(date: Date, count: number, future: boolean): string {
