@@ -47,12 +47,11 @@ export function RoutineDraftRecoveryDialog({
     >
       <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-border-strong sm:hidden" />
       <div className="px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 sm:p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-info">BORRADOR GUARDADO</p>
-        <h2 className="mt-3 font-brand text-2xl font-bold leading-tight" id="routine-draft-recovery-title">
+        <h2 className="font-brand text-2xl font-bold leading-tight" id="routine-draft-recovery-title">
           Tenés una rutina sin terminar
         </h2>
         <p className="mt-3 text-sm leading-6 text-text-secondary" id="routine-draft-recovery-description">
-          Última modificación · {formatRoutineDraftUpdatedAt(storedDraft.updatedAt)}
+          Guardada {formatRoutineDraftUpdatedAt(storedDraft.updatedAt).toLocaleLowerCase("es-AR")}.
         </p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row-reverse sm:justify-start">
           <Button autoFocus className="min-h-12 sm:min-w-32" onClick={continueDraft}>

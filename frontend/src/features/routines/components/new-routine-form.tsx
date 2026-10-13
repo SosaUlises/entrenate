@@ -1,13 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronDown, ChevronRight, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { getExerciseImage } from "@/features/exercises/components/exercise-catalog";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { createRoutineAction } from "../actions/create-routine.action";
 import { deleteRoutineAction } from "../actions/delete-routine.action";
@@ -138,7 +136,7 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
 
   if (notFound) {
     return (
-      <section className="mx-auto w-full max-w-xl rounded-card border border-border bg-surface p-5">
+      <section className="mx-auto w-full max-w-xl pt-4">
         <p className="text-sm text-text-primary">No encontramos esta rutina.</p>
         <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline-primary" href="/routines">
           Volver a mis rutinas
@@ -148,7 +146,7 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
   }
 
   return (
-    <section aria-labelledby="new-routine-title" className="mx-auto w-full max-w-xl">
+    <section aria-labelledby="new-routine-title" className="mx-auto w-full max-w-xl pb-24">
       <div className="flex items-center gap-1">
         <Link
           aria-label={routineId ? "Volver al detalle de la rutina" : "Volver a mis rutinas"}
@@ -183,7 +181,7 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
           />
         </div>
 
-        <div className="mt-8">
+        <div className={routineId ? "mt-10" : "mt-8"}>
           <h2 className="font-brand text-lg font-bold text-text-primary">Días de entrenamiento</h2>
           <div className="mt-3 border-t border-border/60">
             {dias.map((day) => (
@@ -202,7 +200,7 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
             ))}
           </div>
           <button
-            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-control-sm px-1 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-primary"
+            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-control-sm px-2 py-2 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-primary"
             onClick={handleAddDay}
             type="button"
           >
@@ -220,9 +218,11 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
             ) : null}
           </Alert>
         ) : null}
-        <Button className={`mt-7 min-h-[3.25rem] w-full rounded-control-sm text-[0.9375rem] font-bold sm:max-w-sm ${!canSubmit ? "disabled:border disabled:border-border/60 disabled:bg-surface/70 disabled:text-text-secondary disabled:opacity-100" : ""}`} disabled={!canSubmit || isSubmitting} isLoading={isSubmitting} type="submit">
-          {isSubmitting ? (routineId ? "Guardando..." : "Creando rutina...") : (routineId ? "Guardar cambios" : "Crear rutina")}
-        </Button>
+        <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 z-20 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 border-t border-border/60 bg-background/95 px-3 py-3 backdrop-blur-md sm:rounded-control sm:border">
+          <Button className={`min-h-[3.25rem] w-full rounded-control-sm text-[0.9375rem] font-bold ${!canSubmit ? "disabled:border disabled:border-border-strong disabled:bg-surface-elevated disabled:text-text-secondary disabled:opacity-100" : ""}`} disabled={!canSubmit || isSubmitting} isLoading={isSubmitting} type="submit">
+            {isSubmitting ? (routineId ? "Guardando..." : "Creando rutina...") : (routineId ? "Guardar cambios" : "Crear rutina")}
+          </Button>
+        </div>
       </form>
       {routineId ? (
         <div className="mt-10 border-t border-border/55 pt-6">
@@ -332,7 +332,7 @@ function RoutineDaySection({
 
   return (
     <section aria-label={`Día de entrenamiento ${day.orden}`} className="min-w-0 border-b border-border/60">
-      <div className="flex min-w-0 items-center gap-1">
+      <div className="flex min-w-0 items-center">
         <button
           aria-controls={contentId}
           aria-expanded={expanded}
@@ -340,28 +340,20 @@ function RoutineDaySection({
           onClick={onToggle}
           type="button"
         >
-          <span className="min-w-0 flex-1 truncate font-brand text-base font-bold text-text-primary">{day.nombre}</span>
-          <span className="shrink-0 text-xs font-medium text-info/80">
+          <span className="min-w-0 flex-1 truncate font-brand text-base font-bold uppercase text-text-primary">Día {day.orden}</span>
+          <span className="shrink-0 text-[0.8125rem] font-semibold text-text-secondary">
             {day.exercises.length} {day.exercises.length === 1 ? "ejercicio" : "ejercicios"}
           </span>
           <ChevronDown aria-hidden="true" className={`shrink-0 text-text-secondary/70 transition-[color,transform] group-hover:text-text-primary motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} size={16} strokeWidth={1.75} />
         </button>
-        {canRemove ? (
-          <button
-            aria-label={`Eliminar día ${day.orden}: ${day.nombre}`}
-            className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary/65 transition-colors hover:bg-error/10 hover:text-error focus-visible:text-error focus-visible:outline-primary"
-            onClick={() => onRemove(day.id)}
-            type="button"
-          >
-            <Trash2 aria-hidden="true" size={17} />
-          </button>
-        ) : null}
       </div>
 
       <div className="pb-5" hidden={!expanded} id={contentId}>
-        <label className="sr-only" htmlFor={`routine-day-${day.id}`}>Nombre del día {day.orden}</label>
+        <label className="text-[0.8125rem] font-semibold text-text-primary" htmlFor={`routine-day-${day.id}`}>
+          Nombre del día<span className="sr-only"> {day.orden}</span>
+        </label>
         <input
-          className="min-h-11 w-full rounded-control-sm border border-border/50 bg-surface/40 px-3 text-sm font-semibold text-text-primary outline-none transition-[background-color,border-color,box-shadow] hover:border-border-strong hover:bg-surface/55 focus:border-primary focus:bg-surface/55 focus:ring-2 focus:ring-primary/20 focus-visible:outline-primary"
+          className="mt-2 min-h-11 w-full rounded-control-sm border border-border/50 bg-surface/40 px-3 text-sm font-semibold text-text-primary outline-none transition-[background-color,border-color,box-shadow] hover:border-border-strong hover:bg-surface/55 focus:border-primary focus:bg-surface/55 focus:ring-2 focus:ring-primary/20 focus-visible:outline-primary"
           id={`routine-day-${day.id}`}
           maxLength={100}
           onChange={(event) => onRename(day.id, event.target.value)}
@@ -371,22 +363,17 @@ function RoutineDaySection({
         />
 
         {day.exercises.length === 0 ? (
-          <p className="mt-4 text-sm leading-6 text-text-secondary">Todavía no agregaste ejercicios.</p>
+          <p className="mt-4 text-sm leading-6 text-text-primary/75">Todavía no agregaste ejercicios.</p>
         ) : (
           <ul className="mt-4 divide-y divide-border/45 border-y border-border/45">
-            {day.exercises.map((exercise) => {
-              const imageSrc = getExerciseImage(exercise.nombre);
-              return (
-                <li className="flex min-w-0 items-center gap-1 py-1.5" key={exercise.exerciseId}>
+            {day.exercises.map((exercise) => (
+              <li className="flex min-w-0 items-center gap-1 py-1.5" key={exercise.exerciseId}>
                   <button
                     aria-label={`Configurar ${exercise.nombre} en ${day.nombre}`}
                     className="group flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-control-sm py-2 text-left transition-colors focus-visible:outline-primary"
                     onClick={() => onEditExercise(exercise.exerciseId)}
                     type="button"
                   >
-                    {imageSrc ? (
-                      <Image alt="" className="size-12 shrink-0 rounded-control-sm object-cover" height={48} src={imageSrc} width={48} />
-                    ) : null}
                     <span className="min-w-0 flex-1">
                       <span className="block break-words font-brand text-base font-bold leading-5 text-text-primary">{exercise.nombre}</span>
                       <span className="mt-1 block break-words text-sm leading-5 text-text-secondary">
@@ -397,18 +384,29 @@ function RoutineDaySection({
                   </button>
                   <button
                     aria-label={`Quitar ${exercise.nombre} de ${day.nombre}`}
-                    className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary/60 transition-colors hover:bg-error/10 hover:text-error focus-visible:text-error focus-visible:outline-primary"
+                    className="flex min-h-11 shrink-0 items-center rounded-control-sm px-2 text-[0.8125rem] font-semibold text-text-secondary transition-colors hover:bg-error/10 hover:text-error focus-visible:text-error focus-visible:outline-primary"
                     onClick={() => onRemoveExercise(day.id, exercise.exerciseId)}
                     type="button"
                   >
-                    <X aria-hidden="true" size={18} />
+                    Quitar
                   </button>
-                </li>
-              );
-            })}
+              </li>
+            ))}
           </ul>
         )}
-        <AddExercisesLink basePath={basePath} dayId={day.id} />
+        <div className={`${day.exercises.length === 0 ? "mt-4" : "mt-3"} flex flex-wrap items-center justify-between gap-2`}>
+          <AddExercisesLink basePath={basePath} dayId={day.id} />
+          {canRemove ? (
+            <button
+              className="inline-flex min-h-11 items-center gap-2 rounded-control-sm px-2 text-[0.8125rem] font-semibold text-text-secondary transition-colors hover:bg-error/10 hover:text-error focus-visible:text-error focus-visible:outline-error"
+              onClick={() => onRemove(day.id)}
+              type="button"
+            >
+              <Trash2 aria-hidden="true" size={16} />
+              Eliminar día
+            </button>
+          ) : null}
+        </div>
       </div>
     </section>
   );
@@ -417,7 +415,7 @@ function RoutineDaySection({
 function AddExercisesLink({ basePath, dayId }: { basePath: string; dayId: string }) {
   return (
     <Link
-      className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-control-sm bg-primary/8 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/12 hover:text-text-primary focus-visible:outline-primary"
+      className="inline-flex min-h-11 items-center gap-2 rounded-control-sm bg-primary/8 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/12 hover:text-text-primary focus-visible:outline-primary"
       href={`${basePath}/exercises?day=${encodeURIComponent(dayId)}`}
     >
       <Plus aria-hidden="true" size={17} />

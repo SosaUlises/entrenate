@@ -13,7 +13,7 @@ export function RoutineExercisePicker({ dayId, returnHref = "/routines/new" }: {
 
   if (!day) {
     return (
-      <div className="mx-auto w-full max-w-xl rounded-card border border-border bg-surface p-5">
+      <div className="mx-auto w-full max-w-xl pt-4">
         <p className="text-sm text-text-primary">No encontramos el día de entrenamiento.</p>
         <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline-primary" href={returnHref}>
           {backLabel}

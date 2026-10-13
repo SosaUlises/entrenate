@@ -10,6 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { getExercisesAction, type GetExercisesActionResult } from "../actions/get-exercises.action";
+import {
+  ALL_MUSCLE_FILTER_ID,
+  getVisibleMuscleFilters,
+  matchesMuscleFilter,
+} from "../exercise-muscle-filters";
 import type { Exercise } from "../types/exercise.types";
 import { hasEntrenateExerciseDemo } from "./exercise-demo-registry";
 
@@ -151,9 +156,11 @@ export function ExerciseCatalog(props: ExerciseCatalogProps) {
       </p>
 
       {state.status === "loading" ? (
-        <div className="flex min-h-48 items-center justify-center">
-          <Spinner className="size-6 text-primary" label="Cargando ejercicios" />
-        </div>
+        props.mode === "select" ? <ExercisePickerSkeleton /> : (
+          <div className="flex min-h-48 items-center justify-center">
+            <Spinner className="size-6 text-primary" label="Cargando ejercicios" />
+          </div>
+        )
       ) : state.status === "error" ? (
         <div className={props.mode === "select" ? "mt-8" : "mt-8 rounded-card border border-border bg-surface p-5"}>
           <p className="text-sm text-text-primary">No pudimos cargar los ejercicios.</p>
@@ -203,6 +210,33 @@ export function ExerciseCatalog(props: ExerciseCatalogProps) {
   );
 }
 
+function ExercisePickerSkeleton() {
+  return (
+    <div aria-label="Cargando ejercicios" className="mt-4 animate-pulse" role="status">
+      <div className="h-11 w-full rounded-control-sm bg-surface-elevated" />
+      <div className="mt-3 flex gap-1.5 overflow-hidden">
+        {[0, 1, 2, 3].map((item) => (
+          <div className="flex h-[4.75rem] min-w-[4.5rem] shrink-0 flex-col items-center" key={item}>
+            <div className="size-11 rounded-control-sm bg-surface-elevated" />
+            <div className="mt-1 h-3 w-10 rounded bg-surface-elevated" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 border-y border-border/50">
+        {[0, 1, 2, 3].map((item) => (
+          <div className="flex min-h-[4.5rem] items-center border-b border-border/50 py-2.5 last:border-b-0" key={item}>
+            <div className="min-w-0 flex-1">
+              <div className="h-4 w-3/4 rounded bg-surface-elevated" />
+              <div className="mt-2 h-3 w-28 rounded bg-surface-elevated" />
+            </div>
+            <div className="size-5 rounded bg-surface-elevated" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 type ExerciseSelectorProps = {
   exercises: Exercise[];
   initialSelectedIds?: string[];
@@ -212,7 +246,7 @@ type ExerciseSelectorProps = {
 
 export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onSelectionChange }: ExerciseSelectorProps) {
   const [query, setQuery] = useState("");
-  const [group, setGroup] = useState<string | null>(null);
+  const [muscleFilterId, setMuscleFilterId] = useState(ALL_MUSCLE_FILTER_ID);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(initialSelectedIds));
   const [preview, setPreview] = useState<{ exercise: Exercise; imageSrc: string } | null>(null);
   const [filterEdges, setFilterEdges] = useState({ left: false, right: false });
@@ -230,12 +264,12 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
     );
   }, []);
 
-  const groups = useMemo(
-    () =>
-      Array.from(new Set(exercises.map((exercise) => exercise.grupoMuscularPrincipal)))
-        .sort((a, b) => a.localeCompare(b, "es-AR")),
+  const muscleFilters = useMemo(
+    () => getVisibleMuscleFilters(exercises.map((exercise) => exercise.grupoMuscularPrincipal)),
     [exercises],
   );
+  const selectedMuscleFilter =
+    muscleFilters.find((filter) => filter.id === muscleFilterId) ?? muscleFilters[0];
 
   useEffect(() => {
     const container = filterRef.current;
@@ -249,7 +283,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [groups, updateFilterEdges]);
+  }, [muscleFilters, updateFilterEdges]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -264,7 +298,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
   const search = normalize(query.trim());
   const visibleExercises = exercises.filter(
     (exercise) =>
-      (!group || exercise.grupoMuscularPrincipal === group) &&
+      matchesMuscleFilter(exercise.grupoMuscularPrincipal, selectedMuscleFilter) &&
       (!search ||
         normalize(exercise.nombre).includes(search) ||
         normalize(exercise.grupoMuscularPrincipal).includes(search)),
@@ -303,24 +337,36 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
         <div className="relative mt-3">
           <div
             aria-label="Filtrar por grupo muscular"
-            className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] sm:pb-1 sm:[scrollbar-width:thin] sm:[scrollbar-color:var(--border-strong)_transparent] [&::-webkit-scrollbar]:h-0 sm:[&::-webkit-scrollbar]:h-1 sm:[&::-webkit-scrollbar-track]:bg-transparent sm:[&::-webkit-scrollbar-thumb]:rounded-full sm:[&::-webkit-scrollbar-thumb]:bg-text-secondary/30"
+            className="flex touch-pan-x gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             onScroll={updateFilterEdges}
             ref={filterRef}
             role="group"
           >
-            {[null, ...groups].map((item) => (
-              <button
-                aria-pressed={group === item}
-                className="flex min-h-11 shrink-0 items-center rounded-full focus-visible:outline-primary"
-                key={item ?? "all"}
-                onClick={() => setGroup(item)}
-                type="button"
-              >
-                <span className={`flex items-center rounded-full px-3 text-xs font-semibold transition-colors ${mode === "select" ? `h-7 ${group === item ? "bg-primary/10 text-primary" : "bg-transparent text-text-secondary hover:bg-surface/50 hover:text-text-primary"}` : `h-8 border ${group === item ? "border-primary/40 bg-primary/12 text-primary" : "border-border/50 bg-surface/60 text-text-secondary hover:border-border hover:text-text-primary"}`}`}>
-                  {item ?? "Todos"}
-                </span>
-              </button>
-            ))}
+            {muscleFilters.map((filter) => {
+              const selected = selectedMuscleFilter.id === filter.id;
+              return (
+                <button
+                  aria-label={`Filtrar por ${filter.label}`}
+                  aria-pressed={selected}
+                  className={`relative flex h-[4.75rem] min-w-[4.5rem] shrink-0 flex-col items-center justify-start rounded-control-sm px-1.5 pb-1.5 transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-1 motion-reduce:transition-none motion-reduce:active:scale-100 ${selected ? "bg-primary/[0.06] text-text-primary" : "text-text-secondary hover:bg-surface/20 hover:text-text-primary"}`}
+                  key={filter.id}
+                  onClick={() => setMuscleFilterId(filter.id)}
+                  type="button"
+                >
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className={`size-11 shrink-0 object-contain ${filter.id === ALL_MUSCLE_FILTER_ID ? "scale-[1.12]" : ""}`}
+                    height={44}
+                    sizes="44px"
+                    src={filter.imageSrc}
+                    width={44}
+                  />
+                  <span className="mt-1 whitespace-nowrap text-[0.8125rem] font-semibold leading-4">{filter.label}</span>
+                  <span aria-hidden="true" className={`absolute bottom-0 h-0.5 w-8 rounded-full bg-primary transition-opacity duration-150 motion-reduce:transition-none ${selected ? "opacity-100" : "opacity-0"}`} />
+                </button>
+              );
+            })}
           </div>
           {filterEdges.left ? (
             <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-linear-to-r from-background to-transparent sm:hidden" />
@@ -348,30 +394,13 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
             if (mode === "select") {
               return (
                 <li
-                  className={`flex min-w-0 items-stretch gap-3 border-b border-border/50 transition-colors first:border-t ${selected ? "bg-primary/5" : "bg-transparent"}`}
+                  className={`flex min-w-0 items-stretch border-b border-border/50 transition-colors first:border-t ${selected ? "bg-primary/5" : "bg-transparent"}`}
                   key={exercise.id}
                 >
-                  {imageSrc ? (
-                    <button
-                      aria-label={`Ver imagen de ${exercise.nombre}`}
-                      className="flex min-h-18 w-14 shrink-0 items-center justify-center py-2 focus-visible:outline-primary"
-                      onClick={() => setPreview({ exercise, imageSrc })}
-                      type="button"
-                    >
-                      <Image
-                        alt=""
-                        className="size-14 rounded-control-sm object-cover"
-                        height={56}
-                        sizes="56px"
-                        src={imageSrc}
-                        width={56}
-                      />
-                    </button>
-                  ) : null}
                   <button
                     aria-label={`${selected ? "Quitar" : "Seleccionar"} ${exercise.nombre}`}
                     aria-pressed={selected}
-                    className="flex min-h-18 min-w-0 flex-1 items-center gap-2 py-2 text-left focus-visible:outline-primary"
+                    className="flex min-h-[4.5rem] min-w-0 flex-1 items-center gap-2 px-1 py-2.5 text-left focus-visible:outline-primary"
                     onClick={() => toggleSelection(exercise.id)}
                     type="button"
                   >
@@ -379,8 +408,8 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                       <span className={`block break-words font-brand text-base font-bold leading-5 ${selected ? "text-primary" : "text-text-primary"}`}>
                         {exercise.nombre}
                       </span>
-                      <span className="mt-1 block text-xs font-medium leading-4 text-info">{exercise.grupoMuscularPrincipal}</span>
-                      <span className="mt-0.5 block break-words text-xs leading-4 text-text-secondary">
+                      <span className="mt-1 block text-[0.8125rem] font-semibold leading-4 text-info">{exercise.grupoMuscularPrincipal}</span>
+                      <span className="mt-0.5 block break-words text-[0.8125rem] leading-4 text-text-secondary">
                         {exercise.equipamientos.length
                           ? exercise.equipamientos.map((item) => item.nombre).join(" · ")
                           : "Sin equipamiento externo"}
@@ -420,7 +449,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                 <div className="pointer-events-none relative z-10 min-w-0 flex-1">
                   <h3 className="font-brand text-base font-bold leading-5 text-text-primary">{exercise.nombre}</h3>
                   <p className="mt-1 text-sm font-medium leading-5 text-primary">{exercise.grupoMuscularPrincipal}</p>
-                  <p className="mt-1 text-xs leading-5 text-text-secondary">
+                  <p className="mt-1 text-[0.8125rem] leading-5 text-text-secondary">
                     {exercise.equipamientos.length
                       ? exercise.equipamientos.map((item) => item.nombre).join(" · ")
                       : "Sin equipamiento externo"}

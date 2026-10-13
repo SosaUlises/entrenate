@@ -1,4 +1,4 @@
-export type ProgressMuscleFilter = {
+export type ExerciseMuscleFilter = {
   id: string;
   label: string;
   imageSrc: string;
@@ -9,7 +9,7 @@ const NEUTRAL_MUSCLE_MAP = "/muscle-maps/muscle-map-todos-neutral.png";
 
 export const ALL_MUSCLE_FILTER_ID = "all";
 
-const primaryMuscleFilters: readonly ProgressMuscleFilter[] = [
+const primaryMuscleFilters: readonly ExerciseMuscleFilter[] = [
   {
     id: ALL_MUSCLE_FILTER_ID,
     label: "Todos",
@@ -60,7 +60,7 @@ const knownBackendValues = new Set(
 
 export function getVisibleMuscleFilters(
   backendGroups: readonly string[],
-): ProgressMuscleFilter[] {
+): ExerciseMuscleFilter[] {
   const availableGroups = new Set(backendGroups);
   const visiblePrimaryFilters = primaryMuscleFilters.filter(
     (filter) =>
@@ -81,7 +81,7 @@ export function getVisibleMuscleFilters(
 
 export function matchesMuscleFilter(
   backendGroup: string,
-  filter: ProgressMuscleFilter,
+  filter: ExerciseMuscleFilter,
 ): boolean {
   return filter.backendValues === null || filter.backendValues.includes(backendGroup);
 }

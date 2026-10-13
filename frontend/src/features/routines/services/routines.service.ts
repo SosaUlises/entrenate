@@ -66,6 +66,9 @@ export async function getRoutines(authToken: string): Promise<RoutineListItem[]>
           (total, day) => total + day.ejercicios.length,
           0,
         ),
+        nombresDias: [...detail.dias]
+          .sort((first, second) => first.orden - second.orden)
+          .map((day) => day.nombre),
       };
     }),
   );

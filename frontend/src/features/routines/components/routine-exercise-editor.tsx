@@ -134,7 +134,7 @@ export function RoutineExerciseEditor({ exercise, onSave, onClose }: {
           <div>
             <label className="text-sm font-semibold text-text-primary" htmlFor={`${id}-notes`}>Notas</label>
             <textarea aria-invalid={Boolean(errors.notas)} className="mt-2 min-h-20 w-full resize-y rounded-control-sm border border-border/70 bg-surface/70 p-3 text-sm leading-5 text-text-primary outline-none transition-[background-color,border-color,box-shadow] placeholder:text-text-secondary/60 hover:border-border-strong focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 focus-visible:outline-primary" id={`${id}-notes`} maxLength={500} onChange={(event) => setNotas(event.target.value)} placeholder="Ej. priorizar técnica, agarre neutro..." value={notas} />
-            {errors.notas ? <p className="mt-1 text-xs text-error" role="alert">{errors.notas}</p> : null}
+            {errors.notas ? <p className="mt-1 text-[0.8125rem] text-error" role="alert">{errors.notas}</p> : null}
           </div>
         </div>
 
@@ -152,13 +152,13 @@ function FieldHeading({ label, text }: { label: string; text: string }) {
   return (
     <div className="relative flex items-center gap-1.5" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <span className="text-sm font-semibold text-text-primary">{label}</span>
-      <button aria-controls={open ? id : undefined} aria-describedby={open ? id : undefined} aria-expanded={open} aria-label={`Ayuda sobre ${label}`} className="flex size-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-primary focus-visible:outline-primary" onClick={() => setOpen((current) => !current)} onFocus={() => setOpen(true)} type="button">
+      <button aria-controls={open ? id : undefined} aria-describedby={open ? id : undefined} aria-expanded={open} aria-label={`Ayuda sobre ${label}`} className="flex size-11 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-primary focus-visible:outline-primary" onClick={() => setOpen((current) => !current)} onFocus={() => setOpen(true)} type="button">
         <CircleHelp aria-hidden="true" size={16} />
       </button>
       {open ? (
-        <div className="absolute top-full left-0 z-20 w-64 max-w-[calc(100vw-2.5rem)] rounded-control-sm border border-border bg-surface p-3 text-xs leading-5 text-text-primary shadow-elevated" id={id} role="tooltip">
+        <div className="absolute top-full left-0 z-20 w-64 max-w-[calc(100vw-2.5rem)] rounded-control-sm border border-border bg-surface p-3 text-[0.8125rem] leading-5 text-text-primary shadow-elevated" id={id} role="tooltip">
           {text}
-          <button aria-label={`Cerrar ayuda sobre ${label}`} className="ml-2 inline-flex min-h-6 items-center text-primary focus-visible:outline-primary" onClick={() => setOpen(false)} type="button">Cerrar</button>
+          <button aria-label={`Cerrar ayuda sobre ${label}`} className="ml-2 inline-flex min-h-11 items-center text-primary focus-visible:outline-primary" onClick={() => setOpen(false)} type="button">Cerrar</button>
         </div>
       ) : null}
     </div>
@@ -179,9 +179,9 @@ function NumberInput({ id, label, value, min, max, error, rangeLabel, className 
   return (
     <div className={`min-w-0 ${className}`}>
       <label className="sr-only" htmlFor={id}>{label}</label>
-      {rangeLabel ? <span aria-hidden="true" className="mb-1.5 block text-[0.6875rem] font-semibold tracking-[0.08em] text-text-secondary/75 uppercase">{rangeLabel}</span> : null}
+      {rangeLabel ? <span aria-hidden="true" className="mb-1.5 block text-[0.8125rem] font-semibold tracking-[0.06em] text-text-secondary/75 uppercase">{rangeLabel}</span> : null}
       <input aria-describedby={error ? `${id}-error` : undefined} aria-invalid={Boolean(error)} className="h-12 w-full rounded-control-sm border border-border/70 bg-surface/70 px-3 text-center font-brand text-lg font-bold tabular-nums text-text-primary outline-none transition-[background-color,border-color,box-shadow] hover:border-border-strong focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 focus-visible:outline-primary" id={id} inputMode="numeric" max={max} min={min} onChange={(event) => onChange(event.target.value)} step={1} type="number" value={value} />
-      {error ? <p className="mt-1 text-xs text-error" id={`${id}-error`} role="alert">{error}</p> : null}
+      {error ? <p className="mt-1 text-[0.8125rem] text-error" id={`${id}-error`} role="alert">{error}</p> : null}
     </div>
   );
 }

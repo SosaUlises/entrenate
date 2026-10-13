@@ -37,6 +37,7 @@ export type RoutineDetail = {
 
 export type RoutineListItem = RoutineSummary & {
   cantidadEjercicios: number;
+  nombresDias: string[];
 };
 
 export type CreateRoutineRequest = {

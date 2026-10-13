@@ -1,13 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import { getExerciseImage } from "@/features/exercises/components/exercise-catalog";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { getActiveTrainingSessionAction, startTrainingSessionAction } from "@/features/training/actions/training.actions";
 import { ActiveSessionRecoveryDialog } from "@/features/training/components/active-session-recovery-dialog";
@@ -133,9 +130,7 @@ export function RoutineDetailContent({ id }: { id: string }) {
       {startNotice ? <p className="mt-4 text-sm text-success" role="status">{startNotice}</p> : null}
 
       {state.status === "loading" || state.status === "unauthenticated" ? (
-        <div className="flex min-h-48 items-center justify-center">
-          <Spinner className="size-6 text-primary" label="Cargando rutina" />
-        </div>
+        <RoutineDetailSkeleton />
       ) : state.status === "not-found" ? (
         <div className="mt-8">
           <p className="text-sm text-text-primary">No encontramos esta rutina.</p>
@@ -177,7 +172,7 @@ export function RoutineDetailContent({ id }: { id: string }) {
                     type="button"
                   >
                     <h2 className="min-w-0 flex-1 truncate font-brand text-base font-bold text-text-primary">{day.nombre}</h2>
-                    <span className="shrink-0 text-xs font-medium text-info/80">
+                    <span className="shrink-0 text-[0.8125rem] font-semibold text-text-secondary">
                       {day.ejercicios.length} {day.ejercicios.length === 1 ? "ejercicio" : "ejercicios"}
                     </span>
                     <ChevronDown aria-hidden="true" className={`shrink-0 text-text-secondary/75 transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} size={16} strokeWidth={1.75} />
@@ -189,27 +184,19 @@ export function RoutineDetailContent({ id }: { id: string }) {
                       <p className="text-sm leading-6 text-text-secondary">Todavía no hay ejercicios.</p>
                     ) : (
                       <ul className="divide-y divide-border/40 border-y border-border/40">
-                        {[...day.ejercicios].sort((first, second) => first.orden - second.orden).map((exercise) => {
-                          const imageSrc = getExerciseImage(exercise.nombre);
-                          return (
-                            <li className="flex min-w-0 items-start gap-3 py-3" key={`${exercise.ejercicioId}-${exercise.orden}`}>
-                              {imageSrc ? (
-                                <Image alt="" className="size-12 shrink-0 rounded-control-sm object-cover" height={48} src={imageSrc} width={48} />
-                              ) : null}
-                              <div className="min-w-0 flex-1">
-                                <h3 className="break-words font-brand text-base font-bold leading-5 text-text-primary">{exercise.nombre}</h3>
-                                <p className="mt-1 break-words text-sm leading-5 text-text-secondary">
-                                  {exercise.cantidadSeries}×{exercise.repeticionesMinimas}–{exercise.repeticionesMaximas} · RIR {exercise.rirObjetivoMinimo}–{exercise.rirObjetivoMaximo} · {exercise.descansoSegundos} s
-                                </p>
-                                {exercise.notas?.trim() ? <p className="mt-1 text-xs leading-5 text-text-secondary">{exercise.notas}</p> : null}
-                              </div>
-                            </li>
-                          );
-                        })}
+                        {[...day.ejercicios].sort((first, second) => first.orden - second.orden).map((exercise) => (
+                          <li className="min-w-0 py-3.5" key={`${exercise.ejercicioId}-${exercise.orden}`}>
+                            <h3 className="break-words font-brand text-base font-bold leading-5 text-text-primary">{exercise.nombre}</h3>
+                            <p className="mt-1 break-words text-[0.8125rem] leading-5 text-text-secondary">
+                              {exercise.cantidadSeries}×{exercise.repeticionesMinimas}–{exercise.repeticionesMaximas} · RIR {exercise.rirObjetivoMinimo}–{exercise.rirObjetivoMaximo} · {exercise.descansoSegundos} s
+                            </p>
+                            {exercise.notas?.trim() ? <p className="mt-1 text-[0.8125rem] leading-5 text-text-secondary/85">{exercise.notas}</p> : null}
+                          </li>
+                        ))}
                       </ul>
                     )}
                     {day.ejercicios.length > 0 ? (
-                      <Button className="mt-5 min-h-[3.25rem] rounded-control-sm text-[0.9375rem] font-bold sm:max-w-sm" disabled={Boolean(startingDayId)} fullWidth isLoading={startingDayId === day.id} onClick={() => void handleStart(day.id)}>
+                      <Button className="mt-7 min-h-[3.25rem] rounded-control-sm text-[0.9375rem] font-bold sm:max-w-sm" disabled={Boolean(startingDayId)} fullWidth isLoading={startingDayId === day.id} onClick={() => void handleStart(day.id)}>
                         {startingDayId === day.id ? "Iniciando..." : `Iniciar ${day.nombre}`}
                       </Button>
                     ) : null}
@@ -241,5 +228,19 @@ export function RoutineDetailContent({ id }: { id: string }) {
         />
       ) : null}
     </section>
+  );
+}
+
+function RoutineDetailSkeleton() {
+  return (
+    <div aria-label="Cargando rutina" className="mt-6 animate-pulse" role="status">
+      <div className="h-4 w-40 rounded bg-surface-elevated" />
+      <div className="mt-8 border-y border-border/50 py-4">
+        <div className="h-5 w-32 rounded bg-surface-elevated" />
+        <div className="mt-4 h-4 w-4/5 rounded bg-surface-elevated" />
+        <div className="mt-3 h-4 w-3/5 rounded bg-surface-elevated" />
+        <div className="mt-5 h-12 w-full rounded-control-sm bg-surface-elevated" />
+      </div>
+    </div>
   );
 }

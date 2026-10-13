@@ -6,14 +6,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
-import { getExerciseProgressHubAction } from "../actions/get-exercise-progress-hub.action";
-import { formatCompactProgressDate, formatProgressDate, formatProgressValue } from "../progress-formatters";
 import {
   ALL_MUSCLE_FILTER_ID,
   getVisibleMuscleFilters,
   matchesMuscleFilter,
-} from "../progress-muscle-filters";
+} from "@/features/exercises/exercise-muscle-filters";
+import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
+import { getExerciseProgressHubAction } from "../actions/get-exercise-progress-hub.action";
+import { formatCompactProgressDate, formatProgressDate, formatProgressValue } from "../progress-formatters";
 import type { ExerciseProgressBestSet, ExerciseProgressHub, ExerciseProgressHubItem } from "../types/progress.types";
 
 type HubState =
