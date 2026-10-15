@@ -14,22 +14,35 @@ function createPlaybackSequence(frameCount: number): number[] {
   return [...forward, ...forward.slice(1, -1).reverse()];
 }
 
-export function EntrenateExerciseDemo({ exerciseName }: { exerciseName: string }) {
-  const [definition, setDefinition] = useState<EntrenateExerciseDemoDefinition | null>(null);
+type EntrenateExerciseDemoProps = {
+  exerciseName: string;
+  preferredDefinition?: EntrenateExerciseDemoDefinition | null;
+};
+
+export function EntrenateExerciseDemo({
+  exerciseName,
+  preferredDefinition = null,
+}: EntrenateExerciseDemoProps) {
+  const [legacyDefinition, setLegacyDefinition] = useState<EntrenateExerciseDemoDefinition | null>(null);
+  const [preferredFailed, setPreferredFailed] = useState(false);
   const [view, setView] = useState<DemoView>("movement");
   const [sequenceIndex, setSequenceIndex] = useState(0);
   const [loadedFrames, setLoadedFrames] = useState<Set<string>>(() => new Set());
   const [failed, setFailed] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(true);
+  const activePreferredDefinition = preferredFailed ? null : preferredDefinition;
+  const definition = activePreferredDefinition ?? legacyDefinition;
 
   useEffect(() => {
+    if (activePreferredDefinition) return;
+
     let active = true;
     void loadEntrenateExerciseDemo(exerciseName).then(
-      (demo) => { if (active) setDefinition(demo); },
+      (demo) => { if (active) setLegacyDefinition(demo); },
       () => { if (active) setFailed(true); },
     );
     return () => { active = false; };
-  }, [exerciseName]);
+  }, [activePreferredDefinition, exerciseName]);
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -64,6 +77,16 @@ export function EntrenateExerciseDemo({ exerciseName }: { exerciseName: string }
     : playbackSequence[sequenceIndex];
 
   const hasArmPositionView = Boolean(definition?.armPositionFrames?.length);
+  const handleFrameError = () => {
+    if (activePreferredDefinition) {
+      setLoadedFrames(new Set());
+      setSequenceIndex(0);
+      setPreferredFailed(true);
+      return;
+    }
+
+    setFailed(true);
+  };
 
   return (
     <section aria-label="Demostración Entrenate" className="mt-1 min-w-0 w-full max-w-full">
@@ -106,7 +129,7 @@ export function EntrenateExerciseDemo({ exerciseName }: { exerciseName: string }
                   className="h-auto w-full object-contain"
                   height={1254}
                   key={source}
-                  onError={() => setFailed(true)}
+                  onError={handleFrameError}
                   onLoad={() => setLoadedFrames((loaded) => new Set(loaded).add(source))}
                   src={source}
                   unoptimized
@@ -124,7 +147,7 @@ export function EntrenateExerciseDemo({ exerciseName }: { exerciseName: string }
                   height={1254}
                   key={source}
                   loading="eager"
-                  onError={() => setFailed(true)}
+                  onError={handleFrameError}
                   onLoad={() => setLoadedFrames((loaded) => new Set(loaded).add(source))}
                   src={source}
                   unoptimized

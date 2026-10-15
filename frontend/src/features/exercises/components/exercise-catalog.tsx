@@ -428,6 +428,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                 <ExerciseMovementDemo
                   exerciseName={preview.nombre}
                   key={preview.id}
+                  preferV2
                   workoutGuideId={preview.workoutGuideId}
                 />
               </section>
