@@ -273,6 +273,105 @@ const sentadillaGobletV2: EntrenateExerciseDemoDefinition = {
   ],
 };
 
+const sentadillaPesoCorporalV2: EntrenateExerciseDemoDefinition = {
+  key: "sentadilla-peso-corporal-v2",
+  movementFrames: [
+    "/exercises/v2/sentadilla-peso-corporal/frame-01.png",
+    "/exercises/v2/sentadilla-peso-corporal/frame-02.png",
+    "/exercises/v2/sentadilla-peso-corporal/frame-03.png",
+    "/exercises/v2/sentadilla-peso-corporal/frame-04.png",
+    "/exercises/v2/sentadilla-peso-corporal/frame-05.png",
+  ],
+};
+
+const prensaV2: EntrenateExerciseDemoDefinition = {
+  key: "prensa-v2",
+  movementFrames: [
+    "/exercises/v2/prensa/frame-01.png",
+    "/exercises/v2/prensa/frame-02.png",
+    "/exercises/v2/prensa/frame-03.png",
+    "/exercises/v2/prensa/frame-04.png",
+    "/exercises/v2/prensa/frame-05.png",
+  ],
+};
+
+const hackSquatV2: EntrenateExerciseDemoDefinition = {
+  key: "hack-squat-v2",
+  movementFrames: [
+    "/exercises/v2/hack-squat/frame-01.png",
+    "/exercises/v2/hack-squat/frame-02.png",
+    "/exercises/v2/hack-squat/frame-03.png",
+    "/exercises/v2/hack-squat/frame-04.png",
+    "/exercises/v2/hack-squat/frame-05.png",
+  ],
+};
+
+const extensionCuadricepsV2: EntrenateExerciseDemoDefinition = {
+  key: "extension-cuadriceps-v2",
+  movementFrames: [
+    "/exercises/v2/extension-cuadriceps/frame-01.png",
+    "/exercises/v2/extension-cuadriceps/frame-02.png",
+    "/exercises/v2/extension-cuadriceps/frame-03.png",
+    "/exercises/v2/extension-cuadriceps/frame-04.png",
+    "/exercises/v2/extension-cuadriceps/frame-05.png",
+  ],
+};
+
+const zancadasV2: EntrenateExerciseDemoDefinition = {
+  key: "zancadas-v2",
+  movementFrames: [
+    "/exercises/v2/zancadas/frame-01.png",
+    "/exercises/v2/zancadas/frame-02.png",
+    "/exercises/v2/zancadas/frame-03.png",
+    "/exercises/v2/zancadas/frame-04.png",
+    "/exercises/v2/zancadas/frame-05.png",
+  ],
+};
+
+const pesoMuertoRumanoV2: EntrenateExerciseDemoDefinition = {
+  key: "peso-muerto-rumano-v2",
+  movementFrames: [
+    "/exercises/v2/peso-muerto-rumano/frame-01.png",
+    "/exercises/v2/peso-muerto-rumano/frame-02.png",
+    "/exercises/v2/peso-muerto-rumano/frame-03.png",
+    "/exercises/v2/peso-muerto-rumano/frame-04.png",
+    "/exercises/v2/peso-muerto-rumano/frame-05.png",
+  ],
+};
+
+const curlFemoralV2: EntrenateExerciseDemoDefinition = {
+  key: "curl-femoral-v2",
+  movementFrames: [
+    "/exercises/v2/curl-femoral/frame-01.png",
+    "/exercises/v2/curl-femoral/frame-02.png",
+    "/exercises/v2/curl-femoral/frame-03.png",
+    "/exercises/v2/curl-femoral/frame-04.png",
+    "/exercises/v2/curl-femoral/frame-05.png",
+  ],
+};
+
+const hipThrustV2: EntrenateExerciseDemoDefinition = {
+  key: "hip-thrust-v2",
+  movementFrames: [
+    "/exercises/v2/hip-thrust/frame-01.png",
+    "/exercises/v2/hip-thrust/frame-02.png",
+    "/exercises/v2/hip-thrust/frame-03.png",
+    "/exercises/v2/hip-thrust/frame-04.png",
+    "/exercises/v2/hip-thrust/frame-05.png",
+  ],
+};
+
+const puenteGluteosV2: EntrenateExerciseDemoDefinition = {
+  key: "puente-gluteos-v2",
+  movementFrames: [
+    "/exercises/v2/puente-gluteos/frame-01.png",
+    "/exercises/v2/puente-gluteos/frame-02.png",
+    "/exercises/v2/puente-gluteos/frame-03.png",
+    "/exercises/v2/puente-gluteos/frame-04.png",
+    "/exercises/v2/puente-gluteos/frame-05.png",
+  ],
+};
+
 const demoDefinitions = new Map<string, EntrenateExerciseDemoDefinition>([
   ["curl con barra ez", curlBarraEzV2],
   ["press banca con barra", pressBancaBarraV2],
@@ -298,6 +397,15 @@ const demoDefinitions = new Map<string, EntrenateExerciseDemoDefinition>([
   ["press frances con barra ez", pressFrancesBarraEzV2],
   ["fondos en paralelas", fondosParalelasV2],
   ["sentadilla goblet", sentadillaGobletV2],
+  ["sentadilla con peso corporal", sentadillaPesoCorporalV2],
+  ["prensa de piernas", prensaV2],
+  ["hack squat", hackSquatV2],
+  ["extension de cuadriceps", extensionCuadricepsV2],
+  ["zancadas con mancuernas", zancadasV2],
+  ["peso muerto rumano con barra", pesoMuertoRumanoV2],
+  ["curl femoral", curlFemoralV2],
+  ["hip thrust con barra", hipThrustV2],
+  ["puente de gluteos", puenteGluteosV2],
 ]);
 
 export function getEntrenateExerciseDemoV2(
