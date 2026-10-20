@@ -93,12 +93,12 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                 <span className="flex shrink-0 items-center gap-2">
                   <span
                     aria-label={`${completedTargetCount} de ${exercise.seriesObjetivo} series objetivo completadas`}
-                    className={`inline-flex items-center gap-1 font-brand text-[1.0625rem] font-bold tabular-nums ${isComplete ? "text-success" : "text-info"}`}
+                    className={`inline-flex items-center gap-1 font-brand text-[1.0625rem] font-bold tabular-nums ${isComplete ? "text-success" : "text-info/75"}`}
                   >
                     {isComplete ? <Check aria-hidden="true" size={17} strokeWidth={2.25} /> : null}
                     {completedTargetCount} / {exercise.seriesObjetivo}
                   </span>
-                  <span className={`flex size-11 items-center justify-center rounded-control-sm transition-colors duration-150 motion-reduce:transition-none ${isExpanded ? "bg-primary/5 text-primary" : "bg-transparent text-text-secondary/80 group-hover:text-text-primary"}`}>
+                  <span className={`flex size-11 items-center justify-center rounded-control-sm transition-colors duration-150 motion-reduce:transition-none ${isExpanded ? "training-expanded-control" : "bg-transparent text-text-secondary/80 group-hover:text-text-primary"}`}>
                     <ChevronDown aria-hidden="true" className={`transition-transform duration-150 motion-reduce:transition-none ${isExpanded ? "rotate-180" : ""}`} size={20} strokeWidth={1.9} />
                   </span>
                 </span>
@@ -112,7 +112,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
               >
                 <div className="min-h-0 min-w-0 overflow-hidden pb-4">
                 {exercise.notas?.trim() ? <p className="mb-3 text-[0.8125rem] leading-5 text-text-secondary">{exercise.notas}</p> : null}
-                <div aria-hidden="true" className="grid min-w-0 grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,.8fr)_minmax(0,.62fr)_6.5rem] gap-1 border-b border-border/50 pb-2 text-[0.8125rem] font-semibold leading-4 text-text-secondary">
+                <div aria-hidden="true" className="grid min-w-0 grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,.8fr)_minmax(0,.62fr)_6.5rem] gap-1 border-b border-border/50 pb-2 text-[0.8125rem] font-semibold leading-4 tracking-[0.06em] text-text-secondary">
                   <span>SET</span>
                   <span className="text-center">KG</span>
                   <span className="text-center">REPS</span>
@@ -162,7 +162,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
         })}
       </div>
       <div className="mt-8 border-t border-border/50 pt-6">
-        <Button className="min-h-[3.25rem]" fullWidth onClick={onFinish}>Finalizar entrenamiento</Button>
+        <Button className="training-primary-action min-h-[3.25rem]" fullWidth onClick={onFinish}>Finalizar entrenamiento</Button>
       </div>
     </div>
   );
@@ -249,22 +249,22 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
     }
   }
 
-  const fieldClass = "h-12 min-w-0 w-full max-w-full border-0 border-b border-border/35 bg-transparent px-1 text-center font-brand text-lg font-bold tabular-nums text-text-primary caret-primary placeholder:text-text-secondary/35 outline-none! transition-colors duration-150 focus:bg-primary/5 focus:outline-none! focus-visible:outline-none! motion-reduce:transition-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
+  const fieldClass = "training-ledger-input h-12 min-w-0 w-full max-w-full border-0 border-b border-border/35 bg-transparent px-1 text-center font-brand text-xl font-bold tabular-nums text-text-primary placeholder:text-text-secondary/35 outline-none! transition-colors duration-150 focus:outline-none! focus-visible:outline-none! motion-reduce:transition-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
   const rowStateClass = error
     ? "bg-error/5"
     : isDirty
-      ? "bg-primary/5"
+      ? "training-ledger-current"
       : isNextPending
-        ? "bg-info/5"
+        ? "training-ledger-current"
         : "";
 
   return (
-    <form className={`min-w-0 border-b border-border/35 px-1 py-2 transition-colors duration-150 last:border-b-0 motion-reduce:transition-none ${rowStateClass}`} onSubmit={(event) => void save(event)}>
+    <form className={`relative min-w-0 border-b border-border/35 px-1 py-2 transition-colors duration-150 last:border-b-0 motion-reduce:transition-none ${rowStateClass}`} onSubmit={(event) => void save(event)}>
       <div className="grid min-w-0 grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,.8fr)_minmax(0,.62fr)_6.5rem] items-center gap-1">
-        <span aria-label={`${isExtra ? "Serie extra" : "Serie"} ${number}${isNextPending ? ", próxima pendiente" : ""}`} className={`font-brand text-base font-bold tabular-nums ${isExtra || isNextPending ? "text-info" : "text-text-secondary"}`} title={isExtra ? "Serie extra" : isNextPending ? "Próxima serie pendiente" : undefined}>
+        <span aria-label={`${isExtra ? "Serie extra" : "Serie"} ${number}${isNextPending ? ", próxima pendiente" : ""}`} className={`font-brand text-base font-bold tabular-nums ${isExtra || isNextPending ? "text-info/75" : "text-text-secondary"}`} title={isExtra ? "Serie extra" : isNextPending ? "Próxima serie pendiente" : undefined}>
           <span className="block">{String(number).padStart(2, "0")}</span>
-          {isExtra ? <span className="mt-0.5 block font-sans text-[0.8125rem] font-semibold leading-4 text-info">Extra</span> : null}
+          {isExtra ? <span className="mt-0.5 block font-sans text-[0.8125rem] font-semibold leading-4 text-info/75">Extra</span> : null}
         </span>
         <label className="min-w-0">
           <span className="sr-only">Peso de la serie {number} en kilogramos</span>
@@ -280,12 +280,12 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
         </label>
         <span className="flex min-h-12 min-w-0 items-center justify-end">
           {pending ? (
-            <button aria-label={`Guardando serie ${number}`} className="flex min-h-12 w-full items-center justify-center gap-1.5 rounded-control-sm bg-primary/10 px-2 text-[0.8125rem] font-semibold text-primary" disabled type="submit">
+            <button aria-label={`Guardando serie ${number}`} className="training-save-action flex min-h-12 w-full items-center justify-center gap-1.5 rounded-control-sm px-2 text-[0.8125rem] font-semibold" disabled type="submit">
               <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={18} />
               <span>Guardando</span>
             </button>
           ) : isDirty ? (
-            <button aria-label={`${isSaved ? "Guardar cambios de" : "Completar"} serie ${number}`} className="flex min-h-12 w-full items-center justify-center gap-1.5 rounded-control-sm bg-primary/15 px-2 text-[0.8125rem] font-semibold text-primary transition-[background-color,color,transform] duration-150 hover:bg-primary/20 active:scale-[0.99] focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100" type="submit">
+            <button aria-label={`${isSaved ? "Guardar cambios de" : "Completar"} serie ${number}`} className="training-save-action flex min-h-12 w-full items-center justify-center gap-1.5 rounded-control-sm px-2 text-[0.8125rem] font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100" type="submit">
               <Save aria-hidden="true" size={16} strokeWidth={2} />
               <span>Guardar</span>
             </button>

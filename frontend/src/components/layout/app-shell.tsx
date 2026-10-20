@@ -136,7 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <AuthenticatedUserProvider user={userState.user}>
-    <div className={`min-h-dvh w-full bg-background ${isTrainingPage ? "overflow-x-clip" : ""}`}>
+    <div className={`min-h-dvh w-full bg-background ${isTrainingPage ? "training-acero-termico overflow-x-clip" : ""}`}>
       <div className="mx-auto min-w-0 w-full max-w-2xl px-4 sm:px-12">
         {!isContextualPage ? (
         <header className="flex items-center justify-between gap-4 pt-9 sm:pt-12">

@@ -261,10 +261,10 @@ export function ActiveTrainingContent() {
           ) : mode === null ? (
             <div className="mt-6 min-w-0 max-w-full">
               <h2 className="font-brand text-3xl font-bold leading-tight text-text-primary">¿Cómo querés entrenar?</h2>
-              <div className="mt-6">
+              <div className="mt-5">
                 <button
                   aria-describedby="guided-mode-description"
-                  className="group flex min-h-[5.25rem] min-w-0 w-full max-w-full items-center gap-4 border-b border-border/50 px-1 py-4 text-left transition-[background-color,color,transform] duration-150 hover:bg-primary/5 active:scale-[0.99] active:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100"
+                  className="training-mode-row group flex min-h-[5.25rem] min-w-0 w-full max-w-full items-center gap-4 border-b border-border/50 px-3 py-4.5 text-left transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100"
                   onClick={() => setMode("guided")}
                   type="button"
                 >
@@ -272,11 +272,11 @@ export function ActiveTrainingContent() {
                     <span className="block font-brand text-xl font-bold leading-6 text-text-primary">Modo guiado</span>
                     <span className="mt-1 block text-sm leading-5 text-text-secondary" id="guided-mode-description">Paso a paso, serie por serie, con descansos controlados.</span>
                   </span>
-                  <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/70 transition-colors duration-150 group-hover:text-primary group-focus-visible:text-primary motion-reduce:transition-none" size={20} strokeWidth={1.75} />
+                  <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/70 transition-colors duration-150 group-hover:text-text-primary group-focus-visible:text-text-primary motion-reduce:transition-none" size={20} strokeWidth={1.75} />
                 </button>
                 <button
                   aria-describedby="free-mode-description"
-                  className="group flex min-h-[5.25rem] min-w-0 w-full max-w-full items-center gap-4 px-1 py-4 text-left transition-[background-color,color,transform] duration-150 hover:bg-primary/5 active:scale-[0.99] active:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100"
+                  className="training-mode-row group flex min-h-[5.25rem] min-w-0 w-full max-w-full items-center gap-4 px-3 py-4.5 text-left transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100"
                   onClick={() => setMode("free")}
                   type="button"
                 >
@@ -284,7 +284,7 @@ export function ActiveTrainingContent() {
                     <span className="block font-brand text-xl font-bold leading-6 text-text-primary">Carga libre</span>
                     <span className="mt-1 block text-sm leading-5 text-text-secondary" id="free-mode-description">Registrá tus series a tu ritmo, cuando quieras.</span>
                   </span>
-                  <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/70 transition-colors duration-150 group-hover:text-primary group-focus-visible:text-primary motion-reduce:transition-none" size={20} strokeWidth={1.75} />
+                  <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/70 transition-colors duration-150 group-hover:text-text-primary group-focus-visible:text-text-primary motion-reduce:transition-none" size={20} strokeWidth={1.75} />
                 </button>
               </div>
             </div>
@@ -320,7 +320,7 @@ export function ActiveTrainingContent() {
         {finishError ? <p className="mt-3 text-sm text-error" role="alert">No pudimos actualizar el entrenamiento. Intentá nuevamente.</p> : null}
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <Button disabled={finishPending} onClick={() => dialogRef.current?.close()} variant="secondary">Seguir entrenando</Button>
-          <Button isLoading={finishPending} onClick={() => void finish()}>{finishMode === "cancel" ? "Cancelar sesión" : "Finalizar"}</Button>
+          <Button className={finishMode === "cancel" ? "training-destructive-action" : "training-primary-action"} isLoading={finishPending} onClick={() => void finish()}>{finishMode === "cancel" ? "Cancelar sesión" : "Finalizar"}</Button>
         </div>
       </dialog>
 
@@ -340,7 +340,7 @@ export function ActiveTrainingContent() {
         </p>
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <Button onClick={() => navigationDialogRef.current?.close()} variant="secondary">Seguir entrenando</Button>
-          <Button onClick={() => pendingNavigation && completeNavigation(pendingNavigation)}>
+          <Button className="training-primary-action" onClick={() => pendingNavigation && completeNavigation(pendingNavigation)}>
             {pendingNavigation === "mode" ? "Descartar y cambiar" : "Descartar y salir"}
           </Button>
         </div>

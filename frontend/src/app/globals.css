@@ -111,3 +111,167 @@ a {
   background: var(--border-strong);
   border-radius: 999px;
 }
+
+/* Acero Térmico reference implementation, scoped to /training. */
+.training-acero-termico {
+  color-scheme: dark;
+  --background: #10110f;
+  --surface: #181a17;
+  --surface-elevated: #22251f;
+  --primary: #e8e7df;
+  --primary-strong: #e8e7df;
+  --secondary: #7fa4ad;
+  --text-primary: #f2f1ea;
+  --text-secondary: #b2b2a9;
+  --training-text-muted: #7e8178;
+  --border: rgba(242, 241, 234, 0.12);
+  --border-strong: rgba(242, 241, 234, 0.2);
+  --success: #67b77a;
+  --warning: #d8ae55;
+  --error: #d85d56;
+  --info: #7fa4ad;
+  --training-accent: #e1734e;
+  --training-on-primary: #151612;
+  --training-primary-hover: #d8d7cf;
+  --training-primary-active: #cac9c1;
+  --training-error-hover: #e16a62;
+  --training-surface-hover: #292c25;
+  --training-control-surface: #1d1f1b;
+
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+.training-acero-termico ::selection {
+  background: rgba(225, 115, 78, 0.3);
+  color: var(--text-primary);
+}
+
+.training-mode-row:hover,
+.training-mode-row:focus-visible,
+.training-mode-row:active {
+  background: rgba(34, 37, 31, 0.72);
+  box-shadow: inset 1px 0 0 var(--training-accent);
+}
+
+.training-primary-action {
+  border-radius: 0.75rem;
+  background: var(--primary);
+  color: var(--training-on-primary);
+  box-shadow: none;
+}
+
+.training-primary-action:hover {
+  background: var(--training-primary-hover);
+}
+
+.training-primary-action:active {
+  background: var(--training-primary-active);
+}
+
+.training-primary-action:focus-visible {
+  outline-color: var(--training-accent);
+}
+
+.training-destructive-action {
+  border-radius: 0.75rem;
+  background: var(--error);
+  color: #10110f;
+  box-shadow: none;
+}
+
+.training-destructive-action:hover {
+  background: var(--training-error-hover);
+}
+
+.training-choice-selected {
+  background: var(--primary);
+  color: var(--training-on-primary);
+}
+
+.training-current-marker {
+  display: inline-block;
+  width: 1rem;
+  height: 2px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--training-accent);
+}
+
+.training-accent-text {
+  color: var(--training-accent);
+}
+
+.training-metric-field {
+  border: 1px solid var(--border-strong);
+  border-radius: 0.75rem;
+  background: var(--training-control-surface);
+}
+
+.training-metric-field:focus-within {
+  border-color: rgba(225, 115, 78, 0.72);
+  background: var(--surface-elevated);
+  box-shadow: inset 0 -1px 0 var(--training-accent);
+}
+
+.training-metric-input,
+.training-ledger-input {
+  caret-color: var(--training-accent);
+}
+
+.training-ledger-input:focus {
+  border-bottom-color: var(--training-accent);
+  background: rgba(34, 37, 31, 0.72);
+}
+
+.training-ledger-current::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 1px;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--training-accent);
+  content: "";
+  transform: translateY(-50%);
+}
+
+.training-save-action {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+.training-save-action:hover,
+.training-save-action:focus-visible {
+  border-color: rgba(225, 115, 78, 0.65);
+  background: var(--training-surface-hover);
+}
+
+.training-expanded-control {
+  background: var(--surface-elevated);
+  color: var(--training-accent);
+}
+
+.training-rest-adjust,
+.training-secondary-action,
+.training-sheet-close {
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.training-rest-adjust:hover,
+.training-secondary-action:hover,
+.training-sheet-close:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-elevated);
+}
+
+.training-demo-sheet {
+  border-color: var(--border-strong);
+}
+
+.training-demo-stage {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}

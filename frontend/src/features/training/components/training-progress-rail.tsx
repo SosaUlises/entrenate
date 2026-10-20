@@ -16,7 +16,7 @@ export function TrainingProgressRail({ session }: { session: TrainingSession }) 
       role="progressbar"
     >
       <div
-        className="h-full rounded-full bg-primary transition-[width] duration-200 motion-reduce:transition-none"
+        className="h-full rounded-full bg-info/55 transition-[width] duration-200 motion-reduce:transition-none"
         style={{ width: `${progress}%` }}
       />
     </div>
