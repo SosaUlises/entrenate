@@ -18,8 +18,8 @@ import { getHomeStateAction, type HomeState } from "../actions/get-home-state.ac
 
 type HomeViewState = { status: "loading" } | HomeState;
 
-const primaryLinkClass = "flex min-h-[3.25rem] min-w-0 w-full max-w-sm items-center justify-between overflow-hidden rounded-control-sm bg-primary px-5 text-[0.9375rem] font-bold text-primary-foreground transition-[background-color,transform] duration-200 hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-pressed))] active:scale-[0.99] active:bg-primary-pressed focus-visible:outline-focus";
-const sectionLabelClass = "text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.12em] text-text-secondary";
+const homePrimaryActionClass = "border border-border-strong bg-[color-mix(in_srgb,var(--technical-white)_74%,var(--surface-elevated))] text-primary-foreground shadow-none hover:bg-[color-mix(in_srgb,var(--technical-white)_80%,var(--surface-elevated))] active:bg-[color-mix(in_srgb,var(--technical-white)_66%,var(--surface-elevated))] disabled:border-border disabled:bg-surface-active disabled:text-text-secondary disabled:opacity-100 aria-disabled:pointer-events-none aria-disabled:border-border aria-disabled:bg-surface-active aria-disabled:text-text-secondary";
+const primaryLinkClass = `flex min-h-[3.25rem] min-w-0 w-full max-w-sm items-center justify-between overflow-hidden rounded-control px-5 text-[0.9375rem] font-bold transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.99] focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${homePrimaryActionClass}`;
 
 export function HomeContent() {
   const router = useRouter();
@@ -67,16 +67,15 @@ export function HomeContent() {
 
   if (state.status === "error") {
     return (
-      <section aria-labelledby="home-error-title" className="max-w-lg py-2">
-        <p className={sectionLabelClass}>TU ENTRENAMIENTO</p>
-        <h2 className="mt-5 max-w-md font-brand text-3xl font-bold leading-tight text-text-primary" id="home-error-title">
+      <section aria-labelledby="home-error-title" className="w-full max-w-lg py-1">
+        <h2 className="max-w-md font-brand text-[2rem] font-bold leading-[1.08] text-text-primary" id="home-error-title">
           No pudimos actualizar tu estado
         </h2>
         <p className="mt-3 max-w-sm text-[0.9375rem] leading-6 text-text-secondary">
           No podemos confirmar si tenés un entrenamiento en curso. Intentá nuevamente.
         </p>
         <Button
-          className="mt-7 min-h-[3.25rem] w-full max-w-sm rounded-control-sm text-[0.9375rem] font-bold"
+          className={`mt-7 min-h-[3.25rem] w-full max-w-sm text-[0.9375rem] font-bold ${homePrimaryActionClass}`}
           onClick={() => {
             setState({ status: "loading" });
             setRequestKey((key) => key + 1);
@@ -119,24 +118,24 @@ function ActiveSessionState({
 
   if (isStaleActiveSession(state.horaInicio)) {
     return (
-      <section aria-labelledby="active-training-title" className="max-w-lg py-2">
-        <p className="text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.12em] text-info">
-          ENTRENAMIENTO PENDIENTE
-        </p>
-        <h2 className="mt-5 break-words font-brand text-3xl font-bold leading-[1.08] text-text-primary sm:text-4xl" id="active-training-title">
+      <section aria-labelledby="active-training-title" className="w-full max-w-lg py-1">
+        <StatusLabel label="Entrenamiento pendiente" />
+        <h2 className="mt-4 max-w-md break-words font-brand text-[2rem] font-bold leading-[1.06] text-text-primary sm:text-4xl" id="active-training-title">
           {state.exerciseName ?? "Tu entrenamiento"}
         </h2>
-        <p className="mt-3 text-[0.9375rem] font-medium leading-6 text-text-primary">
-          {formatActiveSessionStart(state.horaInicio)}
-        </p>
-        <p className="mt-1 text-sm leading-6 text-text-secondary">
-          {state.registeredSetCount} {state.registeredSetCount === 1 ? "serie registrada" : "series registradas"}
-        </p>
-        <PrimaryLink className="mt-7" href="/training">
+        <div className="mt-6 max-w-sm border-y border-border py-4">
+          <p className="text-[0.875rem] font-medium leading-5 text-text-primary">
+            {formatActiveSessionStart(state.horaInicio)}
+          </p>
+          <p className="mt-1.5 text-[0.8125rem] font-semibold leading-5 text-text-muted">
+            {state.registeredSetCount} {state.registeredSetCount === 1 ? "serie registrada" : "series registradas"}
+          </p>
+        </div>
+        <PrimaryLink className="mt-6" href="/training">
           Continuar entrenamiento
         </PrimaryLink>
         <button
-          className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-text-secondary transition-colors hover:text-error focus-visible:outline-primary"
+          className="mt-2 inline-flex min-h-11 items-center rounded-control-sm px-1 text-[0.8125rem] font-semibold text-text-secondary transition-colors duration-200 hover:text-text-primary focus-visible:outline-focus motion-reduce:transition-none"
           onClick={() => setConfirmingCancellation(true)}
           type="button"
         >
@@ -157,17 +156,25 @@ function ActiveSessionState({
 
   if (state.readyToFinish) {
     return (
-      <section aria-labelledby="active-training-title" className="max-w-lg py-2">
-        <p className="text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.12em] text-success">
-          ENTRENAMIENTO LISTO
-        </p>
-        <h2 className="mt-5 font-brand text-4xl font-bold leading-[1.05] text-text-primary" id="active-training-title">
+      <section aria-labelledby="active-training-title" className="w-full max-w-lg py-1">
+        <StatusLabel label="Entrenamiento listo" tone="success" />
+        <h2 className="mt-4 max-w-md font-brand text-[2rem] font-bold leading-[1.06] text-text-primary sm:text-4xl" id="active-training-title">
           Objetivos completados.
         </h2>
-        <p className="mt-4 max-w-sm text-[0.9375rem] leading-6 text-text-secondary">
+        <p className="mt-3 max-w-sm text-[0.9375rem] leading-6 text-text-secondary">
           Tu sesión está lista para finalizar.
         </p>
-        <PrimaryLink className="mt-8" href="/training">
+        <dl className="mt-6 grid max-w-sm grid-cols-2 border-y border-border py-4">
+          <div className="min-w-0 border-r border-border pr-4">
+            <dt className="text-[0.8125rem] font-semibold leading-5 text-text-muted">Ejercicios</dt>
+            <dd className="mt-1 font-brand text-2xl font-bold tabular-nums text-text-primary">{state.exerciseCount}</dd>
+          </div>
+          <div className="min-w-0 pl-5">
+            <dt className="text-[0.8125rem] font-semibold leading-5 text-text-muted">Series registradas</dt>
+            <dd className="mt-1 font-brand text-2xl font-bold tabular-nums text-text-primary">{state.registeredSetCount}</dd>
+          </div>
+        </dl>
+        <PrimaryLink className="mt-6" href="/training">
           Continuar entrenamiento
         </PrimaryLink>
         <HistoryLink />
@@ -176,30 +183,31 @@ function ActiveSessionState({
   }
 
   return (
-    <section aria-labelledby="active-training-title" className="max-w-lg py-2">
-      <p className="text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.12em] text-info">
-        ENTRENAMIENTO EN CURSO
-      </p>
-      <h2 className="mt-5 break-words font-brand text-3xl font-bold leading-[1.08] text-text-primary sm:text-4xl" id="active-training-title">
+    <section aria-labelledby="active-training-title" className="w-full max-w-lg py-1">
+      <StatusLabel label="Entrenamiento en curso" />
+      <h2 className="mt-4 max-w-md break-words font-brand text-[2rem] font-bold leading-[1.06] text-text-primary sm:text-4xl" id="active-training-title">
         {state.exerciseName}
       </h2>
+      <p className="mt-3 text-[0.8125rem] font-semibold leading-5 text-text-muted">
+        {formatActiveSessionStart(state.horaInicio)}
+      </p>
 
-      <dl className="mt-7 grid max-w-sm grid-cols-2 border-y border-border/60 py-4">
-        <div className="min-w-0 border-r border-border/60 pr-4">
-          <dt className="text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.1em] text-text-secondary">EJERCICIO</dt>
-          <dd className="mt-2 font-brand text-3xl font-bold leading-none tabular-nums text-info">
+      <dl className="mt-6 grid max-w-sm grid-cols-2 border-y border-border py-4">
+        <div className="min-w-0 border-r border-border pr-4">
+          <dt className="text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.08em] text-text-muted">Ejercicio</dt>
+          <dd className="mt-2 font-brand text-3xl font-bold leading-none tabular-nums text-steel">
             {formatMetric(state.exercisePosition)} <span className="text-xl text-text-secondary">/ {formatMetric(state.exerciseCount)}</span>
           </dd>
         </div>
         <div className="min-w-0 pl-5">
-          <dt className="text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.1em] text-text-secondary">SERIE</dt>
-          <dd className="mt-2 font-brand text-3xl font-bold leading-none tabular-nums text-info">
+          <dt className="text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.08em] text-text-muted">Serie</dt>
+          <dd className="mt-2 font-brand text-3xl font-bold leading-none tabular-nums text-steel">
             {formatMetric(state.setNumber)} <span className="text-xl text-text-secondary">/ {formatMetric(state.targetSetCount)}</span>
           </dd>
         </div>
       </dl>
 
-      <PrimaryLink className="mt-8" href="/training">
+      <PrimaryLink className="mt-6" href="/training">
         Continuar entrenamiento
       </PrimaryLink>
       <HistoryLink />
@@ -209,14 +217,14 @@ function ActiveSessionState({
 
 function NoRoutinesState() {
   return (
-    <section aria-labelledby="first-routine-title" className="w-full max-w-lg py-2">
-      <h2 className="max-w-md font-brand text-4xl font-bold leading-[1.05] text-text-primary" id="first-routine-title">
+    <section aria-labelledby="first-routine-title" className="w-full max-w-lg py-1">
+      <h2 className="max-w-md font-brand text-[2rem] font-bold leading-[1.06] text-text-primary sm:text-4xl" id="first-routine-title">
         Creá tu primera rutina.
       </h2>
       <p className="mt-4 max-w-sm text-[0.9375rem] leading-6 text-text-secondary">
         Organizá tus ejercicios y empezá a registrar tus entrenamientos.
       </p>
-      <PrimaryLink className="mt-7" href="/routines/new">
+      <PrimaryLink className="mt-8" href="/routines/new">
         Crear rutina
       </PrimaryLink>
       <HistoryLink />
@@ -337,18 +345,18 @@ function RoutinesAvailableState({
   }
 
   return (
-    <section aria-labelledby="available-routines-title" className="w-full max-w-lg py-2">
-      <h2 className="font-brand text-3xl font-bold leading-[1.08] text-text-primary" id="available-routines-title">
+    <section aria-labelledby="available-routines-title" className="w-full max-w-lg py-1">
+      <h2 className="font-brand text-[2rem] font-bold leading-[1.06] text-text-primary" id="available-routines-title">
         Elegí una rutina.
       </h2>
 
       {showSearch ? (
-        <div className="relative mt-6">
+        <div className="relative mt-7 max-w-md">
           <label className="sr-only" htmlFor="home-routine-search">Buscar rutina por nombre</label>
           <Search aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={18} strokeWidth={1.75} />
           <Input
             autoComplete="off"
-            className="min-h-12! rounded-control-sm bg-surface/70 pl-11 pr-4 text-[0.9375rem]"
+            className="min-h-12! rounded-control-sm pl-11 pr-4 text-[0.9375rem]"
             id="home-routine-search"
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Buscar rutina"
@@ -359,22 +367,22 @@ function RoutinesAvailableState({
       ) : null}
 
       {visibleRoutines.length > 0 ? (
-        <ul className={`${showSearch ? "mt-4" : "mt-6"} border-t border-border/60`}>
+        <ul className={`${showSearch ? "mt-4" : "mt-7"} border-t border-border`}>
           {visibleRoutines.map((routine) => {
           const isLoading = loadingRoutineId === routine.id;
           const error = startError?.routineId === routine.id ? getRoutineErrorMessage(startError.kind) : null;
 
           return (
-            <li className="border-b border-border/60" key={routine.id}>
+            <li className="border-b border-border" key={routine.id}>
               <button
                 aria-busy={isLoading}
-                className="group flex min-h-[4.5rem] w-full min-w-0 items-center gap-4 px-2 py-2 text-left transition-[background-color,transform] duration-200 hover:bg-surface/35 active:scale-[0.99] active:bg-primary/5 focus-visible:bg-primary/5 focus-visible:outline-primary disabled:cursor-wait motion-reduce:transition-none motion-reduce:active:scale-100"
+                className="group flex min-h-[4.75rem] w-full min-w-0 items-center gap-4 rounded-control-sm px-1 py-2.5 text-left transition-[background-color,transform] duration-200 hover:bg-surface/45 active:scale-[0.995] active:bg-surface-active/70 focus-visible:bg-surface/55 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none motion-reduce:active:scale-100"
                 disabled={Boolean(loadingRoutineId || startingDayId)}
                 onClick={() => void chooseRoutine(routine.id)}
                 type="button"
               >
                 <span className="min-w-0 flex-1">
-                  <span className="line-clamp-2 break-words font-brand text-lg font-bold leading-6 text-text-primary transition-colors group-hover:text-primary">
+                  <span className="line-clamp-2 break-words font-brand text-lg font-bold leading-6 text-text-primary">
                     {routine.nombre}
                   </span>
                   <span className="mt-1 block text-[0.8125rem] font-semibold leading-5 text-text-secondary">
@@ -384,7 +392,7 @@ function RoutinesAvailableState({
                 {isLoading ? (
                   <Spinner className="size-5 shrink-0 text-primary" label={`Cargando ${routine.nombre}`} />
                 ) : (
-                  <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary transition-[color,transform] duration-200 group-hover:translate-x-0.5 group-hover:text-primary motion-reduce:transition-none" size={20} />
+                  <ChevronRight aria-hidden="true" className="shrink-0 text-text-muted transition-[color,transform] duration-200 group-hover:translate-x-0.5 group-hover:text-steel motion-reduce:transition-none" size={20} />
                 )}
               </button>
               {error ? <p className="pb-3 text-[0.8125rem] leading-5 text-error" role="alert">{error}</p> : null}
@@ -468,7 +476,7 @@ function DayPickerDialog({
           </div>
           <button
             aria-label="Cerrar selector de días"
-            className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface hover:text-text-primary focus-visible:outline-primary"
+            className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors duration-200 hover:bg-surface-active hover:text-text-primary focus-visible:outline-focus motion-reduce:transition-none"
             disabled={Boolean(startingDayId)}
             onClick={() => dialogRef.current?.close()}
             type="button"
@@ -477,17 +485,17 @@ function DayPickerDialog({
           </button>
         </div>
 
-        <ul className="border-y border-border/60">
+        <ul className="border-y border-border">
           {routine.dias.map((day) => (
-            <li className="border-b border-border/60 last:border-b-0" key={day.id}>
+            <li className="border-b border-border last:border-b-0" key={day.id}>
               <button
-                className="group flex min-h-[4.5rem] w-full min-w-0 items-center gap-4 px-5 py-3 text-left focus-visible:outline-primary disabled:cursor-wait sm:px-6"
+                className="group flex min-h-[4.75rem] w-full min-w-0 items-center gap-4 px-5 py-3 text-left transition-colors duration-200 hover:bg-surface-active/60 focus-visible:bg-surface-active/60 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none sm:px-6"
                 disabled={Boolean(startingDayId)}
                 onClick={() => onSelect(day.id)}
                 type="button"
               >
                 <span className="min-w-0 flex-1">
-                  <span className="block break-words font-brand text-lg font-bold leading-6 text-text-primary group-hover:text-primary">
+                  <span className="block break-words font-brand text-lg font-bold leading-6 text-text-primary">
                     {day.nombre}
                   </span>
                   <span className="mt-1 block text-[0.8125rem] font-semibold leading-5 text-text-secondary">
@@ -497,7 +505,7 @@ function DayPickerDialog({
                 {startingDayId === day.id ? (
                   <Spinner className="size-5 shrink-0 text-primary" label={`Iniciando ${day.nombre}`} />
                 ) : (
-                  <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary transition-[color,transform] duration-200 group-hover:translate-x-0.5 group-hover:text-primary motion-reduce:transition-none" size={20} />
+                  <ChevronRight aria-hidden="true" className="shrink-0 text-text-muted transition-[color,transform] duration-200 group-hover:translate-x-0.5 group-hover:text-steel motion-reduce:transition-none" size={20} />
                 )}
               </button>
             </li>
@@ -516,11 +524,23 @@ function getRoutineErrorMessage(kind: RoutineStartError["kind"]): string {
   return "No pudimos cargar esta rutina. Intentá nuevamente.";
 }
 
+function StatusLabel({ label, tone = "active" }: { label: string; tone?: "active" | "success" }) {
+  return (
+    <p className="flex min-h-5 items-center gap-2 text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.1em] text-text-muted">
+      <span
+        aria-hidden="true"
+        className={`h-0.5 w-4 shrink-0 rounded-full ${tone === "success" ? "bg-success" : "bg-thermal-accent"}`}
+      />
+      {label}
+    </p>
+  );
+}
+
 function HistoryLink() {
   return (
-    <Link className="group mt-3 flex min-h-12 w-full max-w-lg items-center justify-between gap-4 text-sm font-semibold text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-primary" href="/history">
+    <Link className="group mt-6 flex min-h-12 w-full max-w-lg items-center justify-between gap-4 border-t border-border pt-4 text-[0.8125rem] font-semibold text-text-secondary transition-colors duration-200 hover:text-text-primary focus-visible:outline-focus motion-reduce:transition-none" href="/history">
       <span>Actividad e historial</span>
-      <ArrowRight aria-hidden="true" className="shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" size={18} strokeWidth={1.75} />
+      <ArrowRight aria-hidden="true" className="shrink-0 text-steel transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" size={18} strokeWidth={1.75} />
     </Link>
   );
 }

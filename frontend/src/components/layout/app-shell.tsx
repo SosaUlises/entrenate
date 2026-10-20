@@ -139,15 +139,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className={`min-h-dvh w-full bg-background ${isTrainingPage ? "overflow-x-clip" : ""}`}>
       <div className="mx-auto min-w-0 w-full max-w-2xl px-4 sm:px-12">
         {!isContextualPage ? (
-        <header className="flex items-center justify-between gap-4 pt-9 sm:pt-12">
-          <h1 className="min-w-0 break-words font-brand text-2xl font-bold leading-tight text-text-primary sm:text-3xl">
+        <header className="flex items-center justify-between gap-4 pt-[max(2rem,env(safe-area-inset-top))] sm:pt-12">
+          <h1 className="min-w-0 break-words font-brand text-[1.625rem] font-bold leading-[1.1] text-text-primary sm:text-3xl">
             Hola, {nombre}.
           </h1>
 
           <details className="group relative shrink-0">
             <summary
               aria-label="Abrir menú de cuenta"
-              className="flex size-12 cursor-pointer list-none items-center justify-center rounded-full border border-border-strong bg-surface-interactive font-brand text-lg font-bold text-text-primary transition-colors marker:hidden hover:bg-surface-active focus-visible:outline-focus [&::-webkit-details-marker]:hidden"
+              className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full border border-border-strong bg-surface-interactive font-brand text-base font-bold text-text-primary transition-colors duration-200 marker:hidden hover:bg-surface-active focus-visible:outline-focus motion-reduce:transition-none [&::-webkit-details-marker]:hidden"
             >
               {initial}
             </summary>
@@ -179,53 +179,53 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
 
-        <main className={`mx-auto min-w-0 w-full max-w-full ${isTrainingPage || isHistoryDetailPage ? "pb-[calc(2rem+env(safe-area-inset-bottom))]" : "pb-[calc(7.5rem+env(safe-area-inset-bottom))]"} ${isContextualPage ? "pt-5 sm:pt-8" : "pt-8 sm:pt-10"}`}>
+        <main className={`mx-auto min-w-0 w-full max-w-full ${isTrainingPage || isHistoryDetailPage ? "pb-[calc(2rem+env(safe-area-inset-bottom))]" : "pb-[calc(5.5rem+env(safe-area-inset-bottom))]"} ${isContextualPage ? "pt-5 sm:pt-8" : "pt-9 sm:pt-11"}`}>
           {children}
         </main>
       </div>
 
       {showBottomNav ? <nav
         aria-label="Navegación principal"
-        className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-10 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-container border border-border bg-surface-elevated p-1 shadow-elevated"
+        className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-[color-mix(in_srgb,var(--surface-elevated)_72%,var(--background))]"
       >
-        <div className="grid grid-cols-4 gap-1">
+        <div className="mx-auto grid w-full max-w-2xl grid-cols-4 gap-1 px-3 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-11">
           <Link
             aria-current={isHomePage ? "page" : undefined}
-            className={`group relative flex min-h-12 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] font-semibold transition-colors focus-visible:outline-focus ${isHomePage ? "text-text-primary after:absolute after:bottom-0.5 after:left-1/2 after:h-0.5 after:w-4 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "text-text-secondary hover:bg-surface-active hover:text-text-primary"}`}
+            className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isHomePage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/home"
           >
-            <span className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <Home aria-hidden="true" size={18} strokeWidth={2} />
+            <span className="flex flex-col items-center gap-1 px-2 py-1">
+              <Home aria-hidden="true" className={isHomePage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isHomePage ? 2.25 : 1.85} />
               <span>Inicio</span>
             </span>
           </Link>
           <Link
             aria-current={isRoutinesPage ? "page" : undefined}
-            className={`group relative flex min-h-12 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] font-semibold transition-colors focus-visible:outline-focus ${isRoutinesPage ? "text-text-primary after:absolute after:bottom-0.5 after:left-1/2 after:h-0.5 after:w-4 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "text-text-secondary hover:bg-surface-active hover:text-text-primary"}`}
+            className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isRoutinesPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/routines"
           >
-            <span className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <ClipboardList aria-hidden="true" size={18} strokeWidth={2} />
+            <span className="flex flex-col items-center gap-1 px-2 py-1">
+              <ClipboardList aria-hidden="true" className={isRoutinesPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isRoutinesPage ? 2.25 : 1.85} />
               <span>Rutinas</span>
             </span>
           </Link>
           <Link
             aria-current={isProgressPage ? "page" : undefined}
-            className={`group relative flex min-h-12 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] font-semibold transition-colors focus-visible:outline-focus ${isProgressPage ? "text-text-primary after:absolute after:bottom-0.5 after:left-1/2 after:h-0.5 after:w-4 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "text-text-secondary hover:bg-surface-active hover:text-text-primary"}`}
+            className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isProgressPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/progress"
           >
-            <span className="flex flex-col items-center gap-0.5 px-2 py-1 sm:px-3">
-              <TrendingUp aria-hidden="true" size={18} strokeWidth={2} />
+            <span className="flex flex-col items-center gap-1 px-2 py-1">
+              <TrendingUp aria-hidden="true" className={isProgressPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isProgressPage ? 2.25 : 1.85} />
               <span>Progreso</span>
             </span>
           </Link>
           <Link
             aria-current={isExercisesPage ? "page" : undefined}
-            className={`group relative flex min-h-12 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] font-semibold transition-colors focus-visible:outline-focus ${isExercisesPage ? "text-text-primary after:absolute after:bottom-0.5 after:left-1/2 after:h-0.5 after:w-4 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "text-text-secondary hover:bg-surface-active hover:text-text-primary"}`}
+            className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isExercisesPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/exercises"
           >
-            <span className="flex flex-col items-center gap-0.5 px-2 py-1 sm:px-3">
-              <Dumbbell aria-hidden="true" size={18} strokeWidth={2} />
+            <span className="flex flex-col items-center gap-1 px-2 py-1">
+              <Dumbbell aria-hidden="true" className={isExercisesPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isExercisesPage ? 2.25 : 1.85} />
               <span>Ejercicios</span>
             </span>
           </Link>
