@@ -4,7 +4,7 @@
 
 Este documento define la base visual y de producción para las demostraciones técnicas propias de Entrenate.
 
-La figura funciona exclusivamente como un **modelo técnico de movimiento**. No es una mascota, no tiene nombre, no tiene personalidad y no debe aparecer fuera de una demostración de técnica.
+La figura funciona exclusivamente como un **modelo técnico de movimiento**. Carece de nombre, personalidad e identidad narrativa, y solo aparece dentro de una demostración de técnica.
 
 Orden de prioridad:
 
@@ -173,7 +173,7 @@ frontend/public/exercises/v2/
     └── frame-05.png
 ```
 
-Las demos existentes continúan en `frontend/public/exercise-demos/`. Los archivos V2 no se conectan a `exercise-demo-registry.ts` hasta ser aprobados.
+Las demos aprobadas se registran únicamente en `frontend/src/features/exercises/components/exercise-demo-v2-registry.ts` y usan assets bajo `frontend/public/exercises/v2/`.
 
 ## Piloto: Curl con barra EZ
 

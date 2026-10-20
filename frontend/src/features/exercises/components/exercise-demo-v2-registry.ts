@@ -1,4 +1,8 @@
-import type { EntrenateExerciseDemoDefinition } from "./exercise-demo-registry";
+export type EntrenateExerciseDemoDefinition = {
+  key: string;
+  movementFrames: readonly string[];
+  armPositionFrames?: readonly string[];
+};
 
 function normalizeExerciseName(value: string): string {
   return value
@@ -372,6 +376,50 @@ const puenteGluteosV2: EntrenateExerciseDemoDefinition = {
   ],
 };
 
+const elevacionGemelosV2: EntrenateExerciseDemoDefinition = {
+  key: "elevacion-gemelos-v2",
+  movementFrames: [
+    "/exercises/v2/elevacion-gemelos/frame-01.png",
+    "/exercises/v2/elevacion-gemelos/frame-02.png",
+    "/exercises/v2/elevacion-gemelos/frame-03.png",
+    "/exercises/v2/elevacion-gemelos/frame-04.png",
+    "/exercises/v2/elevacion-gemelos/frame-05.png",
+  ],
+};
+
+const elevacionGemelosMaquinaV2: EntrenateExerciseDemoDefinition = {
+  key: "elevacion-gemelos-maquina-v2",
+  movementFrames: [
+    "/exercises/v2/elevacion-gemelos-maquina/frame-01.png",
+    "/exercises/v2/elevacion-gemelos-maquina/frame-02.png",
+    "/exercises/v2/elevacion-gemelos-maquina/frame-03.png",
+    "/exercises/v2/elevacion-gemelos-maquina/frame-04.png",
+    "/exercises/v2/elevacion-gemelos-maquina/frame-05.png",
+  ],
+};
+
+const crunchAbdominalV2: EntrenateExerciseDemoDefinition = {
+  key: "crunch-abdominal-v2",
+  movementFrames: [
+    "/exercises/v2/crunch-abdominal/frame-01.png",
+    "/exercises/v2/crunch-abdominal/frame-02.png",
+    "/exercises/v2/crunch-abdominal/frame-03.png",
+    "/exercises/v2/crunch-abdominal/frame-04.png",
+    "/exercises/v2/crunch-abdominal/frame-05.png",
+  ],
+};
+
+const planchaV2: EntrenateExerciseDemoDefinition = {
+  key: "plancha-v2",
+  movementFrames: [
+    "/exercises/v2/plancha/frame-01.png",
+    "/exercises/v2/plancha/frame-02.png",
+    "/exercises/v2/plancha/frame-03.png",
+    "/exercises/v2/plancha/frame-04.png",
+    "/exercises/v2/plancha/frame-05.png",
+  ],
+};
+
 const demoDefinitions = new Map<string, EntrenateExerciseDemoDefinition>([
   ["curl con barra ez", curlBarraEzV2],
   ["press banca con barra", pressBancaBarraV2],
@@ -406,10 +454,18 @@ const demoDefinitions = new Map<string, EntrenateExerciseDemoDefinition>([
   ["curl femoral", curlFemoralV2],
   ["hip thrust con barra", hipThrustV2],
   ["puente de gluteos", puenteGluteosV2],
+  ["elevacion de gemelos de pie", elevacionGemelosV2],
+  ["elevacion de gemelos en maquina", elevacionGemelosMaquinaV2],
+  ["crunch abdominal", crunchAbdominalV2],
+  ["plancha", planchaV2],
 ]);
 
 export function getEntrenateExerciseDemoV2(
   exerciseName: string,
 ): EntrenateExerciseDemoDefinition | null {
   return demoDefinitions.get(normalizeExerciseName(exerciseName)) ?? null;
+}
+
+export function hasEntrenateExerciseDemoV2(exerciseName: string): boolean {
+  return demoDefinitions.has(normalizeExerciseName(exerciseName));
 }

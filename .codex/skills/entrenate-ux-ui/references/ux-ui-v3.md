@@ -120,7 +120,7 @@ Show:
 - greeting/context;
 - clear first-routine guidance;
 - one dominant create action;
-- GymBro only when useful for orientation.
+- concise orientation copy only when useful.
 
 ### Routines available, no active session
 
@@ -296,24 +296,11 @@ Raleway:
 
 Use scale/weight/spacing before adding a new container.
 
-## GymBro
-
-GymBro is useful when acting as:
-
-- onboarding guide;
-- empty-state guide;
-- recovery helper;
-- workout completion identity;
-- exercise visual;
-- future coaching persona.
-
-GymBro should not be repeated as ambient decoration.
-
 ## Exercise media
 
-GymBro thumbnails belong to Entrenate identity.
+Neutral Exercise Model V1 is the technical figure used by Entrenate Exercise Demo V2.
 
-Entrenate Exercise Demo is preferred when available.
+Entrenate Exercise Demo V2 is preferred when available.
 
 External Workout Guide content can remain a fallback while migration continues.
 
@@ -371,7 +358,7 @@ Always account for:
 7. Every surface needs a semantic reason.
 8. Raleway has a performance/metric role.
 9. Violet and blue have distinct semantic roles.
-10. GymBro is contextual, not filler.
+10. Technical exercise media is contextual, not decorative filler.
 11. Motion communicates state.
 12. `390×667` is the hard mobile validation target.
 

@@ -15,7 +15,7 @@ import {
   matchesMuscleFilter,
 } from "../exercise-muscle-filters";
 import type { Exercise } from "../types/exercise.types";
-import { hasEntrenateExerciseDemo } from "./exercise-demo-registry";
+import { hasEntrenateExerciseDemoV2 } from "./exercise-demo-v2-registry";
 
 const ExerciseMovementDemo = dynamic(() => import("./exercise-movement-demo"), { ssr: false });
 
@@ -231,7 +231,8 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
         normalize(exercise.grupoMuscularPrincipal).includes(search)),
   );
   const previewHasDemo = preview
-    ? hasEntrenateExerciseDemo(preview.nombre) || Boolean(preview.workoutGuideId)
+    ? hasEntrenateExerciseDemoV2(preview.nombre) ||
+      Boolean(preview.workoutGuideId)
     : false;
 
   const toggleSelection = (id: string) => {
@@ -428,7 +429,6 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                 <ExerciseMovementDemo
                   exerciseName={preview.nombre}
                   key={preview.id}
-                  preferV2
                   workoutGuideId={preview.workoutGuideId}
                 />
               </section>

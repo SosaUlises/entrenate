@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { hasEntrenateExerciseDemo } from "./exercise-demo-registry";
+import { useState } from "react";
 import { getEntrenateExerciseDemoV2 } from "./exercise-demo-v2-registry";
 import { EntrenateExerciseDemo } from "./entrenate-exercise-demo";
 
@@ -12,24 +12,22 @@ const WorkoutGuideExerciseDemo = dynamic(
 
 type ExerciseMovementDemoProps = {
   exerciseName: string;
-  preferV2?: boolean;
   workoutGuideId: string | null;
 };
 
 export default function ExerciseMovementDemo({
   exerciseName,
-  preferV2 = false,
   workoutGuideId,
 }: ExerciseMovementDemoProps) {
-  const preferredDefinition = preferV2
-    ? getEntrenateExerciseDemoV2(exerciseName)
-    : null;
+  const [failedExerciseName, setFailedExerciseName] = useState<string | null>(null);
+  const definition = getEntrenateExerciseDemoV2(exerciseName);
+  const v2Failed = failedExerciseName === exerciseName;
 
-  if (preferredDefinition || hasEntrenateExerciseDemo(exerciseName)) {
+  if (definition && !v2Failed) {
     return (
       <EntrenateExerciseDemo
-        exerciseName={exerciseName}
-        preferredDefinition={preferredDefinition}
+        definition={definition}
+        onFailure={() => setFailedExerciseName(exerciseName)}
       />
     );
   }

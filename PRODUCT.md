@@ -53,9 +53,8 @@ Entrenate evita fragmentar este recorrido en herramientas separadas. La experien
 - La comunicación utiliza español rioplatense natural, claro y directo.
 - La personalidad debe sentirse premium, tecnológica, deportiva, precisa, moderna y muy fácil de usar.
 - La identidad debe surgir de la marca, el sistema visual, la tipografía, el color, el movimiento, la interacción, los datos y la claridad.
-- GymBro no es una identidad permanente ni debe convertirse en la base de la marca.
 - Las demostraciones de ejercicios pueden usar una figura humana neutral, sin identidad ni rostro reconocible, exclusivamente para explicar el movimiento.
-- Evitar una identidad cyberpunk, gaming, SaaS genérica, basada en glassmorphism excesivo, en superficies anidadas o en una mascota recurrente.
+- Evitar una identidad cyberpunk, gaming, SaaS genérica, basada en glassmorphism excesivo, en superficies anidadas o en recursos decorativos recurrentes.
 
 ## Evidence on Hand
 
@@ -65,8 +64,8 @@ Entrenate evita fragmentar este recorrido en herramientas separadas. La experien
 - Implementación real del frontend autenticado: `frontend/src/`.
 - Contratos y reglas reales del backend: `backend/src/`.
 - Assets actuales de marca: `frontend/public/branding/`.
-- Assets actuales de demostraciones de ejercicios: `frontend/public/exercise-demos/`.
-- Existen assets de GymBro en `frontend/public/gymbro/`, pero no constituyen un compromiso futuro de identidad.
+- Assets actuales de demostraciones de ejercicios: `frontend/public/exercises/v2/`.
+- Referencia maestra del modelo técnico neutral: `frontend/public/exercises/v2/_master/neutral-exercise-model-v1-master.png`.
 - No hay evidencia aprobada de testimonios, clientes, benchmarks comerciales, precios o capacidades de IA implementadas; no deben fabricarse.
 
 ## Product Principles

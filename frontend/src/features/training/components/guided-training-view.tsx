@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { Check, ChevronDown, CircleHelp, ScanEye, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { hasEntrenateExerciseDemo } from "@/features/exercises/components/exercise-demo-registry";
+import { hasEntrenateExerciseDemoV2 } from "@/features/exercises/components/exercise-demo-v2-registry";
 import { upsertTrainingSetAction } from "../actions/training.actions";
 import { getFirstMissingTarget, type TrainingTarget } from "../training-position";
 import type { TrainingSession, TrainingSessionExercise, TrainingSet, TrainingSetInput } from "../types/training.types";
@@ -98,7 +98,7 @@ export function GuidedTrainingView({ session, onDirtyChange, onFinish, onMissing
         </p>
         <div className="mt-1 flex min-w-0 items-start justify-between gap-3">
           <h2 className="min-w-0 break-words font-brand text-2xl font-bold leading-[1.12] text-text-primary sm:text-[1.75rem]">{exercise.nombre}</h2>
-          {hasEntrenateExerciseDemo(exercise.nombre) || workoutGuideIds[exercise.ejercicioId] ? (
+          {hasEntrenateExerciseDemoV2(exercise.nombre) || workoutGuideIds[exercise.ejercicioId] ? (
             <GuidedTechniquePreview exerciseName={exercise.nombre} key={exercise.ejercicioId} workoutGuideId={workoutGuideIds[exercise.ejercicioId]} />
           ) : null}
         </div>

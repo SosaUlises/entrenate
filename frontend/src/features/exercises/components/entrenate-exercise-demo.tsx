@@ -2,10 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import {
-  loadEntrenateExerciseDemo,
-  type EntrenateExerciseDemoDefinition,
-} from "./exercise-demo-registry";
+import type { EntrenateExerciseDemoDefinition } from "./exercise-demo-v2-registry";
 
 type DemoView = "movement" | "arms";
 
@@ -15,34 +12,19 @@ function createPlaybackSequence(frameCount: number): number[] {
 }
 
 type EntrenateExerciseDemoProps = {
-  exerciseName: string;
-  preferredDefinition?: EntrenateExerciseDemoDefinition | null;
+  definition: EntrenateExerciseDemoDefinition;
+  onFailure?: () => void;
 };
 
 export function EntrenateExerciseDemo({
-  exerciseName,
-  preferredDefinition = null,
+  definition,
+  onFailure,
 }: EntrenateExerciseDemoProps) {
-  const [legacyDefinition, setLegacyDefinition] = useState<EntrenateExerciseDemoDefinition | null>(null);
-  const [preferredFailed, setPreferredFailed] = useState(false);
   const [view, setView] = useState<DemoView>("movement");
   const [sequenceIndex, setSequenceIndex] = useState(0);
   const [loadedFrames, setLoadedFrames] = useState<Set<string>>(() => new Set());
   const [failed, setFailed] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(true);
-  const activePreferredDefinition = preferredFailed ? null : preferredDefinition;
-  const definition = activePreferredDefinition ?? legacyDefinition;
-
-  useEffect(() => {
-    if (activePreferredDefinition) return;
-
-    let active = true;
-    void loadEntrenateExerciseDemo(exerciseName).then(
-      (demo) => { if (active) setLegacyDefinition(demo); },
-      () => { if (active) setFailed(true); },
-    );
-    return () => { active = false; };
-  }, [activePreferredDefinition, exerciseName]);
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -53,16 +35,17 @@ export function EntrenateExerciseDemo({
   }, []);
 
   const currentFrames = useMemo(
-    () => definition
-      ? (view === "movement" ? definition.movementFrames : (definition.armPositionFrames ?? []))
-      : [],
+    () => view === "movement"
+      ? definition.movementFrames
+      : (definition.armPositionFrames ?? []),
     [definition, view],
   );
   const playbackSequence = useMemo(
     () => createPlaybackSequence(currentFrames.length),
     [currentFrames.length],
   );
-  const framesReady = currentFrames.length > 0 && currentFrames.every((frame) => loadedFrames.has(frame));
+  const framesReady = currentFrames.length > 0 &&
+    currentFrames.every((frame) => loadedFrames.has(frame));
 
   useEffect(() => {
     if (!framesReady || reducedMotion || failed) return;
@@ -73,19 +56,15 @@ export function EntrenateExerciseDemo({
   }, [failed, framesReady, playbackSequence.length, reducedMotion, view]);
 
   const activeFrame = reducedMotion
-    ? view === "movement" ? Math.floor((currentFrames.length - 1) / 2) : 0
+    ? view === "movement"
+      ? Math.floor((currentFrames.length - 1) / 2)
+      : 0
     : playbackSequence[sequenceIndex];
+  const hasArmPositionView = Boolean(definition.armPositionFrames?.length);
 
-  const hasArmPositionView = Boolean(definition?.armPositionFrames?.length);
   const handleFrameError = () => {
-    if (activePreferredDefinition) {
-      setLoadedFrames(new Set());
-      setSequenceIndex(0);
-      setPreferredFailed(true);
-      return;
-    }
-
     setFailed(true);
+    onFailure?.();
   };
 
   return (
@@ -119,48 +98,48 @@ export function EntrenateExerciseDemo({
 
       <div className="relative mx-auto mt-3 flex aspect-square w-full max-w-full items-center justify-center overflow-hidden rounded-control-sm bg-background/25">
         {failed ? (
-          <p className="px-4 text-center text-sm text-text-secondary" role="status">No pudimos cargar la demostración.</p>
-        ) : definition ? (
-          reducedMotion && view === "arms" ? (
-            <div className="grid size-full grid-cols-2 items-center gap-1">
-              {definition.armPositionFrames?.map((source) => (
-                <Image
-                  alt=""
-                  className="h-auto w-full object-contain"
-                  height={1254}
-                  key={source}
-                  onError={handleFrameError}
-                  onLoad={() => setLoadedFrames((loaded) => new Set(loaded).add(source))}
-                  src={source}
-                  unoptimized
-                  width={1254}
-                />
-              ))}
-            </div>
-          ) : (
-            <>
-              {currentFrames.map((source, index) => (
-                <Image
-                  alt=""
-                  aria-hidden="true"
-                  className={`absolute inset-0 size-full object-contain transition-opacity duration-150 motion-reduce:transition-none ${activeFrame === index ? "opacity-100" : "opacity-0"}`}
-                  height={1254}
-                  key={source}
-                  loading="eager"
-                  onError={handleFrameError}
-                  onLoad={() => setLoadedFrames((loaded) => new Set(loaded).add(source))}
-                  src={source}
-                  unoptimized
-                  width={1254}
-                />
-              ))}
-              {!loadedFrames.has(currentFrames[0]) ? (
-                <span className="relative z-10 text-[0.8125rem] text-text-secondary">Cargando demostración…</span>
-              ) : null}
-            </>
-          )
+          <p className="px-4 text-center text-sm text-text-secondary" role="status">
+            No pudimos cargar la demostración.
+          </p>
+        ) : reducedMotion && view === "arms" ? (
+          <div className="grid size-full grid-cols-2 items-center gap-1">
+            {definition.armPositionFrames?.map((source) => (
+              <Image
+                alt=""
+                className="h-auto w-full object-contain"
+                height={1024}
+                key={source}
+                onError={handleFrameError}
+                onLoad={() => setLoadedFrames((loaded) => new Set(loaded).add(source))}
+                src={source}
+                unoptimized
+                width={1024}
+              />
+            ))}
+          </div>
         ) : (
-          <span className="text-[0.8125rem] text-text-secondary">Cargando demostración…</span>
+          <>
+            {currentFrames.map((source, index) => (
+              <Image
+                alt=""
+                aria-hidden="true"
+                className={`absolute inset-0 size-full object-contain transition-opacity duration-150 motion-reduce:transition-none ${activeFrame === index ? "opacity-100" : "opacity-0"}`}
+                height={1024}
+                key={source}
+                loading="eager"
+                onError={handleFrameError}
+                onLoad={() => setLoadedFrames((loaded) => new Set(loaded).add(source))}
+                src={source}
+                unoptimized
+                width={1024}
+              />
+            ))}
+            {!loadedFrames.has(currentFrames[0]) ? (
+              <span className="relative z-10 text-[0.8125rem] text-text-secondary">
+                Cargando demostración…
+              </span>
+            ) : null}
+          </>
         )}
       </div>
     </section>

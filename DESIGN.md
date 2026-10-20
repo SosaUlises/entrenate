@@ -118,7 +118,7 @@ components:
 
 Entrenate expresa rendimiento mediante una interfaz premium, atlética, tecnológica, precisa y sobria. Está diseñada para responder rápido y mantener la lectura clara durante el entrenamiento: la jerarquía señala la próxima acción, el feedback confirma el avance y el movimiento acompaña los cambios de estado sin distraer.
 
-La tecnología se comunica mediante tipografía, ritmo, motion funcional, datos legibles y respuestas inmediatas. La personalidad nace del sistema visual y de la continuidad entre rutina, sesión, historial, actividad y progreso; no depende de decoración futurista ni de una mascota recurrente.
+La tecnología se comunica mediante tipografía, ritmo, motion funcional, datos legibles y respuestas inmediatas. La personalidad nace del sistema visual y de la continuidad entre rutina, sesión, historial, actividad y progreso; no depende de decoración futurista ni de recursos narrativos recurrentes.
 
 La interfaz debe resultar simple para quien empieza, sólida para quien entrena hace años y cómoda para adultos mayores. La legibilidad, los targets grandes y la baja carga visual tienen prioridad sobre la densidad ornamental.
 
@@ -293,7 +293,7 @@ El gradiente violeta a azul es un tratamiento excepcional, no un primitive ni un
 - Don't convertir Entrenate en un dashboard de analytics.
 - Don't usar glassmorphism excesivo, glow o sombras en superficies planas.
 - Don't anidar cards ni encerrar cada sección en una caja.
-- Don't depender de GymBro ni de otra mascota como identidad recurrente.
+- Don't basar la identidad en una figura narrativa recurrente.
 - Don't llenar la interfaz de violeta o azul; los acentos deben conservar significado.
 - Don't usar el gradiente violeta a azul como CTA habitual ni como decoración para elevar artificialmente una pantalla.
 - Don't reducir labels, metadata o targets hasta comprometer su uso durante el entrenamiento.

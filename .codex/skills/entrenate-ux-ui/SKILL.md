@@ -210,7 +210,7 @@ Conceptual states:
 
 Do not fabricate "Today", weekdays, recommended schedule, streaks, or next workout logic unless backed by actual product data.
 
-GymBro may guide first use, recovery, empty states, or meaningful milestones. Do not use GymBro merely to fill space.
+Use concise product guidance for first use, recovery, empty states, or meaningful milestones. Do not add decorative figures merely to fill space.
 
 ## Routines
 
@@ -236,7 +236,7 @@ Do not change routine API semantics merely to simplify a visual task.
 
 ## Exercise demos
 
-GymBro remains the Entrenate visual identity for exercise thumbnails.
+Exercise technique uses the Neutral Exercise Model V1 and Exercise Demo V2 assets.
 
 `Ver técnica` is contextual and should:
 
@@ -349,20 +349,9 @@ Prefer short, restrained transitions.
 
 Always respect `prefers-reduced-motion`.
 
-## GymBro
+## Technical exercise model
 
-GymBro is a contextual coach/identity asset, not general decoration.
-
-Good contexts:
-
-- onboarding;
-- first routine/empty state;
-- recovery/help;
-- workout completion;
-- exercise imagery;
-- future coaching/AI interventions.
-
-Avoid placing GymBro beside unrelated metrics simply because space exists.
+The Neutral Exercise Model V1 exists only to explain exercise technique. Keep it inside contextual demos and do not use it as general decoration or beside unrelated metrics.
 
 ## Interaction rules
 
