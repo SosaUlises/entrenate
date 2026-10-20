@@ -136,7 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <AuthenticatedUserProvider user={userState.user}>
-    <div className={`min-h-dvh w-full bg-background ${isTrainingPage ? "training-acero-termico overflow-x-clip" : ""}`}>
+    <div className={`min-h-dvh w-full bg-background ${isTrainingPage ? "overflow-x-clip" : ""}`}>
       <div className="mx-auto min-w-0 w-full max-w-2xl px-4 sm:px-12">
         {!isContextualPage ? (
         <header className="flex items-center justify-between gap-4 pt-9 sm:pt-12">
@@ -147,20 +147,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           <details className="group relative shrink-0">
             <summary
               aria-label="Abrir menú de cuenta"
-              className="flex size-12 cursor-pointer list-none items-center justify-center rounded-full border border-primary/50 bg-primary/15 font-brand text-lg font-bold text-primary transition-colors marker:hidden hover:border-primary/80 hover:bg-primary/20 focus-visible:outline-primary focus-visible:ring-2 focus-visible:ring-primary/30 [&::-webkit-details-marker]:hidden"
+              className="flex size-12 cursor-pointer list-none items-center justify-center rounded-full border border-border-strong bg-surface-interactive font-brand text-lg font-bold text-text-primary transition-colors marker:hidden hover:bg-surface-active focus-visible:outline-focus [&::-webkit-details-marker]:hidden"
             >
               {initial}
             </summary>
-            <div className="absolute right-0 z-20 mt-2 w-48 rounded-control border border-border bg-surface-elevated p-1 shadow-elevated">
+            <div className="absolute right-0 z-20 mt-2 w-48 rounded-card border border-border bg-surface-elevated p-1 shadow-elevated">
               <Link
-                className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary hover:bg-surface focus-visible:outline-primary"
+                className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary hover:bg-surface-active focus-visible:outline-focus"
                 href="/profile"
               >
                 <UserRound aria-hidden="true" size={18} />
                 Perfil
               </Link>
               <button
-                className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary hover:bg-surface"
+                className="flex min-h-11 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary hover:bg-surface-active focus-visible:outline-focus"
                 disabled={isSigningOut}
                 onClick={() => void handleLogout()}
                 type="button"
@@ -186,45 +186,45 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {showBottomNav ? <nav
         aria-label="Navegación principal"
-        className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-10 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-border/40 bg-surface-elevated/90 p-1 shadow-sm backdrop-blur-md"
+        className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-10 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-container border border-border bg-surface-elevated p-1 shadow-elevated"
       >
         <div className="grid grid-cols-4 gap-1">
           <Link
             aria-current={isHomePage ? "page" : undefined}
-            className={`group flex min-h-12 min-w-0 items-center justify-center rounded-full text-xs font-semibold transition-colors focus-visible:outline-primary ${isHomePage ? "text-primary" : "text-text-primary/75 hover:text-text-primary"}`}
+            className={`group relative flex min-h-12 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] font-semibold transition-colors focus-visible:outline-focus ${isHomePage ? "text-text-primary after:absolute after:bottom-0.5 after:left-1/2 after:h-0.5 after:w-4 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "text-text-secondary hover:bg-surface-active hover:text-text-primary"}`}
             href="/home"
           >
-            <span className={`flex flex-col items-center gap-0.5 rounded-full px-3 py-1 transition-colors ${isHomePage ? "bg-primary/10" : "group-hover:bg-surface"}`}>
+            <span className="flex flex-col items-center gap-0.5 px-3 py-1">
               <Home aria-hidden="true" size={18} strokeWidth={2} />
               <span>Inicio</span>
             </span>
           </Link>
           <Link
             aria-current={isRoutinesPage ? "page" : undefined}
-            className={`group flex min-h-12 min-w-0 items-center justify-center rounded-full text-xs font-semibold transition-colors focus-visible:outline-primary ${isRoutinesPage ? "text-primary" : "text-text-primary/75 hover:text-text-primary"}`}
+            className={`group relative flex min-h-12 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] font-semibold transition-colors focus-visible:outline-focus ${isRoutinesPage ? "text-text-primary after:absolute after:bottom-0.5 after:left-1/2 after:h-0.5 after:w-4 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "text-text-secondary hover:bg-surface-active hover:text-text-primary"}`}
             href="/routines"
           >
-            <span className={`flex flex-col items-center gap-0.5 rounded-full px-3 py-1 transition-colors ${isRoutinesPage ? "bg-primary/10" : "group-hover:bg-surface"}`}>
+            <span className="flex flex-col items-center gap-0.5 px-3 py-1">
               <ClipboardList aria-hidden="true" size={18} strokeWidth={2} />
               <span>Rutinas</span>
             </span>
           </Link>
           <Link
             aria-current={isProgressPage ? "page" : undefined}
-            className={`group flex min-h-12 min-w-0 items-center justify-center rounded-full text-xs font-semibold transition-colors focus-visible:outline-primary ${isProgressPage ? "text-primary" : "text-text-primary/75 hover:text-text-primary"}`}
+            className={`group relative flex min-h-12 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] font-semibold transition-colors focus-visible:outline-focus ${isProgressPage ? "text-text-primary after:absolute after:bottom-0.5 after:left-1/2 after:h-0.5 after:w-4 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "text-text-secondary hover:bg-surface-active hover:text-text-primary"}`}
             href="/progress"
           >
-            <span className={`flex flex-col items-center gap-0.5 rounded-full px-2 py-1 transition-colors sm:px-3 ${isProgressPage ? "bg-primary/10" : "group-hover:bg-surface"}`}>
+            <span className="flex flex-col items-center gap-0.5 px-2 py-1 sm:px-3">
               <TrendingUp aria-hidden="true" size={18} strokeWidth={2} />
               <span>Progreso</span>
             </span>
           </Link>
           <Link
             aria-current={isExercisesPage ? "page" : undefined}
-            className={`group flex min-h-12 min-w-0 items-center justify-center rounded-full text-xs font-semibold transition-colors focus-visible:outline-primary ${isExercisesPage ? "text-primary" : "text-text-primary/75 hover:text-text-primary"}`}
+            className={`group relative flex min-h-12 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] font-semibold transition-colors focus-visible:outline-focus ${isExercisesPage ? "text-text-primary after:absolute after:bottom-0.5 after:left-1/2 after:h-0.5 after:w-4 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "text-text-secondary hover:bg-surface-active hover:text-text-primary"}`}
             href="/exercises"
           >
-            <span className={`flex flex-col items-center gap-0.5 rounded-full px-2 py-1 transition-colors sm:px-3 ${isExercisesPage ? "bg-primary/10" : "group-hover:bg-surface"}`}>
+            <span className="flex flex-col items-center gap-0.5 px-2 py-1 sm:px-3">
               <Dumbbell aria-hidden="true" size={18} strokeWidth={2} />
               <span>Ejercicios</span>
             </span>

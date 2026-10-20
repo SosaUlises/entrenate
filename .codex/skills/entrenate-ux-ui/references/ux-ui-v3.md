@@ -1,4 +1,4 @@
-# Entrenate UX/UI V3 — Product and Visual Reference
+# Entrenate UX/UI — Product and Acero Térmico Reference
 
 ## North star
 
@@ -142,7 +142,7 @@ Other Home content becomes secondary.
 
 ## Training target
 
-Training should be the strongest expression of the V3 language.
+Training is the strongest expression of the Acero Térmico language.
 
 ### Guided hierarchy
 
@@ -265,14 +265,10 @@ Especially avoid:
 
 Base identity:
 
-- dark background;
-- violet brand accent;
-- blue secondary accent.
-
-V3 semantics:
-
-- Violet = focus / primary interaction / primary action.
-- Blue = information / progress / non-destructive status.
+- carbon background and graphite/mineral surfaces;
+- technical white for primary action and important data;
+- thermal accent for brief focus, interaction, and performance signals;
+- steel for information, progress, and non-destructive status.
 
 Functional success/warning/error colors may be used when state requires them.
 
@@ -357,7 +353,7 @@ Always account for:
 6. Prefer one dominant CTA per state.
 7. Every surface needs a semantic reason.
 8. Raleway has a performance/metric role.
-9. Violet and blue have distinct semantic roles.
+9. Technical white, thermal accent, steel, and semantic state colors have distinct roles.
 10. Technical exercise media is contextual, not decorative filler.
 11. Motion communicates state.
 12. `390×667` is the hard mobile validation target.

@@ -1,104 +1,37 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-10T11:50:08.605Z",
-  "title": "Design System: Entrenate",
+  "generatedAt": "2026-10-20T00:00:00.000Z",
+  "title": "Design System: Entrenate — Acero Térmico",
   "extensions": {
     "colorMeta": {
-      "fondo-carbon": {
-        "role": "neutral",
-        "displayName": "Fondo Carbón",
-        "canonical": "#0c0c12",
-        "tonalRamp": ["oklch(15% 0.014 286)", "oklch(25% 0.014 286)", "oklch(36% 0.013 286)", "oklch(48% 0.012 286)", "oklch(60% 0.011 286)", "oklch(72% 0.010 286)", "oklch(84% 0.008 286)", "oklch(95% 0.004 286)"]
-      },
-      "superficie-grafito": {
-        "role": "neutral",
-        "displayName": "Superficie Grafito",
-        "canonical": "#171923",
-        "tonalRamp": ["oklch(15% 0.018 275)", "oklch(25% 0.018 275)", "oklch(36% 0.017 275)", "oklch(48% 0.015 275)", "oklch(60% 0.013 275)", "oklch(72% 0.011 275)", "oklch(84% 0.008 275)", "oklch(95% 0.004 275)"]
-      },
-      "superficie-grafito-elevada": {
-        "role": "neutral",
-        "displayName": "Superficie Grafito Elevada",
-        "canonical": "#20222e",
-        "tonalRamp": ["oklch(15% 0.020 275)", "oklch(25% 0.020 275)", "oklch(36% 0.019 275)", "oklch(48% 0.017 275)", "oklch(60% 0.014 275)", "oklch(72% 0.011 275)", "oklch(84% 0.008 275)", "oklch(95% 0.004 275)"]
-      },
-      "violeta-impulso": {
-        "role": "primary",
-        "displayName": "Violeta Impulso",
-        "canonical": "#a78bfa",
-        "tonalRamp": ["oklch(15% 0.08 295)", "oklch(25% 0.12 295)", "oklch(36% 0.16 295)", "oklch(48% 0.19 295)", "oklch(60% 0.20 295)", "oklch(72% 0.18 295)", "oklch(84% 0.12 295)", "oklch(95% 0.04 295)"]
-      },
-      "violeta-impulso-fuerte": {
-        "role": "primary",
-        "displayName": "Violeta Impulso Fuerte",
-        "canonical": "#8b5cf6",
-        "tonalRamp": ["oklch(15% 0.09 295)", "oklch(25% 0.14 295)", "oklch(36% 0.19 295)", "oklch(48% 0.23 295)", "oklch(60% 0.24 295)", "oklch(72% 0.20 295)", "oklch(84% 0.13 295)", "oklch(95% 0.04 295)"]
-      },
-      "azul-rendimiento": {
-        "role": "secondary",
-        "displayName": "Azul Rendimiento",
-        "canonical": "#3b82f6",
-        "tonalRamp": ["oklch(15% 0.07 260)", "oklch(25% 0.12 260)", "oklch(36% 0.17 260)", "oklch(48% 0.21 260)", "oklch(60% 0.22 260)", "oklch(72% 0.18 260)", "oklch(84% 0.11 260)", "oklch(95% 0.035 260)"]
-      },
-      "blanco-tecnico": {
-        "role": "neutral",
-        "displayName": "Blanco Técnico",
-        "canonical": "#f5f5f7",
-        "tonalRamp": ["oklch(15% 0.004 285)", "oklch(25% 0.004 285)", "oklch(36% 0.004 285)", "oklch(48% 0.004 285)", "oklch(60% 0.004 285)", "oklch(72% 0.004 285)", "oklch(84% 0.004 285)", "oklch(95% 0.003 285)"]
-      },
-      "gris-informacion": {
-        "role": "neutral",
-        "displayName": "Gris Información",
-        "canonical": "#a1a1aa",
-        "tonalRamp": ["oklch(15% 0.008 285)", "oklch(25% 0.008 285)", "oklch(36% 0.008 285)", "oklch(48% 0.008 285)", "oklch(60% 0.007 285)", "oklch(72% 0.006 285)", "oklch(84% 0.005 285)", "oklch(95% 0.003 285)"]
-      },
-      "borde-sutil": {
-        "role": "neutral",
-        "displayName": "Borde Sutil",
-        "canonical": "rgba(255, 255, 255, 0.10)",
-        "tonalRamp": ["rgba(255,255,255,0.04)", "rgba(255,255,255,0.07)", "rgba(255,255,255,0.10)", "rgba(255,255,255,0.14)", "rgba(255,255,255,0.20)", "rgba(255,255,255,0.30)", "rgba(255,255,255,0.45)", "rgba(255,255,255,0.65)"]
-      },
-      "borde-fuerte": {
-        "role": "neutral",
-        "displayName": "Borde Fuerte",
-        "canonical": "rgba(255, 255, 255, 0.16)",
-        "tonalRamp": ["rgba(255,255,255,0.06)", "rgba(255,255,255,0.10)", "rgba(255,255,255,0.16)", "rgba(255,255,255,0.22)", "rgba(255,255,255,0.30)", "rgba(255,255,255,0.40)", "rgba(255,255,255,0.55)", "rgba(255,255,255,0.72)"]
-      },
-      "exito": {
-        "role": "semantic",
-        "displayName": "Éxito",
-        "canonical": "#22c55e",
-        "tonalRamp": ["oklch(15% 0.06 145)", "oklch(25% 0.10 145)", "oklch(36% 0.14 145)", "oklch(48% 0.17 145)", "oklch(60% 0.18 145)", "oklch(72% 0.15 145)", "oklch(84% 0.09 145)", "oklch(95% 0.025 145)"]
-      },
-      "advertencia": {
-        "role": "semantic",
-        "displayName": "Advertencia",
-        "canonical": "#f59e0b",
-        "tonalRamp": ["oklch(15% 0.06 75)", "oklch(25% 0.10 75)", "oklch(36% 0.14 75)", "oklch(48% 0.17 75)", "oklch(60% 0.18 75)", "oklch(72% 0.15 75)", "oklch(84% 0.09 75)", "oklch(95% 0.025 75)"]
-      },
-      "error": {
-        "role": "semantic",
-        "displayName": "Error",
-        "canonical": "#ef4444",
-        "tonalRamp": ["oklch(15% 0.07 25)", "oklch(25% 0.12 25)", "oklch(36% 0.17 25)", "oklch(48% 0.20 25)", "oklch(60% 0.21 25)", "oklch(72% 0.17 25)", "oklch(84% 0.10 25)", "oklch(95% 0.03 25)"]
-      }
+      "background": { "role": "neutral", "displayName": "Carbón", "canonical": "#10110f", "tonalRamp": ["#10110f", "#181a17", "#1d1f1b", "#22251f", "#292c25"] },
+      "surface": { "role": "neutral", "displayName": "Grafito", "canonical": "#181a17", "tonalRamp": ["#10110f", "#181a17", "#1d1f1b", "#22251f", "#292c25"] },
+      "surface-elevated": { "role": "neutral", "displayName": "Grafito elevado", "canonical": "#22251f", "tonalRamp": ["#10110f", "#181a17", "#1d1f1b", "#22251f", "#292c25"] },
+      "technical-white": { "role": "primary", "displayName": "Blanco técnico", "canonical": "#e8e7df", "tonalRamp": ["#151612", "#7e8178", "#b2b2a9", "#e8e7df", "#f2f1ea"] },
+      "thermal-accent": { "role": "secondary", "displayName": "Señal térmica", "canonical": "#e1734e", "tonalRamp": ["#44251c", "#713c2a", "#a65338", "#e1734e", "#f0ab8d"] },
+      "steel": { "role": "secondary", "displayName": "Acero", "canonical": "#7fa4ad", "tonalRamp": ["#263638", "#40565b", "#5c7980", "#7fa4ad", "#b3c9ce"] },
+      "text-primary": { "role": "neutral", "displayName": "Texto primario", "canonical": "#f2f1ea", "tonalRamp": ["#151612", "#7e8178", "#b2b2a9", "#e8e7df", "#f2f1ea"] },
+      "text-secondary": { "role": "neutral", "displayName": "Texto secundario", "canonical": "#b2b2a9", "tonalRamp": ["#151612", "#7e8178", "#b2b2a9", "#e8e7df", "#f2f1ea"] },
+      "success": { "role": "semantic", "displayName": "Éxito", "canonical": "#67b77a", "tonalRamp": ["#203c27", "#376d45", "#4e9360", "#67b77a", "#a1d6ad"] },
+      "warning": { "role": "semantic", "displayName": "Advertencia", "canonical": "#d8ae55", "tonalRamp": ["#493b1d", "#7d632d", "#ae8c43", "#d8ae55", "#ead18e"] },
+      "error": { "role": "semantic", "displayName": "Error", "canonical": "#d85d56", "tonalRamp": ["#4b211e", "#7f3732", "#ad4943", "#d85d56", "#e99b96"] }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Métricas protagonistas y momentos de alto énfasis." },
-      "headline": { "displayName": "Headline", "purpose": "Títulos de pantalla y estados principales." },
-      "title": { "displayName": "Title", "purpose": "Secciones, ejercicios y entidades." },
-      "body": { "displayName": "Body", "purpose": "Contenido continuo y explicaciones breves." },
-      "label": { "displayName": "Label", "purpose": "Controles, acciones y navegación." },
-      "metadata": { "displayName": "Metadata", "purpose": "Contexto breve, categorías y posiciones." }
+      "display": { "displayName": "Display", "purpose": "Métricas, timers y cifras protagonistas en Raleway." },
+      "headline": { "displayName": "Headline", "purpose": "Títulos principales y estados en Raleway." },
+      "title": { "displayName": "Title", "purpose": "Entidades y secciones en Raleway." },
+      "body": { "displayName": "Body", "purpose": "Contenido legible en Manrope." },
+      "label": { "displayName": "Label", "purpose": "Controles y navegación en Manrope." },
+      "metadata": { "displayName": "Metadata", "purpose": "Contexto breve en Manrope, nunca menor a 13px." }
     },
     "shadows": [
-      { "name": "elevated", "value": "0 12px 32px rgba(0, 0, 0, 0.24)", "purpose": "Separar menús, diálogos, sheets y otras capas realmente superpuestas." }
+      { "name": "elevated", "value": "0 12px 28px rgba(0, 0, 0, 0.28)", "purpose": "Solo capas superpuestas: navegación, menús, dialogs, sheets y popovers." }
     ],
     "motion": [
-      { "name": "feedback-fast", "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Cambios de opacidad y feedback visual inmediato." },
-      { "name": "state-standard", "value": "200ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Color, borde, superficie y escala en controles." },
-      { "name": "demo-relaxed", "value": "300ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Transiciones visuales de demostraciones cuando requieren una lectura más pausada." },
-      { "name": "reduced-motion", "value": "prefers-reduced-motion: reduce", "purpose": "Desactivar autoplay y transiciones no esenciales." }
+      { "name": "feedback-fast", "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Feedback inmediato." },
+      { "name": "state-standard", "value": "200ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Cambios de estado, color y superficie." },
+      { "name": "state-deliberate", "value": "220ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Entrada de overlays y cambios de contexto." },
+      { "name": "reduced-motion", "value": "prefers-reduced-motion: reduce", "purpose": "Eliminar movimiento no esencial." }
     ],
     "breakpoints": [
       { "name": "sm", "value": "640px" },
@@ -110,102 +43,75 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Acción principal única del estado actual.",
+      "description": "Acción dominante con cerámica técnica sólida.",
       "html": "<button class=\"ds-btn-primary\">Completar serie</button>",
-      "css": ".ds-btn-primary { min-height: 48px; padding: 0 20px; border: 0; border-radius: 16px; background: var(--primary-strong, #8b5cf6); color: var(--text-primary, #f5f5f7); font: 600 14px/1.25 var(--font-manrope, system-ui, sans-serif); transition: background-color 200ms, transform 200ms; } .ds-btn-primary:hover { background: var(--primary, #a78bfa); } .ds-btn-primary:active { transform: scale(0.99); } .ds-btn-primary:focus-visible { outline: 2px solid var(--primary, #a78bfa); outline-offset: 3px; }"
+      "css": ".ds-btn-primary{min-height:48px;padding:0 20px;border:0;border-radius:12px;background:#e8e7df;color:#151612;font:600 14px/1.25 Manrope,sans-serif;transition:background-color 200ms,transform 200ms}.ds-btn-primary:active{background:#cbcac1;transform:scale(.99)}.ds-btn-primary:focus-visible{outline:2px solid #e1734e;outline-offset:3px}"
     },
     {
       "name": "Secondary Button",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Acción disponible con jerarquía inferior al CTA principal.",
+      "description": "Acción secundaria mineral.",
       "html": "<button class=\"ds-btn-secondary\">Cambiar modo</button>",
-      "css": ".ds-btn-secondary { min-height: 48px; padding: 0 20px; border: 1px solid var(--border, rgba(255,255,255,0.10)); border-radius: 16px; background: var(--surface-elevated, #20222e); color: var(--text-primary, #f5f5f7); font: 600 14px/1.25 var(--font-manrope, system-ui, sans-serif); transition: background-color 200ms, border-color 200ms; } .ds-btn-secondary:hover { border-color: var(--border-strong, rgba(255,255,255,0.16)); background: var(--surface, #171923); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--primary, #a78bfa); outline-offset: 3px; }"
+      "css": ".ds-btn-secondary{min-height:48px;padding:0 20px;border:1px solid rgba(242,241,234,.20);border-radius:12px;background:#22251f;color:#f2f1ea;font:600 14px/1.25 Manrope,sans-serif}.ds-btn-secondary:hover{background:#292c25}.ds-btn-secondary:focus-visible{outline:2px solid #e1734e;outline-offset:3px}"
     },
     {
       "name": "Text Field",
       "kind": "input",
       "refersTo": "input",
-      "description": "Entrada táctil con label persistente y feedback de foco visible.",
-      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Nombre</span><input class=\"ds-input\" placeholder=\"Ej. Push\"></label>",
-      "css": ".ds-field { display: grid; gap: 8px; color: var(--text-primary, #f5f5f7); font-family: var(--font-manrope, system-ui, sans-serif); } .ds-field-label { font-size: 14px; line-height: 1.25; font-weight: 600; } .ds-input { min-height: 56px; padding: 0 16px; border: 1px solid var(--border, rgba(255,255,255,0.10)); border-radius: 16px; background: color-mix(in srgb, var(--surface-elevated, #20222e) 70%, transparent); color: var(--text-primary, #f5f5f7); font: 400 15px/1.6 var(--font-manrope, system-ui, sans-serif); outline: none; transition: background-color 200ms, border-color 200ms, box-shadow 200ms; } .ds-input::placeholder { color: color-mix(in srgb, var(--text-secondary, #a1a1aa) 55%, transparent); } .ds-input:hover { border-color: var(--border-strong, rgba(255,255,255,0.16)); } .ds-input:focus { border-color: var(--primary, #a78bfa); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary, #a78bfa) 25%, transparent); } .ds-input:focus-visible { outline: 2px solid var(--primary, #a78bfa); outline-offset: 3px; }"
+      "description": "Entrada mineral con foco técnico, sin halo.",
+      "html": "<label class=\"ds-field\"><span>Nombre</span><input class=\"ds-input\"></label>",
+      "css": ".ds-field{display:grid;gap:8px;color:#f2f1ea;font:600 14px/1.25 Manrope,sans-serif}.ds-input{min-height:56px;padding:0 16px;border:1px solid rgba(242,241,234,.12);border-radius:12px;background:#1d1f1b;color:#f2f1ea;font:400 15px/1.6 Manrope,sans-serif}.ds-input:focus{border-color:#e1734e;box-shadow:inset 0 -1px 0 #e1734e;outline:none}.ds-input:focus-visible{outline:2px solid #e1734e;outline-offset:3px}"
     },
     {
       "name": "Active Chip",
       "kind": "chip",
       "refersTo": "chip-active",
-      "description": "Selección compacta con color de acción contenido.",
+      "description": "Selección compacta por contraste y marcador.",
       "html": "<button aria-pressed=\"true\" class=\"ds-chip-active\">Espalda</button>",
-      "css": ".ds-chip-active { min-height: 44px; padding: 0 16px; border: 1px solid color-mix(in srgb, var(--primary, #a78bfa) 50%, transparent); border-radius: 9999px; background: color-mix(in srgb, var(--primary, #a78bfa) 12%, transparent); color: var(--primary, #a78bfa); font: 600 14px/1.25 var(--font-manrope, system-ui, sans-serif); transition: background-color 200ms, border-color 200ms; } .ds-chip-active:hover { border-color: var(--primary, #a78bfa); background: color-mix(in srgb, var(--primary, #a78bfa) 16%, transparent); } .ds-chip-active:focus-visible { outline: 2px solid var(--primary, #a78bfa); outline-offset: 3px; }"
-    },
-    {
-      "name": "Functional Card",
-      "kind": "card",
-      "refersTo": "card-functional",
-      "description": "Agrupación semántica con superficie y borde contenidos.",
-      "html": "<section class=\"ds-card\"><p class=\"ds-card-kicker\">ENTRENAMIENTO EN CURSO</p><h3 class=\"ds-card-title\">Press banca</h3><p class=\"ds-card-copy\">Serie 2 de 4</p></section>",
-      "css": ".ds-card { padding: 16px; border: 1px solid var(--border, rgba(255,255,255,0.10)); border-radius: 20px; background: var(--surface, #171923); color: var(--text-primary, #f5f5f7); } .ds-card-kicker { margin: 0; color: var(--text-secondary, #a1a1aa); font: 600 13px/1.33 var(--font-manrope, system-ui, sans-serif); letter-spacing: 0.1em; } .ds-card-title { margin: 12px 0 0; font: 700 20px/1.4 var(--font-raleway, system-ui, sans-serif); } .ds-card-copy { margin: 4px 0 0; color: var(--text-secondary, #a1a1aa); font: 400 15px/1.6 var(--font-manrope, system-ui, sans-serif); }"
-    },
-    {
-      "name": "List Row",
-      "kind": "custom",
-      "description": "Fila escaneable para entidades y navegación contextual.",
-      "html": "<button class=\"ds-list-row\"><span class=\"ds-row-index\">01</span><span class=\"ds-row-content\"><strong>Push</strong><small>1 día · 4 ejercicios</small></span><svg class=\"ds-row-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/></svg></button>",
-      "css": ".ds-list-row { display: flex; width: 100%; min-height: 84px; align-items: center; gap: 12px; padding: 16px 4px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--border, rgba(255,255,255,0.10)) 50%, transparent); background: transparent; color: var(--text-primary, #f5f5f7); text-align: left; transition: background-color 200ms; } .ds-list-row:hover { background: color-mix(in srgb, var(--surface, #171923) 35%, transparent); } .ds-list-row:focus-visible { outline: 2px solid var(--primary, #a78bfa); outline-offset: 3px; } .ds-row-index { color: var(--primary, #a78bfa); font: 700 16px/1.4 var(--font-raleway, system-ui, sans-serif); } .ds-row-content { display: grid; flex: 1; gap: 4px; min-width: 0; } .ds-row-content strong { font: 700 17px/1.4 var(--font-raleway, system-ui, sans-serif); } .ds-row-content small { color: var(--text-secondary, #a1a1aa); font: 400 14px/1.4 var(--font-manrope, system-ui, sans-serif); } .ds-row-icon { width: 20px; height: 20px; color: var(--text-secondary, #a1a1aa); }"
+      "css": ".ds-chip-active{min-height:44px;padding:0 16px;border:1px solid rgba(242,241,234,.20);border-radius:9999px;background:#292c25;color:#f2f1ea;font:600 14px/1.25 Manrope,sans-serif;box-shadow:inset 0 -2px 0 #e1734e}.ds-chip-active:focus-visible{outline:2px solid #e1734e;outline-offset:3px}"
     },
     {
       "name": "Floating Navigation",
       "kind": "nav",
       "refersTo": "nav-floating",
-      "description": "Navegación principal compacta, flotante y compatible con safe area.",
-      "html": "<nav class=\"ds-nav\" aria-label=\"Navegación principal\"><a class=\"ds-nav-item ds-nav-active\" href=\"#\">Inicio</a><a class=\"ds-nav-item\" href=\"#\">Rutinas</a><a class=\"ds-nav-item\" href=\"#\">Progreso</a><a class=\"ds-nav-item\" href=\"#\">Ejercicios</a></nav>",
-      "css": ".ds-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid color-mix(in srgb, var(--border, rgba(255,255,255,0.10)) 40%, transparent); border-radius: 9999px; background: color-mix(in srgb, var(--surface-elevated, #20222e) 90%, transparent); box-shadow: 0 2px 8px rgba(0,0,0,0.14); backdrop-filter: blur(12px); } .ds-nav-item { display: flex; min-height: 48px; min-width: 0; align-items: center; justify-content: center; border-radius: 9999px; color: color-mix(in srgb, var(--text-primary, #f5f5f7) 75%, transparent); font: 600 13px/1.25 var(--font-manrope, system-ui, sans-serif); text-decoration: none; transition: background-color 200ms, color 200ms; } .ds-nav-item:hover { background: var(--surface, #171923); color: var(--text-primary, #f5f5f7); } .ds-nav-item:focus-visible { outline: 2px solid var(--primary, #a78bfa); outline-offset: 2px; } .ds-nav-active { background: color-mix(in srgb, var(--primary, #a78bfa) 10%, transparent); color: var(--primary, #a78bfa); }"
+      "description": "Navegación mineral elevada con marcador térmico corto.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-active\">Inicio</a><a class=\"ds-nav-item\">Rutinas</a></nav>",
+      "css": ".ds-nav{display:grid;grid-auto-flow:column;padding:4px;border:1px solid rgba(242,241,234,.12);border-radius:18px;background:#22251f;box-shadow:0 12px 28px rgba(0,0,0,.28)}.ds-nav-item{position:relative;display:flex;min-height:48px;align-items:center;justify-content:center;border-radius:8px;color:#b2b2a9;font:600 13px/1.25 Manrope,sans-serif}.ds-nav-active{color:#f2f1ea}.ds-nav-active:after{position:absolute;bottom:2px;width:16px;height:2px;border-radius:9999px;background:#e1734e;content:''}"
     }
   ],
   "narrative": {
     "northStar": "Precisión en movimiento",
-    "overview": "Entrenate expresa rendimiento mediante una interfaz premium, atlética, tecnológica, precisa y sobria. Está diseñada para responder rápido y mantener la lectura clara durante el entrenamiento: la jerarquía señala la próxima acción, el feedback confirma el avance y el movimiento acompaña los cambios de estado sin distraer.\n\nLa tecnología se comunica mediante tipografía, ritmo, motion funcional, datos legibles y respuestas inmediatas. La personalidad nace del sistema visual y de la continuidad entre rutina, sesión, historial, actividad y progreso; no depende de decoración futurista ni de recursos narrativos recurrentes.\n\nLa interfaz debe resultar simple para quien empieza, sólida para quien entrena hace años y cómoda para adultos mayores. La legibilidad, los targets grandes y la baja carga visual tienen prioridad sobre la densidad ornamental.",
+    "overview": "Acero Térmico convierte Entrenate en un instrumento deportivo digital: carbón, grafito, acero, blanco técnico y una señal térmica contenida. Training es la referencia visual. La jerarquía nace de datos, tipografía, espacio, feedback y materialidad, sin decoración futurista.",
     "keyCharacteristics": [
-      "Dark-first, mobile-first y orientada al uso real en gimnasio.",
-      "Jerarquía tipográfica fuerte con una acción primaria evidente por estado.",
-      "Violeta para acción y foco; azul para información y evolución.",
-      "Superficies contenidas, pocas capas y poco ruido.",
-      "Motion breve y funcional que guía sin interrumpir.",
-      "Targets táctiles de 44–48 px como mínimo."
+      "Dark-first y mobile-first.",
+      "Blanco técnico para acción y datos protagonistas.",
+      "Señal térmica breve para foco, avance y performance.",
+      "Acero para información.",
+      "Superficies planas y capas elevadas solo cuando se superponen.",
+      "Targets de 44–48px y texto funcional mínimo de 13px."
     ],
     "rules": [
-      { "name": "The Precision in Motion Rule", "body": "Cada transición, cambio de color o variación de escala debe explicar una acción, confirmar un resultado o facilitar la orientación.", "section": "overview" },
-      { "name": "The Controlled Accent Rule", "body": "El violeta y el azul guían la atención; no rellenan la interfaz ni compiten simultáneamente por protagonismo.", "section": "colors" },
-      { "name": "The Semantic Surface Rule", "body": "Una superficie grafito debe agrupar contenido relacionado o comunicar una capa real. No se usa para convertir cada sección en una card.", "section": "colors" },
-      { "name": "The Operational Legibility Rule", "body": "Cuanto más importante sea un dato durante una serie, mayor debe ser su contraste y menor la distancia visual respecto del control que modifica.", "section": "typography" },
-      { "name": "The One Operational Column Rule", "body": "En flujos de entrenamiento, formularios y detalle, conservar una columna principal clara; desktop amplía el aire, no transforma la experiencia en un dashboard ancho.", "section": "layout" },
-      { "name": "The Thumb-Reach Rule", "body": "Los controles frecuentes deben mantener targets de 44–48 px y permanecer separados de acciones destructivas.", "section": "layout" },
-      { "name": "The Flat-by-Default Rule", "body": "Si un elemento no se superpone físicamente a otro, debe resolver su jerarquía sin sombra.", "section": "elevation" },
-      { "name": "The Real Layers Rule", "body": "La sombra comunica una capa interactiva real; nunca sustituye una jerarquía de contenido débil.", "section": "elevation" },
-      { "name": "The Purposeful Radius Rule", "body": "El radio expresa escala y función; no convierte todas las superficies en pills ni suaviza divisores que funcionan mejor como líneas.", "section": "shapes" },
-      { "name": "The Solid Primary Rule", "body": "La acción primaria habitual usa Violeta Impulso Fuerte sólido. El gradiente no es una solución visual por defecto.", "section": "components" },
-      { "name": "The Direct Action Rule", "body": "Una acción frecuente durante el entrenamiento debe requerir el mínimo de lectura, desplazamiento y decoración compatible con seguridad y accesibilidad.", "section": "components" }
+      { "name": "Primary is not accent", "body": "Primary es la acción cerámica sólida; Thermal Accent es una señal pequeña y contextual.", "section": "colors" },
+      { "name": "Color is signal", "body": "El color comunica interacción, información o estado; nunca reemplaza jerarquía.", "section": "colors" },
+      { "name": "Flat by default", "body": "Espacio, tipografía, divisores y bordes resuelven jerarquía antes que elevación.", "section": "elevation" },
+      { "name": "Operational legibility", "body": "Datos y controles frecuentes priorizan lectura inmediata, targets amplios y una columna clara.", "section": "typography" },
+      { "name": "Firm geometry", "body": "Los radios 8/12/16/18 expresan escala sin suavizar toda la interfaz.", "section": "shapes" },
+      { "name": "Functional motion", "body": "El movimiento de 150–220ms confirma, encaja, avanza o guarda.", "section": "motion" }
     ],
     "dos": [
-      "Do usar una acción primaria evidente por estado.",
-      "Do priorizar lectura rápida, targets amplios y operación con una mano.",
-      "Do separar secciones con espacio, tipografía y divisores antes de agregar superficies.",
-      "Do usar Violeta Impulso para acción, foco, selección y progreso activo.",
-      "Do usar Azul Rendimiento para información, evolución y estados secundarios.",
-      "Do acompañar el color con texto, iconografía o forma para comunicar estados.",
-      "Do conservar español natural y rioplatense en el producto.",
-      "Do usar figuras humanas neutrales y sin identidad reconocible en demostraciones técnicas."
+      "Do usar blanco técnico para la acción primaria.",
+      "Do usar señal térmica como marcador contenido.",
+      "Do usar acero para información.",
+      "Do mantener foco visible y texto funcional desde 13px.",
+      "Do validar 390×667 antes que desktop."
     ],
     "donts": [
-      "Don't usar cyberpunk, gaming, neon fuerte o decoración futurista.",
-      "Don't convertir Entrenate en un dashboard de analytics.",
-      "Don't usar glassmorphism excesivo, glow o sombras en superficies planas.",
-      "Don't anidar cards ni encerrar cada sección en una caja.",
-      "Don't basar la identidad en una figura narrativa recurrente.",
-      "Don't llenar la interfaz de violeta o azul; los acentos deben conservar significado.",
-      "Don't usar el gradiente violeta a azul como CTA habitual ni como decoración para elevar artificialmente una pantalla.",
-      "Don't reducir labels, metadata o targets hasta comprometer su uso durante el entrenamiento.",
-      "Don't inventar diferencias de desktop que rompan la continuidad mobile-first."
+      "Don't usar gradientes, glow, halos o glassmorphism.",
+      "Don't llenar superficies con el acento térmico.",
+      "Don't usar color semántico fuera de su función.",
+      "Don't anidar cards ni agregar sombras a contenido plano.",
+      "Don't introducir violeta o azul heredado como identidad."
     ]
   }
 }

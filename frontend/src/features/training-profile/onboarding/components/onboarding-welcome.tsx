@@ -46,7 +46,7 @@ export function OnboardingWelcome({ nombre }: OnboardingWelcomeProps) {
           fullWidth
           onClick={() => router.push("/onboarding/objective")}
           type="button"
-          variant="gradient"
+          variant="primary"
         >
           Empezar
         </Button>

@@ -41,8 +41,9 @@ Remove the surface if it has no job.
 
 ## Color
 
-- Is violet reserved primarily for focus/action?
-- Is blue used for information/progress rather than decoration?
+- Does the primary action use technical white with a readable carbon foreground?
+- Is thermal accent limited to a brief signal rather than a large fill?
+- Is steel used for information/progress rather than decoration?
 - Are success/warning/error colors functional?
 - Did we avoid gradients/glow/neon as a shortcut to "technology"?
 

@@ -26,7 +26,7 @@ export function FormField({
       {children}
       {message ? (
         <p
-          className={error ? "text-xs text-error" : "text-xs text-text-secondary"}
+          className={error ? "text-[0.8125rem] leading-5 text-error" : "text-[0.8125rem] leading-5 text-text-secondary"}
           id={messageId}
         >
           {message}

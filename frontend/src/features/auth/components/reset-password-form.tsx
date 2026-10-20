@@ -179,7 +179,7 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
           fullWidth
           isLoading={isSubmitting}
           type="submit"
-          variant="gradient"
+          variant="primary"
         >
           Guardar contraseña
         </Button>

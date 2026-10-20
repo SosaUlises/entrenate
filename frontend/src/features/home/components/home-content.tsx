@@ -18,7 +18,7 @@ import { getHomeStateAction, type HomeState } from "../actions/get-home-state.ac
 
 type HomeViewState = { status: "loading" } | HomeState;
 
-const primaryLinkClass = "flex min-h-[3.25rem] min-w-0 w-full max-w-sm items-center justify-between overflow-hidden rounded-control-sm bg-primary-strong px-5 text-[0.9375rem] font-bold text-text-primary transition-[background-color,transform] duration-200 hover:bg-primary active:scale-[0.99] focus-visible:outline-primary";
+const primaryLinkClass = "flex min-h-[3.25rem] min-w-0 w-full max-w-sm items-center justify-between overflow-hidden rounded-control-sm bg-primary px-5 text-[0.9375rem] font-bold text-primary-foreground transition-[background-color,transform] duration-200 hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-pressed))] active:scale-[0.99] active:bg-primary-pressed focus-visible:outline-focus";
 const sectionLabelClass = "text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.12em] text-text-secondary";
 
 export function HomeContent() {

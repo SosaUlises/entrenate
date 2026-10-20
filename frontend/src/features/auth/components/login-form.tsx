@@ -193,7 +193,7 @@ export function LoginForm() {
           fullWidth
           isLoading={isSubmitting}
           type="submit"
-          variant="gradient"
+          variant="primary"
         >
           Iniciar sesión
         </Button>

@@ -240,7 +240,7 @@ export function OnboardingSummary({
           isLoading={submitState === "submitting"}
           onClick={handleSubmit}
           type="button"
-          variant="gradient"
+          variant="primary"
         >
           {submitState === "submitting"
             ? "Creando tu perfil..."

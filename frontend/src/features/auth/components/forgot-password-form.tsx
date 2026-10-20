@@ -106,7 +106,7 @@ export function ForgotPasswordForm() {
           fullWidth
           isLoading={isSubmitting}
           type="submit"
-          variant="gradient"
+          variant="primary"
         >
           Enviar instrucciones
         </Button>

@@ -172,7 +172,7 @@ export function SexStep() {
           fullWidth
           onClick={handleContinue}
           type="button"
-          variant="gradient"
+          variant="primary"
         >
           Continuar
         </Button>

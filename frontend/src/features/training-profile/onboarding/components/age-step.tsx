@@ -114,7 +114,7 @@ export function AgeStep() {
           fullWidth
           onClick={goNext}
           type="button"
-          variant="gradient"
+          variant="primary"
         >
           Continuar
         </Button>

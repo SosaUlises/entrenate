@@ -204,7 +204,7 @@ export function ActiveTrainingContent() {
       <div className="flex min-w-0 max-w-full items-start gap-1">
         <button
           aria-label="Salir y continuar después"
-          className="flex size-12 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary"
+          className="flex size-12 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-focus"
           onClick={() => requestNavigation("home")}
           type="button"
         >
@@ -215,30 +215,30 @@ export function ActiveTrainingContent() {
         </div>
         {showTrainingActions || showModeSelectionActions ? (
           <details className="group relative shrink-0" ref={actionsRef}>
-            <summary aria-label="Acciones del entrenamiento" className="flex size-12 cursor-pointer list-none items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface/50 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary group-open:bg-primary/10 group-open:text-primary [&::-webkit-details-marker]:hidden" ref={actionsTriggerRef}>
+            <summary aria-label="Acciones del entrenamiento" className="flex size-12 cursor-pointer list-none items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus group-open:bg-surface-active group-open:text-text-primary [&::-webkit-details-marker]:hidden" ref={actionsTriggerRef}>
               <Ellipsis aria-hidden="true" size={20} strokeWidth={1.75} />
             </summary>
             <div className="absolute right-0 z-20 mt-1.5 w-56 max-w-[calc(100vw-2rem)] rounded-control border border-border/60 bg-surface-elevated p-2 shadow-elevated">
               {showTrainingActions ? (
                 <>
-                  <button className="flex min-h-12 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary" onClick={() => requestNavigation("mode")} type="button">
+                  <button className="flex min-h-12 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary transition-colors hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus" onClick={() => requestNavigation("mode")} type="button">
                     <ArrowLeftRight aria-hidden="true" className="shrink-0 text-text-secondary" size={17} strokeWidth={1.75} />
                     Cambiar modo
                   </button>
-                  <button className="flex min-h-12 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary transition-colors hover:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { actionsRef.current?.removeAttribute("open"); openFinish("complete"); }} type="button">
+                  <button className="flex min-h-12 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-text-primary transition-colors hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus" onClick={() => { actionsRef.current?.removeAttribute("open"); openFinish("complete"); }} type="button">
                     <Check aria-hidden="true" className="shrink-0 text-primary" size={17} strokeWidth={2} />
                     Finalizar entrenamiento
                   </button>
                   <div className="my-1 border-t border-border/60" />
                 </>
               ) : null}
-              <button className="flex min-h-12 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-error/85 transition-colors hover:bg-error/8 hover:text-error focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { actionsRef.current?.removeAttribute("open"); openFinish("cancel"); }} type="button">
+              <button className="flex min-h-12 w-full items-center gap-3 rounded-control-sm px-3 text-left text-sm font-medium text-error/85 transition-colors hover:bg-error/8 hover:text-error focus-visible:outline-2 focus-visible:outline-focus" onClick={() => { actionsRef.current?.removeAttribute("open"); openFinish("cancel"); }} type="button">
                 <X aria-hidden="true" className="shrink-0" size={17} strokeWidth={1.9} />
                 Cancelar entrenamiento
               </button>
             </div>
           </details>
-        ) : session ? <button className="min-h-12 shrink-0 px-2 text-[0.8125rem] text-text-secondary hover:text-text-primary focus-visible:outline-primary" onClick={() => openFinish("cancel")} type="button">Cancelar</button> : null}
+        ) : session ? <button className="min-h-12 shrink-0 px-2 text-[0.8125rem] text-text-secondary hover:text-text-primary focus-visible:outline-focus" onClick={() => openFinish("cancel")} type="button">Cancelar</button> : null}
       </div>
 
       {sessionNotice ? <p className="mt-5 text-sm text-text-secondary" role="status">{sessionNotice}</p> : null}
@@ -264,7 +264,7 @@ export function ActiveTrainingContent() {
               <div className="mt-5">
                 <button
                   aria-describedby="guided-mode-description"
-                  className="training-mode-row group flex min-h-[5.25rem] min-w-0 w-full max-w-full items-center gap-4 border-b border-border/50 px-3 py-4.5 text-left transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100"
+                  className="training-mode-row group flex min-h-[5.25rem] min-w-0 w-full max-w-full items-center gap-4 border-b border-border/50 px-3 py-4.5 text-left transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100"
                   onClick={() => setMode("guided")}
                   type="button"
                 >
@@ -276,7 +276,7 @@ export function ActiveTrainingContent() {
                 </button>
                 <button
                   aria-describedby="free-mode-description"
-                  className="training-mode-row group flex min-h-[5.25rem] min-w-0 w-full max-w-full items-center gap-4 px-3 py-4.5 text-left transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100"
+                  className="training-mode-row group flex min-h-[5.25rem] min-w-0 w-full max-w-full items-center gap-4 px-3 py-4.5 text-left transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100"
                   onClick={() => setMode("free")}
                   type="button"
                 >

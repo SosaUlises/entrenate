@@ -415,7 +415,7 @@ function DayDetailDialog({
 
 function getActivityClasses(count: number, future: boolean): string {
   if (future) return "border-border/25 bg-surface/20 text-text-secondary/35";
-  if (count > 0) return "border-primary/65 bg-primary-strong/85 text-text-primary";
+  if (count > 0) return "border-primary/65 bg-primary/85 text-primary-foreground";
   return "border-border/60 bg-surface-elevated/50 text-text-primary/70";
 }
 

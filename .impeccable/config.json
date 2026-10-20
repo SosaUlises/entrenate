@@ -1,3 +1,36 @@
 {
-  "buildPath": "comp"
+  "buildPath": "comp",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/training-thumb-zone-deck.html"
+        ],
+        "createdAt": "2026-10-20T22:33:12.033Z",
+        "reason": "Historical decision mock predating Acero Termico; runtime Training is the approved source of truth."
+      },
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/training-set-ledger.html"
+        ],
+        "createdAt": "2026-10-20T22:33:13.269Z",
+        "reason": "Historical decision mock predating Acero Termico; runtime Training is the approved source of truth."
+      },
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/training-performance-rail.html"
+        ],
+        "createdAt": "2026-10-20T22:33:14.470Z",
+        "reason": "Historical decision mock predating Acero Termico; runtime Training is the approved source of truth."
+      }
+    ]
+  }
 }

@@ -80,7 +80,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
               <button
                 aria-controls={contentId}
                 aria-expanded={isExpanded}
-                className="group flex min-h-[5rem] w-full min-w-0 items-center gap-3 py-3 text-left transition-colors duration-150 hover:bg-surface/25 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none"
+                className="group flex min-h-[5rem] w-full min-w-0 items-center gap-3 py-3 text-left transition-colors duration-150 hover:bg-surface/25 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
                 onClick={() => setExpandedExerciseId((current) => current === exercise.id ? null : exercise.id)}
                 type="button"
               >
@@ -146,7 +146,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                   ))}
                 </div>
                 <button
-                  className="mt-2 inline-flex min-h-12 items-center rounded-control-sm px-1 text-[0.9375rem] font-semibold text-text-secondary transition-colors duration-150 hover:text-primary active:text-primary focus-visible:outline-primary motion-reduce:transition-none"
+                  className="mt-2 inline-flex min-h-12 items-center rounded-control-sm px-1 text-[0.9375rem] font-semibold text-text-secondary transition-colors duration-150 hover:text-primary active:text-primary focus-visible:outline-focus motion-reduce:transition-none"
                   onClick={() => setExtraCounts((current) => ({
                     ...current,
                     [exercise.id]: Math.max(current[exercise.id] ?? 0, highestSaved - exercise.seriesObjetivo) + 1,
@@ -285,7 +285,7 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
               <span>Guardando</span>
             </button>
           ) : isDirty ? (
-            <button aria-label={`${isSaved ? "Guardar cambios de" : "Completar"} serie ${number}`} className="training-save-action flex min-h-12 w-full items-center justify-center gap-1.5 rounded-control-sm px-2 text-[0.8125rem] font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100" type="submit">
+            <button aria-label={`${isSaved ? "Guardar cambios de" : "Completar"} serie ${number}`} className="training-save-action flex min-h-12 w-full items-center justify-center gap-1.5 rounded-control-sm px-2 text-[0.8125rem] font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100" type="submit">
               <Save aria-hidden="true" size={16} strokeWidth={2} />
               <span>Guardar</span>
             </button>
@@ -304,7 +304,7 @@ function SetRow({ exercise, canRemove, isExtra, isNextPending, number, onDirtyCh
       {canRemove ? (
         <button
           aria-label={`Quitar serie extra ${number}`}
-          className="ml-auto mt-1 flex min-h-12 items-center gap-2 rounded-control-sm px-2 text-[0.8125rem] font-semibold text-text-secondary transition-[background-color,color,transform] duration-150 hover:bg-error/5 hover:text-error active:scale-[0.99] active:text-error focus-visible:bg-error/5 focus-visible:text-error focus-visible:outline-primary disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100"
+          className="ml-auto mt-1 flex min-h-12 items-center gap-2 rounded-control-sm px-2 text-[0.8125rem] font-semibold text-text-secondary transition-[background-color,color,transform] duration-150 hover:bg-error/5 hover:text-error active:scale-[0.99] active:text-error focus-visible:bg-error/5 focus-visible:text-error focus-visible:outline-focus disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100"
           disabled={pending}
           onClick={onRemove}
           type="button"

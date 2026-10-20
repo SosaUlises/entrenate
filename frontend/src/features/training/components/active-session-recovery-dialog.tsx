@@ -99,13 +99,13 @@ export function ActiveSessionRecoveryDialog({
               {formatActiveSessionStart(session.horaInicio)}. Podés continuarlo o cancelarlo antes de iniciar otro.
             </p>
             <Link
-              className="mt-6 flex min-h-[3.25rem] w-full items-center justify-center rounded-control-sm bg-primary-strong px-5 text-sm font-bold text-text-primary transition-colors hover:bg-primary focus-visible:outline-primary"
+              className="mt-6 flex min-h-[3.25rem] w-full items-center justify-center rounded-control-sm bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-pressed))] active:bg-primary-pressed focus-visible:outline-focus"
               href="/training"
             >
               Continuar entrenamiento
             </Link>
             <button
-              className="mt-2 min-h-11 w-full text-sm font-semibold text-text-secondary transition-colors hover:text-error focus-visible:outline-primary"
+              className="mt-2 min-h-11 w-full text-sm font-semibold text-text-secondary transition-colors hover:text-error focus-visible:outline-focus"
               onClick={() => {
                 setCancelError(false);
                 setStep("cancel");

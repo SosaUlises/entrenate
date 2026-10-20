@@ -1,6 +1,6 @@
 ---
 name: entrenate-ux-ui
-description: Audit, design, and implement UX/UI changes for the Entrenate fitness app using the approved UX/UI V3 "Dark Performance Interface" principles. Use when reviewing or changing authenticated frontend experiences such as Home, Routines, Exercises, Training, Guided/Free modes, navigation, dialogs/sheets, exercise demos, responsive mobile behavior, or shared UI patterns.
+description: Audit, design, and implement UX/UI changes for the Entrenate fitness app using the approved Acero Térmico visual system. Use when reviewing or changing authenticated frontend experiences such as Home, Routines, Exercises, Training, Guided/Free modes, navigation, dialogs/sheets, exercise demos, responsive mobile behavior, or shared UI patterns.
 ---
 
 # Entrenate UX/UI
@@ -14,7 +14,7 @@ Before making decisions, read:
 - `references/ux-ui-v3.md` for the approved product and visual direction.
 - `references/review-checklist.md` before finalizing a UX/UI change.
 
-Treat the V3 reference as the target design language. Do not migrate unrelated screens unless the task explicitly asks for them.
+Treat Acero Térmico and the current product reference as the target design language. Do not migrate unrelated screens unless the task explicitly asks for them.
 
 ## Core product principle
 
@@ -252,7 +252,7 @@ External Workout Guide content may remain as a fallback where currently supporte
 
 Do not make exercise media decorative; it is technical information.
 
-## Visual language: Dark Performance Interface
+## Visual language: Acero Térmico
 
 The interface should feel:
 
@@ -299,16 +299,17 @@ Avoid card-inside-card layouts.
 
 ### Color semantics
 
-Current brand base remains dark with restrained violet/blue.
+The brand base is carbon and graphite with technical white, steel, and a restrained thermal signal.
 
 Target semantics:
 
-- violet: focus, interaction, primary action;
-- blue: information, progress, non-destructive status.
+- technical white: primary action and high-priority data;
+- thermal accent: brief focus, interaction, and performance signal;
+- steel: information, progress, and non-destructive status.
 
 Use success/warning/error colors only when they communicate functional state.
 
-Do not use violet for every interactive or highlighted element.
+Do not use thermal accent as a universal interaction color or a large fill.
 
 Avoid:
 
@@ -388,7 +389,7 @@ For an implementation task:
 
 1. Inspect the current route and components.
 2. State the UX problem being solved internally before coding.
-3. Check the V3 reference.
+3. Check the current Acero Térmico reference.
 4. Identify the smallest set of files needed.
 5. Reuse current primitives where they fit.
 6. Implement only the requested scope.
@@ -431,7 +432,7 @@ For implementation tasks, report concisely:
 
 1. files changed;
 2. UX problem addressed;
-3. main V3 decisions applied;
+3. main Acero Térmico decisions applied;
 4. mobile behavior checked;
 5. states/accessibility considered;
 6. lint result;

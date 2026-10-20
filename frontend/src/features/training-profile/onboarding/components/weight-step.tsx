@@ -138,7 +138,7 @@ export function WeightStep() {
           fullWidth
           onClick={handleContinue}
           type="button"
-          variant="gradient"
+          variant="primary"
         >
           Continuar
         </Button>

@@ -127,7 +127,7 @@ export function RoutinesContent() {
 function CreateRoutineLink({ label, variant }: { label: string; variant: "header" | "empty" }) {
   return (
     <Link
-      className={`inline-flex items-center justify-center gap-1.5 rounded-control-sm bg-primary-strong text-sm font-semibold text-text-primary transition-colors hover:bg-primary active:bg-primary/90 focus-visible:outline-primary ${variant === "header" ? "min-h-11 px-3" : "min-h-12 px-4"}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-control-sm bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-pressed))] active:bg-primary-pressed focus-visible:outline-focus ${variant === "header" ? "min-h-11 px-3" : "min-h-12 px-4"}`}
       href="/routines/new"
     >
       <Plus aria-hidden="true" size={variant === "header" ? 17 : 16} strokeWidth={1.9} />

@@ -184,7 +184,7 @@ function RestView({ onAdjust, onContinue, remaining, session, showSavedNotice, t
         <div className="mt-4 flex w-full max-w-xs items-center justify-center gap-3">
           <button
             aria-label="Restar 15 segundos al descanso"
-            className="training-rest-adjust min-h-12 min-w-24 rounded-control-sm px-3 text-sm font-semibold text-text-secondary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-35 motion-reduce:transition-none"
+            className="training-rest-adjust min-h-12 min-w-24 rounded-control-sm px-3 text-sm font-semibold text-text-secondary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-35 motion-reduce:transition-none"
             disabled={remaining === 0}
             onClick={() => adjust(-15)}
             type="button"
@@ -193,7 +193,7 @@ function RestView({ onAdjust, onContinue, remaining, session, showSavedNotice, t
           </button>
           <button
             aria-label="Agregar 15 segundos al descanso"
-            className="training-rest-adjust min-h-12 min-w-24 rounded-control-sm px-3 text-sm font-semibold text-text-primary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none"
+            className="training-rest-adjust min-h-12 min-w-24 rounded-control-sm px-3 text-sm font-semibold text-text-primary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
             onClick={() => adjust(15)}
             type="button"
           >
@@ -220,7 +220,7 @@ function RestView({ onAdjust, onContinue, remaining, session, showSavedNotice, t
           Serie {String(target.setNumber).padStart(2, "0")} / {String(target.exercise.seriesObjetivo).padStart(2, "0")}
         </p>
         {remaining > 0 ? (
-          <button className="training-secondary-action mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-control-sm text-sm font-semibold text-text-secondary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none" onClick={onContinue} type="button">
+          <button className="training-secondary-action mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-control-sm text-sm font-semibold text-text-secondary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none" onClick={onContinue} type="button">
             Terminar descanso
           </button>
         ) : (
@@ -239,7 +239,7 @@ function GuidedTechniquePreview({ exerciseName, workoutGuideId }: { exerciseName
   return (
     <>
       <button
-        className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-control-sm px-2 text-[0.8125rem] font-semibold text-text-secondary transition-colors hover:bg-primary/8 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary"
+        className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-control-sm px-2 text-[0.8125rem] font-semibold text-text-secondary transition-colors hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
         onClick={() => { setOpen(true); dialogRef.current?.showModal(); }}
         ref={triggerRef}
         type="button"
@@ -260,7 +260,7 @@ function GuidedTechniquePreview({ exerciseName, workoutGuideId }: { exerciseName
       >
         <div className="sticky top-0 z-10 flex min-w-0 items-start justify-between gap-3 bg-surface-elevated pb-4">
           <h2 className="min-w-0 flex-1 break-words font-brand text-2xl font-bold leading-tight text-text-primary" id="guided-technique-title">{exerciseName}</h2>
-          <button aria-label="Cerrar técnica" className="training-sheet-close flex size-12 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors duration-150 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none" onClick={() => dialogRef.current?.close()} type="button">
+          <button aria-label="Cerrar técnica" className="training-sheet-close flex size-12 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors duration-150 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none" onClick={() => dialogRef.current?.close()} type="button">
             <X aria-hidden="true" size={20} />
           </button>
         </div>
@@ -281,7 +281,7 @@ function CompletedSetsDisclosure({ exercise }: { exercise: TrainingSessionExerci
 
   return (
     <details className="group border-b border-border/40">
-      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 text-[0.8125rem] font-semibold text-text-secondary focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 text-[0.8125rem] font-semibold text-text-secondary focus-visible:outline-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
         <span>Series registradas</span>
         <span className="flex items-center gap-2 font-brand tabular-nums">
           {completedSets.length} / {exercise.seriesObjetivo}
@@ -370,7 +370,7 @@ function GuidedSetForm({ exercise, number, onDirtyChange, onMissing, onSaved, on
         </p>
         {exercise.notas?.trim() ? (
           <details className="group mt-2">
-            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 text-[0.8125rem] font-medium text-text-secondary focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 text-[0.8125rem] font-medium text-text-secondary focus-visible:outline-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
               Ver indicaciones
               <ChevronDown aria-hidden="true" className="transition-transform group-open:rotate-180 motion-reduce:transition-none" size={16} />
             </summary>
@@ -400,7 +400,7 @@ function GuidedSetForm({ exercise, number, onDirtyChange, onMissing, onSaved, on
           <legend className="sr-only">RIR opcional</legend>
           <div className="flex min-h-12 items-center gap-1">
             <p className="text-[0.8125rem] font-semibold leading-5 tracking-[0.08em] text-text-secondary">RIR <span className="font-normal normal-case tracking-normal">· opcional</span></p>
-            <button aria-controls="rir-help" aria-expanded={showRirHelp} aria-label="Qué significa RIR" className="flex size-12 items-center justify-center rounded-full text-text-secondary hover:text-info focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setShowRirHelp((current) => !current)} type="button">
+            <button aria-controls="rir-help" aria-expanded={showRirHelp} aria-label="Qué significa RIR" className="flex size-12 items-center justify-center rounded-full text-text-secondary hover:text-info focus-visible:outline-2 focus-visible:outline-focus" onClick={() => setShowRirHelp((current) => !current)} type="button">
               <CircleHelp aria-hidden="true" size={18} strokeWidth={1.75} />
             </button>
           </div>
@@ -408,7 +408,7 @@ function GuidedSetForm({ exercise, number, onDirtyChange, onMissing, onSaved, on
           <div className="grid min-w-0 w-full grid-cols-6 gap-1.5" role="group" aria-label="Seleccionar RIR opcional">
             {[0, 1, 2, 3, 4, 5].map((value) => {
               const selected = rir === String(value);
-              return <button aria-label={`RIR ${value}`} aria-pressed={selected} className={`min-h-12 min-w-0 rounded-control-sm font-brand text-base font-bold tabular-nums transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none ${selected ? "training-choice-selected" : "bg-surface/55 text-text-secondary hover:bg-surface-elevated hover:text-text-primary"}`} key={value} onClick={() => setRir(selected ? "" : String(value))} type="button">{value}</button>;
+              return <button aria-label={`RIR ${value}`} aria-pressed={selected} className={`min-h-12 min-w-0 rounded-control-sm font-brand text-base font-bold tabular-nums transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none ${selected ? "training-choice-selected" : "bg-surface/55 text-text-secondary hover:bg-surface-elevated hover:text-text-primary"}`} key={value} onClick={() => setRir(selected ? "" : String(value))} type="button">{value}</button>;
             })}
           </div>
         </fieldset>

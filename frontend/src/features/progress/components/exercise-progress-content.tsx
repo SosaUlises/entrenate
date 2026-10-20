@@ -382,7 +382,7 @@ function EmptyExercise() {
     <div className="mt-10 border-t border-border/60 pt-7">
       <h2 className="font-brand text-2xl font-bold leading-8 text-text-primary">Todavía no registraste este ejercicio.</h2>
       <p className="mt-3 max-w-md text-base leading-6 text-text-secondary">Cuando lo entrenes, vas a ver su evolución acá.</p>
-      <Link className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-control-sm bg-primary-strong px-4 text-base font-semibold text-text-primary hover:bg-primary focus-visible:outline-primary" href="/routines">Ver rutinas<ChevronRight aria-hidden="true" size={19} /></Link>
+      <Link className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-control-sm bg-primary px-4 text-base font-semibold text-primary-foreground hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-pressed))] active:bg-primary-pressed focus-visible:outline-focus" href="/routines">Ver rutinas<ChevronRight aria-hidden="true" size={19} /></Link>
     </div>
   );
 }

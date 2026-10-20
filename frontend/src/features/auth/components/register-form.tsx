@@ -249,7 +249,7 @@ export function RegisterForm() {
           fullWidth
           isLoading={isSubmitting}
           type="submit"
-          variant="gradient"
+          variant="primary"
         >
           Crear cuenta
         </Button>
