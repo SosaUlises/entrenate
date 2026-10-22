@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "check:quick": "node scripts/check-diff.mjs",
+    "check:screen": "npm run lint && npm run typecheck && npm run build",
+    "check:full": "npm run check:screen"
   },
   "dependencies": {
     "@bryllim/workout-guide": "1.0.0",

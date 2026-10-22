@@ -1178,7 +1178,7 @@ Estas funcionalidades no deberán incorporarse durante el desarrollo del MVP 1 s
 
 ---
 
-# 45. Preparación para MVP 2
+# 45. Historical roadmap — Preparación para MVP 2
 
 El MVP 1 deberá generar una base sólida para incorporar posteriormente un **motor adaptativo de entrenamiento**.
 
@@ -1203,7 +1203,7 @@ Por esta razón, la calidad y consistencia de los datos registrados durante el M
 
 ---
 
-# 46. Preparación para MVP 3
+# 46. Historical roadmap — Preparación para MVP 3
 
 El MVP 3 incorporará componentes desarrollados en Python relacionados con análisis de datos y Machine Learning.
 
@@ -1336,7 +1336,7 @@ El sistema deberá permitir evolucionar hacia MVP 2 y MVP 3, pero sin implementa
 
 ---
 
-# 51. Estructura inicial del repositorio
+# 51. Historical baseline — Estructura inicial del repositorio
 
 Se propone comenzar utilizando un único repositorio.
 
@@ -1380,7 +1380,7 @@ No será necesario crear el proyecto `ai` durante el MVP 1.
 
 ---
 
-# 52. Objetivo técnico inmediato
+# 52. Historical baseline — Objetivo técnico inmediato
 
 Una vez creado el repositorio, el orden inicial de implementación será:
 
@@ -1405,7 +1405,7 @@ A partir de este punto el desarrollo deberá realizarse incrementalmente, comple
 
 ---
 
-# 53. Visión posterior al MVP 1
+# 53. Historical roadmap — Visión posterior al MVP 1
 
 El MVP 1 responde principalmente:
 

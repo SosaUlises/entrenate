@@ -165,7 +165,7 @@ Cada generación debe declarar:
 frontend/public/exercises/v2/
 ├── _master/
 │   └── neutral-exercise-model-v1-master.png
-└── curl-barra-ez/
+└── <exercise-slug>/
     ├── frame-01.png
     ├── frame-02.png
     ├── frame-03.png
@@ -174,56 +174,6 @@ frontend/public/exercises/v2/
 ```
 
 Las demos aprobadas se registran únicamente en `frontend/src/features/exercises/components/exercise-demo-v2-registry.ts` y usan assets bajo `frontend/public/exercises/v2/`.
-
-## Piloto: Curl con barra EZ
-
-### Cámara y framing
-
-- vista 3/4 lateral suave, aproximadamente 15°;
-- cámara a la altura de los ojos;
-- focal neutra, sin perspectiva heroica;
-- cuerpo completo, barra y discos visibles;
-- modelo y equipamiento centrados y con margen de seguridad;
-- misma escala y encuadre en los cinco frames.
-
-### Equipo y agarre
-
-- barra EZ metálica;
-- discos negros pequeños/moderados e idénticos en toda la secuencia;
-- agarre semi-supinado coherente con la barra;
-- ancho de agarre, manos, muñecas y carga constantes.
-
-### Secuencia
-
-1. `frame-01.png`: brazos casi extendidos; barra delante de los muslos.
-2. `frame-02.png`: inicio de flexión; barra se separa ligeramente de los muslos.
-3. `frame-03.png`: mitad del recorrido; antebrazos en diagonal.
-4. `frame-04.png`: aproximación final; antebrazos cercanos a vertical.
-5. `frame-05.png`: contracción superior controlada; barra cerca del torso superior.
-
-### Validación del piloto
-
-- mismo modelo, rostro faceless, ropa y proporciones: aprobado;
-- misma cámara, zoom, escala e iluminación: aprobado;
-- misma barra, carga y agarre: aprobado;
-- pies, rodillas y torso estables: aprobado;
-- hombros sin elevación protagonista: aprobado;
-- codos próximos al torso y recorrido progresivo: aprobado;
-- muñecas neutrales y movimiento simétrico: aprobado;
-- cuerpo, articulaciones, barra y discos sin recortes: aprobado;
-- transparencia alfa real: aprobado;
-- continuidad visual 1→5: aprobada para revisión de producto.
-
-### Incidencias y correcciones del piloto
-
-- El generador produjo los originales a 1254×1254 px aunque el contrato pedía 1024×1024 px. Se normalizaron el master y los cinco frames a 1024×1024 con remuestreo bicúbico de alta calidad y se conservó el canal alfa.
-- En la primera exportación, el extremo izquierdo de la barra de `frame-04.png` llegaba al límite del canvas. Se aplicó el mismo reencuadre uniforme del 88% al master y a toda la secuencia para mantener escala relativa y recuperar margen de seguridad.
-- Después del reencuadre, todos los assets conservan las cuatro esquinas transparentes y ningún modelo, articulación, disco o extremo de barra toca el borde.
-- No se detectaron cambios que requirieran regenerar una pose completa: identidad, cámara, postura base, carga y recorrido se mantuvieron suficientemente consistentes para la revisión visual del piloto.
-
-### Estado del piloto
-
-El piloto V2 de Curl con barra EZ está integrado únicamente en `Exercise Catalog > Preview > Técnica` para revisión visual. Su registry V2 permanece separado del registry legacy y conserva fallback seguro hacia la demo anterior. Esta validación puntual no autoriza la migración de otros ejercicios.
 
 ## Checklist de aceptación para futuros ejercicios
 

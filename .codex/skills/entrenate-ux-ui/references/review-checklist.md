@@ -1,119 +1,36 @@
-# Entrenate UX/UI Review Checklist
+# Entrenate UX/UI closure checklist
 
-Use this checklist before completing a UX/UI audit or implementation.
+Use only for a screen/feature closure or explicit UX audit.
 
-## Product clarity
+## Task and hierarchy
 
-- Can the user tell where they are?
-- Can the user tell what happens next?
-- Is the dominant action obvious?
-- Does the screen reflect real backend/product state?
-- Did we avoid inventing data or behavior?
+- Is the current context and next action clear?
+- Does the UI represent real product/backend state?
+- Is there one dominant action with secondary/destructive actions clearly subordinate?
+- Could typography, spacing or a divider replace any non-semantic surface?
 
-## Training continuity
+## Mobile and accessibility
 
-When applicable:
+Check 390×667, then 390×844 and relevant desktop behavior:
 
-- Is an active session easy to resume?
-- Is Training protected from unrelated navigation?
-- Can unsaved input be lost accidentally?
-- Is the primary set/rest/finish action reachable?
-- Does opening technique preserve current inputs?
-- Is transition between set/rest/exercise understandable?
+- no horizontal overflow or fixed/sticky overlap;
+- primary action remains reachable with keyboard and safe areas;
+- controls are semantic, labeled and roughly 44–48px minimum;
+- focus is visible, state does not rely only on color and reduced motion works;
+- functional copy is at least 13px.
 
-## Hierarchy
+## State and continuity
 
-- Is there one clear dominant CTA?
-- Are secondary/destructive actions visually secondary?
-- Are metrics more prominent than supporting copy where appropriate?
-- Are headings meaningfully differentiated?
-- Did we avoid solving hierarchy by wrapping everything in cards?
-
-## Surfaces
-
-For every new surface/card, ask:
-
-- What semantic job does this surface perform?
-- Is it selection, state, elevation, interactive grouping, or overlay?
-- Could spacing/dividers/typography communicate the same thing more clearly?
-
-Remove the surface if it has no job.
-
-## Color
-
-- Does the primary action use technical white with a readable carbon foreground?
-- Is thermal accent limited to a brief signal rather than a large fill?
-- Is steel used for information/progress rather than decoration?
-- Are success/warning/error colors functional?
-- Did we avoid gradients/glow/neon as a shortcut to "technology"?
-
-## Typography
-
-- Is Manrope used for readable UI/body content?
-- Is Raleway being used intentionally for performance hierarchy?
-- Can important numbers be scanned quickly?
-- Are labels subordinate to values?
-
-## Mobile
-
-Verify `390×667`:
-
-- Is the primary action reachable?
-- Does content require avoidable scrolling?
-- Does numeric keyboard cover the action?
-- Do fixed/sticky elements overlap content?
-- Do sheets fit the viewport?
-- Are touch targets at least roughly 44–48 px?
-
-Then verify `390×844`.
-
-## Accessibility
-
-- Keyboard focus remains visible.
-- Controls remain semantic.
-- Labels are understandable without relying only on color.
-- Reduced motion is respected.
-- Modal/sheet close behavior remains accessible.
-- Density reductions did not create tiny controls.
-
-## States
-
-Where relevant, verify:
-
-- loading;
-- empty;
-- error;
-- retry;
-- saving;
-- saved;
-- disabled;
-- active;
-- completed.
-
-Do not use a giant container for every state.
+- Loading, empty, error, retry, disabled and success states remain understandable.
+- Active Training remains recoverable and unsaved input is protected where required.
+- Technique/dialog/sheet interactions preserve their parent state.
+- No fake data, unavailable action or changed backend contract was introduced.
 
 ## Scope
 
-- Did the task change only the requested area?
-- Did we preserve backend contracts unless explicitly in scope?
-- Did we avoid unrelated refactors?
-- Did we reuse existing architecture when suitable?
-- Did we avoid duplicating components for equivalent contexts?
+- Only requested files/flows changed.
+- Existing primitives and feature boundaries were reused where appropriate.
+- No unrelated refactor or visual migration was added.
+- The change makes the task clearer, faster or more reliable, rather than only more decorative.
 
-## Validation
-
-From `frontend`:
-
-```bash
-npm run lint
-npx tsc --noEmit
-npm run build
-```
-
-If build fails externally, report the real cause.
-
-## Final question
-
-Before calling the work complete:
-
-> Is this interaction actually faster, clearer, or more reliable for the person training—or did we only make it look different?
+Run the appropriate validation tier from docs/codex-workflow.md.
