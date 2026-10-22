@@ -90,7 +90,7 @@ export function RoutineExerciseEditor({ exercise, onSave, onClose }: {
             <h2 className="font-brand text-xl font-bold text-text-primary" id={`${id}-title`}>{exercise.nombre}</h2>
             {exercise.grupoMuscularPrincipal ? <p className="mt-1 text-sm text-info/85">{exercise.grupoMuscularPrincipal}</p> : null}
           </div>
-          <button aria-label="Cerrar sin guardar" className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-primary focus-visible:outline-primary" onClick={() => dialogRef.current?.close()} type="button">
+          <button aria-label="Cerrar sin guardar" className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus" onClick={() => dialogRef.current?.close()} type="button">
             <X aria-hidden="true" size={20} />
           </button>
         </div>
@@ -98,10 +98,10 @@ export function RoutineExerciseEditor({ exercise, onSave, onClose }: {
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
           <div>
             <FieldHeading label="Series" text={helpText.Series} />
-            <div className="mt-2 inline-grid grid-cols-[2.75rem_4.5rem_2.75rem] items-center rounded-control-sm bg-surface/70">
-              <button aria-label="Quitar una serie" className="flex size-11 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-primary disabled:opacity-40 focus-visible:outline-primary" disabled={series <= 1} onClick={() => setSeries((value) => Math.max(1, value - 1))} type="button"><Minus aria-hidden="true" size={18} /></button>
+            <div className="mt-2 inline-grid grid-cols-[2.75rem_4.5rem_2.75rem] items-center rounded-control-sm border border-border bg-surface-interactive">
+              <button aria-label="Quitar una serie" className="flex size-11 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-active hover:text-text-primary disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-focus" disabled={series <= 1} onClick={() => setSeries((value) => Math.max(1, value - 1))} type="button"><Minus aria-hidden="true" size={18} /></button>
               <output aria-label="Cantidad de series" className="font-brand text-center text-2xl font-bold tabular-nums text-text-primary">{series}</output>
-              <button aria-label="Agregar una serie" className="flex size-11 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-primary disabled:opacity-40 focus-visible:outline-primary" disabled={series >= 20} onClick={() => setSeries((value) => Math.min(20, value + 1))} type="button"><Plus aria-hidden="true" size={18} /></button>
+              <button aria-label="Agregar una serie" className="flex size-11 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-active hover:text-text-primary disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-focus" disabled={series >= 20} onClick={() => setSeries((value) => Math.min(20, value + 1))} type="button"><Plus aria-hidden="true" size={18} /></button>
             </div>
           </div>
 
@@ -133,13 +133,13 @@ export function RoutineExerciseEditor({ exercise, onSave, onClose }: {
 
           <div>
             <label className="text-sm font-semibold text-text-primary" htmlFor={`${id}-notes`}>Notas</label>
-            <textarea aria-invalid={Boolean(errors.notas)} className="mt-2 min-h-20 w-full resize-y rounded-control-sm border border-border/70 bg-surface/70 p-3 text-sm leading-5 text-text-primary outline-none transition-[background-color,border-color,box-shadow] placeholder:text-text-secondary/60 hover:border-border-strong focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 focus-visible:outline-primary" id={`${id}-notes`} maxLength={500} onChange={(event) => setNotas(event.target.value)} placeholder="Ej. priorizar técnica, agarre neutro..." value={notas} />
+            <textarea aria-invalid={Boolean(errors.notas)} className="mt-2 min-h-20 w-full resize-y rounded-control-sm border border-border bg-surface-interactive p-3 text-sm leading-5 text-text-primary caret-thermal-accent outline-none transition-colors placeholder:text-text-muted hover:border-border-strong focus:border-focus focus-visible:outline-none" id={`${id}-notes`} maxLength={500} onChange={(event) => setNotas(event.target.value)} placeholder="Ej. priorizar técnica, agarre neutro..." value={notas} />
             {errors.notas ? <p className="mt-1 text-[0.8125rem] text-error" role="alert">{errors.notas}</p> : null}
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-border/60 bg-surface-elevated px-5 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-5">
-          <Button className="min-h-[3.25rem] w-full rounded-control-sm text-[0.9375rem] font-bold" type="submit">Guardar cambios</Button>
+        <div className="shrink-0 border-t border-border/70 bg-surface-elevated px-5 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-5">
+          <Button className="sm:ml-auto sm:max-w-xs" fullWidth size="md" type="submit">Guardar cambios</Button>
         </div>
       </form>
     </dialog>
@@ -152,13 +152,13 @@ function FieldHeading({ label, text }: { label: string; text: string }) {
   return (
     <div className="relative flex items-center gap-1.5" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <span className="text-sm font-semibold text-text-primary">{label}</span>
-      <button aria-controls={open ? id : undefined} aria-describedby={open ? id : undefined} aria-expanded={open} aria-label={`Ayuda sobre ${label}`} className="flex size-11 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-primary focus-visible:outline-primary" onClick={() => setOpen((current) => !current)} onFocus={() => setOpen(true)} type="button">
+      <button aria-controls={open ? id : undefined} aria-describedby={open ? id : undefined} aria-expanded={open} aria-label={`Ayuda sobre ${label}`} className="flex size-11 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus" onClick={() => setOpen((current) => !current)} onFocus={() => setOpen(true)} type="button">
         <CircleHelp aria-hidden="true" size={16} />
       </button>
       {open ? (
         <div className="absolute top-full left-0 z-20 w-64 max-w-[calc(100vw-2.5rem)] rounded-control-sm border border-border bg-surface p-3 text-[0.8125rem] leading-5 text-text-primary shadow-elevated" id={id} role="tooltip">
           {text}
-          <button aria-label={`Cerrar ayuda sobre ${label}`} className="ml-2 inline-flex min-h-11 items-center text-primary focus-visible:outline-primary" onClick={() => setOpen(false)} type="button">Cerrar</button>
+          <button aria-label={`Cerrar ayuda sobre ${label}`} className="ml-2 inline-flex min-h-11 items-center font-semibold text-text-primary focus-visible:outline-2 focus-visible:outline-focus" onClick={() => setOpen(false)} type="button">Cerrar</button>
         </div>
       ) : null}
     </div>
@@ -180,7 +180,7 @@ function NumberInput({ id, label, value, min, max, error, rangeLabel, className 
     <div className={`min-w-0 ${className}`}>
       <label className="sr-only" htmlFor={id}>{label}</label>
       {rangeLabel ? <span aria-hidden="true" className="mb-1.5 block text-[0.8125rem] font-semibold tracking-[0.06em] text-text-secondary/75 uppercase">{rangeLabel}</span> : null}
-      <input aria-describedby={error ? `${id}-error` : undefined} aria-invalid={Boolean(error)} className="h-12 w-full rounded-control-sm border border-border/70 bg-surface/70 px-3 text-center font-brand text-lg font-bold tabular-nums text-text-primary outline-none transition-[background-color,border-color,box-shadow] hover:border-border-strong focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 focus-visible:outline-primary" id={id} inputMode="numeric" max={max} min={min} onChange={(event) => onChange(event.target.value)} step={1} type="number" value={value} />
+      <input aria-describedby={error ? `${id}-error` : undefined} aria-invalid={Boolean(error)} className="h-12 w-full border-0 border-b border-border-strong bg-transparent px-2 text-center font-brand text-xl font-bold tabular-nums text-text-primary caret-thermal-accent outline-none transition-colors hover:border-text-muted focus:border-focus focus-visible:outline-none" id={id} inputMode="numeric" max={max} min={min} onChange={(event) => onChange(event.target.value)} step={1} type="number" value={value} />
       {error ? <p className="mt-1 text-[0.8125rem] text-error" id={`${id}-error`} role="alert">{error}</p> : null}
     </div>
   );

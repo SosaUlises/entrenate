@@ -45,7 +45,7 @@ export function EditRoutineContent({ id }: { id: string }) {
     return (
       <section className="mx-auto w-full max-w-xl pt-4">
         <p className="text-sm text-text-primary">No encontramos esta rutina.</p>
-        <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline-primary" href="/routines">
+        <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-text-primary focus-visible:outline-2 focus-visible:outline-focus" href="/routines">
           Volver a mis rutinas
         </Link>
       </section>

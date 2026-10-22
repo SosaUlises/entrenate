@@ -79,7 +79,7 @@ spacing:
   16: "64px"
 components:
   button-primary:
-    backgroundColor: "{colors.primary}"
+    backgroundColor: "color-mix(in srgb, {colors.technical-white} 76%, {colors.surface-elevated})"
     textColor: "{colors.primary-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.medium}"
@@ -140,7 +140,7 @@ La tecnología se expresa mediante jerarquía, datos, motion funcional y feedbac
 - **Text Primary `#F2F1EA`, Secondary `#B2B2A9`, Muted `#7E8178`:** jerarquía de lectura.
 - **Success `#67B77A`, Warning `#D8AE55`, Error `#D85D56`:** estados semánticos exclusivos.
 
-`primary` is the solid ceramic action treatment, not a universal brand color. `thermalAccent` never replaces success, warning, error, or info and never fills large surfaces.
+`primary` supplies the ceramic action color; the shared primary button tempers it with elevated graphite so large controls remain enabled without reading as white plates. `thermalAccent` never replaces success, warning, error, or info and never fills large surfaces.
 
 Do not use gradients, halos, glow, inherited violet/blue tints, or color to artificially elevate a composition.
 
@@ -168,10 +168,12 @@ Touch targets measure at least 44–48px. Borders are technical, thin, and discr
 
 ## Components
 
-- **Primary button:** solid technical white, carbon text, 48px minimum, 12px radius.
+- **Primary button:** controlled ceramic blend (76% technical white / 24% elevated graphite), carbon text, technical border, 48px minimum, 12px radius.
 - **Secondary button:** elevated surface, strong border, primary text.
+- **Outline button:** transparent surface, strong border, primary text.
 - **Ghost button:** neutral until interaction.
 - **Destructive button:** semantic error, never thermal signal.
+- **Button sizes:** `sm` 44px, `md` 48px, `lg` 52px; all keep the same 12px radius, weight, icon gap and focus treatment.
 - **Inputs:** `surfaceInteractive`, fine border, technical text, muted placeholder, visible focus line, no halo.
 - **Selection controls:** contrast, weight, underline, marker, or border before accent fills.
 - **Navigation:** elevated mineral surface, neutral icons, 13px labels, and a short thermal active marker.

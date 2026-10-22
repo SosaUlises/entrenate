@@ -120,7 +120,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             Reintentar
           </Button>
-          <Button disabled={isSigningOut} onClick={() => void handleLogout()} variant="text">
+          <Button disabled={isSigningOut} onClick={() => void handleLogout()} variant="ghost">
             Cerrar sesión
           </Button>
         </div>

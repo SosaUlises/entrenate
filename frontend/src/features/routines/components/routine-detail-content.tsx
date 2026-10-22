@@ -10,6 +10,7 @@ import { getActiveTrainingSessionAction, startTrainingSessionAction } from "@/fe
 import { ActiveSessionRecoveryDialog } from "@/features/training/components/active-session-recovery-dialog";
 import type { TrainingSession } from "@/features/training/types/training.types";
 import { getRoutineDetailAction, type GetRoutineDetailActionResult } from "../actions/get-routine-detail.action";
+import { RoutineExerciseTarget } from "./routine-exercise-target";
 
 type DetailState = { status: "loading" } | GetRoutineDetailActionResult;
 
@@ -108,7 +109,7 @@ export function RoutineDetailContent({ id }: { id: string }) {
       <div className="flex min-w-0 items-center gap-1">
         <Link
           aria-label="Volver a mis rutinas"
-          className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary"
+          className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
           href="/routines"
         >
           <ArrowLeft aria-hidden="true" size={20} />
@@ -117,7 +118,7 @@ export function RoutineDetailContent({ id }: { id: string }) {
           {routine?.nombre ?? "Rutina"}
         </h1>
         {routine ? (
-          <Link className="ml-auto inline-flex min-h-11 shrink-0 items-center rounded-control-sm px-2 text-sm font-semibold text-text-secondary hover:text-primary focus-visible:outline-primary" href={`/routines/${routine.id}/edit`}>
+          <Link className="ml-auto inline-flex min-h-11 shrink-0 items-center rounded-control-sm px-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus" href={`/routines/${routine.id}/edit`}>
             Editar
           </Link>
         ) : null}
@@ -134,7 +135,7 @@ export function RoutineDetailContent({ id }: { id: string }) {
       ) : state.status === "not-found" ? (
         <div className="mt-8">
           <p className="text-sm text-text-primary">No encontramos esta rutina.</p>
-          <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline-primary" href="/routines">
+          <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-text-primary focus-visible:outline-2 focus-visible:outline-focus" href="/routines">
             Volver a mis rutinas
           </Link>
         </div>
@@ -157,7 +158,7 @@ export function RoutineDetailContent({ id }: { id: string }) {
           {state.routine.descripcion?.trim() ? (
             <p className="mt-2 pl-12 text-sm leading-6 text-text-secondary">{state.routine.descripcion}</p>
           ) : null}
-          <div className="mt-8 border-t border-border/60">
+          <div className="mt-9 border-t border-border/60">
             {[...state.routine.dias].sort((first, second) => first.orden - second.orden).map((day) => {
               const expanded = expandedDayId === day.id;
               const contentId = `routine-day-${day.id}`;
@@ -167,15 +168,15 @@ export function RoutineDetailContent({ id }: { id: string }) {
                   <button
                     aria-controls={contentId}
                     aria-expanded={expanded}
-                    className="flex min-h-14 w-full min-w-0 items-center gap-3 py-2 text-left focus-visible:outline-primary"
+                    className={`flex min-h-14 w-full min-w-0 items-center gap-3 rounded-control-sm px-2 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-focus ${expanded ? "bg-surface-active/35" : "hover:bg-surface-interactive/45"}`}
                     onClick={() => setExpandedDayId((current) => current === day.id ? null : day.id)}
                     type="button"
                   >
                     <h2 className="min-w-0 flex-1 truncate font-brand text-base font-bold text-text-primary">{day.nombre}</h2>
-                    <span className="shrink-0 text-[0.8125rem] font-semibold text-text-secondary">
+                    <span className="shrink-0 text-[0.8125rem] font-semibold text-info">
                       {day.ejercicios.length} {day.ejercicios.length === 1 ? "ejercicio" : "ejercicios"}
                     </span>
-                    <ChevronDown aria-hidden="true" className={`shrink-0 text-text-secondary/75 transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} size={16} strokeWidth={1.75} />
+                    <ChevronDown aria-hidden="true" className={`shrink-0 transition-[color,transform] motion-reduce:transition-none ${expanded ? "rotate-180 text-thermal-accent" : "text-text-muted"}`} size={16} strokeWidth={1.75} />
                   </button>
 
                   <div className="pb-6" hidden={!expanded} id={contentId}>
@@ -185,18 +186,16 @@ export function RoutineDetailContent({ id }: { id: string }) {
                     ) : (
                       <ul className="divide-y divide-border/40 border-y border-border/40">
                         {[...day.ejercicios].sort((first, second) => first.orden - second.orden).map((exercise) => (
-                          <li className="min-w-0 py-3.5" key={`${exercise.ejercicioId}-${exercise.orden}`}>
+                          <li className="min-w-0 py-4" key={`${exercise.ejercicioId}-${exercise.orden}`}>
                             <h3 className="break-words font-brand text-base font-bold leading-5 text-text-primary">{exercise.nombre}</h3>
-                            <p className="mt-1 break-words text-[0.8125rem] leading-5 text-text-secondary">
-                              {exercise.cantidadSeries}×{exercise.repeticionesMinimas}–{exercise.repeticionesMaximas} · RIR {exercise.rirObjetivoMinimo}–{exercise.rirObjetivoMaximo} · {exercise.descansoSegundos} s
-                            </p>
+                            <RoutineExerciseTarget className="mt-1.5" {...exercise} />
                             {exercise.notas?.trim() ? <p className="mt-1 text-[0.8125rem] leading-5 text-text-secondary/85">{exercise.notas}</p> : null}
                           </li>
                         ))}
                       </ul>
                     )}
                     {day.ejercicios.length > 0 ? (
-                      <Button className="mt-7 min-h-[3.25rem] rounded-control-sm text-[0.9375rem] font-bold sm:max-w-sm" disabled={Boolean(startingDayId)} fullWidth isLoading={startingDayId === day.id} onClick={() => void handleStart(day.id)}>
+                      <Button className="mt-7 sm:max-w-xs" disabled={Boolean(startingDayId)} fullWidth isLoading={startingDayId === day.id} onClick={() => void handleStart(day.id)} size="md">
                         {startingDayId === day.id ? "Iniciando..." : `Iniciar ${day.nombre}`}
                       </Button>
                     ) : null}

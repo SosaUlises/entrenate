@@ -2,25 +2,54 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/class-names";
 import { Spinner } from "./spinner";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive" | "text";
+export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "destructive";
+export type ButtonSize = "sm" | "md" | "lg";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   fullWidth?: boolean;
   isLoading?: boolean;
+  size?: ButtonSize;
   variant?: ButtonVariant;
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary text-primary-foreground hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-pressed))] active:bg-primary-pressed focus-visible:outline-focus",
+    "border border-border-strong bg-[color-mix(in_srgb,var(--technical-white)_76%,var(--surface-elevated))] text-primary-foreground hover:bg-[color-mix(in_srgb,var(--technical-white)_82%,var(--surface-elevated))] active:bg-[color-mix(in_srgb,var(--technical-white)_68%,var(--surface-elevated))] focus-visible:outline-focus",
   secondary:
     "border border-border-strong bg-surface-elevated text-text-primary hover:bg-surface-active focus-visible:outline-focus",
+  outline:
+    "border border-border-strong bg-transparent text-text-primary hover:bg-surface-interactive active:bg-surface-active focus-visible:outline-focus",
   ghost:
-    "bg-transparent text-text-secondary hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus",
+    "border border-transparent bg-transparent text-text-secondary hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus",
   destructive:
-    "bg-error text-primary-foreground hover:bg-[color-mix(in_srgb,var(--error)_88%,white)] focus-visible:outline-error",
-  text: "px-2 text-text-secondary hover:text-text-primary focus-visible:outline-focus",
+    "border border-error/70 bg-error text-background hover:bg-[color-mix(in_srgb,var(--error)_88%,white)] active:bg-[color-mix(in_srgb,var(--error)_82%,black)] focus-visible:outline-error",
 };
+
+const sizeClasses: Record<ButtonSize, string> = {
+  sm: "min-h-11 px-3 text-sm",
+  md: "min-h-12 px-5 text-sm",
+  lg: "min-h-[3.25rem] px-6 text-[0.9375rem]",
+};
+
+export function buttonClassName({
+  className,
+  fullWidth = false,
+  size = "md",
+  variant = "primary",
+}: {
+  className?: string;
+  fullWidth?: boolean;
+  size?: ButtonSize;
+  variant?: ButtonVariant;
+} = {}): string {
+  return cn(
+    "inline-flex items-center justify-center gap-2 rounded-control font-semibold transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-active disabled:text-text-muted disabled:opacity-100 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100 [&_svg]:size-4 [&_svg]:shrink-0",
+    sizeClasses[size],
+    variantClasses[variant],
+    fullWidth && "w-full",
+    className,
+  );
+}
 
 export function Button({
   children,
@@ -28,6 +57,7 @@ export function Button({
   disabled,
   fullWidth = false,
   isLoading = false,
+  size = "md",
   type = "button",
   variant = "primary",
   ...props
@@ -43,12 +73,7 @@ export function Button({
 
   return (
     <button
-      className={cn(
-        "inline-flex min-h-12 items-center justify-center gap-2 rounded-control px-5 text-sm font-semibold transition-[background-color,border-color,color,opacity,transform] duration-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100",
-        variantClasses[variant],
-        fullWidth && "w-full",
-        className,
-      )}
+      className={buttonClassName({ className, fullWidth, size, variant })}
       disabled={disabled || isLoading}
       type={type}
       {...props}

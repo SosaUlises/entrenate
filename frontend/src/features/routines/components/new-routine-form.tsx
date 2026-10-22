@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { createRoutineAction } from "../actions/create-routine.action";
 import { deleteRoutineAction } from "../actions/delete-routine.action";
 import { updateRoutineAction } from "../actions/update-routine.action";
 import { mapRoutineDraftToRequest } from "../map-routine-draft";
 import { RoutineExerciseEditor } from "./routine-exercise-editor";
+import { RoutineExerciseTarget } from "./routine-exercise-target";
 import { useRoutineDraft, type RoutineDraftDay } from "../context/routine-draft-context";
 import { useRoutineDraftPersistence } from "../context/routine-draft-persistence";
 
@@ -138,7 +139,7 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
     return (
       <section className="mx-auto w-full max-w-xl pt-4">
         <p className="text-sm text-text-primary">No encontramos esta rutina.</p>
-        <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline-primary" href="/routines">
+        <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-text-primary focus-visible:outline-2 focus-visible:outline-focus" href="/routines">
           Volver a mis rutinas
         </Link>
       </section>
@@ -150,7 +151,7 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
       <div className="flex items-center gap-1">
         <Link
           aria-label={routineId ? "Volver al detalle de la rutina" : "Volver a mis rutinas"}
-          className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary"
+          className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
           href={backHref}
         >
           <ArrowLeft aria-hidden="true" size={20} />
@@ -165,11 +166,11 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
 
       <form className="mt-8" onSubmit={(event) => void handleSubmit(event)}>
         <div>
-          <label className="text-sm font-semibold text-text-primary" htmlFor="routine-name">
+          <label className="text-[0.8125rem] font-semibold tracking-[0.04em] text-text-secondary" htmlFor="routine-name">
             Nombre de la rutina
           </label>
           <input
-            className="mt-2 min-h-12 w-full rounded-control-sm border border-border/70 bg-surface/65 px-4 text-sm text-text-primary outline-none transition-[background-color,border-color,box-shadow] placeholder:text-text-secondary/55 hover:border-border-strong focus:border-primary focus:ring-2 focus:ring-primary/25 focus-visible:outline-primary"
+            className="mt-1 min-h-14 w-full border-0 border-b border-border-strong bg-transparent px-0 font-brand text-xl font-bold text-text-primary caret-thermal-accent outline-none transition-colors placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:text-text-muted hover:border-text-muted focus:border-focus focus-visible:outline-none"
             id="routine-name"
             maxLength={100}
             name="nombre"
@@ -200,7 +201,7 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
             ))}
           </div>
           <button
-            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-control-sm px-2 py-2 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-primary"
+            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-control-sm px-2 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus [&_svg]:text-thermal-accent"
             onClick={handleAddDay}
             type="button"
           >
@@ -218,16 +219,18 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
             ) : null}
           </Alert>
         ) : null}
-        <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 z-20 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 border-t border-border/60 bg-background/95 px-3 py-3 backdrop-blur-md sm:rounded-control sm:border">
-          <Button className={`min-h-[3.25rem] w-full rounded-control-sm text-[0.9375rem] font-bold ${!canSubmit ? "disabled:border disabled:border-border-strong disabled:bg-surface-elevated disabled:text-text-secondary disabled:opacity-100" : ""}`} disabled={!canSubmit || isSubmitting} isLoading={isSubmitting} type="submit">
-            {isSubmitting ? (routineId ? "Guardando..." : "Creando rutina...") : (routineId ? "Guardar cambios" : "Crear rutina")}
-          </Button>
+        <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 border-t border-border/70 bg-background/95 px-4 py-3 backdrop-blur-md">
+          <div className="mx-auto flex w-full max-w-xl justify-end">
+            <Button className="sm:max-w-xs" disabled={!canSubmit || isSubmitting} fullWidth isLoading={isSubmitting} size="md" type="submit">
+              {isSubmitting ? (routineId ? "Guardando..." : "Creando rutina...") : (routineId ? "Guardar cambios" : "Crear rutina")}
+            </Button>
+          </div>
         </div>
       </form>
       {routineId ? (
         <div className="mt-10 border-t border-border/55 pt-6">
           <button
-            className="inline-flex min-h-11 items-center gap-2 rounded-control-sm px-1 text-sm font-semibold text-error transition-colors hover:text-text-primary focus-visible:outline-error"
+            className="inline-flex min-h-11 items-center gap-2 rounded-control-sm px-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-error/10 hover:text-error focus-visible:outline-2 focus-visible:outline-error [&_svg]:text-error"
             onClick={() => {
               setDeleteState("idle");
               deleteDialogRef.current?.showModal();
@@ -296,15 +299,14 @@ export function RoutineForm({ routineId }: { routineId?: string }) {
                   <Button autoFocus disabled={deleteState === "deleting"} onClick={() => deleteDialogRef.current?.close()} variant="secondary">
                     Cancelar
                   </Button>
-                  <button
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-error px-5 text-sm font-semibold text-background transition-opacity hover:opacity-90 focus-visible:outline-error disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={deleteState === "deleting"}
+                  <Button
+                    isLoading={deleteState === "deleting"}
                     onClick={() => void handleDeleteRoutine()}
-                    type="button"
+                    variant="destructive"
                   >
                     <Trash2 aria-hidden="true" size={17} />
                     {deleteState === "deleting" ? "Eliminando..." : "Eliminar rutina"}
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
@@ -336,24 +338,24 @@ function RoutineDaySection({
         <button
           aria-controls={contentId}
           aria-expanded={expanded}
-          className="group flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 text-left focus-visible:outline-primary"
+          className={`group flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-control-sm px-2 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-focus ${expanded ? "bg-surface-active/35" : "hover:bg-surface-interactive/45"}`}
           onClick={onToggle}
           type="button"
         >
-          <span className="min-w-0 flex-1 truncate font-brand text-base font-bold uppercase text-text-primary">Día {day.orden}</span>
-          <span className="shrink-0 text-[0.8125rem] font-semibold text-text-secondary">
+          <span className="min-w-0 flex-1 truncate font-brand text-base font-bold text-text-primary">Día {day.orden}</span>
+          <span className="shrink-0 text-[0.8125rem] font-semibold text-info">
             {day.exercises.length} {day.exercises.length === 1 ? "ejercicio" : "ejercicios"}
           </span>
-          <ChevronDown aria-hidden="true" className={`shrink-0 text-text-secondary/70 transition-[color,transform] group-hover:text-text-primary motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} size={16} strokeWidth={1.75} />
+          <ChevronDown aria-hidden="true" className={`shrink-0 transition-[color,transform] motion-reduce:transition-none ${expanded ? "rotate-180 text-thermal-accent" : "text-text-muted group-hover:text-text-primary"}`} size={16} strokeWidth={1.75} />
         </button>
       </div>
 
       <div className="pb-5" hidden={!expanded} id={contentId}>
-        <label className="text-[0.8125rem] font-semibold text-text-primary" htmlFor={`routine-day-${day.id}`}>
+        <label className="text-[0.8125rem] font-semibold tracking-[0.04em] text-text-secondary" htmlFor={`routine-day-${day.id}`}>
           Nombre del día<span className="sr-only"> {day.orden}</span>
         </label>
         <input
-          className="mt-2 min-h-11 w-full rounded-control-sm border border-border/50 bg-surface/40 px-3 text-sm font-semibold text-text-primary outline-none transition-[background-color,border-color,box-shadow] hover:border-border-strong hover:bg-surface/55 focus:border-primary focus:bg-surface/55 focus:ring-2 focus:ring-primary/20 focus-visible:outline-primary"
+          className="mt-1 min-h-12 w-full border-0 border-b border-border bg-transparent px-0 font-brand text-base font-bold text-text-primary caret-thermal-accent outline-none transition-colors hover:border-border-strong focus:border-focus focus-visible:outline-none"
           id={`routine-day-${day.id}`}
           maxLength={100}
           onChange={(event) => onRename(day.id, event.target.value)}
@@ -363,28 +365,26 @@ function RoutineDaySection({
         />
 
         {day.exercises.length === 0 ? (
-          <p className="mt-4 text-sm leading-6 text-text-primary/75">Todavía no agregaste ejercicios.</p>
+          <p className="mt-4 text-sm leading-6 text-text-secondary">Todavía no agregaste ejercicios.</p>
         ) : (
           <ul className="mt-4 divide-y divide-border/45 border-y border-border/45">
             {day.exercises.map((exercise) => (
               <li className="flex min-w-0 items-center gap-1 py-1.5" key={exercise.exerciseId}>
                   <button
                     aria-label={`Configurar ${exercise.nombre} en ${day.nombre}`}
-                    className="group flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-control-sm py-2 text-left transition-colors focus-visible:outline-primary"
+                    className="group flex min-h-[4.5rem] min-w-0 flex-1 items-center gap-3 rounded-control-sm px-1 py-2 text-left transition-colors hover:bg-surface-interactive/40 focus-visible:outline-2 focus-visible:outline-focus"
                     onClick={() => onEditExercise(exercise.exerciseId)}
                     type="button"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block break-words font-brand text-base font-bold leading-5 text-text-primary">{exercise.nombre}</span>
-                      <span className="mt-1 block break-words text-sm leading-5 text-text-secondary">
-                        {exercise.cantidadSeries}×{exercise.repeticionesMinimas}–{exercise.repeticionesMaximas} · RIR {exercise.rirObjetivoMinimo}–{exercise.rirObjetivoMaximo} · {exercise.descansoSegundos} s
-                      </span>
+                      <RoutineExerciseTarget className="mt-1.5" {...exercise} />
                     </span>
-                    <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/65 transition-colors group-hover:text-primary" size={17} />
+                    <ChevronRight aria-hidden="true" className="shrink-0 text-text-muted transition-colors group-hover:text-text-primary" size={17} />
                   </button>
                   <button
                     aria-label={`Quitar ${exercise.nombre} de ${day.nombre}`}
-                    className="flex min-h-11 shrink-0 items-center rounded-control-sm px-2 text-[0.8125rem] font-semibold text-text-secondary transition-colors hover:bg-error/10 hover:text-error focus-visible:text-error focus-visible:outline-primary"
+                    className="flex min-h-11 shrink-0 items-center rounded-control-sm px-2 text-[0.8125rem] font-semibold text-text-secondary transition-colors hover:bg-error/10 hover:text-error focus-visible:text-error focus-visible:outline-2 focus-visible:outline-error"
                     onClick={() => onRemoveExercise(day.id, exercise.exerciseId)}
                     type="button"
                   >
@@ -415,7 +415,7 @@ function RoutineDaySection({
 function AddExercisesLink({ basePath, dayId }: { basePath: string; dayId: string }) {
   return (
     <Link
-      className="inline-flex min-h-11 items-center gap-2 rounded-control-sm bg-primary/8 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/12 hover:text-text-primary focus-visible:outline-primary"
+      className={buttonClassName({ className: "[&_svg]:text-thermal-accent", size: "sm", variant: "secondary" })}
       href={`${basePath}/exercises?day=${encodeURIComponent(dayId)}`}
     >
       <Plus aria-hidden="true" size={17} />

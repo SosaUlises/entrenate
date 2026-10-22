@@ -136,36 +136,6 @@ a {
   box-shadow: inset 1px 0 0 var(--thermal-accent);
 }
 
-.training-primary-action {
-  border-radius: 0.75rem;
-  background: var(--primary);
-  color: var(--primary-foreground);
-  box-shadow: none;
-}
-
-.training-primary-action:hover {
-  background: color-mix(in srgb, var(--primary) 88%, var(--primary-pressed));
-}
-
-.training-primary-action:active {
-  background: var(--primary-pressed);
-}
-
-.training-primary-action:focus-visible {
-  outline-color: var(--thermal-accent);
-}
-
-.training-destructive-action {
-  border-radius: 0.75rem;
-  background: var(--error);
-  color: #10110f;
-  box-shadow: none;
-}
-
-.training-destructive-action:hover {
-  background: color-mix(in srgb, var(--error) 88%, white);
-}
-
 .training-choice-selected {
   background: var(--primary);
   color: var(--primary-foreground);

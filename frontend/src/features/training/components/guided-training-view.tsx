@@ -69,7 +69,7 @@ export function GuidedTrainingView({ session, onDirtyChange, onFinish, onMissing
           <p className="mt-3 text-[0.9375rem] font-medium leading-6 text-text-secondary">
             {session.ejercicios.length} {session.ejercicios.length === 1 ? "ejercicio" : "ejercicios"} · {registeredSets} {registeredSets === 1 ? "serie registrada" : "series registradas"}
           </p>
-          <Button className="training-primary-action mt-8 min-h-[3.25rem]" fullWidth onClick={onFinish}>Finalizar entrenamiento</Button>
+          <Button className="mt-8" fullWidth onClick={onFinish} size="lg">Finalizar entrenamiento</Button>
         </div>
       </div>
     );
@@ -224,7 +224,7 @@ function RestView({ onAdjust, onContinue, remaining, session, showSavedNotice, t
             Terminar descanso
           </button>
         ) : (
-          <Button className="training-primary-action mt-4 min-h-[3.25rem]" fullWidth onClick={onContinue}>Continuar</Button>
+          <Button className="mt-4" fullWidth onClick={onContinue} size="lg">Continuar</Button>
         )}
       </div>
     </div>
@@ -413,7 +413,7 @@ function GuidedSetForm({ exercise, number, onDirtyChange, onMissing, onSaved, on
           </div>
         </fieldset>
         {error ? <p className="mt-3 text-sm leading-5 text-error" id={errorId} role="alert">{error}</p> : null}
-        <Button className="training-primary-action mt-4 min-h-[3.25rem] rounded-control-sm text-[0.9375rem] font-bold duration-150 active:scale-[0.99] motion-reduce:transition-none" fullWidth isLoading={pending} type="submit">Completar serie</Button>
+        <Button className="mt-4" fullWidth isLoading={pending} size="lg" type="submit">Completar serie</Button>
       </div>
     </form>
   );

@@ -162,7 +162,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
         })}
       </div>
       <div className="mt-8 border-t border-border/50 pt-6">
-        <Button className="training-primary-action min-h-[3.25rem]" fullWidth onClick={onFinish}>Finalizar entrenamiento</Button>
+        <Button fullWidth onClick={onFinish} size="lg">Finalizar entrenamiento</Button>
       </div>
     </div>
   );

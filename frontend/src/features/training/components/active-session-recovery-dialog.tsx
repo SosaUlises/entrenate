@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { cancelTrainingSessionAction } from "../actions/training.actions";
 import {
   formatActiveSessionStart,
@@ -99,7 +99,7 @@ export function ActiveSessionRecoveryDialog({
               {formatActiveSessionStart(session.horaInicio)}. Podés continuarlo o cancelarlo antes de iniciar otro.
             </p>
             <Link
-              className="mt-6 flex min-h-[3.25rem] w-full items-center justify-center rounded-control-sm bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-pressed))] active:bg-primary-pressed focus-visible:outline-focus"
+              className={buttonClassName({ className: "mt-6", fullWidth: true, size: "lg" })}
               href="/training"
             >
               Continuar entrenamiento
@@ -143,7 +143,7 @@ export function ActiveSessionRecoveryDialog({
               >
                 Volver
               </Button>
-              <Button isLoading={cancelPending} onClick={() => void cancelSession()}>
+              <Button isLoading={cancelPending} onClick={() => void cancelSession()} variant="destructive">
                 Cancelar entrenamiento
               </Button>
             </div>

@@ -320,7 +320,7 @@ export function ActiveTrainingContent() {
         {finishError ? <p className="mt-3 text-sm text-error" role="alert">No pudimos actualizar el entrenamiento. Intentá nuevamente.</p> : null}
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <Button disabled={finishPending} onClick={() => dialogRef.current?.close()} variant="secondary">Seguir entrenando</Button>
-          <Button className={finishMode === "cancel" ? "training-destructive-action" : "training-primary-action"} isLoading={finishPending} onClick={() => void finish()}>{finishMode === "cancel" ? "Cancelar sesión" : "Finalizar"}</Button>
+          <Button isLoading={finishPending} onClick={() => void finish()} variant={finishMode === "cancel" ? "destructive" : "primary"}>{finishMode === "cancel" ? "Cancelar sesión" : "Finalizar"}</Button>
         </div>
       </dialog>
 
@@ -340,7 +340,7 @@ export function ActiveTrainingContent() {
         </p>
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <Button onClick={() => navigationDialogRef.current?.close()} variant="secondary">Seguir entrenando</Button>
-          <Button className="training-primary-action" onClick={() => pendingNavigation && completeNavigation(pendingNavigation)}>
+          <Button onClick={() => pendingNavigation && completeNavigation(pendingNavigation)}>
             {pendingNavigation === "mode" ? "Descartar y cambiar" : "Descartar y salir"}
           </Button>
         </div>

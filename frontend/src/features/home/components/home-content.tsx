@@ -4,7 +4,7 @@ import { ArrowRight, ChevronRight, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { getRoutineDetailAction } from "@/features/routines/actions/get-routine-detail.action";
@@ -17,9 +17,6 @@ import type { TrainingSession } from "@/features/training/types/training.types";
 import { getHomeStateAction, type HomeState } from "../actions/get-home-state.action";
 
 type HomeViewState = { status: "loading" } | HomeState;
-
-const homePrimaryActionClass = "border border-border-strong bg-[color-mix(in_srgb,var(--technical-white)_74%,var(--surface-elevated))] text-primary-foreground shadow-none hover:bg-[color-mix(in_srgb,var(--technical-white)_80%,var(--surface-elevated))] active:bg-[color-mix(in_srgb,var(--technical-white)_66%,var(--surface-elevated))] disabled:border-border disabled:bg-surface-active disabled:text-text-secondary disabled:opacity-100 aria-disabled:pointer-events-none aria-disabled:border-border aria-disabled:bg-surface-active aria-disabled:text-text-secondary";
-const primaryLinkClass = `flex min-h-[3.25rem] min-w-0 w-full max-w-sm items-center justify-between overflow-hidden rounded-control px-5 text-[0.9375rem] font-bold transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.99] focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${homePrimaryActionClass}`;
 
 export function HomeContent() {
   const router = useRouter();
@@ -75,11 +72,13 @@ export function HomeContent() {
           No podemos confirmar si tenés un entrenamiento en curso. Intentá nuevamente.
         </p>
         <Button
-          className={`mt-7 min-h-[3.25rem] w-full max-w-sm text-[0.9375rem] font-bold ${homePrimaryActionClass}`}
+          className="mt-7 max-w-sm"
+          fullWidth
           onClick={() => {
             setState({ status: "loading" });
             setRequestKey((key) => key + 1);
           }}
+          size="lg"
         >
           Reintentar
         </Button>
@@ -547,7 +546,7 @@ function HistoryLink() {
 
 function PrimaryLink({ children, className, href }: { children: string; className?: string; href: string }) {
   return (
-    <Link className={`${primaryLinkClass} gap-4 ${className ?? ""}`} href={href}>
+    <Link className={buttonClassName({ className: `max-w-sm justify-between gap-4 overflow-hidden ${className ?? ""}`, fullWidth: true, size: "lg" })} href={href}>
       <span className="min-w-0 break-words leading-5">{children}</span>
       <ArrowRight aria-hidden="true" className="shrink-0" size={18} strokeWidth={2} />
     </Link>

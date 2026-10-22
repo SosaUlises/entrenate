@@ -128,7 +128,7 @@ export function WeightStep() {
           className="min-h-12 px-4"
           onClick={handleSkip}
           type="button"
-          variant="text"
+          variant="ghost"
         >
           Omitir por ahora
         </Button>

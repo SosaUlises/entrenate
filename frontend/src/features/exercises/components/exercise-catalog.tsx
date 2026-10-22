@@ -87,12 +87,12 @@ export function ExerciseCatalog(props: ExerciseCatalogProps) {
   }, [invalidateSession, requestKey, router]);
 
   return (
-    <section aria-labelledby="exercises-title" className="mx-auto w-full min-w-0 max-w-xl">
+    <section aria-labelledby="exercises-title" className={`mx-auto w-full min-w-0 max-w-xl ${props.mode === "select" ? "pb-[calc(6rem+env(safe-area-inset-bottom))]" : ""}`}>
       {props.mode === "select" ? (
         <div className="flex items-center gap-1">
           <Link
             aria-label={backLabel}
-            className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary"
+            className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
             href={backHref}
           >
             <ArrowLeft aria-hidden="true" size={20} />
@@ -136,17 +136,18 @@ export function ExerciseCatalog(props: ExerciseCatalogProps) {
       )}
 
       {props.mode === "select" && state.status === "ready" ? (
-        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border/60 bg-background/95 backdrop-blur-md">
-          <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-0">
-            <p aria-live="polite" className="text-sm font-medium text-text-secondary">
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border/70 bg-surface-elevated">
+          <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-0 sm:pb-3">
+            <p aria-live="polite" className="min-w-0 text-[0.8125rem] font-semibold text-text-secondary">
               {selectedExercises.length === 1
                 ? "1 seleccionado"
                 : `${selectedExercises.length} seleccionados`}
             </p>
             <Button
-              className="min-h-12 rounded-control-sm disabled:border disabled:border-border-strong disabled:bg-surface-elevated disabled:text-text-secondary disabled:opacity-100"
+              className="shrink-0"
               disabled={selectedExercises.length === 0}
               onClick={() => props.onConfirmSelection(selectedExercises)}
+              size="md"
             >
               {selectedExercises.length === 0
                 ? "Agregar ejercicios"
@@ -255,7 +256,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
         <Search aria-hidden="true" className="absolute top-1/2 left-3 -translate-y-1/2 text-text-secondary" size={16} />
         <input
           autoComplete="off"
-          className="h-12 w-full rounded-control-sm border border-border/70 bg-surface/60 pr-12 pl-10 text-sm text-text-primary outline-none transition-colors placeholder:text-text-secondary/70 hover:border-border-strong focus:border-primary focus:ring-2 focus:ring-primary/25 focus-visible:outline-primary [&::-webkit-search-cancel-button]:appearance-none"
+          className={`h-12 w-full rounded-control-sm border pr-12 pl-10 text-sm text-text-primary outline-none transition-colors hover:border-border-strong [&::-webkit-search-cancel-button]:appearance-none ${mode === "select" ? "border-border bg-surface-interactive caret-thermal-accent placeholder:text-text-muted focus:border-focus focus-visible:outline-none" : "border-border/70 bg-surface/60 placeholder:text-text-secondary/70 focus:border-primary focus:ring-2 focus:ring-primary/25 focus-visible:outline-primary"}`}
           id="exercise-search"
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Buscar ejercicio..."
@@ -265,7 +266,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
         {query ? (
           <button
             aria-label="Limpiar búsqueda"
-            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-primary"
+            className={`absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:text-text-primary ${mode === "select" ? "focus-visible:outline-2 focus-visible:outline-focus" : "focus-visible:outline-primary"}`}
             onClick={() => setQuery("")}
             type="button"
           >
@@ -287,7 +288,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                 <button
                   aria-label={`Filtrar por ${filter.label}`}
                   aria-pressed={selected}
-                  className={`relative flex shrink-0 flex-col items-center justify-start rounded-control-sm px-1.5 pb-1.5 transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-1 motion-reduce:transition-none motion-reduce:active:scale-100 ${mode === "select" ? "h-[5.25rem] min-w-[4.5rem]" : "h-[5.75rem] min-w-[4.75rem]"} ${selected ? "bg-primary/[0.06] text-text-primary" : "text-text-secondary hover:bg-surface/20 hover:text-text-primary"}`}
+                  className={`relative flex shrink-0 flex-col items-center justify-start rounded-control-sm px-1.5 pb-1.5 transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-1 motion-reduce:transition-none motion-reduce:active:scale-100 ${mode === "select" ? "h-[5.25rem] min-w-[4.5rem] focus-visible:outline-focus" : "h-[5.75rem] min-w-[4.75rem] focus-visible:outline-primary"} ${selected ? (mode === "select" ? "bg-surface-active/55 text-text-primary" : "bg-primary/[0.06] text-text-primary") : "text-text-secondary hover:bg-surface/20 hover:text-text-primary"}`}
                   key={filter.id}
                   onClick={() => setMuscleFilterId(filter.id)}
                   type="button"
@@ -302,7 +303,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                     width={mode === "select" ? 48 : 56}
                   />
                   <span className="mt-1 whitespace-nowrap text-[0.8125rem] font-semibold leading-4">{filter.label}</span>
-                  <span aria-hidden="true" className={`absolute bottom-0 h-0.5 w-8 rounded-full bg-primary transition-opacity duration-150 motion-reduce:transition-none ${selected ? "opacity-100" : "opacity-0"}`} />
+                  <span aria-hidden="true" className={`absolute bottom-0 h-0.5 w-8 rounded-full transition-opacity duration-150 motion-reduce:transition-none ${mode === "select" ? "bg-thermal-accent" : "bg-primary"} ${selected ? "opacity-100" : "opacity-0"}`} />
                 </button>
               );
             })}
@@ -318,7 +319,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
           <div className="mt-3 flex flex-wrap gap-3">
             {query ? (
               <button
-                className="inline-flex min-h-11 items-center text-sm font-semibold text-primary transition-colors hover:text-text-primary focus-visible:outline-primary"
+                className={`inline-flex min-h-11 items-center text-sm font-semibold transition-colors ${mode === "select" ? "text-text-primary hover:text-thermal-accent focus-visible:outline-2 focus-visible:outline-focus" : "text-primary hover:text-text-primary focus-visible:outline-primary"}`}
                 onClick={() => setQuery("")}
                 type="button"
               >
@@ -327,7 +328,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
             ) : null}
             {isFiltered ? (
               <button
-                className="inline-flex min-h-11 items-center text-sm font-semibold text-primary transition-colors hover:text-text-primary focus-visible:outline-primary"
+                className={`inline-flex min-h-11 items-center text-sm font-semibold transition-colors ${mode === "select" ? "text-text-primary hover:text-thermal-accent focus-visible:outline-2 focus-visible:outline-focus" : "text-primary hover:text-text-primary focus-visible:outline-primary"}`}
                 onClick={() => setMuscleFilterId(ALL_MUSCLE_FILTER_ID)}
                 type="button"
               >
@@ -343,14 +344,14 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
 
             return (
               <li
-                className={`min-w-0 transition-colors ${selected ? "bg-primary/5" : "bg-transparent"}`}
+                className={`min-w-0 transition-colors ${selected ? "bg-surface-active/40" : "bg-transparent"}`}
                 key={exercise.id}
               >
                 <button
                   aria-haspopup={mode === "browse" ? "dialog" : undefined}
                   aria-label={mode === "select" ? `${selected ? "Quitar" : "Seleccionar"} ${exercise.nombre}` : `Ver detalles de ${exercise.nombre}`}
                   aria-pressed={mode === "select" ? selected : undefined}
-                  className="group flex min-h-[4.5rem] w-full min-w-0 items-center gap-2 px-1 py-3.5 text-left transition-[background-color,transform] duration-150 hover:bg-surface/25 active:scale-[0.995] focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none motion-reduce:active:scale-100"
+                  className={`group flex min-h-[4.5rem] w-full min-w-0 items-center gap-2 py-3.5 text-left transition-[background-color,transform] duration-150 active:scale-[0.995] focus-visible:outline-2 motion-reduce:transition-none motion-reduce:active:scale-100 ${mode === "select" ? "px-2 hover:bg-surface-interactive/45 focus-visible:outline-focus" : "px-1 hover:bg-surface/25 focus-visible:outline-primary"}`}
                   onClick={() => mode === "select" ? toggleSelection(exercise.id) : setPreview(exercise)}
                   type="button"
                 >
@@ -362,7 +363,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                       {exercise.grupoMuscularPrincipal}
                     </span>
                   </span>
-                  <span className={`flex size-11 shrink-0 items-center justify-center transition-colors ${selected ? "text-primary" : "text-text-secondary group-hover:text-text-primary"}`}>
+                  <span className={`flex size-11 shrink-0 items-center justify-center transition-colors ${selected ? "text-thermal-accent" : mode === "select" ? "text-text-muted group-hover:text-text-primary" : "text-text-secondary group-hover:text-text-primary"}`}>
                     {mode === "select"
                       ? selected
                         ? <Check aria-hidden="true" size={19} strokeWidth={2.25} />
