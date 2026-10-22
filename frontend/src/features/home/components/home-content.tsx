@@ -130,16 +130,17 @@ function ActiveSessionState({
             {state.registeredSetCount} {state.registeredSetCount === 1 ? "serie registrada" : "series registradas"}
           </p>
         </div>
-        <PrimaryLink className="mt-6" href="/training">
+        <HomeActionLink className="mt-6" href="/training" variant="secondary">
           Continuar entrenamiento
-        </PrimaryLink>
-        <button
-          className="mt-2 inline-flex min-h-11 items-center rounded-control-sm px-1 text-[0.8125rem] font-semibold text-text-secondary transition-colors duration-200 hover:text-text-primary focus-visible:outline-focus motion-reduce:transition-none"
+        </HomeActionLink>
+        <Button
+          className="mt-2 px-1 text-[0.8125rem]"
           onClick={() => setConfirmingCancellation(true)}
-          type="button"
+          size="sm"
+          variant="ghost"
         >
           Cancelar sesión
-        </button>
+        </Button>
         {confirmingCancellation ? (
           <ActiveSessionRecoveryDialog
             initialStep="cancel"
@@ -173,9 +174,9 @@ function ActiveSessionState({
             <dd className="mt-1 font-brand text-2xl font-bold tabular-nums text-text-primary">{state.registeredSetCount}</dd>
           </div>
         </dl>
-        <PrimaryLink className="mt-6" href="/training">
+        <HomeActionLink className="mt-6" href="/training" variant="secondary">
           Continuar entrenamiento
-        </PrimaryLink>
+        </HomeActionLink>
         <HistoryLink />
       </section>
     );
@@ -206,9 +207,9 @@ function ActiveSessionState({
         </div>
       </dl>
 
-      <PrimaryLink className="mt-6" href="/training">
+      <HomeActionLink className="mt-6" href="/training" variant="secondary">
         Continuar entrenamiento
-      </PrimaryLink>
+      </HomeActionLink>
       <HistoryLink />
     </section>
   );
@@ -223,9 +224,9 @@ function NoRoutinesState() {
       <p className="mt-4 max-w-sm text-[0.9375rem] leading-6 text-text-secondary">
         Organizá tus ejercicios y empezá a registrar tus entrenamientos.
       </p>
-      <PrimaryLink className="mt-8" href="/routines/new">
+      <HomeActionLink className="mt-8" href="/routines/new">
         Crear rutina
-      </PrimaryLink>
+      </HomeActionLink>
       <HistoryLink />
     </section>
   );
@@ -544,9 +545,17 @@ function HistoryLink() {
   );
 }
 
-function PrimaryLink({ children, className, href }: { children: string; className?: string; href: string }) {
+function HomeActionLink({ children, className, href, variant = "primary" }: { children: string; className?: string; href: string; variant?: "primary" | "secondary" }) {
   return (
-    <Link className={buttonClassName({ className: `max-w-sm justify-between gap-4 overflow-hidden ${className ?? ""}`, fullWidth: true, size: "lg" })} href={href}>
+    <Link
+      className={buttonClassName({
+        className: `max-w-sm justify-between gap-4 overflow-hidden ${variant === "secondary" ? "[&_svg]:text-thermal-accent" : ""} ${className ?? ""}`,
+        fullWidth: true,
+        size: "lg",
+        variant,
+      })}
+      href={href}
+    >
       <span className="min-w-0 break-words leading-5">{children}</span>
       <ArrowRight aria-hidden="true" className="shrink-0" size={18} strokeWidth={2} />
     </Link>
