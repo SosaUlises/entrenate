@@ -102,11 +102,13 @@ export function ExerciseCatalog(props: ExerciseCatalogProps) {
           </h1>
         </div>
       ) : (
-        <h1 className="font-brand text-2xl font-bold text-text-primary" id="exercises-title">
-          {title}
-        </h1>
+        <div className="max-w-lg">
+          <h1 className="font-brand text-[2rem] font-bold leading-[1.08] text-text-primary" id="exercises-title">
+            {title}
+          </h1>
+        </div>
       )}
-      <p className={`text-sm text-text-secondary ${props.mode === "select" ? "mt-1 pl-12" : "mt-2 leading-6"}`}>
+      <p className={`text-text-secondary ${props.mode === "select" ? "mt-1 pl-12 text-sm" : "mt-3 max-w-md text-[0.9375rem] leading-6"}`}>
         {description}
       </p>
 
@@ -166,19 +168,19 @@ function ExerciseCatalogSkeleton({ mode }: { mode: "browse" | "select" }) {
   const compact = mode === "select";
 
   return (
-    <div aria-label="Cargando ejercicios" className="mt-4 animate-pulse" role="status">
-      <div className="h-12 w-full rounded-control-sm bg-surface-elevated" />
-      <div className="mt-3 flex gap-1.5 overflow-hidden">
+    <div aria-label="Cargando ejercicios" className={`${compact ? "mt-4" : "mt-6"} animate-pulse`} role="status">
+      <div className={`${compact ? "h-12 rounded-control-sm" : "h-14 rounded-control"} w-full bg-surface-elevated`} />
+      <div className={`${compact ? "mt-3 gap-1.5" : "mt-5 gap-2"} flex overflow-hidden`}>
         {[0, 1, 2, 3].map((item) => (
-          <div className={`flex shrink-0 flex-col items-center ${compact ? "h-[5.25rem] min-w-[4.5rem]" : "h-[5.75rem] min-w-[4.75rem]"}`} key={item}>
+          <div className={`flex shrink-0 flex-col items-center ${compact ? "h-[5.25rem] min-w-[4.5rem]" : "h-24 min-w-20"}`} key={item}>
             <div className={compact ? "size-12 rounded-control-sm bg-surface-elevated" : "size-14 rounded-control-sm bg-surface-elevated"} />
-            <div className="mt-1 h-3 w-10 rounded bg-surface-elevated" />
+            <div className={`${compact ? "mt-1" : "mt-2"} h-3 w-10 rounded bg-surface-elevated`} />
           </div>
         ))}
       </div>
-      <div className="mt-2 border-y border-border/50">
+      <div className={`${compact ? "mt-2" : "mt-5"} border-y border-border/50`}>
         {[0, 1, 2, 3].map((item) => (
-          <div className="flex min-h-[4.5rem] items-center border-b border-border/50 py-3.5 last:border-b-0" key={item}>
+          <div className={`flex items-center border-b border-border/50 last:border-b-0 ${compact ? "min-h-[4.5rem] py-3.5" : "min-h-20 py-4"}`} key={item}>
             <div className="min-w-0 flex-1">
               <div className="h-4 w-3/4 rounded bg-surface-elevated" />
               <div className="mt-2 h-3 w-28 rounded bg-surface-elevated" />
@@ -248,15 +250,15 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
   };
 
   return (
-    <div className={`${mode === "select" ? "mt-4" : "mt-5"} min-w-0`}>
+    <div className={`${mode === "select" ? "mt-4" : "mt-6"} min-w-0`}>
       <label className="sr-only" htmlFor="exercise-search">
         Buscar ejercicio
       </label>
       <div className="relative">
-        <Search aria-hidden="true" className="absolute top-1/2 left-3 -translate-y-1/2 text-text-secondary" size={16} />
+        <Search aria-hidden="true" className={`absolute top-1/2 -translate-y-1/2 ${mode === "select" ? "left-3 text-text-secondary" : "left-4 text-steel"}`} size={mode === "select" ? 16 : 18} strokeWidth={1.8} />
         <input
           autoComplete="off"
-          className={`h-12 w-full rounded-control-sm border pr-12 pl-10 text-sm text-text-primary outline-none transition-colors hover:border-border-strong [&::-webkit-search-cancel-button]:appearance-none ${mode === "select" ? "border-border bg-surface-interactive caret-thermal-accent placeholder:text-text-muted focus:border-focus focus-visible:outline-none" : "border-border/70 bg-surface/60 placeholder:text-text-secondary/70 focus:border-primary focus:ring-2 focus:ring-primary/25 focus-visible:outline-primary"}`}
+          className={`w-full border pr-12 text-text-primary outline-none transition-[background-color,border-color] duration-200 hover:border-border-strong [&::-webkit-search-cancel-button]:appearance-none ${mode === "select" ? "h-12 rounded-control-sm border-border bg-surface-interactive pl-10 text-sm caret-thermal-accent placeholder:text-text-muted focus:border-focus focus-visible:outline-none" : "h-14 rounded-control border-border-strong bg-surface-interactive pl-12 text-[0.9375rem] caret-thermal-accent placeholder:text-text-muted focus:border-focus focus:bg-surface-elevated focus-visible:outline-none"}`}
           id="exercise-search"
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Buscar ejercicio..."
@@ -266,7 +268,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
         {query ? (
           <button
             aria-label="Limpiar búsqueda"
-            className={`absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:text-text-primary ${mode === "select" ? "focus-visible:outline-2 focus-visible:outline-focus" : "focus-visible:outline-primary"}`}
+            className={`absolute inset-y-0 right-0 flex w-12 items-center justify-center text-text-secondary transition-colors hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus ${mode === "select" ? "rounded-control-sm" : "rounded-control"}`}
             onClick={() => setQuery("")}
             type="button"
           >
@@ -276,10 +278,10 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
       </div>
 
       {exercises.length > 0 ? (
-        <div className="relative mt-3">
+        <div className={`relative ${mode === "select" ? "mt-3" : "mt-5"}`}>
           <div
             aria-label="Filtrar por grupo muscular"
-            className="flex touch-pan-x gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className={`flex touch-pan-x overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${mode === "select" ? "gap-1.5 pb-1" : "gap-2 pb-2"}`}
             role="group"
           >
             {muscleFilters.map((filter) => {
@@ -288,7 +290,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                 <button
                   aria-label={`Filtrar por ${filter.label}`}
                   aria-pressed={selected}
-                  className={`relative flex shrink-0 flex-col items-center justify-start rounded-control-sm px-1.5 pb-1.5 transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-1 motion-reduce:transition-none motion-reduce:active:scale-100 ${mode === "select" ? "h-[5.25rem] min-w-[4.5rem] focus-visible:outline-focus" : "h-[5.75rem] min-w-[4.75rem] focus-visible:outline-primary"} ${selected ? (mode === "select" ? "bg-surface-active/55 text-text-primary" : "bg-primary/[0.06] text-text-primary") : "text-text-secondary hover:bg-surface/20 hover:text-text-primary"}`}
+                  className={`relative flex shrink-0 flex-col items-center justify-start px-1.5 transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${mode === "select" ? "h-[5.25rem] min-w-[4.5rem] rounded-control-sm pb-1.5" : "h-24 min-w-20 rounded-control pb-2"} ${selected ? "bg-surface-active/55 text-text-primary" : mode === "select" ? "text-text-secondary hover:bg-surface/20 hover:text-text-primary" : "text-text-secondary hover:bg-surface-interactive/55 hover:text-text-primary"}`}
                   key={filter.id}
                   onClick={() => setMuscleFilterId(filter.id)}
                   type="button"
@@ -296,14 +298,14 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                   <Image
                     alt=""
                     aria-hidden="true"
-                    className={`${mode === "select" ? "size-12" : "size-14"} shrink-0 object-contain ${filter.id === ALL_MUSCLE_FILTER_ID ? "scale-[1.12]" : ""}`}
+                    className={`${mode === "select" ? "size-12" : "size-14"} shrink-0 object-contain ${filter.id === ALL_MUSCLE_FILTER_ID ? "scale-[1.12]" : ""} ${mode === "browse" ? `transition-opacity duration-150 motion-reduce:transition-none ${selected ? "opacity-100" : "opacity-70"}` : ""}`}
                     height={mode === "select" ? 48 : 56}
                     sizes={mode === "select" ? "48px" : "56px"}
                     src={filter.imageSrc}
                     width={mode === "select" ? 48 : 56}
                   />
-                  <span className="mt-1 whitespace-nowrap text-[0.8125rem] font-semibold leading-4">{filter.label}</span>
-                  <span aria-hidden="true" className={`absolute bottom-0 h-0.5 w-8 rounded-full transition-opacity duration-150 motion-reduce:transition-none ${mode === "select" ? "bg-thermal-accent" : "bg-primary"} ${selected ? "opacity-100" : "opacity-0"}`} />
+                  <span className={`${mode === "select" ? "mt-1" : "mt-2"} whitespace-nowrap text-[0.8125rem] font-semibold leading-4`}>{filter.label}</span>
+                  <span aria-hidden="true" className={`absolute bottom-0 h-0.5 rounded-full bg-thermal-accent transition-opacity duration-150 motion-reduce:transition-none ${mode === "select" ? "w-8" : "w-6"} ${selected ? "opacity-100" : "opacity-0"}`} />
                 </button>
               );
             })}
@@ -319,7 +321,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
           <div className="mt-3 flex flex-wrap gap-3">
             {query ? (
               <button
-                className={`inline-flex min-h-11 items-center text-sm font-semibold transition-colors ${mode === "select" ? "text-text-primary hover:text-thermal-accent focus-visible:outline-2 focus-visible:outline-focus" : "text-primary hover:text-text-primary focus-visible:outline-primary"}`}
+                className="inline-flex min-h-11 items-center text-sm font-semibold text-text-primary transition-colors hover:text-thermal-accent focus-visible:outline-2 focus-visible:outline-focus"
                 onClick={() => setQuery("")}
                 type="button"
               >
@@ -328,7 +330,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
             ) : null}
             {isFiltered ? (
               <button
-                className={`inline-flex min-h-11 items-center text-sm font-semibold transition-colors ${mode === "select" ? "text-text-primary hover:text-thermal-accent focus-visible:outline-2 focus-visible:outline-focus" : "text-primary hover:text-text-primary focus-visible:outline-primary"}`}
+                className="inline-flex min-h-11 items-center text-sm font-semibold text-text-primary transition-colors hover:text-thermal-accent focus-visible:outline-2 focus-visible:outline-focus"
                 onClick={() => setMuscleFilterId(ALL_MUSCLE_FILTER_ID)}
                 type="button"
               >
@@ -338,7 +340,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
           </div>
         </div>
       ) : (
-        <ul className={`${mode === "browse" ? "mt-4" : "mt-3"} divide-y divide-border/50 border-y border-border/50`}>
+        <ul className={`${mode === "browse" ? "mt-5" : "mt-3"} divide-y divide-border/50 border-y border-border/50`}>
           {visibleExercises.map((exercise) => {
             const selected = mode === "select" && selectedIds.has(exercise.id);
 
@@ -351,19 +353,19 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
                   aria-haspopup={mode === "browse" ? "dialog" : undefined}
                   aria-label={mode === "select" ? `${selected ? "Quitar" : "Seleccionar"} ${exercise.nombre}` : `Ver detalles de ${exercise.nombre}`}
                   aria-pressed={mode === "select" ? selected : undefined}
-                  className={`group flex min-h-[4.5rem] w-full min-w-0 items-center gap-2 py-3.5 text-left transition-[background-color,transform] duration-150 active:scale-[0.995] focus-visible:outline-2 motion-reduce:transition-none motion-reduce:active:scale-100 ${mode === "select" ? "px-2 hover:bg-surface-interactive/45 focus-visible:outline-focus" : "px-1 hover:bg-surface/25 focus-visible:outline-primary"}`}
+                  className={`group flex w-full min-w-0 items-center gap-2 text-left transition-[background-color,transform] duration-150 active:scale-[0.995] focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${mode === "select" ? "min-h-[4.5rem] px-2 py-3.5 hover:bg-surface-interactive/45" : "min-h-20 px-1 py-4 hover:bg-surface-interactive/40 focus-visible:bg-surface-interactive/40"}`}
                   onClick={() => mode === "select" ? toggleSelection(exercise.id) : setPreview(exercise)}
                   type="button"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block break-words font-brand text-base font-bold leading-5 text-text-primary">
+                    <span className={`block break-words font-brand font-bold text-text-primary ${mode === "select" ? "text-base leading-5" : "text-[1.0625rem] leading-6"}`}>
                       {exercise.nombre}
                     </span>
-                    <span className="mt-1 block text-[0.8125rem] font-semibold leading-4 text-info">
+                    <span className={`block text-[0.8125rem] font-semibold text-info ${mode === "select" ? "mt-1 leading-4" : "mt-1.5 leading-5"}`}>
                       {exercise.grupoMuscularPrincipal}
                     </span>
                   </span>
-                  <span className={`flex size-11 shrink-0 items-center justify-center transition-colors ${selected ? "text-thermal-accent" : mode === "select" ? "text-text-muted group-hover:text-text-primary" : "text-text-secondary group-hover:text-text-primary"}`}>
+                  <span className={`flex size-11 shrink-0 items-center justify-center transition-colors ${selected ? "text-thermal-accent" : mode === "select" ? "text-text-muted group-hover:text-text-primary" : "text-text-muted group-hover:text-thermal-accent"}`}>
                     {mode === "select"
                       ? selected
                         ? <Check aria-hidden="true" size={19} strokeWidth={2.25} />
@@ -380,7 +382,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
       <dialog
         aria-labelledby="exercise-preview-title"
         aria-modal="true"
-        className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-full overflow-y-auto rounded-t-container border border-border bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:inset-0 sm:m-auto sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100%-2rem)] sm:max-w-xl sm:rounded-container"
+        className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[92dvh] w-full max-w-full overflow-y-auto rounded-t-container border border-border-strong bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:inset-0 sm:m-auto sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100%-2rem)] sm:max-w-xl sm:rounded-container"
         onClick={(event) => {
           const dialog = event.currentTarget;
           const bounds = dialog.getBoundingClientRect();
@@ -395,38 +397,41 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
         ref={dialogRef}
       >
         {preview ? (
-          <div className="px-4 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:p-6">
-            <div aria-hidden="true" className="mx-auto mb-2 h-1 w-10 rounded-full bg-border-strong sm:hidden" />
-            <div className="flex min-w-0 items-start gap-3">
-              <div className="min-w-0 flex-1 pt-2">
-                <h2 className="break-words font-brand text-xl font-bold leading-7 text-text-primary" id="exercise-preview-title">
+          <div className="px-5 pt-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:p-6">
+            <div aria-hidden="true" className="mx-auto mb-3 h-1 w-10 rounded-full bg-border-strong sm:hidden" />
+            <div className="flex min-w-0 items-start gap-4 border-b border-border/60 pb-4">
+              <div className="min-w-0 flex-1 pt-2 sm:pt-1">
+                <h2 className="break-words font-brand text-2xl font-bold leading-tight text-text-primary" id="exercise-preview-title">
                   {preview.nombre}
                 </h2>
-                <p className="mt-1 text-[0.8125rem] font-semibold text-info">
+                <p className="mt-2 text-[0.8125rem] font-semibold leading-5 text-info">
                   {preview.grupoMuscularPrincipal}
+                  <span aria-hidden="true" className="px-2 text-text-muted">·</span>
+                  <span className="font-medium text-text-secondary">
+                    {preview.equipamientos.length
+                      ? preview.equipamientos.map((item) => item.nombre).join(" · ")
+                      : "Sin equipamiento externo"}
+                  </span>
                 </p>
               </div>
               <button
                 aria-label="Cerrar vista previa"
-                className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface hover:text-text-primary focus-visible:outline-primary"
+                className="flex size-11 shrink-0 items-center justify-center rounded-control-sm border border-border bg-surface-interactive text-text-secondary transition-colors hover:border-border-strong hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
                 onClick={() => dialogRef.current?.close()}
                 type="button"
               >
                 <X aria-hidden="true" size={20} />
               </button>
             </div>
-            <p className="mt-4 text-[0.8125rem] font-semibold text-text-secondary/80">Equipamiento</p>
-            <p className="mt-1 text-[0.8125rem] leading-5 text-text-secondary">
-              {preview.equipamientos.length
-                ? preview.equipamientos.map((item) => item.nombre).join(" · ")
-                : "Sin equipamiento externo"}
-            </p>
             {preview.descripcion?.trim() ? (
               <p className="mt-4 text-sm leading-6 text-text-secondary">{preview.descripcion}</p>
             ) : null}
             {previewHasDemo ? (
-              <section aria-labelledby="exercise-technique-title" className="mt-8 border-t border-border/60 pt-5">
-                <h3 className="font-brand text-lg font-bold text-text-primary" id="exercise-technique-title">Técnica</h3>
+              <section aria-labelledby="exercise-technique-title" className={preview.descripcion?.trim() ? "mt-5" : "mt-4"}>
+                <div className="flex items-center gap-3">
+                  <span aria-hidden="true" className="h-0.5 w-5 rounded-full bg-thermal-accent" />
+                  <h3 className="font-brand text-lg font-bold text-text-primary" id="exercise-technique-title">Técnica</h3>
+                </div>
                 <ExerciseMovementDemo
                   exerciseName={preview.nombre}
                   key={preview.id}
