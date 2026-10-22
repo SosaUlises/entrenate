@@ -53,25 +53,25 @@ export function ExerciseProgressChart({ metric, metricLabel, points }: {
     : `${metricLabel} pasó de ${formatMetricValue(metric, chartPoints[0].value)} a ${formatMetricValue(metric, chartPoints.at(-1)!.value)} en el período.`;
 
   return (
-    <div className="relative mt-4 min-w-0" key={metric}>
-      <div aria-live="polite" className="pointer-events-none absolute top-0 right-0 z-10 rounded-control-sm border border-border/70 bg-surface-elevated/95 px-3 py-2 text-right shadow-elevated">
+    <div className="relative mt-5 min-w-0" key={metric}>
+      <div aria-live="polite" className="pointer-events-none absolute top-0 right-0 z-10 rounded-control-sm border border-border-strong bg-surface-interactive/95 px-3 py-2 text-right shadow-elevated">
         <p className="font-brand text-base font-bold tabular-nums text-text-primary">{formatMetricValue(metric, selectedPoint.value)}</p>
-        <p className="mt-0.5 text-[0.8125rem] font-medium text-text-secondary">{formatShortProgressDate(selectedPoint.date)}</p>
+        <p className="mt-0.5 text-[0.8125rem] font-semibold text-steel">{formatShortProgressDate(selectedPoint.date)}</p>
       </div>
 
       <svg aria-label={description} className="h-[14.375rem] w-full max-w-full overflow-visible" preserveAspectRatio="xMidYMid meet" role="group" viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
         <title>{description}</title>
         <line className="stroke-border/55" strokeWidth="1" x1={HORIZONTAL_PADDING} x2={WIDTH - HORIZONTAL_PADDING} y1={HEIGHT - BOTTOM_PADDING} y2={HEIGHT - BOTTOM_PADDING} />
         {coordinates.length > 1 ? (
-          <polyline className="fill-none stroke-info transition-[stroke-dashoffset] duration-300 starting:[stroke-dashoffset:1] motion-reduce:transition-none" pathLength="1" points={coordinates.map((point) => `${point.x},${point.y}`).join(" ")} strokeDasharray="1" strokeDashoffset="0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+          <polyline className="fill-none stroke-steel transition-[stroke-dashoffset] duration-300 starting:[stroke-dashoffset:1] motion-reduce:transition-none" pathLength="1" points={coordinates.map((point) => `${point.x},${point.y}`).join(" ")} strokeDasharray="1" strokeDashoffset="0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
         ) : null}
         {coordinates.map((point) => {
           const selected = point.sessionId === selectedPoint.sessionId;
           const pointLabel = `${formatMetricValue(metric, point.value)}, ${formatShortProgressDate(point.date)}`;
           return (
             <g key={point.sessionId}>
-              <circle aria-hidden="true" className={selected ? "fill-primary stroke-background" : "fill-background stroke-primary"} cx={point.x} cy={point.y} r={selected ? 5 : 4} strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
-              <circle aria-label={pointLabel} className="cursor-pointer fill-transparent focus:outline-none focus-visible:stroke-primary" cx={point.x} cy={point.y} onClick={() => setSelectedSessionId(point.sessionId)} onKeyDown={(event) => {
+              <circle aria-hidden="true" className={selected ? "fill-thermal-accent stroke-background" : "fill-background stroke-steel"} cx={point.x} cy={point.y} r={selected ? 5 : 4} strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+              <circle aria-label={pointLabel} className="cursor-pointer fill-transparent focus:outline-none focus-visible:stroke-focus" cx={point.x} cy={point.y} onClick={() => setSelectedSessionId(point.sessionId)} onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   setSelectedSessionId(point.sessionId);

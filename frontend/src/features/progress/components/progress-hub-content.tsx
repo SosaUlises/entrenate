@@ -98,11 +98,11 @@ export function ProgressHubContent() {
       ) : (
         <>
           <div className="relative mt-5">
-            <Search aria-hidden="true" className="absolute top-1/2 left-3.5 -translate-y-1/2 text-text-secondary" size={19} />
+            <Search aria-hidden="true" className="absolute top-1/2 left-4 -translate-y-1/2 text-steel" size={19} />
             <label className="sr-only" htmlFor="progress-search">Buscar ejercicio</label>
             <input
               autoComplete="off"
-              className="h-12 w-full rounded-control-sm border border-border/70 bg-surface/60 pr-12 pl-11 text-base text-text-primary outline-none transition-colors placeholder:text-text-secondary hover:border-border-strong focus:border-primary focus:ring-2 focus:ring-primary/25 focus-visible:outline-primary"
+              className="h-14 w-full rounded-control border border-border bg-surface-interactive pr-12 pl-12 text-base text-text-primary caret-thermal-accent outline-none transition-[background-color,border-color] duration-200 placeholder:text-text-muted hover:border-border-strong hover:bg-surface-elevated focus:border-focus focus:bg-surface-elevated focus-visible:outline-focus motion-reduce:transition-none"
               id="progress-search"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar ejercicio"
@@ -112,7 +112,7 @@ export function ProgressHubContent() {
             {query ? (
               <button
                 aria-label="Limpiar búsqueda"
-                className="absolute top-1/2 right-0 flex size-12 -translate-y-1/2 items-center justify-center rounded-control-sm text-text-secondary hover:text-text-primary focus-visible:outline-primary"
+                className="absolute top-1/2 right-1 flex size-12 -translate-y-1/2 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-active hover:text-text-primary focus-visible:outline-focus"
                 onClick={() => setQuery("")}
                 type="button"
               >
@@ -132,7 +132,7 @@ export function ProgressHubContent() {
                 <button
                   aria-label={`Filtrar por ${filter.label}`}
                   aria-pressed={selected}
-                  className={`relative flex h-28 min-w-[5.75rem] w-max shrink-0 flex-col items-center justify-start rounded-control-sm px-2 pb-2 transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 motion-reduce:transition-none motion-reduce:active:scale-100 ${selected ? "bg-primary/[0.06] text-text-primary" : "text-text-secondary hover:bg-surface/20 hover:text-text-primary"}`}
+                  className={`relative flex h-28 min-w-[5.75rem] w-max shrink-0 flex-col items-center justify-start rounded-control-sm px-2 pb-2 transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2 motion-reduce:transition-none motion-reduce:active:scale-100 ${selected ? "bg-surface-active/55 text-text-primary" : "text-text-secondary hover:bg-surface-interactive/55 hover:text-text-primary"}`}
                   key={filter.id}
                   onClick={() => setMuscleFilterId(filter.id)}
                   type="button"
@@ -151,7 +151,7 @@ export function ProgressHubContent() {
                   </span>
                   <span
                     aria-hidden="true"
-                    className={`absolute bottom-0 h-0.5 w-11 rounded-full bg-primary transition-opacity duration-150 motion-reduce:transition-none ${selected ? "opacity-100" : "opacity-0"}`}
+                    className={`absolute bottom-0 h-0.5 w-8 rounded-full bg-thermal-accent transition-opacity duration-150 motion-reduce:transition-none ${selected ? "opacity-100" : "opacity-0"}`}
                   />
                 </button>
               );
@@ -164,7 +164,7 @@ export function ProgressHubContent() {
               <button
                 aria-controls="progress-trend-help"
                 aria-expanded={showTrendHelp}
-                className="inline-flex min-h-11 items-center gap-2 rounded-control-sm px-2 text-sm font-semibold text-text-secondary transition-colors hover:text-info focus-visible:outline-primary"
+                className="inline-flex min-h-11 items-center gap-2 rounded-control-sm px-2 text-sm font-semibold text-steel transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus"
                 onClick={() => setShowTrendHelp((current) => !current)}
                 type="button"
               >
@@ -182,7 +182,7 @@ export function ProgressHubContent() {
                 <p className="text-base leading-6 text-text-primary">No encontramos ejercicios con estos filtros.</p>
                 {hasActiveFilters ? (
                   <button
-                    className="mt-3 flex min-h-11 items-center text-sm font-semibold text-primary hover:text-text-primary focus-visible:outline-primary"
+                    className="mt-3 flex min-h-11 items-center text-sm font-semibold text-thermal-accent hover:text-text-primary focus-visible:outline-focus"
                     onClick={clearFilters}
                     type="button"
                   >
@@ -208,11 +208,11 @@ function ProgressRow({ exercise }: { exercise: ExerciseProgressHubItem }) {
   return (
     <Link
       aria-label={formatProgressRowLabel(exercise, displaySet)}
-      className="group flex min-h-[5.5rem] min-w-0 items-center gap-3 py-3 transition-[background-color,transform] duration-150 hover:bg-surface/25 active:scale-[0.99] active:bg-surface/40 motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-primary"
+      className="group flex min-h-[5.5rem] min-w-0 items-center gap-3 px-1 py-3 transition-[background-color,transform] duration-150 hover:bg-surface-interactive/45 active:scale-[0.99] active:bg-surface-active/55 motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-focus"
       href={`/exercises/${exercise.ejercicioId}/progress`}
     >
       <span aria-hidden="true" className="min-w-0 flex-1 self-stretch py-0.5">
-        <span className="block break-words font-brand text-[1.125rem] font-bold leading-[1.35] text-text-primary transition-colors group-hover:text-primary">
+        <span className="block break-words font-brand text-[1.125rem] font-bold leading-[1.35] text-text-primary">
           {exercise.nombre}
         </span>
         {displaySet ? (
@@ -226,7 +226,7 @@ function ProgressRow({ exercise }: { exercise: ExerciseProgressHubItem }) {
       </span>
       <span aria-hidden="true" className="flex shrink-0 self-stretch flex-col items-end justify-between py-0.5">
         <ProgressChange value={exercise.cambioPorcentual} />
-        <ChevronRight className="text-text-secondary transition-colors group-hover:text-primary" size={21} strokeWidth={2} />
+        <ChevronRight className="text-text-muted transition-colors group-hover:text-thermal-accent" size={20} strokeWidth={1.75} />
       </span>
     </Link>
   );
@@ -241,7 +241,7 @@ function ProgressChange({ value }: { value: number | null }) {
   const Icon = value > 0 ? ArrowUp : value < 0 ? ArrowDown : ArrowRight;
 
   return (
-    <span className="flex shrink-0 items-center gap-1 whitespace-nowrap font-brand text-[0.9375rem] font-bold tabular-nums text-info">
+    <span className="flex shrink-0 items-center gap-1 whitespace-nowrap font-brand text-[0.9375rem] font-bold tabular-nums text-steel">
       <Icon aria-hidden="true" size={17} strokeWidth={2.25} />
       {formattedValue}%
     </span>
@@ -255,7 +255,7 @@ function EmptyHub() {
       <p className="mt-2 max-w-md text-base leading-6 text-text-secondary">
         Cuando completes entrenamientos, vas a poder seguir tu evolución desde acá.
       </p>
-      <Link className="mt-5 inline-flex min-h-11 items-center gap-1 text-base font-semibold text-primary focus-visible:outline-primary" href="/routines">
+      <Link className="mt-5 inline-flex min-h-11 items-center gap-1 text-base font-semibold text-thermal-accent transition-colors hover:text-text-primary focus-visible:outline-focus" href="/routines">
         Ver rutinas
         <ChevronRight aria-hidden="true" size={18} />
       </Link>
@@ -266,7 +266,7 @@ function EmptyHub() {
 function HubSkeleton() {
   return (
     <div aria-label="Cargando progreso" className="mt-6 animate-pulse" role="status">
-      <div className="h-12 w-full rounded-control-sm bg-surface-elevated" />
+      <div className="h-14 w-full rounded-control bg-surface-interactive" />
       <div className="mt-4 flex gap-2.5 overflow-hidden">
         {[0, 1, 2, 3].map((item) => (
           <div className="flex h-28 w-[5.75rem] shrink-0 flex-col items-center" key={item}>

@@ -4,7 +4,7 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, ChevronR
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { formatHistoryGroupDate, formatHistoryTime, getLocalDateKey } from "@/features/history/history-formatters";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { getExerciseProgressTrendAction } from "../actions/get-exercise-progress-trend.action";
@@ -141,14 +141,14 @@ export function ExerciseProgressContent({ exerciseId }: { exerciseId: string }) 
 function ProgressHeader({ name }: { name?: string }) {
   return (
     <header>
-      <div className="flex min-w-0 items-center gap-1">
-        <Link aria-label="Volver a Progreso" className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-primary hover:bg-surface focus-visible:outline-primary" href="/progress">
+      <div className="flex min-w-0 items-center gap-3">
+        <Link aria-label="Volver a Progreso" className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus" href="/progress">
           <ArrowLeft aria-hidden="true" size={21} />
         </Link>
-        <p className="text-sm font-semibold uppercase tracking-[0.1em] text-text-secondary">Progreso</p>
+        <span aria-hidden="true" className="h-px min-w-5 flex-1 bg-border/70" />
       </div>
       {name ? (
-        <h1 className="mt-2 min-w-0 break-words font-brand text-[1.625rem] font-bold leading-8 text-text-primary" id="exercise-progress-title">{name}</h1>
+        <h1 className="mt-3 min-w-0 break-words font-brand text-[1.75rem] font-bold leading-9 text-text-primary" id="exercise-progress-title">{name}</h1>
       ) : (
         <h1 className="sr-only" id="exercise-progress-title">Progreso del ejercicio</h1>
       )}
@@ -196,20 +196,23 @@ function TrendDetail({
 
   return (
     <div className="mt-5 min-w-0">
-      <div className="flex min-w-0 items-center gap-2 border-y border-border/50 py-1">
-        <button className="flex min-h-12 min-w-0 flex-1 items-center justify-between gap-3 px-1 text-left text-base font-semibold text-text-primary transition-colors hover:text-primary focus-visible:outline-primary" onClick={onOpenMetric} type="button">
-          <span className="min-w-0 break-words">{selectedMetric.label}</span>
-          <ChevronDown aria-hidden="true" className="shrink-0 text-primary" size={20} />
-        </button>
+      <div className="flex min-w-0 items-end gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="mb-2 text-[0.8125rem] font-semibold leading-5 text-steel">Métrica</p>
+          <button className="flex min-h-12 w-full min-w-0 items-center justify-between gap-3 rounded-control border border-border-strong bg-surface-interactive px-4 text-left text-base font-semibold text-text-primary transition-[background-color,border-color] duration-200 hover:bg-surface-elevated focus-visible:outline-focus motion-reduce:transition-none" onClick={onOpenMetric} type="button">
+            <span className="min-w-0 break-words">{selectedMetric.label}</span>
+            <ChevronDown aria-hidden="true" className="shrink-0 text-thermal-accent" size={19} strokeWidth={1.75} />
+          </button>
+        </div>
         <button
           aria-controls="current-metric-help"
           aria-expanded={showMetricHelp}
-          className="flex min-h-12 shrink-0 items-center gap-2 rounded-control-sm px-2 text-sm font-semibold text-text-secondary transition-colors hover:text-info focus-visible:outline-primary"
+          aria-label={`Ayuda sobre ${selectedMetric.label}`}
+          className="flex size-12 shrink-0 items-center justify-center rounded-control border border-border bg-surface-interactive text-steel transition-[background-color,border-color,color] duration-200 hover:border-border-strong hover:bg-surface-elevated hover:text-text-primary focus-visible:outline-focus motion-reduce:transition-none"
           onClick={() => setShowMetricHelp((current) => !current)}
           type="button"
         >
           <CircleHelp aria-hidden="true" size={18} />
-          Ayuda
         </button>
       </div>
       {showMetricHelp ? (
@@ -218,8 +221,8 @@ function TrendDetail({
         </p>
       ) : null}
 
-      <div aria-live="polite" className="mt-6">
-        <p className="break-words font-brand text-[2.5rem] font-bold leading-none tabular-nums text-text-primary">{formatMetricValue(selectedMetric.key, currentValue)}</p>
+      <div aria-live="polite" className="mt-7">
+        <p className="break-words font-brand text-[2.875rem] font-bold leading-none tabular-nums text-text-primary sm:text-5xl">{formatMetricValue(selectedMetric.key, currentValue)}</p>
         {change === null ? (
           <p className="mt-3 text-base leading-6 text-text-secondary">Necesitás otro registro para comparar.</p>
         ) : (
@@ -234,9 +237,9 @@ function TrendDetail({
 
       <PeriodSelector onChange={onChangePeriod} selected={period} />
 
-      <button className="mt-6 flex min-h-12 w-full items-center justify-between border-t border-border/55 pt-5 text-left text-base font-semibold text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-primary" onClick={onOpenSessions} type="button">
+      <button className="group mt-6 flex min-h-14 w-full items-center justify-between border-t border-border/70 pt-5 text-left text-base font-semibold text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-focus" onClick={onOpenSessions} type="button">
         <span>Ver sesiones</span>
-        <ChevronRight aria-hidden="true" size={20} />
+        <ChevronRight aria-hidden="true" className="text-text-muted transition-colors group-hover:text-thermal-accent" size={19} strokeWidth={1.75} />
       </button>
 
       <MetricDialog dialogRef={metricDialogRef} metrics={availableMetrics} onSelect={onChangeMetric} selected={selectedMetric.key} />
@@ -250,7 +253,7 @@ function MetricChange({ change, period }: { change: number; period: ProgressPeri
   const direction = change > 0 ? "aumentó" : change < 0 ? "disminuyó" : "no cambió";
   const value = formatCompactProgressPercentage(Math.abs(change));
   return (
-    <p aria-label={`La métrica ${direction} ${value} por ciento en ${getPeriodDescription(period)}.`} className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-semibold text-info">
+    <p aria-label={`La métrica ${direction} ${value} por ciento en ${getPeriodDescription(period)}.`} className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-semibold text-steel">
       <Icon aria-hidden="true" size={19} strokeWidth={2.25} />
       <span className="tabular-nums">{value}%</span>
       <span className="font-medium text-text-secondary">en {getPeriodDescription(period)}</span>
@@ -260,9 +263,9 @@ function MetricChange({ change, period }: { change: number; period: ProgressPeri
 
 function PeriodSelector({ onChange, selected }: { onChange: (period: ProgressPeriodKey) => void; selected: ProgressPeriodKey }) {
   return (
-    <div aria-label="Período de evolución" className="mt-3 grid grid-cols-5 gap-1 border-y border-border/45 py-1" role="group">
+    <div aria-label="Período de evolución" className="mt-3 grid grid-cols-5 gap-1 border-y border-border/70 py-1.5" role="group">
       {progressPeriods.map((period) => (
-        <button aria-pressed={selected === period.key} className={`min-h-11 rounded-full px-1 text-sm font-semibold transition-colors focus-visible:outline-primary ${selected === period.key ? "bg-primary/16 text-primary" : "text-text-secondary hover:text-text-primary"}`} key={period.key} onClick={() => onChange(period.key)} type="button">
+        <button aria-pressed={selected === period.key} className={`relative min-h-11 rounded-control-sm px-1 text-sm font-semibold transition-colors focus-visible:outline-focus ${selected === period.key ? "bg-surface-active text-text-primary after:absolute after:right-3 after:bottom-0 after:left-3 after:h-0.5 after:rounded-full after:bg-thermal-accent" : "text-text-secondary hover:bg-surface-interactive hover:text-text-primary"}`} key={period.key} onClick={() => onChange(period.key)} type="button">
           {period.label}
         </button>
       ))}
@@ -279,32 +282,32 @@ function MetricDialog({ dialogRef, metrics, onSelect, selected }: {
   const [expandedMetric, setExpandedMetric] = useState<ProgressMetricKey | null>(null);
 
   return (
-    <dialog aria-labelledby="metric-dialog-title" aria-modal="true" className="mt-auto max-h-[85dvh] w-full max-w-full rounded-t-container border border-border bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:m-auto sm:w-[calc(100%-2rem)] sm:max-w-md sm:rounded-container" onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }} onClose={() => setExpandedMetric(null)} ref={dialogRef}>
+    <dialog aria-labelledby="metric-dialog-title" aria-modal="true" className="mt-auto max-h-[85dvh] w-full max-w-full rounded-t-container border border-border-strong bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:m-auto sm:w-[calc(100%-2rem)] sm:max-w-md sm:rounded-container" onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }} onClose={() => setExpandedMetric(null)} ref={dialogRef}>
       <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-border-strong sm:hidden" />
       <div className="max-h-[calc(85dvh-0.75rem)] overflow-y-auto px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-6 sm:pt-5">
         <header className="flex items-center gap-3">
           <h2 className="min-w-0 flex-1 font-brand text-xl font-bold text-text-primary" id="metric-dialog-title">Seleccioná una métrica</h2>
-          <button aria-label="Cerrar selector de métrica" className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary hover:bg-surface hover:text-text-primary focus-visible:outline-primary" onClick={() => dialogRef.current?.close()} type="button"><X aria-hidden="true" size={20} /></button>
+          <button aria-label="Cerrar selector de métrica" className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus" onClick={() => dialogRef.current?.close()} type="button"><X aria-hidden="true" size={20} /></button>
         </header>
-        <div className="mt-4 divide-y divide-border/50 border-y border-border/50">
+        <div className="mt-3 divide-y divide-border/70 border-y border-border/70">
           {metrics.map((metric) => {
             const descriptionId = `metric-description-${metric.key}`;
             const expanded = expandedMetric === metric.key;
             return (
-              <div key={metric.key}>
-                <div className="grid grid-cols-[minmax(0,1fr)_2.75rem_2.25rem] items-center">
-                  <button aria-pressed={selected === metric.key} className="min-h-14 min-w-0 py-3 pr-2 text-left text-base font-semibold text-text-primary hover:text-primary focus-visible:outline-primary" onClick={() => { onSelect(metric.key); dialogRef.current?.close(); }} type="button">
+              <div className={selected === metric.key ? "bg-surface-active/65" : ""} key={metric.key}>
+                <div className="grid grid-cols-[minmax(0,1fr)_2.75rem_2.5rem] items-center px-1">
+                  <button aria-pressed={selected === metric.key} className="min-h-14 min-w-0 py-3 pr-2 text-left text-base font-semibold text-text-primary transition-colors hover:text-thermal-accent focus-visible:outline-focus" onClick={() => { onSelect(metric.key); dialogRef.current?.close(); }} type="button">
                     {metric.sheetLabel}
                   </button>
-                  <button aria-controls={descriptionId} aria-expanded={expanded} aria-label={`Qué significa ${metric.sheetLabel}`} className="flex size-11 items-center justify-center rounded-full text-text-secondary hover:bg-surface hover:text-primary focus-visible:outline-primary" onClick={() => setExpandedMetric(expanded ? null : metric.key)} type="button">
+                  <button aria-controls={descriptionId} aria-expanded={expanded} aria-label={`Qué significa ${metric.sheetLabel}`} className="flex size-11 items-center justify-center rounded-control-sm text-steel transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus" onClick={() => setExpandedMetric(expanded ? null : metric.key)} type="button">
                     <CircleHelp aria-hidden="true" size={19} />
                   </button>
-                  <span aria-hidden="true" className="flex size-9 items-center justify-center text-primary">
+                  <span aria-hidden="true" className="flex size-10 items-center justify-center text-thermal-accent">
                     {selected === metric.key ? <Check size={21} /> : null}
                   </span>
                 </div>
                 {expanded ? (
-                  <p className="pb-4 pr-12 text-sm leading-5 text-text-secondary" id={descriptionId}>{metric.description}</p>
+                  <p className="px-1 pb-4 pr-12 text-sm leading-5 text-text-secondary" id={descriptionId}>{metric.description}</p>
                 ) : null}
               </div>
             );
@@ -319,12 +322,12 @@ function SessionsDialog({ dialogRef, points }: { dialogRef: React.RefObject<HTML
   const groups = useMemo(() => groupSessionPoints(points), [points]);
 
   return (
-    <dialog aria-labelledby="progress-sessions-title" aria-modal="true" className="mt-auto max-h-[75dvh] w-full max-w-full overflow-hidden rounded-t-container border border-border bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:m-auto sm:w-[calc(100%-2rem)] sm:max-w-md sm:rounded-container" onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }} ref={dialogRef}>
+    <dialog aria-labelledby="progress-sessions-title" aria-modal="true" className="mt-auto max-h-[75dvh] w-full max-w-full overflow-hidden rounded-t-container border border-border-strong bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:m-auto sm:w-[calc(100%-2rem)] sm:max-w-md sm:rounded-container" onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }} ref={dialogRef}>
       <div className="flex max-h-[75dvh] flex-col overflow-hidden sm:max-h-[80dvh]">
         <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border-strong sm:hidden" />
         <header className="flex shrink-0 items-center gap-3 px-4 pb-3 pt-3 sm:px-6 sm:pt-5">
           <h2 className="min-w-0 flex-1 font-brand text-xl font-bold text-text-primary" id="progress-sessions-title">Sesiones del período · {points.length}</h2>
-          <button aria-label="Cerrar sesiones" className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary hover:bg-surface hover:text-text-primary focus-visible:outline-primary" onClick={() => dialogRef.current?.close()} type="button"><X aria-hidden="true" size={20} /></button>
+          <button aria-label="Cerrar sesiones" className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus" onClick={() => dialogRef.current?.close()} type="button"><X aria-hidden="true" size={20} /></button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-6">
           {groups.map((group, groupIndex) => (
@@ -333,10 +336,10 @@ function SessionsDialog({ dialogRef, points }: { dialogRef: React.RefObject<HTML
               <ul className="mt-1 divide-y divide-border/45">
                 {group.points.map((point) => (
                   <li key={point.sessionId}>
-                    <Link className="group flex min-h-14 items-center gap-3 py-2 focus-visible:outline-primary" href={`/history/${point.sessionId}`}>
-                      <time className="w-12 shrink-0 font-brand text-base font-bold tabular-nums text-text-secondary" dateTime={point.horaInicio}>{formatHistoryTime(point.horaInicio) ?? "—"}</time>
+                    <Link className="group flex min-h-14 items-center gap-3 py-2 focus-visible:outline-focus" href={`/history/${point.sessionId}`}>
+                      <time className="w-12 shrink-0 font-brand text-base font-bold tabular-nums text-steel" dateTime={point.horaInicio}>{formatHistoryTime(point.horaInicio) ?? "—"}</time>
                       <span className="min-w-0 flex-1 font-brand text-base font-bold text-text-primary">{formatSessionResult(point)}</span>
-                      <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary group-hover:text-primary" size={19} />
+                      <ChevronRight aria-hidden="true" className="shrink-0 text-text-muted transition-colors group-hover:text-thermal-accent" size={19} />
                     </Link>
                   </li>
                 ))}
@@ -382,7 +385,7 @@ function EmptyExercise() {
     <div className="mt-10 border-t border-border/60 pt-7">
       <h2 className="font-brand text-2xl font-bold leading-8 text-text-primary">Todavía no registraste este ejercicio.</h2>
       <p className="mt-3 max-w-md text-base leading-6 text-text-secondary">Cuando lo entrenes, vas a ver su evolución acá.</p>
-      <Link className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-control-sm bg-primary px-4 text-base font-semibold text-primary-foreground hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--primary-pressed))] active:bg-primary-pressed focus-visible:outline-focus" href="/routines">Ver rutinas<ChevronRight aria-hidden="true" size={19} /></Link>
+      <Link className={buttonClassName({ className: "mt-6", variant: "primary" })} href="/routines">Ver rutinas<ChevronRight aria-hidden="true" size={19} /></Link>
     </div>
   );
 }
@@ -391,7 +394,7 @@ function EmptyPeriod({ onViewAll }: { onViewAll: () => void }) {
   return (
     <div className="mt-10 border-t border-border/60 pt-7">
       <h2 className="font-brand text-2xl font-bold leading-8 text-text-primary">No hay registros en este período.</h2>
-      <button className="mt-5 flex min-h-12 items-center text-base font-semibold text-primary hover:text-text-primary focus-visible:outline-primary" onClick={onViewAll} type="button">Ver todo</button>
+      <Button className="mt-5" onClick={onViewAll} variant="secondary">Ver todo</Button>
     </div>
   );
 }
@@ -400,7 +403,7 @@ function NotFoundState() {
   return (
     <div className="mt-8">
       <p className="text-base text-text-primary">No encontramos este ejercicio.</p>
-      <Link className="mt-4 inline-flex min-h-12 items-center gap-1 text-base font-semibold text-primary focus-visible:outline-primary" href="/progress">Volver a Progreso<ChevronRight aria-hidden="true" size={18} /></Link>
+      <Link className={buttonClassName({ className: "mt-4", variant: "ghost" })} href="/progress">Volver a Progreso<ChevronRight aria-hidden="true" size={18} /></Link>
     </div>
   );
 }
@@ -412,8 +415,8 @@ function ProgressSkeleton() {
       <div className="mt-7 h-12 w-full rounded-control-sm bg-surface-elevated" />
       <div className="mt-6 h-10 w-40 rounded bg-surface-elevated" />
       <div className="mt-3 h-5 w-52 rounded bg-surface-elevated" />
-      <div className="mt-4 h-[14.375rem] w-full rounded-control-sm bg-surface/55" />
-      <div className="mt-3 h-12 w-full rounded-full bg-surface-elevated" />
+      <div className="mt-4 h-[14.375rem] w-full rounded-control-sm bg-surface-interactive" />
+      <div className="mt-3 h-12 w-full rounded-control-sm bg-surface-elevated" />
     </div>
   );
 }
