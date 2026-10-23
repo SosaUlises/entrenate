@@ -32,6 +32,13 @@
 
 - Welcome is completed.
 - Primary objective screen is completed.
+- Experience screen is completed.
+- Weekly training days screen is completed.
+- Preferred training days screen is completed.
+- Training duration screen is completed.
+- Training environment screen is completed.
+- Equipment screen and its visual card pass are completed.
+- Sex screen is completed.
 - Next: remaining onboarding steps.
 
 ## Exercise Demo

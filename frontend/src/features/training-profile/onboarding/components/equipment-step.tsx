@@ -11,9 +11,7 @@ import { useOnboarding } from "../context/onboarding-context";
 import { getEquipmentImagePath } from "../equipment-images";
 import { equipmentCategoryDefinitions } from "../../shared/training-profile-options";
 import { useOnboardingStepNavigation } from "../hooks/use-onboarding-step-navigation";
-import {
-  type Equipment,
-} from "../types/equipment.types";
+import { type Equipment } from "../types/equipment.types";
 import { OnboardingStepHeader } from "./onboarding-step-header";
 
 type LoadState = "error" | "loading" | "success";
@@ -92,10 +90,7 @@ export function EquipmentStep() {
 
   return (
     <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[560px] flex-col sm:min-h-[calc(100dvh-4rem)]">
-      <OnboardingStepHeader
-        currentStep={7}
-        onBack={goBack}
-      />
+      <OnboardingStepHeader currentStep={7} onBack={goBack} />
 
       <div className="mt-7 sm:mt-8">
         <h1 className="font-brand text-[1.75rem] leading-tight font-bold tracking-tight text-text-primary sm:text-3xl md:text-[2rem]">
@@ -109,7 +104,7 @@ export function EquipmentStep() {
         </p>
       </div>
 
-      <div className="mt-6 md:mt-8">
+      <div className="mt-6 pb-3 md:mt-8">
         {loadState === "loading" ? <EquipmentSkeleton /> : null}
 
         {loadState === "error" ? (
@@ -137,7 +132,7 @@ export function EquipmentStep() {
         ) : null}
 
         {loadState === "success" && equipment.length > 0 ? (
-          <div className="space-y-6">
+          <div className="space-y-[1.125rem]">
             {equipmentCategoryDefinitions.map((category) => {
               const categoryEquipment = equipment.filter(
                 (item) => item.categoria === category.value,
@@ -149,7 +144,7 @@ export function EquipmentStep() {
 
               return (
                 <fieldset key={category.value}>
-                  <legend className="mb-2.5 text-sm font-semibold text-text-primary">
+                  <legend className="mb-2 font-brand text-[0.8125rem] font-bold tracking-[0.02em] text-text-primary">
                     {category.label}
                   </legend>
                   <div className="grid grid-cols-2 items-start gap-2.5 md:grid-cols-3">
@@ -167,41 +162,55 @@ export function EquipmentStep() {
                           />
                           <span
                             className={cn(
-                              "relative flex rounded-control-sm border text-left text-sm leading-5 font-medium transition-[background-color,border-color] duration-200 hover:border-border-strong peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
+                              "relative flex overflow-hidden rounded-card border text-left text-sm font-medium leading-5 transition-[background-color,border-color,box-shadow,transform] duration-200 active:scale-[0.99] peer-focus-visible:ring-2 peer-focus-visible:ring-thermal-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
                               imagePath
-                                ? "min-h-44 flex-col p-2.5"
+                                ? "h-44 flex-col"
                                 : "min-h-12 items-center justify-between gap-2 px-3 py-2.5",
                               isSelected
-                                ? "border-primary bg-[color-mix(in_srgb,var(--primary)_7%,var(--surface))] text-text-primary"
-                                : "border-border bg-surface text-text-secondary",
+                                ? "border-thermal-accent/40 bg-surface-active text-text-primary shadow-[inset_0_0_0_1px_rgba(225,115,78,0.18)]"
+                                : "border-border bg-surface-interactive text-text-secondary hover:border-border-strong",
                             )}
                           >
                             {imagePath ? (
                               <>
                                 <span
                                   aria-hidden="true"
-                                  className="relative h-28 w-full shrink-0"
+                                  className={cn(
+                                    "relative h-28 w-full shrink-0 border-b transition-[background-color,border-color] duration-200",
+                                    isSelected
+                                      ? "border-thermal-accent/15 bg-surface-elevated/50"
+                                      : "border-border/60 bg-surface/50",
+                                  )}
                                 >
                                   <Image
                                     alt=""
-                                    className="object-contain p-2"
+                                    className="object-contain p-2 brightness-[1.16] contrast-[1.08]"
                                     fill
                                     sizes="(max-width: 767px) calc((100vw - 3.25rem) / 2), 170px"
                                     src={imagePath}
                                   />
                                 </span>
-                                <span className="flex min-h-10 w-full flex-1 items-end px-1 pb-0.5 pt-2 font-semibold text-text-primary wrap-break-word">
+                                <span className="flex min-h-0 w-full flex-1 items-center px-3.5 py-3 font-brand text-[0.8125rem] font-bold leading-[1.3] tracking-tight text-text-primary wrap-break-word sm:text-sm">
                                   {item.nombre}
                                 </span>
-                                {isSelected ? (
-                                  <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full border border-primary bg-surface-elevated text-primary">
-                                    <Check
-                                      aria-hidden="true"
-                                      size={14}
-                                      strokeWidth={2.5}
-                                    />
-                                  </span>
-                                ) : null}
+                                <span
+                                  aria-hidden="true"
+                                  className={cn(
+                                    "absolute right-2 top-2 flex size-5 items-center justify-center rounded-full border transition-[background-color,border-color,color,transform] duration-200",
+                                    isSelected
+                                      ? "scale-100 border-thermal-accent/60 bg-thermal-accent/15 text-thermal-accent"
+                                      : "scale-95 border-border-strong/70 bg-surface/85 text-transparent",
+                                  )}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "transition-transform duration-200",
+                                      isSelected ? "scale-100" : "scale-0",
+                                    )}
+                                    size={11}
+                                    strokeWidth={2.25}
+                                  />
+                                </span>
                               </>
                             ) : (
                               <>
@@ -209,12 +218,7 @@ export function EquipmentStep() {
                                   {item.nombre}
                                 </span>
                                 {isSelected ? (
-                                  <Check
-                                    aria-hidden="true"
-                                    className="shrink-0 text-primary"
-                                    size={16}
-                                    strokeWidth={2.5}
-                                  />
+                                  <Check aria-hidden="true" className="shrink-0 text-thermal-accent" size={16} strokeWidth={2.5} />
                                 ) : null}
                               </>
                             )}
@@ -230,7 +234,7 @@ export function EquipmentStep() {
             {selectedCount > 0 ? (
               <p
                 aria-live="polite"
-                className="text-sm leading-5 text-text-secondary"
+                className="text-[0.8125rem] font-medium leading-5 text-text-muted"
               >
                 {selectedCount} {selectedCount === 1 ? "seleccionado" : "seleccionados"}
               </p>
@@ -245,10 +249,10 @@ export function EquipmentStep() {
               />
               <span
                 className={cn(
-                  "flex min-h-16 items-center gap-3 rounded-control border px-4 py-3 transition-[background-color,border-color] duration-200 hover:border-border-strong peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
+                  "flex min-h-16 items-center gap-3 border-y px-1 py-3 transition-[background-color,border-color] duration-200 hover:bg-surface-interactive peer-focus-visible:ring-2 peer-focus-visible:ring-thermal-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
                   selectedIds?.length === 0
-                    ? "border-primary bg-[color-mix(in_srgb,var(--primary)_7%,var(--surface))]"
-                    : "border-border bg-surface",
+                    ? "border-thermal-accent/35 bg-surface-active/60"
+                    : "border-border/70 bg-transparent",
                 )}
               >
                 <PackageX
@@ -256,8 +260,8 @@ export function EquipmentStep() {
                   className={cn(
                     "shrink-0",
                     selectedIds?.length === 0
-                      ? "text-primary"
-                      : "text-text-secondary",
+                      ? "text-thermal-accent"
+                      : "text-text-muted",
                   )}
                   size={22}
                 />
@@ -269,31 +273,43 @@ export function EquipmentStep() {
                     Entreno sin equipamiento disponible
                   </span>
                 </span>
-                {selectedIds?.length === 0 ? (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center rounded-full border transition-[background-color,border-color,color,transform] duration-200",
+                    selectedIds?.length === 0
+                      ? "scale-100 border-thermal-accent/60 bg-thermal-accent/15 text-thermal-accent"
+                      : "scale-95 border-border-strong bg-surface text-transparent",
+                  )}
+                >
                   <Check
-                    aria-hidden="true"
-                    className="shrink-0 text-primary"
-                    size={16}
-                    strokeWidth={2.5}
+                    className={cn(
+                      "transition-transform duration-200",
+                      selectedIds?.length === 0 ? "scale-100" : "scale-0",
+                    )}
+                    size={13}
+                    strokeWidth={2.25}
                   />
-                ) : null}
+                </span>
               </span>
             </label>
           </div>
         ) : null}
       </div>
 
-      <div className="mt-6 md:mt-8">
-        <Button
-          className="min-h-14"
-          disabled={!canContinue}
-          fullWidth
-          onClick={goNext}
-          type="button"
-          variant="primary"
-        >
-          Continuar
-        </Button>
+      <div className="sticky -bottom-6 z-20 -mx-5 mt-5 border-t border-border/70 bg-background/95 px-5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-md sm:-bottom-8 sm:-mx-6 sm:px-6 sm:pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="mx-auto w-full max-w-[520px]">
+          <Button
+            disabled={!canContinue}
+            fullWidth
+            onClick={goNext}
+            size="lg"
+            type="button"
+            variant="primary"
+          >
+            Continuar
+          </Button>
+        </div>
       </div>
     </article>
   );
@@ -301,14 +317,14 @@ export function EquipmentStep() {
 
 function EquipmentSkeleton() {
   return (
-    <div aria-label="Cargando equipamiento" className="space-y-6" role="status">
+    <div aria-label="Cargando equipamiento" className="space-y-[1.125rem]" role="status">
       {[3, 4, 2].map((itemCount, sectionIndex) => (
         <div key={sectionIndex}>
           <div className="mb-2.5 h-4 w-28 animate-pulse rounded bg-surface-elevated" />
           <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
             {Array.from({ length: itemCount }, (_, itemIndex) => (
               <div
-                className="h-12 animate-pulse rounded-control-sm border border-border bg-surface"
+                className="h-44 animate-pulse rounded-card border border-border bg-surface"
                 key={itemIndex}
               />
             ))}

@@ -43,10 +43,7 @@ export function AgeStep() {
 
   return (
     <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[560px] flex-col sm:min-h-[calc(100dvh-4rem)] md:justify-center">
-      <OnboardingStepHeader
-        currentStep={8}
-        onBack={goBack}
-      />
+      <OnboardingStepHeader currentStep={8} onBack={goBack} />
 
       <div className="mt-7 sm:mt-8">
         <h1 className="font-brand text-[1.75rem] leading-tight font-bold tracking-tight text-text-primary sm:text-3xl md:text-[2rem]">
@@ -57,21 +54,22 @@ export function AgeStep() {
         </p>
       </div>
 
-      <div className="mt-10 flex flex-col items-center md:mt-12">
-        <div
+      <div className="mt-6 flex flex-col items-center md:mt-8">
+        <label
           className={cn(
-            "flex h-28 w-44 items-center justify-center rounded-card border bg-surface px-4 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-primary focus-within:bg-[color-mix(in_srgb,var(--primary)_7%,var(--surface))] focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background",
-            showError && "border-error",
+            "flex h-28 w-full max-w-[20rem] cursor-text flex-col items-center justify-center rounded-card border border-border bg-surface-interactive px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-thermal-accent/45 focus-within:bg-surface-active focus-within:ring-2 focus-within:ring-thermal-accent focus-within:ring-offset-2 focus-within:ring-offset-background",
+            showError && "border-error/70",
           )}
+          htmlFor="edad"
         >
-          <label className="sr-only" htmlFor="edad">
+          <span className="sr-only">
             Edad en años
-          </label>
+          </span>
           <input
             aria-describedby={showError ? "age-unit age-error" : "age-unit"}
             aria-invalid={showError}
             autoComplete="off"
-            className="w-full appearance-none bg-transparent text-center text-text-primary outline-none placeholder:text-text-secondary [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="w-full max-w-52 appearance-none border-0 bg-transparent text-center font-brand font-extrabold tracking-[-0.04em] text-text-primary caret-thermal-accent shadow-none outline-none placeholder:text-text-muted focus:border-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             id="edad"
             inputMode="numeric"
             max={maximumAge}
@@ -81,22 +79,24 @@ export function AgeStep() {
             placeholder="—"
             step={1}
             style={{
+              border: 0,
+              boxShadow: "none",
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "clamp(3rem, 4vw, 3.5rem)",
-              fontWeight: 700,
+              fontSize: "clamp(3rem, 9vw, 3.5rem)",
+              fontWeight: 800,
               lineHeight: 1,
+              outline: "none",
             }}
             type="number"
             value={inputValue}
           />
-        </div>
-
-        <p
-          className="mt-2 text-base leading-6 font-semibold text-text-secondary"
-          id="age-unit"
-        >
-          años
-        </p>
+          <span
+            className="mt-1 text-[0.8125rem] font-semibold leading-5 text-text-secondary"
+            id="age-unit"
+          >
+            años
+          </span>
+        </label>
 
         <div className="mt-2 min-h-5" aria-live="polite">
           {showError ? (
@@ -107,12 +107,12 @@ export function AgeStep() {
         </div>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-4 md:mt-5">
         <Button
-          className="min-h-14"
           disabled={validAge === undefined}
           fullWidth
           onClick={goNext}
+          size="lg"
           type="button"
           variant="primary"
         >

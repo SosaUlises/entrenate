@@ -5,8 +5,10 @@ import {
   useCallback,
   useContext,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { diasEntrenamientoPorSemanaValues } from "../types/onboarding.types";
 import type {
   DiaSemana,
   DiasEntrenamientoPorSemana,
@@ -17,6 +19,57 @@ import type {
   OnboardingDraft,
   Sexo,
 } from "../types/onboarding.types";
+
+const trainingDaysStorageKey = "entrenate:onboarding:training-days";
+const trainingDaysListeners = new Set<() => void>();
+let cachedTrainingDaysRaw: string | null | undefined;
+let cachedTrainingDays: DiasEntrenamientoPorSemana | undefined;
+
+function subscribeToStoredTrainingDays(listener: () => void) {
+  trainingDaysListeners.add(listener);
+  return () => {
+    trainingDaysListeners.delete(listener);
+  };
+}
+
+function getStoredTrainingDays(): DiasEntrenamientoPorSemana | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  try {
+    const rawValue = window.sessionStorage.getItem(trainingDaysStorageKey);
+
+    if (rawValue === cachedTrainingDaysRaw) {
+      return cachedTrainingDays;
+    }
+
+    cachedTrainingDaysRaw = rawValue;
+    const parsedValue = Number(rawValue);
+    cachedTrainingDays = diasEntrenamientoPorSemanaValues.includes(
+      parsedValue as DiasEntrenamientoPorSemana,
+    )
+      ? (parsedValue as DiasEntrenamientoPorSemana)
+      : undefined;
+
+    return cachedTrainingDays;
+  } catch {
+    return undefined;
+  }
+}
+
+function persistTrainingDays(value: DiasEntrenamientoPorSemana) {
+  cachedTrainingDaysRaw = String(value);
+  cachedTrainingDays = value;
+
+  try {
+    window.sessionStorage.setItem(trainingDaysStorageKey, String(value));
+  } catch {
+    // The in-memory onboarding flow remains available if storage is blocked.
+  }
+
+  trainingDaysListeners.forEach((listener) => listener());
+}
 
 type OnboardingContextValue = {
   draft: OnboardingDraft;
@@ -42,10 +95,24 @@ const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [draft, setDraft] = useState<OnboardingDraft>({});
+  const storedTrainingDays = useSyncExternalStore(
+    subscribeToStoredTrainingDays,
+    getStoredTrainingDays,
+    () => undefined,
+  );
+  const resolvedDraft =
+    draft.diasEntrenamientoPorSemana === undefined &&
+    storedTrainingDays !== undefined
+      ? {
+          ...draft,
+          diasEntrenamientoPorSemana: storedTrainingDays,
+        }
+      : draft;
 
   const setDiasEntrenamientoPorSemana = (
     diasEntrenamientoPorSemana: DiasEntrenamientoPorSemana,
   ) => {
+    persistTrainingDays(diasEntrenamientoPorSemana);
     setDraft((currentDraft) => ({
       ...currentDraft,
       diasEntrenamientoPorSemana,
@@ -103,7 +170,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   return (
     <OnboardingContext
       value={{
-        draft,
+        draft: resolvedDraft,
         setDiasEntrenamientoPorSemana,
         setDiasPreferidos,
         setDuracionSesionMinutos,

@@ -641,7 +641,6 @@ function ConditioningIllustration({ className }: { className?: string }) {
 type ObjectiveOption = {
   description: string;
   illustration: (props: { className?: string }) => ReactNode;
-  label: string;
   title: string;
   value: ObjetivoEntrenamientoValue;
 };
@@ -650,28 +649,24 @@ const objectiveOptions: ReadonlyArray<ObjectiveOption> = [
   {
     description: "Desarrollo y volumen muscular",
     illustration: MuscleIllustration,
-    label: "01",
     title: "Ganar masa muscular",
     value: ObjetivoEntrenamiento.GanarMasaMuscular,
   },
   {
     description: "Aumentar cargas y rendimiento",
     illustration: StrengthIllustration,
-    label: "02",
     title: "Ganar fuerza",
     value: ObjetivoEntrenamiento.GanarFuerza,
   },
   {
     description: "Progresar en ambos objetivos",
     illustration: CombinedIllustration,
-    label: "03",
     title: "Masa muscular y fuerza",
     value: ObjetivoEntrenamiento.GanarmasaMuscularYFuerza,
   },
   {
     description: "Mejorar tu condición física",
     illustration: ConditioningIllustration,
-    label: "04",
     title: "Acondicionamiento general",
     value: ObjetivoEntrenamiento.AcondicionamientoGeneral,
   },
@@ -735,7 +730,7 @@ export function ObjectiveStep() {
                 >
                   <Illustration
                     className={cn(
-                      "h-[4rem] w-auto transition-colors duration-200",
+                      "h-[4.25rem] w-auto transition-colors duration-200",
                       isSelected ? "text-text-primary" : "text-text-secondary",
                     )}
                   />
@@ -762,21 +757,11 @@ export function ObjectiveStep() {
                 </span>
 
                 {/* ── Content zone ── */}
-                <span className="flex flex-1 flex-col px-3.5 pb-4 pt-3.5">
-                  {/* Index — very secondary */}
-                  <span
-                    className={cn(
-                      "font-brand text-[0.65rem] font-bold tracking-[0.16em] transition-colors duration-200",
-                      isSelected ? "text-thermal-accent/70" : "text-text-muted/55",
-                    )}
-                  >
-                    {option.label}
-                  </span>
-
+                <span className="flex min-h-28 flex-1 flex-col justify-center px-3.5 py-3.5">
                   {/* Title */}
                   <span
                     className={cn(
-                      "font-brand mt-2 text-[0.9375rem] leading-snug tracking-tight transition-[color,font-weight] duration-200 sm:text-base",
+                      "font-brand text-[0.9375rem] leading-snug tracking-tight transition-[color,font-weight] duration-200 sm:text-base",
                       isSelected
                         ? "font-extrabold text-text-primary"
                         : "font-bold text-text-primary/85",
