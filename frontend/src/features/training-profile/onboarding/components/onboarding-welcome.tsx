@@ -13,44 +13,78 @@ export function OnboardingWelcome({ nombre }: OnboardingWelcomeProps) {
   const greeting = normalizedName ? `Hola, ${normalizedName}` : "Hola";
 
   return (
-    <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[640px] flex-col justify-center sm:min-h-[calc(100dvh-4rem)]">
-      <header className="text-center">
-        <h1 className="font-brand text-3xl leading-tight font-bold tracking-tight text-text-primary sm:text-4xl lg:text-[2.5rem]">
+    <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[520px] -translate-y-3 flex-col justify-center py-2 sm:min-h-[calc(100dvh-4rem)] sm:-translate-y-4 sm:py-4">
+      <header>
+        <h1 className="font-brand text-[2.5rem] font-extrabold leading-[1.04] tracking-[-0.03em] text-text-primary sm:text-5xl">
           {greeting}
         </h1>
-        <p className="mt-2 text-lg font-semibold text-primary sm:text-xl">
-          Bienvenido a Entrenate
+        <p className="mt-3 max-w-[460px] text-base leading-7 text-text-secondary">
+          Vamos a adaptar Entrenate a tu forma de entrenar.
         </p>
       </header>
 
-      <div className="mx-auto mt-8 max-w-[540px] space-y-5 text-center">
-        <p className="text-base leading-6 font-normal text-text-primary">
-          Vamos a preparar tu experiencia para que Entrenate se adapte a tu forma
-          de entrenar.
-        </p>
+      <ol
+        aria-label="Datos que vamos a configurar"
+        className="mt-9 border-y border-border sm:mt-10"
+      >
+        <ConfigurationItem
+          description="Qué querés lograr con tu entrenamiento."
+          index="01"
+          label="Objetivo"
+        />
+        <ConfigurationItem
+          description="Tu punto de partida y nivel actual."
+          index="02"
+          label="Experiencia"
+        />
+        <ConfigurationItem
+          description="Cómo, cuándo y dónde preferís entrenar."
+          index="03"
+          label="Preferencias"
+        />
+      </ol>
 
-        <div className="space-y-3">
-          <h2 className="font-brand text-xl font-bold text-text-primary lg:text-2xl">
-            Primero quiero conocerte un poco.
-          </h2>
-          <p className="text-sm leading-6 font-normal text-text-secondary lg:text-[0.9375rem]">
-            Son unas preguntas rápidas sobre vos y tu forma de entrenar. No te
-            va a llevar más de 2 minutos.
-          </p>
-        </div>
-      </div>
-
-      <div className="mx-auto w-full max-w-[440px] pt-6 sm:pt-8">
+      <div className="pt-10 sm:pt-11">
         <Button
-          className="min-h-14"
+          className="font-bold"
           fullWidth
           onClick={() => router.push("/onboarding/objective")}
+          size="lg"
           type="button"
-          variant="primary"
+          variant="secondary"
         >
           Empezar
         </Button>
       </div>
     </article>
+  );
+}
+
+function ConfigurationItem({
+  description,
+  index,
+  label,
+}: {
+  description: string;
+  index: string;
+  label: string;
+}) {
+  return (
+    <li className="grid min-h-[4.5rem] grid-cols-[auto_1fr] items-center gap-x-4 border-b border-border py-4 last:border-b-0">
+      <div aria-hidden="true" className="flex items-center gap-3">
+        <span className="h-7 w-0.5 rounded-full bg-thermal-accent" />
+        <span className="font-brand text-[0.8125rem] font-bold tracking-[0.12em] text-steel">
+          {index}
+        </span>
+      </div>
+      <div className="min-w-0">
+        <h2 className="font-brand text-[1.0625rem] font-extrabold leading-6 tracking-[-0.01em] text-text-primary sm:text-lg">
+          {label}
+        </h2>
+        <p className="mt-0.5 text-[0.8125rem] leading-5 text-text-secondary">
+          {description}
+        </p>
+      </div>
+    </li>
   );
 }

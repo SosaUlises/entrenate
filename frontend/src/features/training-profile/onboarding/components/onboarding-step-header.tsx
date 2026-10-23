@@ -21,7 +21,7 @@ export function OnboardingStepHeader({
     <header className="flex items-center gap-3">
       <button
         aria-label="Volver"
-        className="inline-flex size-12 shrink-0 items-center justify-center rounded-control border border-border bg-surface text-text-primary transition-colors hover:border-border-strong hover:bg-surface-elevated"
+        className="inline-flex size-12 shrink-0 items-center justify-center rounded-control border border-border bg-surface text-text-primary transition-[background-color,border-color,transform] duration-150 hover:border-border-strong hover:bg-surface-elevated active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100"
         onClick={onBack}
         type="button"
       >
@@ -38,11 +38,11 @@ export function OnboardingStepHeader({
           role="progressbar"
         >
           <div
-            className="h-full rounded-full bg-primary"
+            className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
-        <span className="shrink-0 text-xs font-medium text-text-secondary">
+        <span className="shrink-0 text-[0.8125rem] font-semibold tracking-[0.02em] tabular-nums text-[color-mix(in_srgb,var(--text-secondary)_85%,var(--text-primary))]">
           {label ?? `${currentStep} de ${totalSteps}`}
         </span>
       </div>
