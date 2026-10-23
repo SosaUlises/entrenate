@@ -61,16 +61,16 @@ export function ExerciseProgressChart({ metric, metricLabel, points }: {
 
       <svg aria-label={description} className="h-[14.375rem] w-full max-w-full overflow-visible" preserveAspectRatio="xMidYMid meet" role="group" viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
         <title>{description}</title>
-        <line className="stroke-border/55" strokeWidth="1" x1={HORIZONTAL_PADDING} x2={WIDTH - HORIZONTAL_PADDING} y1={HEIGHT - BOTTOM_PADDING} y2={HEIGHT - BOTTOM_PADDING} />
+        <line className="stroke-border/65" strokeWidth="1" x1={HORIZONTAL_PADDING} x2={WIDTH - HORIZONTAL_PADDING} y1={HEIGHT - BOTTOM_PADDING} y2={HEIGHT - BOTTOM_PADDING} />
         {coordinates.length > 1 ? (
-          <polyline className="fill-none stroke-steel transition-[stroke-dashoffset] duration-300 starting:[stroke-dashoffset:1] motion-reduce:transition-none" pathLength="1" points={coordinates.map((point) => `${point.x},${point.y}`).join(" ")} strokeDasharray="1" strokeDashoffset="0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+          <polyline className="fill-none stroke-steel transition-[stroke-dashoffset] duration-300 starting:[stroke-dashoffset:1] motion-reduce:transition-none" pathLength="1" points={coordinates.map((point) => `${point.x},${point.y}`).join(" ")} strokeDasharray="1" strokeDashoffset="0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" vectorEffect="non-scaling-stroke" />
         ) : null}
         {coordinates.map((point) => {
           const selected = point.sessionId === selectedPoint.sessionId;
           const pointLabel = `${formatMetricValue(metric, point.value)}, ${formatShortProgressDate(point.date)}`;
           return (
             <g key={point.sessionId}>
-              <circle aria-hidden="true" className={selected ? "fill-thermal-accent stroke-background" : "fill-background stroke-steel"} cx={point.x} cy={point.y} r={selected ? 5 : 4} strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+              <circle aria-hidden="true" className={selected ? "fill-thermal-accent stroke-background" : "fill-background stroke-steel"} cx={point.x} cy={point.y} r={selected ? 5.5 : 4.5} strokeWidth="2.75" vectorEffect="non-scaling-stroke" />
               <circle aria-label={pointLabel} className="cursor-pointer fill-transparent focus:outline-none focus-visible:stroke-focus" cx={point.x} cy={point.y} onClick={() => setSelectedSessionId(point.sessionId)} onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();

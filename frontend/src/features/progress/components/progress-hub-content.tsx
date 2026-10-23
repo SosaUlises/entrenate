@@ -158,13 +158,13 @@ export function ProgressHubContent() {
             })}
           </div>
 
-          <div className="mt-6">
-            <div className="flex min-h-11 items-center justify-between gap-3">
+          <div className="mt-7">
+            <div className="flex min-h-11 items-center justify-between gap-4">
               <h2 className="font-brand text-lg font-bold text-text-primary">Ejercicios</h2>
               <button
                 aria-controls="progress-trend-help"
                 aria-expanded={showTrendHelp}
-                className="inline-flex min-h-11 items-center gap-2 rounded-control-sm px-2 text-sm font-semibold text-steel transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus"
+                className="-mr-1 inline-flex min-h-11 items-center gap-2 rounded-control-sm px-2 text-sm font-semibold text-steel transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus"
                 onClick={() => setShowTrendHelp((current) => !current)}
                 type="button"
               >
@@ -191,7 +191,7 @@ export function ProgressHubContent() {
                 ) : null}
               </div>
             ) : (
-              <div className="mt-2 divide-y divide-border/60 border-y border-border/60">
+              <div className="mt-3 divide-y divide-border/60 border-y border-border/60">
                 {visibleExercises.map((exercise) => <ProgressRow exercise={exercise} key={exercise.ejercicioId} />)}
               </div>
             )}
@@ -208,7 +208,7 @@ function ProgressRow({ exercise }: { exercise: ExerciseProgressHubItem }) {
   return (
     <Link
       aria-label={formatProgressRowLabel(exercise, displaySet)}
-      className="group flex min-h-[5.5rem] min-w-0 items-center gap-3 px-1 py-3 transition-[background-color,transform] duration-150 hover:bg-surface-interactive/45 active:scale-[0.99] active:bg-surface-active/55 motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-focus"
+      className="group flex min-h-24 min-w-0 items-center gap-4 px-1 py-4 transition-[background-color,transform] duration-150 hover:bg-surface-interactive/45 active:scale-[0.99] active:bg-surface-active/55 motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-focus"
       href={`/exercises/${exercise.ejercicioId}/progress`}
     >
       <span aria-hidden="true" className="min-w-0 flex-1 self-stretch py-0.5">
@@ -216,7 +216,7 @@ function ProgressRow({ exercise }: { exercise: ExerciseProgressHubItem }) {
           {exercise.nombre}
         </span>
         {displaySet ? (
-          <span className="mt-1 block break-words font-brand text-lg font-bold leading-6 tabular-nums text-text-primary">
+          <span className="mt-1.5 block break-words font-brand text-lg font-bold leading-6 tabular-nums text-text-primary">
             {formatSet(displaySet)}
           </span>
         ) : null}
@@ -224,7 +224,7 @@ function ProgressRow({ exercise }: { exercise: ExerciseProgressHubItem }) {
           Último · {formatCompactProgressDate(exercise.ultimoEntrenamiento)}
         </span>
       </span>
-      <span aria-hidden="true" className="flex shrink-0 self-stretch flex-col items-end justify-between py-0.5">
+      <span aria-hidden="true" className="flex shrink-0 flex-col items-end justify-center gap-3 py-0.5">
         <ProgressChange value={exercise.cambioPorcentual} />
         <ChevronRight className="text-text-muted transition-colors group-hover:text-thermal-accent" size={20} strokeWidth={1.75} />
       </span>

@@ -208,7 +208,7 @@ function TrendDetail({
           aria-controls="current-metric-help"
           aria-expanded={showMetricHelp}
           aria-label={`Ayuda sobre ${selectedMetric.label}`}
-          className="flex size-12 shrink-0 items-center justify-center rounded-control border border-border bg-surface-interactive text-steel transition-[background-color,border-color,color] duration-200 hover:border-border-strong hover:bg-surface-elevated hover:text-text-primary focus-visible:outline-focus motion-reduce:transition-none"
+          className="flex size-12 shrink-0 items-center justify-center rounded-control-sm border border-transparent bg-transparent text-steel transition-[background-color,color] duration-200 hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus motion-reduce:transition-none"
           onClick={() => setShowMetricHelp((current) => !current)}
           type="button"
         >
@@ -331,14 +331,14 @@ function SessionsDialog({ dialogRef, points }: { dialogRef: React.RefObject<HTML
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-6">
           {groups.map((group, groupIndex) => (
-            <section className={groupIndex === 0 ? "" : "mt-4 border-t border-border/50 pt-4"} key={group.key}>
-              <h3 className="text-[0.8125rem] font-semibold uppercase tracking-[0.08em] text-text-secondary">{group.label}</h3>
-              <ul className="mt-1 divide-y divide-border/45">
+            <section className={groupIndex === 0 ? "" : "mt-6 border-t border-border/70 pt-5"} key={group.key}>
+              <h3 className="text-[0.8125rem] font-semibold uppercase tracking-[0.08em] text-steel">{group.label}</h3>
+              <ul className="mt-2 divide-y divide-border/45">
                 {group.points.map((point) => (
                   <li key={point.sessionId}>
-                    <Link className="group flex min-h-14 items-center gap-3 py-2 focus-visible:outline-focus" href={`/history/${point.sessionId}`}>
-                      <time className="w-12 shrink-0 font-brand text-base font-bold tabular-nums text-steel" dateTime={point.horaInicio}>{formatHistoryTime(point.horaInicio) ?? "—"}</time>
-                      <span className="min-w-0 flex-1 font-brand text-base font-bold text-text-primary">{formatSessionResult(point)}</span>
+                    <Link className="group flex min-h-16 items-center gap-4 py-2 focus-visible:outline-focus" href={`/history/${point.sessionId}`}>
+                      <time className="w-12 shrink-0 text-sm font-semibold tabular-nums text-text-muted" dateTime={point.horaInicio}>{formatHistoryTime(point.horaInicio) ?? "—"}</time>
+                      <span className="min-w-0 flex-1 font-brand text-[1.0625rem] font-bold leading-6 text-text-primary">{formatSessionResult(point)}</span>
                       <ChevronRight aria-hidden="true" className="shrink-0 text-text-muted transition-colors group-hover:text-thermal-accent" size={19} />
                     </Link>
                   </li>

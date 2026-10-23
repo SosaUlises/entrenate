@@ -140,11 +140,11 @@ export function TrainingActivityCalendar({
     <section aria-labelledby="activity-title" className="mt-6 min-w-0 max-w-full overflow-x-hidden">
       <h2 className="sr-only" id="activity-title">Actividad</h2>
       <div className="flex min-w-0 max-w-full justify-end">
-        <div aria-label="Vista de actividad" className="inline-flex rounded-full border border-border/50 bg-surface/45 p-1" role="group">
+        <div aria-label="Vista de actividad" className="inline-grid grid-cols-2 gap-2 border-b border-border/70" role="group">
           {(["month", "year"] as const).map((item) => (
             <button
               aria-pressed={mode === item}
-              className={`min-h-11 rounded-full px-4 text-[0.8125rem] font-semibold transition-colors duration-150 focus-visible:outline-primary motion-reduce:transition-none ${mode === item ? "bg-primary/15 text-primary" : "text-text-secondary hover:text-text-primary"}`}
+              className={`relative min-h-12 px-3 text-[0.8125rem] font-semibold transition-colors duration-150 focus-visible:outline-focus motion-reduce:transition-none ${mode === item ? "text-text-primary after:absolute after:right-3 after:bottom-0 after:left-3 after:h-0.5 after:rounded-full after:bg-thermal-accent" : "text-text-muted hover:text-text-secondary"}`}
               key={item}
               onClick={() => changeMode(item)}
               type="button"
@@ -170,6 +170,7 @@ export function TrainingActivityCalendar({
           onNext={() => changeMonth(1)}
           onPrevious={() => changeMonth(-1)}
           onSelectDay={setSelectedDay}
+          selectedDayKey={selectedDay?.key ?? null}
           todayKey={todayKey}
         />
       ) : (
@@ -182,6 +183,7 @@ export function TrainingActivityCalendar({
           onPrevious={() => changeYear(-1)}
           onSelectDay={setSelectedDay}
           scrollRef={annualScrollRef}
+          selectedDayKey={selectedDay?.key ?? null}
           todayKey={todayKey}
           year={selectedYear}
         />
@@ -208,6 +210,7 @@ function MonthView({
   onNext,
   onPrevious,
   onSelectDay,
+  selectedDayKey,
   todayKey,
 }: {
   activity: TrainingActivity | null;
@@ -218,6 +221,7 @@ function MonthView({
   onNext: () => void;
   onPrevious: () => void;
   onSelectDay: (day: SelectedDay) => void;
+  selectedDayKey: string | null;
   todayKey: string;
 }) {
   const cells = buildMonthCells(month);
@@ -227,27 +231,27 @@ function MonthView({
       <CalendarNavigation label={getMonthLabel(month)} nextDisabled={nextDisabled} onNext={onNext} onPrevious={onPrevious} />
       <div aria-label={`Actividad de ${getMonthLabel(month)}`} className="mt-3 grid min-w-0 max-w-full grid-cols-7 gap-1.5 sm:mt-4 sm:gap-2" role="grid">
         {weekDayLabels.map((label) => (
-          <span className="pb-1 text-center text-[0.8125rem] font-semibold text-text-secondary" key={label} role="columnheader">{label}</span>
+          <span className="pb-1 text-center text-[0.8125rem] font-semibold text-steel" key={label} role="columnheader">{label}</span>
         ))}
         {loading
           ? Array.from({ length: cells.length }, (_, index) => <span aria-hidden="true" className="aspect-square animate-pulse rounded-[0.625rem] bg-surface-elevated/55" key={index} />)
           : cells.map((day, index) => day
-            ? <MonthDayCell count={counts.get(day.key) ?? 0} day={day} future={day.key > todayKey} key={day.key} onSelect={onSelectDay} />
+            ? <MonthDayCell count={counts.get(day.key) ?? 0} day={day} future={day.key > todayKey} key={day.key} onSelect={onSelectDay} selected={selectedDayKey === day.key} />
             : <span aria-hidden="true" key={`empty-${index}`} />)}
       </div>
-      {!loading && activity ? <ActivitySummary activity={activity} className="mt-4 border-t border-border/45 pt-3" /> : <div aria-hidden="true" className="mt-4 h-8 border-t border-border/45" />}
+      {!loading && activity ? <ActivitySummary activity={activity} className="mt-5 border-t border-border/60 pt-4" /> : <div aria-hidden="true" className="mt-5 h-9 border-t border-border/60" />}
     </div>
   );
 }
 
-function MonthDayCell({ count, day, future, onSelect }: { count: number; day: CalendarDay; future: boolean; onSelect: (day: SelectedDay) => void }) {
+function MonthDayCell({ count, day, future, onSelect, selected }: { count: number; day: CalendarDay; future: boolean; onSelect: (day: SelectedDay) => void; selected: boolean }) {
   const label = getDayAriaLabel(day.date, count, future);
-  const className = `relative flex aspect-square min-w-0 items-center justify-center rounded-[0.625rem] border text-sm font-semibold tabular-nums transition-[background-color,border-color,color,transform] duration-150 motion-reduce:transition-none motion-reduce:active:scale-100 ${getActivityClasses(count, future)} ${count > 0 && !future ? "hover:border-primary active:scale-[0.98] focus-visible:outline-primary" : ""}`;
+  const className = `relative flex aspect-square min-w-0 items-center justify-center rounded-[0.625rem] border text-sm font-semibold tabular-nums transition-[background-color,border-color,color,transform] duration-150 motion-reduce:transition-none motion-reduce:active:scale-100 ${getActivityClasses(count, future, selected)} ${count > 0 && !future ? "hover:border-thermal-accent active:scale-[0.98] focus-visible:outline-focus" : ""}`;
 
   return count > 0 && !future ? (
-    <button aria-label={label} className={className} onClick={() => onSelect({ key: day.key, sessionCount: count })} title={label} type="button">
+    <button aria-label={label} aria-pressed={selected} className={className} onClick={() => onSelect({ key: day.key, sessionCount: count })} title={label} type="button">
       {day.dayNumber}
-      <span aria-hidden="true" className="absolute bottom-1 size-1 rounded-full bg-text-primary" />
+      <span aria-hidden="true" className="absolute bottom-1 size-1 rounded-full bg-thermal-accent" />
     </button>
   ) : (
     <span aria-label={label} className={className} role="gridcell">{day.dayNumber}</span>
@@ -263,6 +267,7 @@ function YearView({
   onPrevious,
   onSelectDay,
   scrollRef,
+  selectedDayKey,
   todayKey,
   year,
 }: {
@@ -274,6 +279,7 @@ function YearView({
   onPrevious: () => void;
   onSelectDay: (day: SelectedDay) => void;
   scrollRef: React.RefObject<HTMLDivElement | null>;
+  selectedDayKey: string | null;
   todayKey: string;
   year: number;
 }) {
@@ -284,7 +290,7 @@ function YearView({
     <div className="mt-4 min-w-0 w-full max-w-full overflow-hidden sm:mt-5">
       <CalendarNavigation label={String(year)} nextDisabled={nextDisabled} onNext={onNext} onPrevious={onPrevious} />
       <div className="mt-4 flex min-w-0 max-w-full gap-2 overflow-hidden sm:mt-5">
-        <div aria-hidden="true" className="grid shrink-0 grid-rows-7 gap-1 pt-6 text-[0.8125rem] font-medium text-text-secondary">
+        <div aria-hidden="true" className="grid shrink-0 grid-rows-7 gap-1 pt-6 text-[0.8125rem] font-semibold text-steel">
           {weekDayLabels.map((label) => <span className="flex h-11 items-center" key={label}>{label}</span>)}
         </div>
         <div aria-label={`Actividad de ${year}. Deslizá horizontalmente para recorrer el año.`} className="activity-scrollbar w-0 min-w-0 flex-1 overflow-x-auto overscroll-x-contain pb-2" ref={scrollRef} role="region" tabIndex={0}>
@@ -292,31 +298,31 @@ function YearView({
             <div aria-hidden="true" className="mb-1 grid h-6 gap-1" style={{ gridTemplateColumns: columnTemplate }}>
               {weeks.map((week, index) => {
                 const monthStart = week.find((day) => day?.dayNumber === 1);
-                return <span className="text-[0.8125rem] font-semibold text-text-secondary" key={index}>{monthStart ? getShortMonthLabel(monthStart.date) : ""}</span>;
+                return <span className="text-[0.8125rem] font-semibold text-steel" key={index}>{monthStart ? getShortMonthLabel(monthStart.date) : ""}</span>;
               })}
             </div>
             <div aria-label={`Días de actividad de ${year}`} className="grid grid-flow-col grid-rows-7 gap-1" role="grid" style={{ gridTemplateColumns: columnTemplate }}>
               {loading
                 ? Array.from({ length: weeks.length * 7 }, (_, index) => <span aria-hidden="true" className="size-11 animate-pulse rounded-[0.4rem] bg-surface-elevated/55" key={index} />)
                 : weeks.flatMap((week, weekIndex) => week.map((day, dayIndex) => day
-                  ? <YearDayCell count={counts.get(day.key) ?? 0} day={day} future={day.key > todayKey} key={day.key} onSelect={onSelectDay} />
+                  ? <YearDayCell count={counts.get(day.key) ?? 0} day={day} future={day.key > todayKey} key={day.key} onSelect={onSelectDay} selected={selectedDayKey === day.key} />
                   : <span aria-hidden="true" className="size-11" key={`empty-${weekIndex}-${dayIndex}`} />))}
             </div>
           </div>
         </div>
       </div>
-      {!loading && activity ? <ActivitySummary activity={activity} className="mt-4 border-t border-border/45 pt-3" /> : <div aria-hidden="true" className="mt-4 h-8 border-t border-border/45" />}
+      {!loading && activity ? <ActivitySummary activity={activity} className="mt-5 border-t border-border/60 pt-4" /> : <div aria-hidden="true" className="mt-5 h-9 border-t border-border/60" />}
     </div>
   );
 }
 
-function YearDayCell({ count, day, future, onSelect }: { count: number; day: CalendarDay; future: boolean; onSelect: (day: SelectedDay) => void }) {
+function YearDayCell({ count, day, future, onSelect, selected }: { count: number; day: CalendarDay; future: boolean; onSelect: (day: SelectedDay) => void; selected: boolean }) {
   const label = getDayAriaLabel(day.date, count, future);
-  const className = `flex size-11 items-center justify-center rounded-[0.4rem] border transition-[background-color,border-color,transform] duration-150 motion-reduce:transition-none motion-reduce:active:scale-100 ${getActivityClasses(count, future)} ${count > 0 && !future ? "hover:border-primary active:scale-[0.98] focus-visible:outline-primary" : ""}`;
+  const className = `flex size-11 items-center justify-center rounded-[0.4rem] border transition-[background-color,border-color,transform] duration-150 motion-reduce:transition-none motion-reduce:active:scale-100 ${getActivityClasses(count, future, selected)} ${count > 0 && !future ? "hover:border-thermal-accent active:scale-[0.98] focus-visible:outline-focus" : ""}`;
 
   return count > 0 && !future ? (
-    <button aria-label={label} className={className} onClick={() => onSelect({ key: day.key, sessionCount: count })} title={label} type="button">
-      <span aria-hidden="true" className="size-1.5 rounded-full bg-text-primary" />
+    <button aria-label={label} aria-pressed={selected} className={className} onClick={() => onSelect({ key: day.key, sessionCount: count })} title={label} type="button">
+      <span aria-hidden="true" className="size-1.5 rounded-full bg-thermal-accent" />
     </button>
   ) : (
     <span aria-label={label} className={className} role="gridcell" title={label} />
@@ -326,19 +332,19 @@ function YearDayCell({ count, day, future, onSelect }: { count: number; day: Cal
 function CalendarNavigation({ label, nextDisabled, onNext, onPrevious }: { label: string; nextDisabled: boolean; onNext: () => void; onPrevious: () => void }) {
   return (
     <div className="flex min-h-11 items-center justify-between gap-3">
-      <button aria-label="Período anterior" className="flex size-11 items-center justify-center rounded-control-sm text-text-secondary hover:bg-surface hover:text-primary focus-visible:outline-primary" onClick={onPrevious} type="button"><ChevronLeft aria-hidden="true" size={20} /></button>
+      <button aria-label="Período anterior" className="flex size-11 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus" onClick={onPrevious} type="button"><ChevronLeft aria-hidden="true" size={20} /></button>
       <p aria-live="polite" className="font-brand text-xl font-bold leading-7 text-text-primary">{label}</p>
-      <button aria-label="Período siguiente" className="flex size-11 items-center justify-center rounded-control-sm text-text-secondary hover:bg-surface hover:text-primary focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-30" disabled={nextDisabled} onClick={onNext} type="button"><ChevronRight aria-hidden="true" size={20} /></button>
+      <button aria-label="Período siguiente" className="flex size-11 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-45" disabled={nextDisabled} onClick={onNext} type="button"><ChevronRight aria-hidden="true" size={20} /></button>
     </div>
   );
 }
 
 function ActivitySummary({ activity, className }: { activity: TrainingActivity; className?: string }) {
   return (
-    <p className={`${className ?? ""} text-sm leading-5 text-text-secondary`}>
-      <span className="font-brand font-bold tabular-nums text-text-primary">{activity.totalSessions}</span> {activity.totalSessions === 1 ? "entrenamiento" : "entrenamientos"}
+    <p className={`${className ?? ""} text-[0.9375rem] font-medium leading-6 text-steel`}>
+      <span className="font-brand text-lg font-bold tabular-nums text-text-primary">{activity.totalSessions}</span> {activity.totalSessions === 1 ? "entrenamiento" : "entrenamientos"}
       <span aria-hidden="true"> · </span>
-      <span className="font-brand font-bold tabular-nums text-text-primary">{activity.activeDays}</span> {activity.activeDays === 1 ? "día activo" : "días activos"}
+      <span className="font-brand text-lg font-bold tabular-nums text-text-primary">{activity.activeDays}</span> {activity.activeDays === 1 ? "día activo" : "días activos"}
     </p>
   );
 }
@@ -367,7 +373,7 @@ function DayDetailDialog({
     <dialog
       aria-labelledby="activity-day-title"
       aria-modal="true"
-      className="mt-auto max-h-[85dvh] w-full max-w-full rounded-t-container border border-border bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:m-auto sm:w-[calc(100%-2rem)] sm:max-w-lg sm:rounded-container"
+      className="mt-auto max-h-[85dvh] w-full max-w-full rounded-t-container border border-border-strong bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:m-auto sm:w-[calc(100%-2rem)] sm:max-w-lg sm:rounded-container"
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
       onClose={onClosed}
       ref={dialogRef}
@@ -379,7 +385,7 @@ function DayDetailDialog({
             <h3 className="font-brand text-xl font-bold leading-7 text-text-primary" id="activity-day-title">{date ? formatAccessibleDate(date) : "Actividad"}</h3>
             {selectedDay ? <p className="mt-1 text-sm text-text-secondary">{selectedDay.sessionCount} {selectedDay.sessionCount === 1 ? "entrenamiento" : "entrenamientos"}</p> : null}
           </div>
-          <button aria-label="Cerrar detalle del día" className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary hover:bg-surface hover:text-text-primary focus-visible:outline-primary" onClick={onClose} type="button"><X aria-hidden="true" size={20} /></button>
+          <button aria-label="Cerrar detalle del día" className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus" onClick={onClose} type="button"><X aria-hidden="true" size={20} /></button>
         </header>
 
         {historyState === "loading" ? (
@@ -395,13 +401,13 @@ function DayDetailDialog({
               const metadata = [formatExerciseCount(session.cantidadEjercicios), formatCompactSetCount(session.cantidadSeriesCompletadas), duration].filter((value): value is string => Boolean(value));
               return (
                 <li key={session.id}>
-                  <Link className="group flex min-h-20 items-center gap-3 py-3 focus-visible:outline-primary" href={`/history/${session.id}`}>
-                    <time className="w-12 shrink-0 self-start pt-0.5 font-brand text-lg font-bold tabular-nums" dateTime={session.horaInicio}>{formatHistoryTime(session.horaInicio) ?? "—"}</time>
+                  <Link className="group flex min-h-20 items-center gap-4 py-3 focus-visible:outline-focus" href={`/history/${session.id}`}>
+                    <time className="w-12 shrink-0 self-start pt-0.5 text-[0.9375rem] font-semibold tabular-nums text-text-muted" dateTime={session.horaInicio}>{formatHistoryTime(session.horaInicio) ?? "—"}</time>
                     <span className="min-w-0 flex-1">
-                      <span className="block break-words text-sm leading-6 text-text-secondary">{metadata.join(" · ")}</span>
-                      <span className="mt-1 block text-sm font-semibold text-primary">Ver entrenamiento</span>
+                      <span className="block break-words font-brand text-base font-bold leading-6 text-text-primary">{metadata.join(" · ")}</span>
+                      <span className="mt-1 block text-[0.8125rem] font-semibold text-steel">Ver entrenamiento</span>
                     </span>
-                    <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary group-hover:text-primary" size={19} />
+                    <ChevronRight aria-hidden="true" className="shrink-0 text-text-muted transition-colors group-hover:text-thermal-accent" size={19} />
                   </Link>
                 </li>
               );
@@ -413,10 +419,12 @@ function DayDetailDialog({
   );
 }
 
-function getActivityClasses(count: number, future: boolean): string {
-  if (future) return "border-border/25 bg-surface/20 text-text-secondary/35";
-  if (count > 0) return "border-primary/65 bg-primary/85 text-primary-foreground";
-  return "border-border/60 bg-surface-elevated/50 text-text-primary/70";
+function getActivityClasses(count: number, future: boolean, selected = false): string {
+  if (future) return "border-border/25 bg-surface/20 text-text-muted/45";
+  if (count > 0) return selected
+    ? "border-thermal-accent bg-surface-active text-text-primary"
+    : "border-steel bg-surface-elevated text-text-primary";
+  return "border-border/60 bg-surface-interactive/65 text-text-secondary";
 }
 
 function getDayAriaLabel(date: Date, count: number, future: boolean): string {

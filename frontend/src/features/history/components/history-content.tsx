@@ -42,7 +42,7 @@ export function HistoryContent() {
   const [state, setState] = useState<HistoryState>({ status: "loading" });
   const [requestKey, setRequestKey] = useState(0);
   const [visibleSessionCount, setVisibleSessionCount] = useState(initialVisibleSessionCount);
-  const [view, setView] = useState<HistoryView>("sessions");
+  const [view, setView] = useState<HistoryView>("activity");
 
   useEffect(() => {
     let active = true;
@@ -72,18 +72,18 @@ export function HistoryContent() {
   return (
     <section aria-labelledby="history-title" className="mx-auto min-w-0 w-full max-w-xl overflow-x-clip">
       <header className="pb-1">
-        <h1 className="font-brand text-[1.625rem] font-bold leading-8 text-text-primary" id="history-title">Historial</h1>
-        <p className="mt-1 text-sm leading-5 text-text-secondary">Tus entrenamientos registrados.</p>
+        <h1 className="font-brand text-3xl font-bold leading-tight text-text-primary" id="history-title">Historial</h1>
+        <p className="mt-2 text-base leading-6 text-text-secondary">Tus entrenamientos registrados.</p>
       </header>
 
-      <div aria-label="Vista de historial" className="mt-5 inline-flex rounded-full border border-border/50 bg-surface/45 p-1" role="group">
-        {(["sessions", "activity"] as const).map((item) => {
+      <div aria-label="Vista de historial" className="mt-6 inline-grid grid-cols-2 gap-2 border-b border-border/70" role="group">
+        {(["activity", "sessions"] as const).map((item) => {
           const selected = view === item;
           const label = item === "sessions" ? "Entrenamientos" : "Actividad";
           return (
             <button
               aria-pressed={selected}
-              className={`min-h-11 rounded-full px-4 text-[0.8125rem] font-semibold transition-colors duration-150 focus-visible:outline-primary motion-reduce:transition-none ${selected ? "bg-primary/15 text-primary" : "text-text-secondary hover:text-text-primary"}`}
+              className={`relative min-h-12 px-3 text-[0.8125rem] font-semibold transition-colors duration-150 focus-visible:outline-focus motion-reduce:transition-none ${selected ? "text-text-primary after:absolute after:right-3 after:bottom-0 after:left-3 after:h-0.5 after:rounded-full after:bg-thermal-accent" : "text-text-muted hover:text-text-secondary"}`}
               key={item}
               onClick={() => setView(item)}
               type="button"
@@ -112,7 +112,7 @@ export function HistoryContent() {
         <div className="mt-8 max-w-sm">
           <h2 className="font-brand text-2xl font-bold leading-tight text-text-primary">Todavía no registraste entrenamientos.</h2>
           <p className="mt-3 text-sm leading-6 text-text-secondary">Las sesiones completadas o canceladas van a aparecer acá.</p>
-          <Link className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-primary transition-colors hover:text-text-primary focus-visible:outline-primary" href="/routines">
+          <Link className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-thermal-accent transition-colors hover:text-text-primary focus-visible:outline-focus" href="/routines">
             Ver rutinas
           </Link>
         </div>
@@ -121,7 +121,7 @@ export function HistoryContent() {
           <div className="min-w-0 max-w-full space-y-7 sm:space-y-8">
             {groups.map((group) => (
               <section aria-labelledby={`history-date-${group.key}`} className="min-w-0 max-w-full" key={group.key}>
-                <h2 className="text-[0.8125rem] font-semibold leading-5 tracking-[0.08em] text-text-primary/70" id={`history-date-${group.key}`}>
+                <h2 className="text-[0.8125rem] font-semibold leading-5 tracking-[0.08em] text-steel" id={`history-date-${group.key}`}>
                   <time aria-label={group.accessibleLabel} dateTime={group.key}>{group.label}</time>
                 </h2>
                 <ul className="mt-2 min-w-0 max-w-full divide-y divide-border/50 border-y border-border/50">
@@ -132,7 +132,7 @@ export function HistoryContent() {
           </div>
           {hasMoreSessions ? (
             <Button
-              className="mt-5 min-h-11 rounded-full px-4"
+              className="mt-6"
               onClick={() => setVisibleSessionCount((current) => current + sessionCountIncrement)}
               variant="secondary"
             >
@@ -163,20 +163,20 @@ function HistoryRow({ session }: { session: TrainingSessionHistorySummary }) {
 
   return (
     <li>
-      <Link aria-label={accessibleLabel} className="group flex min-h-[5.25rem] min-w-0 items-center gap-3 rounded-control-sm px-1 py-4 transition-colors hover:bg-surface/35 active:bg-surface/60 focus-visible:outline-2 focus-visible:outline-primary sm:min-h-[5.75rem] sm:gap-3.5 sm:py-5" href={`/history/${session.id}`}>
-        <time className="w-12 shrink-0 self-start pt-0.5 font-brand text-[1.0625rem] font-bold leading-6 tabular-nums text-text-primary sm:w-13 sm:text-lg" dateTime={session.horaInicio}>
+      <Link aria-label={accessibleLabel} className="group flex min-h-[5.5rem] min-w-0 items-center gap-4 rounded-control-sm px-1 py-4 transition-colors hover:bg-surface-interactive/45 active:bg-surface-active/55 focus-visible:outline-2 focus-visible:outline-focus sm:min-h-[5.75rem] sm:py-5" href={`/history/${session.id}`}>
+        <time className="w-12 shrink-0 self-start pt-0.5 text-[0.9375rem] font-semibold leading-6 tabular-nums text-text-muted sm:w-13" dateTime={session.horaInicio}>
           {time ?? "—"}
         </time>
         <span aria-hidden="true" className="min-w-0 flex-1">
-          <span className="block break-words text-[0.9375rem] font-semibold leading-6 text-text-primary">{registered}</span>
+          <span className="block break-words font-brand text-[1.0625rem] font-bold leading-6 text-text-primary">{registered}</span>
           {duration || cancelled ? (
-            <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.8125rem] leading-5 text-text-secondary">
+            <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.8125rem] leading-5 text-steel">
               {duration ? <span>{duration}</span> : null}
               {cancelled ? <span className="font-semibold text-warning/85">Cancelada</span> : null}
             </span>
           ) : null}
         </span>
-        <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center text-text-secondary/70 transition-colors group-hover:text-primary group-active:text-primary">
+        <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center text-text-muted transition-colors group-hover:text-thermal-accent group-active:text-thermal-accent">
           <ChevronRight size={21} strokeWidth={1.8} />
         </span>
       </Link>

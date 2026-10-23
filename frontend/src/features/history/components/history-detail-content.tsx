@@ -50,7 +50,7 @@ export function HistoryDetailContent({ id }: { id: string }) {
 
   return (
     <section aria-label="Detalle del historial" className="mx-auto w-full max-w-xl">
-      <Link className="inline-flex min-h-11 items-center gap-2 rounded-control-sm pr-3 text-sm font-semibold text-primary transition-colors hover:text-text-primary focus-visible:outline-primary" href="/history">
+      <Link className="inline-flex min-h-11 items-center gap-2 rounded-control-sm pr-3 text-sm font-semibold text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-focus" href="/history">
         <ArrowLeft aria-hidden="true" size={20} />
         Historial
       </Link>
@@ -61,7 +61,7 @@ export function HistoryDetailContent({ id }: { id: string }) {
         <div className="mt-6">
           <h1 className="font-brand text-2xl font-bold text-text-primary">Entrenamiento no encontrado</h1>
           <p className="mt-3 text-sm text-text-secondary">No encontramos este entrenamiento.</p>
-          <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline-primary" href="/history">Volver al historial</Link>
+          <Link className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-thermal-accent transition-colors hover:text-text-primary focus-visible:outline-focus" href="/history">Volver al historial</Link>
         </div>
       ) : state.status === "error" ? (
         <div className="mt-6" role="alert">
@@ -90,9 +90,9 @@ function SessionDetail({ session }: { session: TrainingSession }) {
 
   return (
     <>
-      <header className="mt-4">
-        <h1 className="font-brand text-[1.75rem] font-bold leading-tight text-text-primary">{date ?? "Fecha no disponible"}</h1>
-        <p className="mt-2 text-[0.9375rem] font-medium leading-6 text-text-secondary">
+      <header className="mt-5">
+        <h1 className="font-brand text-3xl font-bold leading-tight text-text-primary">{date ?? "Fecha no disponible"}</h1>
+        <p className="mt-2 text-[0.9375rem] font-semibold leading-6 text-steel">
           {[time, duration].filter(Boolean).join(" · ")}
         </p>
         <p className={`mt-3 text-[0.8125rem] font-semibold leading-5 ${cancelled ? "text-warning/85" : "text-success"}`}>
@@ -100,13 +100,13 @@ function SessionDetail({ session }: { session: TrainingSession }) {
         </p>
       </header>
 
-      <dl className="mt-7 grid grid-cols-3 divide-x divide-border/60 border-y border-border/60 py-4">
+      <dl className="mt-7 grid grid-cols-3 divide-x divide-border/70 border-y border-border/70 py-5">
         <SummaryValue label="Ejercicios" value={String(exercises.length)} />
         <SummaryValue label="Series" value={String(registeredSetCount)} />
         <SummaryValue label="Duración" value={duration ?? "—"} />
       </dl>
 
-      <div className="mt-9 border-t border-border/60">
+      <div className="mt-10 border-t border-border/70">
         {exercises.map((exercise) => (
           <ExerciseResult
             canShowProgress={completed && exercise.series.some((set) => set.completada)}
@@ -122,8 +122,8 @@ function SessionDetail({ session }: { session: TrainingSession }) {
 function SummaryValue({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 px-3 first:pl-0 last:pr-0">
-      <dt className="text-[0.8125rem] font-semibold leading-5 text-text-secondary">{label}</dt>
-      <dd className="mt-1 break-words font-brand text-lg font-bold leading-6 tabular-nums text-text-primary">{value}</dd>
+      <dt className="text-[0.8125rem] font-semibold leading-5 text-steel">{label}</dt>
+      <dd className="mt-1.5 break-words font-brand text-xl font-bold leading-6 tabular-nums text-text-primary">{value}</dd>
     </div>
   );
 }
@@ -143,15 +143,15 @@ function ExerciseResult({
   ].join(" · ");
 
   return (
-    <section aria-labelledby={`history-exercise-${exercise.id}`} className="border-b border-border/60 py-7">
+    <section aria-labelledby={`history-exercise-${exercise.id}`} className="border-b border-border/70 py-8">
       <div className="flex min-w-0 items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h2 className="break-words font-brand text-xl font-bold leading-7 text-text-primary" id={`history-exercise-${exercise.id}`}>{exercise.nombre}</h2>
-          <p className="mt-1.5 text-[0.8125rem] font-medium leading-5 text-text-secondary">Objetivo · {prescription}</p>
+          <p className="mt-2 text-[0.8125rem] font-semibold leading-5 text-steel">Objetivo · {prescription}</p>
         </div>
         {canShowProgress ? (
           <Link
-            className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-text-secondary transition-colors duration-150 hover:text-primary active:text-primary focus-visible:text-primary focus-visible:outline-primary motion-reduce:transition-none"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-control-sm px-2 text-sm font-semibold text-text-muted transition-colors duration-150 hover:bg-surface-interactive hover:text-text-primary active:bg-surface-active focus-visible:text-text-primary focus-visible:outline-focus motion-reduce:transition-none"
             href={`/exercises/${exercise.ejercicioId}/progress`}
           >
             Ver progreso
@@ -168,7 +168,7 @@ function ExerciseResult({
         <div className="mt-5 w-full min-w-0 overflow-x-auto">
           <table className="w-full table-fixed border-collapse text-left">
             <caption className="sr-only">Series registradas de {exercise.nombre}</caption>
-            <thead className="border-b border-border/50 text-[0.8125rem] font-semibold uppercase tracking-[0.06em] text-text-secondary">
+            <thead className="border-b border-border/60 text-[0.8125rem] font-semibold uppercase tracking-[0.06em] text-steel">
               <tr>
                 <th className="w-[24%] pb-2.5" scope="col">Set</th>
                 <th className="w-[26%] pb-2.5" scope="col">Kg</th>
@@ -183,7 +183,7 @@ function ExerciseResult({
                   <tr className="h-12 font-brand text-lg font-bold leading-6 tabular-nums text-text-primary" key={set.id}>
                     <td className="min-w-0 py-2.5">
                       {String(set.numeroSerie).padStart(2, "0")}
-                      {extra ? <span className="block font-sans text-[0.8125rem] font-semibold leading-4 text-info">Extra</span> : null}
+                      {extra ? <span className="block font-sans text-[0.8125rem] font-semibold leading-4 text-steel">Extra</span> : null}
                     </td>
                     <td className="min-w-0 truncate py-2.5">
                       {set.peso > 0 ? formatDecimal(set.peso) : (
