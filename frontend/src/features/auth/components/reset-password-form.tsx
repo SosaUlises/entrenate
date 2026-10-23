@@ -1,10 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { resetPasswordAction } from "../actions/reset-password.action";
@@ -12,9 +13,6 @@ import {
   resetPasswordFormSchema,
   type ResetPasswordFormValues,
 } from "../schemas/auth.schemas";
-import { AuthPageHeader } from "./auth-page-header";
-import { AuthPrimaryLink } from "./auth-primary-link";
-import { AuthSecondaryAction } from "./auth-secondary-action";
 import { PasswordRequirements } from "./password-requirements";
 
 const newPasswordFieldId = "reset-password-new-password";
@@ -122,19 +120,23 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
     .join(" ");
 
   return (
-    <div className="space-y-8 sm:space-y-9">
-      <AuthPageHeader
-        supportingText="Elegí una contraseña segura para volver a acceder."
-        title="Creá una nueva contraseña"
-      />
+    <div>
+      <header className="space-y-3">
+        <h1 className="font-brand text-[2.25rem] font-extrabold leading-[1.05] tracking-[-0.025em] text-text-primary sm:text-[2.5rem]">
+          Creá una nueva contraseña
+        </h1>
+        <p className="text-[0.9375rem] leading-6 text-text-secondary">
+          Elegí una contraseña segura para volver a acceder.
+        </p>
+      </header>
 
-      <form className="space-y-5" noValidate onSubmit={onSubmit}>
+      <form className="mt-5 space-y-4" noValidate onSubmit={onSubmit}>
         {submitFeedback ? (
           <Alert variant={submitFeedback.variant}>{submitFeedback.message}</Alert>
         ) : null}
 
         <div className="space-y-4">
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <FormField
               error={errors.newPassword?.message}
               id={newPasswordFieldId}
@@ -142,6 +144,7 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
             >
               <PasswordInput
                 autoComplete="new-password"
+                className="text-base font-medium"
                 hasError={Boolean(errors.newPassword)}
                 id={newPasswordFieldId}
                 placeholder="••••••••"
@@ -151,10 +154,12 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
               />
             </FormField>
 
-            <PasswordRequirements
-              id={passwordRequirementsId}
-              password={newPassword}
-            />
+            <div className="[&>div]:space-y-1 [&>div]:pt-0 [&_li]:text-[0.8125rem] [&_p]:text-[0.8125rem] [&_p]:font-semibold [&_p]:text-steel [&_ul]:grid-cols-2 [&_ul]:gap-x-4 [&_ul]:gap-y-0.5">
+              <PasswordRequirements
+                id={passwordRequirementsId}
+                password={newPassword}
+              />
+            </div>
           </div>
 
           <FormField
@@ -164,6 +169,7 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
           >
             <PasswordInput
               autoComplete="new-password"
+              className="text-base font-medium"
               hasError={Boolean(errors.confirmPassword)}
               id={confirmPasswordFieldId}
               placeholder="••••••••"
@@ -175,45 +181,92 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
         </div>
 
         <Button
-          className="min-h-14"
           fullWidth
           isLoading={isSubmitting}
+          size="lg"
           type="submit"
-          variant="primary"
+          variant="secondary"
         >
           Guardar contraseña
         </Button>
       </form>
 
-      <AuthSecondaryAction action="Volver a iniciar sesión" href="/login" />
+      <BackToLogin />
     </div>
   );
 }
 
 function InvalidResetLink({ message }: { message: string }) {
   return (
-    <div className="space-y-8 sm:space-y-9">
-      <AuthPageHeader
-        supportingText={message}
-        title="El enlace no es válido"
-      />
+    <div>
+      <AuthStateHeader description={message} title="El enlace no es válido" />
 
-      <AuthPrimaryLink href="/forgot-password">
+      <Link
+        className={buttonClassName({
+          className: "mt-7",
+          fullWidth: true,
+          size: "lg",
+          variant: "secondary",
+        })}
+        href="/forgot-password"
+      >
         Solicitar nuevo enlace
-      </AuthPrimaryLink>
+      </Link>
     </div>
   );
 }
 
 function ResetPasswordSuccess() {
   return (
-    <div className="space-y-8 sm:space-y-9">
-      <AuthPageHeader
-        supportingText="Tu contraseña fue restablecida correctamente. Ya podés volver a iniciar sesión."
+    <div>
+      <AuthStateHeader
+        description="Tu contraseña fue restablecida correctamente. Ya podés volver a iniciar sesión."
         title="Contraseña actualizada"
       />
 
-      <AuthPrimaryLink href="/login">Iniciar sesión</AuthPrimaryLink>
+      <Link
+        className={buttonClassName({
+          className: "mt-7",
+          fullWidth: true,
+          size: "lg",
+          variant: "secondary",
+        })}
+        href="/login"
+      >
+        Iniciar sesión
+      </Link>
     </div>
+  );
+}
+
+function AuthStateHeader({
+  description,
+  title,
+}: {
+  description: string;
+  title: string;
+}) {
+  return (
+    <header className="space-y-3">
+      <h1 className="font-brand text-[2.25rem] font-extrabold leading-[1.05] tracking-[-0.025em] text-text-primary sm:text-[2.5rem]">
+        {title}
+      </h1>
+      <p className="text-[0.9375rem] leading-6 text-text-secondary">
+        {description}
+      </p>
+    </header>
+  );
+}
+
+function BackToLogin() {
+  return (
+    <p className="mt-2 flex min-h-12 items-center justify-center border-t border-border pt-2 text-center text-sm sm:mt-4 sm:pt-3">
+      <Link
+        className="inline-flex min-h-11 items-center rounded-control-sm font-semibold text-text-primary underline-offset-4 transition-colors duration-200 hover:text-thermal-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
+        href="/login"
+      >
+        Volver a iniciar sesión
+      </Link>
+    </p>
   );
 }

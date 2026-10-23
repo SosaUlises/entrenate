@@ -144,6 +144,10 @@ La tecnología se expresa mediante jerarquía, datos, motion funcional y feedbac
 
 Do not use gradients, halos, glow, inherited violet/blue tints, or color to artificially elevate a composition.
 
+## Brand master
+
+`frontend/public/brand/entrenate-wordmark-master.png` is the official source of truth for the Entrenate wordmark. The mark uses Technical White as its base and Thermal Accent only in the `A`; violet, blue brand treatments, gradients, glow, alternate symbols, and legacy wordmarks are not part of the active identity.
+
 ## Typography and data
 
 Raleway expresses metrics, timers, highlighted numbers, and entity titles when it adds identity. Manrope supports body, labels, controls, descriptions, navigation, and metadata.

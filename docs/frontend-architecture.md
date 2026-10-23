@@ -48,11 +48,8 @@ Use the implemented structure under `frontend/src/` as the source of truth. The 
 ```text
 frontend/
 ├── public/
-│   └── branding/
-│       ├── logo/
-│       ├── symbol/
-│       ├── icons/
-│       └── decorative/
+│   └── brand/
+│       └── entrenate-wordmark-master.png
 │
 ├── src/
 │   ├── app/
@@ -455,7 +452,7 @@ Prefer Next.js font loading mechanisms.
 Place assets under:
 
 ```text
-frontend/public/branding/
+frontend/public/brand/
 ```
 
 Do not use generated brand-sheet collages in the UI.

@@ -1,14 +1,24 @@
 import Image from "next/image";
+import { cn } from "@/lib/class-names";
 
-export function BrandMark() {
+type BrandMarkProps = {
+  prominent?: boolean;
+};
+
+export function BrandMark({ prominent = false }: BrandMarkProps) {
   return (
     <Image
       alt="Entrenate"
-      className="h-auto w-[256px] sm:w-[288px]"
-      height={127}
+      className={cn(
+        "h-auto object-contain",
+        prominent ? "w-[320px] sm:w-[352px]" : "w-[256px] sm:w-[288px]",
+      )}
+      height={724}
       priority
-      src="/branding/logo/entrenate-logo-white.png"
-      width={936}
+      quality={75}
+      sizes={prominent ? "(min-width: 640px) 352px, 320px" : "(min-width: 640px) 288px, 256px"}
+      src="/brand/entrenate-wordmark-master.png"
+      width={2172}
     />
   );
 }

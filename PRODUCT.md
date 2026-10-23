@@ -63,7 +63,7 @@ Entrenate evita fragmentar este recorrido en herramientas separadas. La experien
 - Arquitectura frontend: `docs/frontend-architecture.md`.
 - Implementación real del frontend autenticado: `frontend/src/`.
 - Contratos y reglas reales del backend: `backend/src/`.
-- Assets actuales de marca: `frontend/public/branding/`.
+- Master oficial de marca: `frontend/public/brand/entrenate-wordmark-master.png`.
 - Assets actuales de demostraciones de ejercicios: `frontend/public/exercises/v2/`.
 - Referencia maestra del modelo técnico neutral: `frontend/public/exercises/v2/_master/neutral-exercise-model-v1-master.png`.
 - No hay evidencia aprobada de testimonios, clientes, benchmarks comerciales, precios o capacidades de IA implementadas; no deben fabricarse.
