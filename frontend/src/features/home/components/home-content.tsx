@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ChevronRight, Search, X } from "lucide-react";
+import { ArrowRight, CalendarDays, ChevronRight, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -538,9 +538,12 @@ function StatusLabel({ label, tone = "active" }: { label: string; tone?: "active
 
 function HistoryLink() {
   return (
-    <Link className="group mt-6 flex min-h-12 w-full max-w-lg items-center justify-between gap-4 border-t border-border pt-4 text-[0.8125rem] font-semibold text-text-secondary transition-colors duration-200 hover:text-text-primary focus-visible:outline-focus motion-reduce:transition-none" href="/history">
-      <span>Actividad e historial</span>
-      <ArrowRight aria-hidden="true" className="shrink-0 text-steel transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" size={18} strokeWidth={1.75} />
+    <Link className="group mt-6 flex min-h-[3.25rem] w-full max-w-lg items-center justify-between gap-4 border-t border-border px-1 py-2 text-[0.9375rem] font-semibold text-text-secondary transition-[background-color,color] duration-200 hover:bg-surface-interactive/45 hover:text-text-primary active:bg-surface-active/60 focus-visible:outline-focus motion-reduce:transition-none" href="/history">
+      <span className="flex min-w-0 items-center gap-3">
+        <CalendarDays aria-hidden="true" className="shrink-0 text-steel" size={18} strokeWidth={1.75} />
+        <span>Actividad e historial</span>
+      </span>
+      <ChevronRight aria-hidden="true" className="shrink-0 text-steel transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" size={18} strokeWidth={1.75} />
     </Link>
   );
 }
