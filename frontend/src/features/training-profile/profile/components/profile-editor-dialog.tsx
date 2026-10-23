@@ -80,7 +80,7 @@ export function ProfileEditorDialog({
     <dialog
       aria-labelledby="profile-editor-title"
       aria-modal="true"
-      className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[calc(100dvh-0.5rem)] w-full max-w-none overflow-hidden rounded-t-container border border-border/80 bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:inset-0 sm:m-auto sm:max-h-[calc(100dvh-3rem)] sm:max-w-lg sm:rounded-container"
+      className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[calc(100dvh-0.5rem)] w-full max-w-none overflow-hidden rounded-t-container border border-border-strong bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:inset-0 sm:m-auto sm:max-h-[calc(100dvh-3rem)] sm:max-w-lg sm:rounded-container"
       onClick={(event) => {
         const bounds = event.currentTarget.getBoundingClientRect();
         const outside =
@@ -197,19 +197,19 @@ function EditorFrame({ children, error, isSaving, onClose, onSubmit, supportingT
 }) {
   return (
     <form className="flex max-h-[calc(100dvh-0.5rem)] flex-col sm:max-h-[calc(100dvh-3rem)]" noValidate onSubmit={onSubmit}>
-      <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/60 px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
+      <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/70 px-4 pt-4 pb-3 sm:px-6 sm:pt-5 sm:pb-4">
         <div className="min-w-0">
           <h2 className="font-brand text-xl font-bold text-text-primary" id="profile-editor-title">{title}</h2>
-          {supportingText ? <p className="mt-1 text-sm leading-5 text-text-secondary">{supportingText}</p> : null}
+          {supportingText ? <p className="mt-1 text-sm leading-5 text-steel">{supportingText}</p> : null}
         </div>
-        <button aria-label="Cerrar sin guardar" className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary hover:bg-surface hover:text-text-primary focus-visible:outline-primary" disabled={isSaving} onClick={onClose} type="button"><X aria-hidden="true" size={20} /></button>
+        <button aria-label="Cerrar sin guardar" className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus" disabled={isSaving} onClick={onClose} type="button"><X aria-hidden="true" size={20} /></button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
         {children}
         {error ? <p className="mt-4 text-sm leading-5 text-error" role="alert">{error}</p> : null}
       </div>
-      <div className="shrink-0 border-t border-border/60 bg-surface-elevated px-5 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-5">
-        <Button className="min-h-[3.25rem]" fullWidth isLoading={isSaving} type="submit">
+      <div className="shrink-0 border-t border-border/70 bg-surface-elevated px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-5">
+        <Button fullWidth isLoading={isSaving} size="lg" type="submit">
           {isSaving ? "Guardando…" : "Guardar"}
         </Button>
       </div>
@@ -247,9 +247,9 @@ function ChoiceEditor<T extends ChoiceValue>({ initialValue, onClose, onSave, op
         {options.map((option) => {
           const selected = option.value === value;
           return (
-            <label className="flex min-h-14 cursor-pointer items-center gap-3 py-3" key={String(option.value)}>
+            <label className={cn("flex min-h-14 cursor-pointer items-center gap-3 rounded-control-sm px-2 py-3 transition-colors", selected ? "bg-surface-active/65" : "hover:bg-surface-interactive/45")} key={String(option.value)}>
               <input checked={selected} className="peer sr-only" name="choice" onChange={() => setValue(option.value)} type="radio" />
-              <span className={cn("flex size-5 shrink-0 items-center justify-center rounded-full border", selected ? "border-primary bg-primary text-background" : "border-border-strong")}>
+              <span className={cn("flex size-5 shrink-0 items-center justify-center rounded-full border", selected ? "border-thermal-accent bg-surface-interactive text-thermal-accent" : "border-border-strong")}>
                 {selected ? <Check aria-hidden="true" size={13} strokeWidth={3} /> : null}
               </span>
               <span className="text-base font-semibold text-text-primary">{option.label}</span>
@@ -310,7 +310,7 @@ function NumberEditor({ allowEmpty = false, initialValue, inputMode, label, max,
       <label className="text-sm font-semibold text-text-primary" htmlFor={id}>{label}</label>
       <div className="relative mt-2">
         <Input aria-describedby={error ? `${id}-error` : undefined} aria-invalid={Boolean(error)} className="pr-16 text-base font-semibold tabular-nums" hasError={Boolean(error)} id={id} inputMode={inputMode} max={max} min={min} onChange={(event) => setValue(event.target.value)} step={step} type="number" value={value} />
-        <span className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm font-semibold text-text-secondary">{unit}</span>
+        <span className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm font-semibold text-steel">{unit}</span>
       </div>
       {error ? <p className="mt-2 text-sm leading-5 text-error" id={`${id}-error`} role="alert">{error}</p> : null}
     </EditorFrame>
@@ -346,13 +346,13 @@ function DurationEditor({ initialValue, onClose, onSave }: {
     <EditorFrame isSaving={isSaving} onClose={onClose} onSubmit={(event) => void submit(event)} supportingText="Elegí una opción o ingresá una duración entre 15 y 240 minutos." title="Duración">
       <div className="grid grid-cols-3 gap-2">
         {duracionSesionMinutosValues.map((duration) => (
-          <button aria-pressed={value === String(duration)} className={cn("min-h-12 rounded-control-sm border text-sm font-semibold focus-visible:outline-primary", value === String(duration) ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-text-primary")} key={duration} onClick={() => setValue(String(duration))} type="button">{duration} min</button>
+          <button aria-pressed={value === String(duration)} className={cn("min-h-12 rounded-control-sm border text-sm focus-visible:outline-focus", value === String(duration) ? "border-thermal-accent bg-surface-active font-bold text-text-primary" : "border-border bg-surface-interactive font-semibold text-text-secondary hover:border-border-strong hover:text-text-primary")} key={duration} onClick={() => setValue(String(duration))} type="button">{duration} min</button>
         ))}
       </div>
       <FormField error={error} id={id} label="Duración personalizada">
         <div className="relative">
           <Input className="pr-20 text-base font-semibold tabular-nums" hasError={Boolean(error)} id={id} inputMode="numeric" max={240} min={15} onChange={(event) => setValue(event.target.value)} type="number" value={value} />
-          <span className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm font-semibold text-text-secondary">minutos</span>
+          <span className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm font-semibold text-steel">minutos</span>
         </div>
       </FormField>
     </EditorFrame>
@@ -398,7 +398,7 @@ function ScheduleEditor({ onClose, onSave, profile }: {
       <fieldset>
         <legend className="text-sm font-semibold text-text-primary">Días por semana</legend>
         <div className="mt-3 grid grid-cols-7 gap-1.5">
-          {diasEntrenamientoPorSemanaValues.map((item) => <button aria-pressed={frequency === item} className={cn("min-h-11 rounded-control-sm border text-sm font-bold focus-visible:outline-primary", frequency === item ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-text-primary")} key={item} onClick={() => { setFrequency(item); setError(undefined); }} type="button">{item}</button>)}
+          {diasEntrenamientoPorSemanaValues.map((item) => <button aria-pressed={frequency === item} className={cn("min-h-11 rounded-control-sm border text-sm focus-visible:outline-focus", frequency === item ? "border-thermal-accent bg-surface-active font-bold text-text-primary" : "border-border bg-surface-interactive font-semibold text-text-secondary hover:border-border-strong hover:text-text-primary")} key={item} onClick={() => { setFrequency(item); setError(undefined); }} type="button">{item}</button>)}
         </div>
       </fieldset>
       <fieldset className="mt-7">
@@ -406,7 +406,7 @@ function ScheduleEditor({ onClose, onSave, profile }: {
         <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-7">
           {dayOptions.map((day) => {
             const selected = days.includes(day.value);
-            return <button aria-pressed={selected} className={cn("min-h-12 rounded-control-sm border text-sm font-semibold focus-visible:outline-primary", selected ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-text-primary")} key={day.value} onClick={() => toggleDay(day.value)} type="button">{day.label}</button>;
+            return <button aria-pressed={selected} className={cn("min-h-12 rounded-control-sm border text-sm focus-visible:outline-focus", selected ? "border-thermal-accent bg-surface-active font-bold text-text-primary" : "border-border bg-surface-interactive font-semibold text-text-secondary hover:border-border-strong hover:text-text-primary")} key={day.value} onClick={() => toggleDay(day.value)} type="button">{day.label}</button>;
           })}
         </div>
         <p className={cn("mt-3 text-sm leading-5", tooManyDays ? "text-error" : "text-text-secondary")} role={tooManyDays ? "alert" : undefined}>
@@ -479,7 +479,7 @@ function EquipmentEditor({ equipment: initialEquipment, onClose, onEquipmentLoad
           {unavailable.length > 0 ? (
             <fieldset>
               <legend className="text-sm font-semibold text-error">No disponible</legend>
-              <p className="mt-1 text-xs leading-5 text-text-secondary">Estos elementos estaban seleccionados. Quitarlos requiere una decisión explícita.</p>
+              <p className="mt-1 text-[0.8125rem] leading-5 text-text-secondary">Estos elementos estaban seleccionados. Quitarlos requiere una decisión explícita.</p>
               <div className="mt-3 divide-y divide-border/60">
                 {unavailable.map((item) => <EquipmentOption item={item} key={item.id} onToggle={() => toggle(item.id)} selected={selectedIds.includes(item.id)} unavailable />)}
               </div>
@@ -488,10 +488,10 @@ function EquipmentEditor({ equipment: initialEquipment, onClose, onEquipmentLoad
           {equipmentCategoryDefinitions.map((category) => {
             const items = equipment.filter((item) => item.categoria === category.value);
             if (items.length === 0) return null;
-            return <fieldset key={category.value}><legend className="text-sm font-semibold text-text-primary">{category.label}</legend><div className="mt-2 divide-y divide-border/60">{items.map((item) => <EquipmentOption item={item} key={item.id} onToggle={() => toggle(item.id)} selected={selectedIds.includes(item.id)} />)}</div></fieldset>;
+            return <fieldset key={category.value}><legend className="text-sm font-semibold text-steel">{category.label}</legend><div className="mt-2 divide-y divide-border/60">{items.map((item) => <EquipmentOption item={item} key={item.id} onToggle={() => toggle(item.id)} selected={selectedIds.includes(item.id)} />)}</div></fieldset>;
           })}
-          <button className="flex min-h-14 w-full items-center gap-3 rounded-control-sm border border-border bg-surface px-4 text-left text-sm font-semibold text-text-primary focus-visible:outline-primary" onClick={() => setSelectedIds([])} type="button"><PackageX aria-hidden="true" className="text-text-secondary" size={19} />No tengo equipamiento</button>
-          <p aria-live="polite" className="text-sm text-text-secondary">{selectedIds.length} {selectedIds.length === 1 ? "seleccionado" : "seleccionados"}</p>
+          <button className="flex min-h-14 w-full items-center gap-3 rounded-control-sm border border-border bg-surface-interactive px-4 text-left text-sm font-semibold text-text-primary transition-colors hover:border-border-strong hover:bg-surface-active focus-visible:outline-focus" onClick={() => setSelectedIds([])} type="button"><PackageX aria-hidden="true" className="text-steel" size={19} />No tengo equipamiento</button>
+          <p aria-live="polite" className="text-sm font-medium text-steel">{selectedIds.length} {selectedIds.length === 1 ? "seleccionado" : "seleccionados"}</p>
         </div>
       )}
     </EditorFrame>
@@ -499,7 +499,7 @@ function EquipmentEditor({ equipment: initialEquipment, onClose, onEquipmentLoad
 }
 
 function EquipmentOption({ item, onToggle, selected, unavailable = false }: { item: Equipment; onToggle: () => void; selected: boolean; unavailable?: boolean }) {
-  return <label className="flex min-h-12 cursor-pointer items-center gap-3 py-2.5"><input checked={selected} className="peer sr-only" onChange={onToggle} type="checkbox" /><span className={cn("flex size-5 shrink-0 items-center justify-center rounded border", selected ? "border-primary bg-primary text-background" : "border-border-strong")}>{selected ? <Check aria-hidden="true" size={13} strokeWidth={3} /> : null}</span><span className="min-w-0 flex-1 text-sm font-semibold text-text-primary">{item.nombre}</span>{unavailable ? <span className="text-xs font-semibold text-error">No disponible</span> : null}</label>;
+  return <label className={cn("flex min-h-12 cursor-pointer items-center gap-3 rounded-control-sm px-2 py-2.5 transition-colors", selected ? "bg-surface-active/65" : "hover:bg-surface-interactive/45")}><input checked={selected} className="peer sr-only" onChange={onToggle} type="checkbox" /><span className={cn("flex size-5 shrink-0 items-center justify-center rounded border", selected ? "border-thermal-accent bg-surface-interactive text-thermal-accent" : "border-border-strong")}>{selected ? <Check aria-hidden="true" size={13} strokeWidth={3} /> : null}</span><span className="min-w-0 flex-1 text-sm font-semibold text-text-primary">{item.nombre}</span>{unavailable ? <span className="text-[0.8125rem] font-semibold text-error">No disponible</span> : null}</label>;
 }
 
 function ChangePasswordEditor({ onClose }: { onClose: () => void }) {
@@ -536,7 +536,7 @@ function ChangePasswordEditor({ onClose }: { onClose: () => void }) {
   if (complete) {
     return (
       <div className="flex max-h-[calc(100dvh-0.5rem)] flex-col sm:max-h-[calc(100dvh-3rem)]">
-        <div className="flex items-start justify-between gap-4 border-b border-border/60 px-5 pt-5 pb-4 sm:px-6"><h2 className="font-brand text-xl font-bold" id="profile-editor-title">Contraseña actualizada</h2><button aria-label="Cerrar" className="flex size-11 items-center justify-center rounded-full text-text-secondary focus-visible:outline-primary" onClick={onClose} type="button"><X aria-hidden="true" size={20} /></button></div>
+        <div className="flex items-start justify-between gap-4 border-b border-border/70 px-4 pt-4 pb-3 sm:px-6 sm:pt-5 sm:pb-4"><h2 className="font-brand text-xl font-bold" id="profile-editor-title">Contraseña actualizada</h2><button aria-label="Cerrar" className="flex size-11 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus" onClick={onClose} type="button"><X aria-hidden="true" size={20} /></button></div>
         <div className="px-5 py-7 sm:px-6"><p className="text-base leading-6 text-text-primary">Tu nueva contraseña ya está activa. Tu sesión continúa abierta.</p><Button className="mt-6" fullWidth onClick={onClose}>Volver al perfil</Button></div>
       </div>
     );
@@ -544,14 +544,14 @@ function ChangePasswordEditor({ onClose }: { onClose: () => void }) {
 
   return (
     <form className="flex max-h-[calc(100dvh-0.5rem)] flex-col sm:max-h-[calc(100dvh-3rem)]" noValidate onSubmit={submit}>
-      <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/60 px-5 pt-5 pb-4 sm:px-6 sm:pt-6"><div><h2 className="font-brand text-xl font-bold" id="profile-editor-title">Cambiar contraseña</h2><p className="mt-1 text-sm text-text-secondary">Ingresá tu contraseña actual y elegí una nueva.</p></div><button aria-label="Cerrar sin guardar" className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary hover:bg-surface focus-visible:outline-primary" disabled={isSubmitting} onClick={onClose} type="button"><X aria-hidden="true" size={20} /></button></div>
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
+      <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/70 px-4 pt-4 pb-3 sm:px-6 sm:pt-5 sm:pb-4"><div><h2 className="font-brand text-xl font-bold" id="profile-editor-title">Cambiar contraseña</h2><p className="mt-1 text-sm text-steel">Ingresá tu contraseña actual y elegí una nueva.</p></div><button aria-label="Cerrar sin guardar" className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus" disabled={isSubmitting} onClick={onClose} type="button"><X aria-hidden="true" size={20} /></button></div>
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
         {feedback ? <Alert variant="error">{feedback}</Alert> : null}
         <PasswordField autoComplete="current-password" error={errors.currentPassword?.message} id="change-password-current" label="Contraseña actual" register={register("currentPassword")} />
-        <div className="space-y-2"><PasswordField autoComplete="new-password" describedBy="change-password-requirements" error={errors.newPassword?.message} id="change-password-new" label="Nueva contraseña" register={register("newPassword")} /><PasswordRequirements id="change-password-requirements" password={newPassword} /></div>
+        <div className="space-y-2"><PasswordField autoComplete="new-password" describedBy="change-password-requirements" error={errors.newPassword?.message} id="change-password-new" label="Nueva contraseña" register={register("newPassword")} /><div className="[&_li]:text-[0.8125rem] [&_p]:text-[0.8125rem] [&_p]:font-semibold [&_p]:text-steel"><PasswordRequirements id="change-password-requirements" password={newPassword} /></div></div>
         <PasswordField autoComplete="new-password" error={errors.confirmPassword?.message} id="change-password-confirm" label="Confirmar nueva contraseña" register={register("confirmPassword")} />
       </div>
-      <div className="shrink-0 border-t border-border/60 px-5 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-5"><Button className="min-h-[3.25rem]" fullWidth isLoading={isSubmitting} type="submit">{isSubmitting ? "Guardando…" : "Actualizar contraseña"}</Button></div>
+      <div className="shrink-0 border-t border-border/70 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-5"><Button fullWidth isLoading={isSubmitting} size="lg" type="submit">{isSubmitting ? "Guardando…" : "Actualizar contraseña"}</Button></div>
     </form>
   );
 }

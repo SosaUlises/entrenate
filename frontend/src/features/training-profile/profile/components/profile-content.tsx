@@ -213,25 +213,25 @@ export function ProfileContent() {
       <header className="flex items-center gap-3">
         <Link
           aria-label="Volver a Inicio"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface hover:text-text-primary focus-visible:outline-primary"
+          className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-focus"
           href="/home"
         >
           <ChevronLeft aria-hidden="true" size={22} />
         </Link>
-        <h1 className="font-brand text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
+        <h1 className="font-brand text-3xl font-bold leading-tight text-text-primary">
           Perfil
         </h1>
       </header>
 
-      <section aria-label="Datos de cuenta" className="mt-7 flex min-w-0 items-center gap-4">
-        <div className="flex size-14 shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary/12 font-brand text-xl font-bold text-primary">
+      <section aria-label="Datos de cuenta" className="mt-7 flex min-w-0 items-center gap-4 border-b border-border/70 pb-7">
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-control border border-border-strong bg-surface-interactive font-brand text-xl font-bold text-text-primary">
           {initial}
         </div>
         <div className="min-w-0">
           <p className="wrap-break-word font-brand text-xl font-bold text-text-primary sm:text-2xl">
             {user.nombre}
           </p>
-          <p className="mt-1 break-all text-sm leading-5 text-text-secondary sm:text-base">
+          <p className="mt-1 break-all text-sm font-medium leading-5 text-steel sm:text-base">
             {user.email}
           </p>
         </div>
@@ -247,7 +247,7 @@ export function ProfileContent() {
         </div>
       ) : null}
 
-      <div className="mt-9 space-y-9">
+      <div className="mt-10 space-y-10">
         <ProfileSection title="Entrenamiento">
           <ProfileRow
             label="Objetivo"
@@ -304,12 +304,12 @@ export function ProfileContent() {
             onClick={() => setActiveEditor("password")}
           />
           <button
-            className="flex min-h-14 w-full items-center gap-3 border-b border-border/60 py-3 text-left text-[15px] font-semibold text-text-primary transition-colors last:border-b-0 hover:text-primary focus-visible:outline-primary disabled:opacity-60"
+            className="flex min-h-16 w-full items-center gap-3 border-b border-border/60 px-1 py-3 text-left text-[0.9375rem] font-semibold text-text-primary transition-colors last:border-b-0 hover:bg-surface-interactive/45 focus-visible:outline-focus disabled:opacity-60"
             disabled={isSigningOut}
             onClick={() => void handleLogout()}
             type="button"
           >
-            <LogOut aria-hidden="true" className="text-text-secondary" size={19} />
+            <LogOut aria-hidden="true" className="text-text-muted" size={19} />
             <span>{isSigningOut ? "Cerrando sesión…" : "Cerrar sesión"}</span>
           </button>
         </ProfileSection>
@@ -348,7 +348,7 @@ export function ProfileContent() {
 function ProfileSection({ children, title }: { children: React.ReactNode; title: string }) {
   return (
     <section>
-      <h2 className="mb-2 text-xs font-bold tracking-[0.12em] text-text-secondary uppercase">
+      <h2 className="mb-3 font-brand text-[0.9375rem] font-bold leading-5 text-steel">
         {title}
       </h2>
       <div className="border-t border-border/70">{children}</div>
@@ -365,21 +365,21 @@ function ProfileRow({ detail, icon, label, onClick, value }: {
 }) {
   return (
     <button
-      className="group flex min-h-16 w-full min-w-0 items-center gap-3 border-b border-border/60 py-3 text-left transition-colors hover:text-primary focus-visible:outline-primary"
+      className="group flex min-h-[4.5rem] w-full min-w-0 items-center gap-3 border-b border-border/60 px-1 py-3 text-left transition-colors hover:bg-surface-interactive/45 focus-visible:outline-focus"
       onClick={onClick}
       type="button"
     >
-      {icon ? <span className="shrink-0 text-text-secondary">{icon}</span> : null}
+      {icon ? <span className="shrink-0 text-steel">{icon}</span> : null}
       <span className="min-w-0 flex-1">
-        <span className="block text-[15px] font-semibold text-text-primary">{label}</span>
-        {detail ? <span className="mt-0.5 block text-xs leading-5 text-error">{detail}</span> : null}
+        <span className="block text-[0.9375rem] font-semibold text-text-primary">{label}</span>
+        {detail ? <span className="mt-0.5 block text-[0.8125rem] leading-5 text-error">{detail}</span> : null}
       </span>
       {value ? (
-        <span className="max-w-[52%] text-right text-sm leading-5 text-text-secondary sm:text-[15px]">
+        <span className="max-w-[52%] break-words text-right text-sm font-medium leading-5 text-steel sm:text-[0.9375rem]">
           {value}
         </span>
       ) : null}
-      <ChevronRight aria-hidden="true" className="shrink-0 text-text-secondary/70 transition-colors group-hover:text-primary" size={18} />
+      <ChevronRight aria-hidden="true" className="shrink-0 text-text-muted transition-colors group-hover:text-thermal-accent" size={18} strokeWidth={1.75} />
     </button>
   );
 }
@@ -387,12 +387,12 @@ function ProfileRow({ detail, icon, label, onClick, value }: {
 function ProfileSkeleton() {
   return (
     <div aria-label="Cargando perfil" className="mx-auto w-full max-w-xl animate-pulse" role="status">
-      <div className="flex items-center gap-3"><div className="size-11 rounded-full bg-surface" /><div className="h-7 w-24 rounded bg-surface" /></div>
-      <div className="mt-7 flex items-center gap-4"><div className="size-14 rounded-full bg-surface" /><div className="space-y-2"><div className="h-5 w-36 rounded bg-surface" /><div className="h-4 w-48 rounded bg-surface" /></div></div>
+      <div className="flex items-center gap-3"><div className="size-11 rounded-control-sm bg-surface-interactive" /><div className="h-7 w-24 rounded bg-surface-interactive" /></div>
+      <div className="mt-7 flex items-center gap-4 border-b border-border/70 pb-7"><div className="size-14 rounded-control bg-surface-interactive" /><div className="space-y-2"><div className="h-5 w-36 rounded bg-surface-interactive" /><div className="h-4 w-48 rounded bg-surface-interactive" /></div></div>
       {[6, 3, 2].map((rows, section) => (
         <div className="mt-9" key={section}>
-          <div className="mb-3 h-3 w-28 rounded bg-surface" />
-          {Array.from({ length: rows }, (_, row) => <div className="h-16 border-t border-border/60" key={row}><div className="mt-5 h-4 w-4/5 rounded bg-surface" /></div>)}
+          <div className="mb-3 h-3 w-28 rounded bg-surface-interactive" />
+          {Array.from({ length: rows }, (_, row) => <div className="h-[4.5rem] border-t border-border/60" key={row}><div className="mt-6 h-4 w-4/5 rounded bg-surface-interactive" /></div>)}
         </div>
       ))}
       <Spinner className="sr-only" />
