@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ClipboardList, Dumbbell, Home, LogOut, TrendingUp, UserRound } from "lucide-react";
+import { ClipboardList, Compass, Dumbbell, Home, LogOut, TrendingUp, UserRound } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isHomePage = pathname === "/" || pathname === "/home";
   const isExerciseProgressPage = /^\/exercises\/[^/]+\/progress$/.test(pathname);
   const isProgressPage = pathname === "/progress" || isExerciseProgressPage;
+  const isCoachPage = pathname === "/coach" || pathname.startsWith("/coach/");
   const isExercisesPage = !isExerciseProgressPage && (pathname === "/exercises" || pathname.startsWith("/exercises/"));
   const isRoutinesPage = pathname === "/routines" || pathname.startsWith("/routines/");
   const isTrainingPage = pathname === "/training" || pathname.startsWith("/training/");
@@ -34,7 +35,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isHistoryDetailPage = /^\/history\/[^/]+$/.test(pathname);
   const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
   const isRoutineExercisePickerPage = pathname === "/routines/new/exercises" || /^\/routines\/[^/]+\/edit\/exercises$/.test(pathname);
-  const isContextualPage = isExercisesPage || isRoutinesPage || isTrainingPage || isHistoryPage || isProgressPage || isProfilePage;
+  const isContextualPage = isCoachPage || isExercisesPage || isRoutinesPage || isTrainingPage || isHistoryPage || isProgressPage || isProfilePage;
   const showBottomNav = !isTrainingPage && !isRoutineExercisePickerPage && !isHistoryDetailPage;
   const { invalidateSession } = useTrainingProfileGate();
   const [userState, setUserState] = useState<UserState>({ status: "loading" });
@@ -188,13 +189,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Navegación principal"
         className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-[color-mix(in_srgb,var(--surface-elevated)_72%,var(--background))]"
       >
-        <div className="mx-auto grid w-full max-w-2xl grid-cols-4 gap-1 px-3 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-11">
+        <div className="mx-auto grid w-full max-w-2xl grid-cols-5 gap-0.5 px-1 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-1 sm:px-10">
           <Link
             aria-current={isHomePage ? "page" : undefined}
             className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isHomePage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/home"
           >
-            <span className="flex flex-col items-center gap-1 px-2 py-1">
+            <span className="flex flex-col items-center gap-1 px-1 py-1">
               <Home aria-hidden="true" className={isHomePage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isHomePage ? 2.25 : 1.85} />
               <span>Inicio</span>
             </span>
@@ -204,9 +205,19 @@ export function AppShell({ children }: { children: ReactNode }) {
             className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isRoutinesPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/routines"
           >
-            <span className="flex flex-col items-center gap-1 px-2 py-1">
+            <span className="flex flex-col items-center gap-1 px-1 py-1">
               <ClipboardList aria-hidden="true" className={isRoutinesPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isRoutinesPage ? 2.25 : 1.85} />
               <span>Rutinas</span>
+            </span>
+          </Link>
+          <Link
+            aria-current={isCoachPage ? "page" : undefined}
+            className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isCoachPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
+            href="/coach"
+          >
+            <span className="flex flex-col items-center gap-1 px-1 py-1">
+              <Compass aria-hidden="true" className={isCoachPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isCoachPage ? 2.25 : 1.85} />
+              <span>Coach</span>
             </span>
           </Link>
           <Link
@@ -214,7 +225,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isProgressPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/progress"
           >
-            <span className="flex flex-col items-center gap-1 px-2 py-1">
+            <span className="flex flex-col items-center gap-1 px-1 py-1">
               <TrendingUp aria-hidden="true" className={isProgressPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isProgressPage ? 2.25 : 1.85} />
               <span>Progreso</span>
             </span>
@@ -224,7 +235,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isExercisesPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/exercises"
           >
-            <span className="flex flex-col items-center gap-1 px-2 py-1">
+            <span className="flex flex-col items-center gap-1 px-1 py-1">
               <Dumbbell aria-hidden="true" className={isExercisesPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isExercisesPage ? 2.25 : 1.85} />
               <span>Ejercicios</span>
             </span>
