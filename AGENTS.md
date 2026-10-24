@@ -48,6 +48,25 @@ and the repository as the source of truth for implementation status.
 - Make focused changes and avoid unrelated refactors.
 - Preserve loading, empty, error, retry, accessibility and duplicate-submission behavior when applicable.
 
+## Backend conventions
+
+When working in `backend/`:
+
+- Preserve the existing Clean Architecture dependency direction:
+  - Domain must not depend on Application, Infrastructure, API, EF Core or Identity.
+  - Application may depend on Domain but not on Infrastructure or EF Core.
+  - Infrastructure implements persistence and external-service concerns.
+  - API remains a thin delivery layer.
+- Use MediatR for application use cases following the existing command/query patterns.
+- Use FluentValidation for request/use-case validation where the existing architecture does so.
+- Keep EF Core and persistence-specific code inside Infrastructure.
+- Preserve the existing ASP.NET Core Identity and JWT authentication/authorization approach.
+- Controllers must remain thin and delegate application work through the existing abstractions.
+- Register dependencies in the appropriate layer/module; do not move feature configuration into `Program.cs` when an existing dependency-registration pattern applies.
+- Prefer existing repositories, services and patterns before introducing new abstractions.
+- Do not introduce interfaces, repositories, services or architectural patterns without a concrete need.
+
+
 For Entrenate Coach features:
 
 - Do not treat the LLM as the source of truth for training decisions.
@@ -58,3 +77,4 @@ For Entrenate Coach features:
 - Do not implement functionality from a later Coach version unless the active task explicitly requires it.
 
 Follow the validation tier and handoff rules in `docs/agent-workflow.md`.
+

@@ -2735,3 +2735,18 @@ use an LLM
 ```
 
 Its output should contain only deterministic analysis facts required by later stages.
+
+## Exposure with no evaluated planned sets
+
+If an Exposure contains completed sets but none of them belong to the planned
+range `1..SeriesObjetivo`, the Exposure is `Partial`.
+
+Because there are no evaluated planned sets:
+
+- `RirCoverage` is null;
+- `LoadClassification` is null;
+- `ReferenceLoad` is null;
+- `IsTopMastery` is false;
+- `IsOverloaded` is false.
+
+Extra sets do not provide progression evidence by themselves.
