@@ -1,0 +1,653 @@
+# Entrenate Coach V2 — Routine Planner
+
+## 1. Estado y propósito
+
+Estado: especificación de diseño previa a implementación.
+
+V2 propone una rutina de entrenamiento a partir del perfil del usuario y del
+catálogo real de Entrenate. La planificación es determinística y produce una
+propuesta estructurada antes de cualquier escritura.
+
+```text
+perfil + catálogo vigente
+        ↓
+motor determinístico de planificación
+        ↓
+propuesta estructurada y revisable
+        ↓
+confirmación explícita del usuario
+        ↓
+creación mediante las reglas normales de Rutinas
+```
+
+Coach puede explicar la propuesta y conversar sobre ella. No puede inventar
+ejercicios, decidir libremente la planificación ni persistir cambios por sí
+mismo.
+
+Esta especificación complementa `docs/coach.md`; no redefine la identidad ni
+las restricciones globales de Coach.
+
+## 2. Alcance inicial
+
+V2 debe:
+
+- generar una rutina nueva desde el perfil de entrenamiento vigente;
+- utilizar exclusivamente ejercicios activos del catálogo;
+- respetar equipamiento, días y duración disponibles;
+- producir prescripción completa por ejercicio;
+- permitir revisar la propuesta sin persistirla;
+- crear la rutina sólo después de confirmación explícita;
+- reutilizar las validaciones y el flujo de creación de rutinas existentes.
+
+V2 no debe:
+
+- generar ejercicios o identificadores inexistentes;
+- calcular cargas iniciales ni porcentajes de 1RM;
+- modificar una rutina existente sin un flujo específico de revisión y
+  confirmación;
+- adaptar por lesiones, molestias, fatiga o nutrición;
+- usar un LLM para decidir split, ejercicios, volumen o prescripción;
+- activar progresión automática. La progresión sigue perteneciendo a Progress
+  Coach.
+
+## 3. Capacidades y límites del modelo actual
+
+### 3.1 Perfil disponible
+
+`PerfilEntrenamiento` ya contiene:
+
+- `Objetivo`;
+- `NivelExperiencia`;
+- `Edad`;
+- `Sexo` opcional;
+- `PesoKg` opcional;
+- `DiasEntrenamientoPorSemana`, actualmente entre 1 y 7;
+- `DuracionSesionMinutos`, actualmente entre 15 y 240;
+- `EntornoEntrenamiento`;
+- cero o más `DiasPreferidos` sin duplicados;
+- cero o más `Equipamientos` sin duplicados.
+
+Los días preferidos pueden ser menos que los días semanales solicitados. No son
+actualmente una agenda completa obligatoria.
+
+### 3.2 Rutina persistida
+
+La estructura actual permite persistir:
+
+- `Rutina`: usuario, nombre, descripción y estado;
+- `DiaRutina`: nombre, descripción y orden;
+- `EjercicioRutina`: ejercicio, series, rango de repeticiones, rango de RIR,
+  descanso, orden y notas.
+
+Los límites vigentes que una propuesta confirmable debe respetar son:
+
+- 1 a 20 series por ejercicio;
+- 1 a 100 repeticiones, con mínimo menor o igual al máximo;
+- RIR entre 0 y 5, con mínimo menor o igual al máximo;
+- descanso entre 15 y 900 segundos;
+- órdenes positivos y únicos dentro de su nivel;
+- nombres de rutina y día de hasta 100 caracteres;
+- descripciones y notas de hasta 500 caracteres;
+- al menos un día por rutina;
+- todos los `ExerciseId` deben existir y estar activos.
+
+`DiaRutina` no tiene un campo tipado para `DiaSemana`. El día preferido puede
+formar parte de una propuesta, pero hoy no puede preservarse semánticamente al
+crear la rutina. No se debe ocultar esta diferencia usando solamente el nombre
+del día como si fuera un contrato persistente.
+
+### 3.3 Catálogo disponible
+
+Cada ejercicio activo expone actualmente:
+
+- `Id` real;
+- nombre y descripción;
+- grupo muscular principal como texto;
+- equipamientos requeridos;
+- `WorkoutGuideId` opcional.
+
+El catálogo no representa todavía:
+
+- patrón de movimiento;
+- rol primario, secundario o accesorio;
+- ejercicio compuesto o aislado;
+- músculos secundarios;
+- dificultad técnica;
+- bilateral o unilateral;
+- prioridad por objetivo o experiencia;
+- alternativas equivalentes.
+
+Esos datos son necesarios para aplicar una selección defendible. V2 no debe
+inferirlos en runtime a partir del nombre, de texto libre ni de un LLM.
+
+## 4. Entradas del planner
+
+El caso de uso construirá un input inmutable con un snapshot del perfil y una
+proyección del catálogo activo.
+
+### 4.1 Entradas que sí influyen en V2
+
+| Entrada | Uso normativo |
+| --- | --- |
+| Objetivo | Define énfasis, rangos de repeticiones y descansos. |
+| Experiencia | Define volumen inicial, cantidad de ejercicios y complejidad admitida. |
+| Días por semana | Selecciona el split y la cantidad exacta de días propuestos. |
+| Días preferidos | Se conservan como restricciones de calendario; los faltantes se infieren y se marcan. |
+| Duración por sesión | Limita el presupuesto estimado de ejercicios y series. |
+| Entorno | Sirve como contexto estructurado y desempate, nunca como equipamiento implícito. |
+| Equipamiento | Determina elegibilidad de ejercicios. |
+| Catálogo activo | Es la única fuente de `ExerciseId`, equipamiento y metadata de planificación. |
+
+### 4.2 Entradas disponibles que V2 no debe usar inicialmente
+
+- **Edad:** se conserva en el snapshot, pero no cambia volumen, ejercicios ni
+  esfuerzo. La edad sola no permite inferir salud, capacidad o restricciones.
+- **Sexo:** no modifica la rutina inicial. No hay una regla de producto que
+  justifique una prescripción distinta.
+- **Peso:** no se usa mientras V2 no prescriba cargas ni tenga una regla formal
+  para progresiones de peso corporal.
+
+Estos datos no se envían a un futuro LLM si no participan en una explicación.
+Incorporarlos al motor requerirá una regla explícita y testeable, no una
+heurística implícita.
+
+## 5. Metadata mínima de planificación del catálogo
+
+Antes de V2.2, cada ejercicio elegible debe tener metadata curada y estable:
+
+- `MovementPattern`: `HorizontalPush`, `VerticalPush`, `HorizontalPull`,
+  `VerticalPull`, `KneeDominant`, `HipHinge`, `HipExtension`, `ElbowFlexion`,
+  `ElbowExtension`, `ShoulderIsolation`, `Calf`, `Core`;
+- `ExerciseRole`: `Primary`, `Secondary`, `Accessory`;
+- `ExerciseKind`: `Compound` o `Isolation`;
+- grupo muscular principal normalizado;
+- grupos secundarios, si se decide contabilizarlos;
+- nivel mínimo de experiencia, sólo si existe una clasificación curada;
+- prioridad determinística dentro de un mismo patrón;
+- equipamientos requeridos con semántica de “todos requeridos”.
+
+La metadata debe pertenecer al catálogo o a una política versionada que pueda
+resolver de forma estable cada ejercicio real. No debe depender de GUID
+hardcodeados: los IDs actuales se generan por base de datos y no constituyen
+identificadores portables. `WorkoutGuideId` tampoco alcanza porque hoy es
+opcional.
+
+Si un ejercicio activo no tiene metadata de planificación, sigue visible en el
+catálogo general pero V2 no lo selecciona automáticamente. La propuesta debe
+informar esta exclusión como diagnóstico, no completar los datos por inferencia.
+
+## 6. Salida estructurada no persistida
+
+La salida recomendada es conceptualmente:
+
+```text
+RoutineProposal
+  TrainingProfileId
+  ProfileUpdatedAtUtc
+  PlannerPolicyVersion
+  Name
+  Description?
+  Goal
+  ExperienceLevel
+  RequestedDaysPerWeek
+  EstimatedWeeklyMinutes
+  Feasibility
+  ReasonCodes[]
+  Warnings[]
+  Days[]
+
+RoutineProposalDay
+  Order
+  ScheduledDay?
+  ScheduledDayWasInferred
+  Focus
+  EstimatedDurationMinutes
+  Exercises[]
+
+RoutineProposalExercise
+  ExerciseId
+  Name
+  Order
+  MovementPattern
+  ExerciseRole
+  Sets
+  MinReps
+  MaxReps
+  MinRir
+  MaxRir
+  RestSeconds
+  Notes?
+```
+
+`Name` en ejercicios es informativo; `ExerciseId` es la referencia normativa.
+El planner debe obtener ambos del mismo snapshot de catálogo.
+
+`Feasibility` debe diferenciar al menos:
+
+- `Feasible`;
+- `FeasibleWithWarnings`;
+- `NotFeasible`.
+
+Los `ReasonCodes` y warnings permiten explicar, por ejemplo, catálogo
+insuficiente, tiempo ajustado, días inferidos o ausencia de una alternativa de
+equipamiento. La propuesta no debe aparentar certeza si faltan patrones
+esenciales.
+
+`Notes` queda `null` por defecto. Sólo se usa para una indicación estructurada
+necesaria ya definida por producto; el planner no inventa instrucciones
+técnicas en texto libre.
+
+## 7. Pipeline determinístico
+
+El orden de ejecución es normativo:
+
+1. validar el snapshot del perfil;
+2. cargar ejercicios activos y su metadata de planificación;
+3. filtrar por equipamiento;
+4. construir los días solicitados y asignar el split;
+5. calcular cuotas de patrones y volumen;
+6. seleccionar ejercicios;
+7. prescribir series, repeticiones, RIR y descanso;
+8. estimar duración;
+9. ajustar dentro de límites sin eliminar cobertura esencial;
+10. validar invariantes y devolver propuesta o `NotFeasible`.
+
+No se persiste nada durante este pipeline.
+
+## 8. Elegibilidad por equipamiento
+
+Una selección es elegible únicamente cuando:
+
+- el ejercicio existe y está activo;
+- tiene metadata completa para el planner;
+- no requiere equipamiento, o todos sus `EquipmentId` requeridos aparecen en el
+  perfil;
+- todo equipamiento referenciado sigue activo.
+
+Un ejercicio sin relaciones de equipamiento se considera de peso corporal.
+
+El entorno no concede acceso implícito a equipamiento. Por ejemplo,
+`GimnasioComercial` no habilita automáticamente todas las máquinas si el perfil
+no las declaró. Esta regla evita inventar disponibilidad.
+
+Si no queda ningún ejercicio para un patrón, el motor intenta una alternativa
+curada del mismo patrón. Si tampoco existe, devuelve un warning o
+`NotFeasible`, según si el patrón es esencial para ese split.
+
+## 9. Distribución semanal inicial
+
+| Días | Split V2 inicial | Orden de focos |
+| ---: | --- | --- |
+| 1 | Full Body | Full Body A |
+| 2 | Full Body A/B | Full Body A, Full Body B |
+| 3 | Full Body A/B/C | Full Body A, Full Body B, Full Body C |
+| 4 | Upper/Lower | Upper A, Lower A, Upper B, Lower B |
+| 5 | Upper/Lower + PPL | Upper, Lower, Push, Pull, Legs |
+| 6 | PPL A/B | Push A, Pull A, Legs A, Push B, Pull B, Legs B |
+| 7 | PPL A/B + accesorios | PPL A/B y un día corto de Core/Calves |
+
+El séptimo día no agrega otra exposición pesada. Debe usar sólo volumen
+accesorio que ya esté dentro del presupuesto semanal. Si el catálogo o la
+duración no permiten un día útil sin exceder volumen, el resultado es
+`NotFeasible`; el motor no reduce silenciosamente la cantidad solicitada.
+
+### 9.1 Calendario
+
+- Si la cantidad de días preferidos coincide con la cantidad solicitada, se
+  usan exactamente esos días.
+- Si hay días preferidos parciales, todos se conservan y los faltantes se
+  completan buscando maximizar la separación circular entre sesiones.
+- Si no hay días preferidos, se distribuyen de forma aproximadamente uniforme
+  en la semana.
+- Los empates se resuelven de lunes a domingo.
+- Cada día inferido se marca con `ScheduledDayWasInferred = true` para permitir
+  revisión.
+
+La asignación nunca cambia la cantidad de días solicitada. Días consecutivos
+elegidos explícitamente se respetan; el split debe evitar repetir el mismo foco
+principal en esos días.
+
+## 10. Cobertura y frecuencia
+
+Los patrones esenciales son:
+
+- tren superior: empuje y tracción;
+- tren inferior: dominante de rodilla y bisagra/extensión de cadera;
+- core: cobertura semanal;
+- gemelos y brazos: accesorios, no sustituyen patrones esenciales.
+
+Reglas iniciales:
+
+- con un día semanal, cada patrón esencial aparece una vez;
+- con dos o más días, cada patrón esencial debe tener al menos dos exposiciones
+  semanales cuando el split y el tiempo sean factibles;
+- un mismo patrón no recibe dos ejercicios primarios en una sesión antes de
+  cubrir los demás patrones requeridos;
+- grupos pequeños no desplazan un patrón esencial por falta de tiempo;
+- el mismo ejercicio puede repetirse en distintos días si no existe una
+  alternativa elegible, pero nunca se duplica dentro del mismo día;
+- las variantes A/B prefieren ejercicios distintos del mismo patrón, sin hacer
+  de la variedad un requisito que vuelva inviable la propuesta.
+
+## 11. Volumen inicial
+
+El volumen se expresa como series de trabajo semanales. No incluye calentamiento
+ni inventa contribuciones indirectas mientras el catálogo no modele músculos
+secundarios.
+
+| Experiencia | Series por patrón principal/semana | Series directas por accesorio/semana | Tope orientativo por sesión |
+| --- | ---: | ---: | ---: |
+| Sin experiencia | 4–6 | 0–2 | 10 |
+| Principiante | 6–8 | 2–4 | 14 |
+| Intermedio | 8–12 | 4–6 | 18 |
+| Avanzado | 10–14 | 4–8 | 22 |
+
+Aplicación por objetivo:
+
+- `GanarFuerza`: usa la mitad inferior para patrones primarios y limita
+  accesorios;
+- `GanarMasaMuscular`: usa el centro o mitad superior si entra en tiempo;
+- objetivo combinado: usa el centro del rango;
+- `AcondicionamientoGeneral`: usa la mitad inferior con cobertura equilibrada.
+
+La duración siempre puede reducir el volumen hacia el mínimo del rango. El
+motor no baja del mínimo sin emitir `FeasibleWithWarnings`; si tampoco cabe una
+propuesta utilizable, devuelve `NotFeasible`.
+
+La distribución entre exposiciones debe diferir como máximo en una serie para
+un mismo patrón, salvo que el foco del split exija una diferencia explícita.
+
+## 12. Selección de ejercicios
+
+Para cada cupo de patrón, el ranking determinístico es:
+
+1. elegibilidad por actividad, metadata y equipamiento;
+2. rol requerido por el cupo (`Primary`, luego `Secondary`, luego
+   `Accessory`);
+3. adecuación curada al nivel de experiencia;
+4. prioridad curada del catálogo;
+5. penalización por repetir el ejercicio en la sesión anterior;
+6. `WorkoutGuideId`, nombre normalizado y `ExerciseId` como desempates
+   estables dentro del catálogo actual.
+
+Orden dentro de una sesión:
+
+1. ejercicios primarios compuestos;
+2. ejercicios secundarios compuestos;
+3. aislamientos y accesorios;
+4. core y gemelos.
+
+No se usa aleatoriedad. El mismo input, catálogo y versión de política deben
+producir la misma propuesta.
+
+## 13. Prescripción inicial
+
+### 13.1 Repeticiones y descansos
+
+| Objetivo | Ejercicio primario compuesto | Secundario/accesorio | Descanso primario | Descanso accesorio |
+| --- | --- | --- | ---: | ---: |
+| Fuerza | 4–6 | 6–10 | 180 s | 90–120 s |
+| Hipertrofia | 6–12 | 10–15 | 120 s | 60–90 s |
+| Combinado | 5–8 | 8–12 | 150 s | 90 s |
+| Acondicionamiento general | 8–12 | 10–15 | 90 s | 60 s |
+
+### 13.2 RIR
+
+- Sin experiencia: 3–4.
+- Principiante: 2–3.
+- Intermedio: 2–3.
+- Avanzado: 1–3.
+
+V2 no prescribe fallo muscular. Los rangos respetan los límites actuales del
+modelo y son puntos de partida; Progress Coach puede recomendar cambios en
+exposiciones posteriores.
+
+### 13.3 Series por ejercicio
+
+- Sin experiencia: 2 series.
+- Principiante: 2–3 series.
+- Intermedio: 3 series.
+- Avanzado: 3–4 series.
+
+El motor reparte el presupuesto semanal y luego limita cada ejercicio a estos
+rangos. No compensa falta de ejercicios concentrando más de cuatro series en un
+ejercicio durante V2 inicial.
+
+## 14. Estimación y ajuste de duración
+
+V2 necesita una fórmula única, visible y testeable:
+
+```text
+duración estimada =
+  5 minutos de preparación general
+  + 60 segundos de transición por ejercicio
+  + suma por ejercicio de:
+      (45 segundos × series)
+      + (descanso × (series - 1))
+```
+
+La estimación no afirma medir la duración real. Su propósito es evitar
+propuestas evidentemente incompatibles con el perfil.
+
+Una sesión es aceptable si no supera la duración solicitada en más de 10%.
+Cuando excede el presupuesto, el ajuste ocurre en este orden:
+
+1. quitar accesorios de menor prioridad;
+2. reducir series accesorias hasta su mínimo;
+3. reducir series secundarias hasta su mínimo;
+4. alternar accesorios entre días equivalentes;
+5. reducir patrones principales sólo hasta el mínimo semanal permitido.
+
+No se eliminan silenciosamente patrones esenciales. Si aun así no cabe, se
+devuelve `NotFeasible` con la duración mínima estimada y los patrones que no
+pudieron cubrirse.
+
+La fórmula deberá calibrarse con datos reales antes de considerarse exacta.
+
+## 15. Invariantes de una propuesta válida
+
+Una propuesta `Feasible` debe cumplir simultáneamente:
+
+- contiene exactamente la cantidad de días solicitada;
+- incluye todos los días preferidos del perfil;
+- cada día y ejercicio tiene orden positivo y único;
+- cada `ExerciseId` proviene del catálogo activo leído para esa ejecución;
+- todo ejercicio cumple su equipamiento requerido;
+- no hay ejercicios duplicados dentro de un día;
+- existe cobertura de todos los patrones esenciales exigidos por el split;
+- series, repeticiones, RIR, descansos y longitudes respetan contratos actuales;
+- la duración estimada de cada día queda dentro de la tolerancia;
+- no contiene una carga sugerida;
+- no contiene texto generado por un LLM;
+- es idéntica para el mismo input, catálogo y `PlannerPolicyVersion`.
+
+Estas invariantes deben validarse nuevamente al confirmar, porque el perfil o
+el catálogo pueden cambiar entre preview y creación.
+
+## 16. Separación de responsabilidades
+
+### 16.1 Motor determinístico
+
+Decide:
+
+- calendario y split;
+- focos y cobertura por día;
+- elegibilidad y ranking de ejercicios;
+- volumen;
+- series, repeticiones, RIR y descansos;
+- orden de ejercicios;
+- duración estimada;
+- factibilidad, warnings y reason codes.
+
+### 16.2 Coach determinístico
+
+Puede explicar:
+
+- por qué se eligió el split;
+- cómo se usaron objetivo, experiencia, días, tiempo y equipamiento;
+- por qué un ejercicio quedó incluido o excluido;
+- qué limitación produjo un warning;
+- qué se va a persistir si el usuario confirma.
+
+La explicación deriva de la propuesta y sus reason codes.
+
+### 16.3 LLM futuro
+
+Puede:
+
+- interpretar una pregunta sobre la propuesta;
+- explicar los datos estructurados en lenguaje natural;
+- clasificar una solicitud como aclaración o pedido de ajuste;
+- solicitar una aclaración cuando una preferencia no pueda mapearse de forma
+  segura.
+
+No puede:
+
+- elegir directamente un ejercicio;
+- modificar series, RIR, descansos o split;
+- producir IDs;
+- declarar equipamiento disponible;
+- crear o actualizar una rutina;
+- convertir texto libre directamente en una mutación.
+
+Un ajuste interpretado por LLM debe convertirse primero en restricciones
+estructuradas, validarse y ejecutar nuevamente el planner.
+
+### 16.4 Usuario
+
+Debe confirmar explícitamente la propuesta final. Cambiar ejercicios,
+prescripción o días en la revisión produce una nueva propuesta validada; no es
+una autorización implícita para persistir.
+
+## 17. Persistencia y confirmación
+
+El flujo recomendado es:
+
+1. **Generate proposal:** obtiene perfil y catálogo, ejecuta el planner y
+   devuelve preview. No escribe en base de datos.
+2. **Review:** el usuario revisa días, ejercicios y prescripción. Puede cancelar
+   o pedir ajustes estructurados.
+3. **Confirm:** el cliente envía la propuesta aceptada y la versión del perfil y
+   de la política usadas para generarla.
+4. **Revalidate:** el backend vuelve a validar ownership, perfil vigente,
+   ejercicios activos, equipamiento, invariantes y contratos de Rutinas.
+5. **Create:** sólo entonces se usa el caso de uso normal de creación de rutina
+   en una única operación.
+
+V2 inicial no necesita persistir drafts ni conversaciones. La confirmación no
+debe confiar en datos descriptivos enviados por el cliente y debe ser
+idempotente para evitar rutinas duplicadas por reintentos.
+
+Si el perfil o el catálogo cambió, la confirmación falla con un conflicto y
+solicita regenerar; no sustituye ejercicios silenciosamente.
+
+Hasta resolver el modelo de día semanal, una propuesta puede mostrarlos pero
+no debe afirmar que la rutina persistida conserva esa agenda. La solución
+recomendada es agregar una asociación tipada opcional antes de V2.5, no codificar
+el día en `Nombre`.
+
+## 18. Ambigüedades y decisiones requeridas
+
+### Bloqueantes antes de selección de ejercicios
+
+1. **Metadata del catálogo:** decidir si vive en el modelo persistente o en una
+   política versionada con identificador estable. Se recomienda catálogo
+   persistente y curado.
+2. **Día semanal en Rutina:** decidir si `DiaRutina` debe almacenar
+   `DiaSemana?`. Se recomienda hacerlo antes de exponer confirmación.
+3. **Volumen secundario:** decidir si los compuestos aportan series parciales a
+   músculos secundarios. V2 inicial recomienda no contabilizarlas hasta modelar
+   esa relación.
+4. **Siete días:** confirmar si el día accesorio propuesto es una política de
+   producto aceptable o si V2 debe pedir reducir frecuencia.
+
+### Necesarias para estabilizar la política
+
+5. Definir la tabla curada de patrón, rol, tipo, dificultad y prioridad para
+   cada ejercicio actual.
+6. Confirmar los rangos de volumen por experiencia y objetivo.
+7. Confirmar si fuerza debe exigir al menos un compuesto primario por sesión.
+8. Definir cuándo una alternativa con peso corporal sustituye una variante con
+   equipamiento.
+9. Calibrar la estimación de 45 segundos por serie, transición y tolerancia del
+   10% con sesiones reales.
+10. Decidir si un usuario puede editar libremente la propuesta o sólo elegir
+    alternativas generadas por el motor.
+11. Definir versionado de política y el mecanismo de idempotencia de
+    confirmación.
+12. Decidir qué rutina queda activa cuando se confirma una nueva; el modelo
+    actual permite múltiples rutinas activas.
+
+### Decisiones explícitas de V2 inicial
+
+- sexo, edad y peso no alteran la prescripción;
+- no se prescriben cargas iniciales;
+- no se infiere equipamiento por entorno;
+- no se usan nombres de ejercicios para clasificarlos;
+- no se agregan notas generativas;
+- no se optimiza con historial de rendimiento en V2 inicial;
+- el LLM no forma parte del pipeline de planificación.
+
+## 19. Roadmap técnico recomendado
+
+### V2.0 — Contratos y política
+
+- cerrar las ambigüedades bloqueantes;
+- definir input, propuesta, feasibility, reason codes y versión de política;
+- definir metadata de catálogo y matriz normativa;
+- crear tests de invariantes sin persistencia.
+
+### V2.1 — Estructura semanal
+
+- implementar calendario, días inferidos y matriz de splits;
+- implementar cuotas de patrones por día;
+- cubrir 1 a 7 días y casos consecutivos;
+- mantenerlo puro y sin selección de ejercicios.
+
+### V2.2 — Elegibilidad y selección
+
+- incorporar metadata curada;
+- proyectar catálogo activo con equipamientos;
+- filtrar por equipamiento completo;
+- implementar ranking, variedad y fallback determinísticos;
+- devolver factibilidad y diagnósticos.
+
+### V2.3 — Prescripción y duración
+
+- distribuir volumen por experiencia y objetivo;
+- asignar repeticiones, RIR y descansos;
+- estimar duración y aplicar reducción por prioridad;
+- validar límites compatibles con `EjercicioRutina`.
+
+### V2.4 — Propuesta completa
+
+- componer estructura, selección y prescripción;
+- incluir snapshot/versiones y warnings;
+- generar explicación determinística inicial;
+- ejecutar tests de escenarios representativos de extremo a extremo en
+  Application.
+
+### V2.5 — Casos de uso y API
+
+- exponer generación autenticada sin persistencia;
+- exponer confirmación explícita e idempotente;
+- revalidar perfil, catálogo, ownership y propuesta;
+- crear mediante las reglas existentes de Rutinas;
+- resolver previamente la persistencia tipada de días semanales.
+
+### V2.6 — Coach explanation/conversation
+
+- construir contexto mínimo a partir de la propuesta;
+- explicar reason codes y tradeoffs sin cambiar decisiones;
+- permitir preguntas y ajustes convertidos a restricciones estructuradas;
+- mantener conversación stateless inicialmente;
+- no habilitar mutaciones sin volver a preview y confirmación.
+
+## 20. Criterio de inicio de implementación
+
+No debe comenzar V2.2 hasta que exista una fuente confiable de metadata de
+planificación para el catálogo. No debe comenzar V2.5 hasta resolver cómo se
+preservan los días semanales y cómo se evita una confirmación duplicada.
+
+V2.0 y V2.1 sí pueden implementarse antes, porque operan sobre contratos,
+política y estructura semanal pura sin inventar decisiones sobre ejercicios.
