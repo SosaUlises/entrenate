@@ -16,7 +16,13 @@ Debe ser suficientemente simple para quien recién empieza y suficientemente só
 
 Entrenate permite organizar rutinas, ejecutar entrenamientos, registrar series y consultar la actividad, el historial y el progreso dentro de una experiencia continua.
 
-El MVP busca que una persona pueda utilizar Entrenate como herramienta principal para registrar entrenamientos reales y construir un historial confiable. Las capacidades inteligentes o adaptativas pertenecen a etapas futuras y no deben presentarse como disponibles antes de estar implementadas.
+El MVP busca que una persona pueda utilizar Entrenate como herramienta principal para registrar entrenamientos reales y construir un historial confiable.
+
+Sobre esa base de datos reales, Entrenate evolucionará hacia una capa inteligente denominada **Entrenate Coach**, capaz de analizar el contexto, progreso y planificación del usuario para ofrecer asistencia personalizada.
+
+Las capacidades de Entrenate Coach se incorporan incrementalmente y no deben presentarse como disponibles antes de estar implementadas.
+
+Su especificación y roadmap se encuentran en `docs/coach.md`.
 
 ## Positioning
 
@@ -26,6 +32,8 @@ El diferencial actual es la continuidad completa del entrenamiento:
 
 Entrenate evita fragmentar este recorrido en herramientas separadas. La experiencia mobile-first está pensada para el uso real dentro del gimnasio, con baja fricción, lectura rápida y recuperación del contexto del usuario.
 
+La evolución del producto busca extender esta continuidad con inteligencia contextual. Entrenate Coach no se plantea como un chatbot genérico, sino como una capa capaz de utilizar los datos reales del entrenamiento para analizar, explicar, recomendar y, progresivamente, asistir en la planificación y adaptación.
+
 ## Operating Context
 
 - Uso prioritario desde teléfonos móviles durante entrenamientos de fuerza e hipertrofia.
@@ -34,8 +42,11 @@ Entrenate evita fragmentar este recorrido en herramientas separadas. La experien
 - Dos formas de registrar una sesión: modo guiado y carga libre.
 - Continuidad de sesiones activas y borradores de rutinas ante navegación, cierre o interrupciones razonables.
 - Consulta posterior de historial, actividad y progreso.
+- Las futuras capacidades inteligentes deben utilizar este contexto existente en lugar de obligar al usuario a volver a describir manualmente su situación en cada interacción.
 
 ## Capabilities and Constraints
+
+### Current product capabilities
 
 - Autenticación, recuperación de contraseña y perfil de entrenamiento.
 - Catálogo de ejercicios con búsqueda, filtros, imágenes y demostraciones técnicas cuando existen.
@@ -45,7 +56,72 @@ Entrenate evita fragmentar este recorrido en herramientas separadas. La experien
 - Recuperación de sesiones activas sin crear sesiones concurrentes.
 - Historial, calendario de actividad y seguimiento del progreso basados en datos reales.
 - El backend conserva las reglas centrales del dominio; el frontend no debe inventar contratos ni métricas.
-- El MVP no incluye recomendaciones automáticas, IA, nutrición, funciones sociales, pagos, wearables, gimnasios ni gestión de clientes por entrenadores.
+
+### Future intelligent capabilities
+
+Entrenate Coach incorporará progresivamente capacidades como:
+
+- análisis contextual del progreso;
+- recomendaciones de entrenamiento;
+- asistencia para crear y modificar rutinas;
+- adaptación del entrenamiento ante cambios de tiempo, equipamiento, preferencias o contexto;
+- adaptación conservadora ante molestias o restricciones, sin realizar diagnóstico médico;
+- orientación nutricional general vinculada al entrenamiento;
+- insights proactivos cuando los datos del usuario justifiquen una intervención útil.
+
+Estas capacidades están definidas por versiones en `docs/coach.md`.
+
+Documentarlas no implica que estén disponibles actualmente.
+
+### Current MVP exclusions
+
+El MVP actual no incluye todavía:
+
+- Entrenate Coach;
+- recomendaciones automáticas;
+- motor adaptativo;
+- generación inteligente de rutinas;
+- adaptación por molestias;
+- nutrición inteligente;
+- funciones sociales;
+- pagos;
+- wearables;
+- gimnasios;
+- gestión de clientes por entrenadores.
+
+Las capacidades del Coach deben habilitarse únicamente a medida que cada versión sea implementada y validada.
+
+## Entrenate Coach
+
+**Entrenate Coach** es la futura capa inteligente del producto.
+
+No es una mascota, personaje animado ni avatar. Su identidad debe integrarse con la dirección seria, premium y orientada al rendimiento de Entrenate.
+
+Su objetivo es utilizar progresivamente información como:
+
+- perfil del usuario;
+- objetivo;
+- nivel de experiencia;
+- equipamiento;
+- rutinas;
+- planificación;
+- sesiones realizadas;
+- series;
+- RIR;
+- historial;
+- progreso;
+
+para ofrecer asistencia contextual.
+
+El principio arquitectónico y de producto es:
+
+`datos reales → reglas/motores → decisión estructurada → interacción y explicación`
+
+Un modelo de lenguaje puede participar en interpretación y conversación, pero no debe convertirse por sí solo en la fuente de verdad de las decisiones de entrenamiento ni evitar las reglas normales del producto.
+
+La definición detallada, límites, seguridad y roadmap de Entrenate Coach se encuentran en:
+
+`docs/coach.md`
 
 ## Brand Commitments
 
@@ -53,6 +129,7 @@ Entrenate evita fragmentar este recorrido en herramientas separadas. La experien
 - La comunicación utiliza español rioplatense natural, claro y directo.
 - La personalidad debe sentirse premium, tecnológica, deportiva, precisa, moderna y muy fácil de usar.
 - La identidad debe surgir de la marca, el sistema visual, la tipografía, el color, el movimiento, la interacción, los datos y la claridad.
+- Entrenate Coach debe formar parte de esta misma identidad y no introducir una mascota, personaje recurrente ni estética separada del producto.
 - Las demostraciones de ejercicios pueden usar una figura humana neutral, sin identidad ni rostro reconocible, exclusivamente para explicar el movimiento.
 - Evitar una identidad cyberpunk, gaming, SaaS genérica, basada en glassmorphism excesivo, en superficies anidadas o en recursos decorativos recurrentes.
 
@@ -61,12 +138,14 @@ Entrenate evita fragmentar este recorrido en herramientas separadas. La experien
 - Especificación funcional del MVP: `docs/spec.md`.
 - Sistema visual y tokens vigentes: `docs/design-system.md`.
 - Arquitectura frontend: `docs/frontend-architecture.md`.
+- Especificación y roadmap de Entrenate Coach: `docs/coach.md`.
+- Estado actual de implementación: `docs/PROJECT-STATUS.md`.
 - Implementación real del frontend autenticado: `frontend/src/`.
 - Contratos y reglas reales del backend: `backend/src/`.
 - Master oficial de marca: `frontend/public/brand/entrenate-wordmark-master.png`.
 - Assets actuales de demostraciones de ejercicios: `frontend/public/exercises/v2/`.
 - Referencia maestra del modelo técnico neutral: `frontend/public/exercises/v2/_master/neutral-exercise-model-v1-master.png`.
-- No hay evidencia aprobada de testimonios, clientes, benchmarks comerciales, precios o capacidades de IA implementadas; no deben fabricarse.
+- No hay evidencia aprobada de testimonios, clientes, benchmarks comerciales, precios o capacidades inteligentes todavía no implementadas; no deben fabricarse.
 
 ## Product Principles
 
@@ -75,6 +154,9 @@ Entrenate evita fragmentar este recorrido en herramientas separadas. La experien
 3. Mostrar solo capacidades, datos y estados que existan realmente.
 4. Servir a distintos niveles de experiencia sin volver compleja la operación básica.
 5. Preparar datos consistentes para evoluciones futuras sin anticipar funcionalidades ni arquitectura innecesaria.
+6. Construir las capacidades inteligentes sobre datos reales y reglas explícitas, no sobre respuestas libres de un modelo.
+7. Introducir Entrenate Coach de manera incremental, manteniendo claramente separado lo implementado de lo planificado.
+8. Mantener al usuario en control de los cambios importantes propuestos por sistemas inteligentes.
 
 ## Accessibility & Inclusion
 
@@ -82,3 +164,4 @@ Entrenate evita fragmentar este recorrido en herramientas separadas. La experien
 - Controles táctiles cómodos, foco visible, contraste suficiente y controles semánticos.
 - Jerarquía, copy y tamaños legibles para personas con distintos niveles de experiencia y para adultos mayores.
 - Las acciones y estados no deben depender exclusivamente del color, de iconos sin texto ni de conocimientos técnicos de entrenamiento.
+- Las recomendaciones inteligentes deben explicar suficientemente su intención y no depender exclusivamente de indicadores visuales ambiguos.
