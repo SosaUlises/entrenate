@@ -33,7 +33,8 @@
 - Progress V1.0/V1.1 is available through the authenticated backend endpoint
   `GET /api/coach/progress/exercises/{exerciseId}`.
 - Progress V1.2 adds a deterministic explanation to that endpoint.
-- V1.3 conversation is not implemented.
+- Progress V1.3 has a structured Application context for future conversation;
+  no provider, prompt or conversation endpoint is implemented.
 
 ### Onboarding
 
