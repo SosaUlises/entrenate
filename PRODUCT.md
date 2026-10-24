@@ -165,3 +165,19 @@ La definición detallada, límites, seguridad y roadmap de Entrenate Coach se en
 - Jerarquía, copy y tamaños legibles para personas con distintos niveles de experiencia y para adultos mayores.
 - Las acciones y estados no deben depender exclusivamente del color, de iconos sin texto ni de conocimientos técnicos de entrenamiento.
 - Las recomendaciones inteligentes deben explicar suficientemente su intención y no depender exclusivamente de indicadores visuales ambiguos.
+
+## Coach product placement
+
+Entrenate Coach is a premium product area within Entrenate.
+
+- Coach has its own entry point in the primary navigation.
+- The Coach Hub is the root surface for all Coach capabilities.
+- Current capabilities:
+  - Progress Coach
+- Planned capabilities:
+  - Routine Planner
+  - Adaptive Training
+  - Nutrition Coach
+- Planned capabilities must not expose functional flows before implementation.
+- Unavailable capabilities may appear only as clearly disabled / coming soon entries.
+- Coach uses the Acero Térmico V5 design system and does not introduce a separate visual identity.
