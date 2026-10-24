@@ -2,7 +2,7 @@
 
 ## 1. Estado y propósito
 
-Estado: especificación de diseño previa a implementación.
+Estado: V2.0 cerrado — contratos, metadata y política normativa.
 
 V2 propone una rutina de entrenamiento a partir del perfil del usuario y del
 catálogo real de Entrenate. La planificación es determinística y produce una
@@ -91,34 +91,31 @@ Los límites vigentes que una propuesta confirmable debe respetar son:
 - al menos un día por rutina;
 - todos los `ExerciseId` deben existir y estar activos.
 
-`DiaRutina` no tiene un campo tipado para `DiaSemana`. El día preferido puede
-formar parte de una propuesta, pero hoy no puede preservarse semánticamente al
-crear la rutina. No se debe ocultar esta diferencia usando solamente el nombre
-del día como si fuera un contrato persistente.
+`DiaRutina` tiene un `DiaSemana?` tipado y nullable. Las rutinas existentes
+conservan `null`; las nuevas rutinas generadas por el planner deben persistir el
+día propuesto. Los contratos actuales de creación y lectura lo exponen de forma
+aditiva.
 
 ### 3.3 Catálogo disponible
 
-Cada ejercicio activo expone actualmente:
+Cada ejercicio activo puede exponer:
 
 - `Id` real;
+- `Codigo` estable y único para el catálogo curado;
 - nombre y descripción;
 - grupo muscular principal como texto;
+- grupos musculares secundarios explícitos;
+- `PatronMovimiento` tipado;
+- `TipoEjercicio` compuesto o aislamiento;
 - equipamientos requeridos;
 - `WorkoutGuideId` opcional.
 
-El catálogo no representa todavía:
-
-- patrón de movimiento;
-- rol primario, secundario o accesorio;
-- ejercicio compuesto o aislado;
-- músculos secundarios;
-- dificultad técnica;
-- bilateral o unilateral;
-- prioridad por objetivo o experiencia;
-- alternativas equivalentes.
-
-Esos datos son necesarios para aplicar una selección defendible. V2 no debe
-inferirlos en runtime a partir del nombre, de texto libre ni de un LLM.
+La metadata de planificación es nullable para preservar ejercicios existentes
+o incorporados fuera del seed. Un ejercicio sin metadata completa no es
+elegible para selección automática. La dificultad técnica, bilateralidad,
+prioridad y alternativas equivalentes no se persisten en V2.0 porque ninguna
+regla inicial las necesita. V2 no debe inferirlas a partir del nombre, texto
+libre ni un LLM.
 
 ## 4. Entradas del planner
 
@@ -153,24 +150,24 @@ heurística implícita.
 
 ## 5. Metadata mínima de planificación del catálogo
 
-Antes de V2.2, cada ejercicio elegible debe tener metadata curada y estable:
+Cada ejercicio elegible debe tener metadata persistida, curada y estable:
 
-- `MovementPattern`: `HorizontalPush`, `VerticalPush`, `HorizontalPull`,
-  `VerticalPull`, `KneeDominant`, `HipHinge`, `HipExtension`, `ElbowFlexion`,
-  `ElbowExtension`, `ShoulderIsolation`, `Calf`, `Core`;
-- `ExerciseRole`: `Primary`, `Secondary`, `Accessory`;
-- `ExerciseKind`: `Compound` o `Isolation`;
-- grupo muscular principal normalizado;
-- grupos secundarios, si se decide contabilizarlos;
-- nivel mínimo de experiencia, sólo si existe una clasificación curada;
-- prioridad determinística dentro de un mismo patrón;
+- `Codigo`: slug único, independiente del GUID y del nombre visible;
+- `PatronMovimiento`: enum explícito para empujes, tracciones, tren inferior,
+  brazos, hombros, gemelos y core;
+- `TipoEjercicio`: `Compuesto` o `Aislamiento`;
+- `GrupoMuscularPrincipal`: se reutiliza el campo existente;
+- `GruposMuscularesSecundarios`: relación explícita sin repetir el principal;
 - equipamientos requeridos con semántica de “todos requeridos”.
 
-La metadata debe pertenecer al catálogo o a una política versionada que pueda
-resolver de forma estable cada ejercicio real. No debe depender de GUID
-hardcodeados: los IDs actuales se generan por base de datos y no constituyen
-identificadores portables. `WorkoutGuideId` tampoco alcanza porque hoy es
-opcional.
+`Primary`, `Secondary` y `Accessory` son roles contextuales asignados por el
+planner a un cupo de la sesión; no son propiedades intrínsecas del ejercicio y
+no se persisten en el catálogo. Tampoco se persiste dificultad en V2.0: agregarla
+sin una regla consumidora sería metadata especulativa.
+
+La metadata pertenece al catálogo y no depende de GUID hardcodeados.
+`WorkoutGuideId` continúa siendo una integración opcional y no sustituye a
+`Codigo`.
 
 Si un ejercicio activo no tiene metadata de planificación, sigue visible en el
 catálogo general pero V2 no lo selecciona automáticamente. La propuesta debe
@@ -331,9 +328,16 @@ Reglas iniciales:
 
 ## 11. Volumen inicial
 
-El volumen se expresa como series de trabajo semanales. No incluye calentamiento
-ni inventa contribuciones indirectas mientras el catálogo no modele músculos
-secundarios.
+El volumen se expresa como series efectivas semanales. No incluye calentamiento.
+Cada serie aporta `1.0` al grupo muscular principal. Si el ejercicio es
+`Compuesto`, aporta `0.5` a cada grupo secundario persistido. Los ejercicios de
+`Aislamiento` no aportan volumen secundario en V2.0, aunque en el futuro el
+catálogo incorpore secundarios para fines descriptivos.
+
+La contribución secundaria sólo sirve para evitar sobreasignación y comprobar
+los rangos semanales. No reemplaza una exposición principal requerida por el
+split y no se redondea por ejercicio; se suma como decimal durante toda la
+semana.
 
 | Experiencia | Series por patrón principal/semana | Series directas por accesorio/semana | Tope orientativo por sesión |
 | --- | ---: | ---: | ---: |
@@ -362,13 +366,14 @@ un mismo patrón, salvo que el foco del split exija una diferencia explícita.
 Para cada cupo de patrón, el ranking determinístico es:
 
 1. elegibilidad por actividad, metadata y equipamiento;
-2. rol requerido por el cupo (`Primary`, luego `Secondary`, luego
-   `Accessory`);
-3. adecuación curada al nivel de experiencia;
-4. prioridad curada del catálogo;
-5. penalización por repetir el ejercicio en la sesión anterior;
-6. `WorkoutGuideId`, nombre normalizado y `ExerciseId` como desempates
-   estables dentro del catálogo actual.
+2. `TipoEjercicio` requerido por el cupo contextual;
+3. menor volumen semanal ya asignado al patrón y grupo principal;
+4. penalización por repetir el ejercicio en la sesión anterior;
+5. `Codigo` como desempate estable.
+
+No existe ranking por dificultad en V2 inicial. Cuando dos ejercicios siguen
+empatados, el código estable produce una selección reproducible sin depender
+del GUID, nombre visible o `WorkoutGuideId`.
 
 Orden dentro de una sesión:
 
@@ -534,49 +539,50 @@ El flujo recomendado es:
 5. **Create:** sólo entonces se usa el caso de uso normal de creación de rutina
    en una única operación.
 
-V2 inicial no necesita persistir drafts ni conversaciones. La confirmación no
-debe confiar en datos descriptivos enviados por el cliente y debe ser
-idempotente para evitar rutinas duplicadas por reintentos.
+V2 inicial no persiste drafts ni conversaciones. Cada propuesta incluye un
+`ProposalId` aleatorio y un hash SHA-256 de su representación canónica, que
+incluye perfil, catálogo relevante, versión de política y contenido propuesto.
+La confirmación no confía en datos descriptivos enviados por el cliente:
+regenera y revalida la propuesta antes de comparar el hash.
+
+La rutina creada guarda `PlannerProposalId` y `PlannerProposalHash`. Existe una
+unicidad por usuario y `PlannerProposalId`:
+
+- repetir la confirmación con el mismo ID y hash devuelve la misma rutina;
+- reutilizar el ID con otro hash devuelve conflicto;
+- confirmaciones concurrentes se resuelven por la restricción única, nunca
+  creando dos rutinas.
 
 Si el perfil o el catálogo cambió, la confirmación falla con un conflicto y
 solicita regenerar; no sustituye ejercicios silenciosamente.
 
-Hasta resolver el modelo de día semanal, una propuesta puede mostrarlos pero
-no debe afirmar que la rutina persistida conserva esa agenda. La solución
-recomendada es agregar una asociación tipada opcional antes de V2.5, no codificar
-el día en `Nombre`.
+Al confirmar, todas las rutinas activas anteriores del usuario se desactivan y
+la nueva queda activa, dentro de la misma transacción. Las rutinas y el historial
+no se eliminan. Esta política aplica al flujo V2; los casos de uso actuales no
+cambian hasta V2.5.
 
-## 18. Ambigüedades y decisiones requeridas
+## 18. Decisiones cerradas y calibraciones futuras
 
-### Bloqueantes antes de selección de ejercicios
+V2.0 cierra como normativas:
 
-1. **Metadata del catálogo:** decidir si vive en el modelo persistente o en una
-   política versionada con identificador estable. Se recomienda catálogo
-   persistente y curado.
-2. **Día semanal en Rutina:** decidir si `DiaRutina` debe almacenar
-   `DiaSemana?`. Se recomienda hacerlo antes de exponer confirmación.
-3. **Volumen secundario:** decidir si los compuestos aportan series parciales a
-   músculos secundarios. V2 inicial recomienda no contabilizarlas hasta modelar
-   esa relación.
-4. **Siete días:** confirmar si el día accesorio propuesto es una política de
-   producto aceptable o si V2 debe pedir reducir frecuencia.
+1. metadata persistida y curada con código estable;
+2. `DiaSemana?` persistido en `DiaRutina`;
+3. volumen secundario de `0.5` por serie compuesta;
+4. siete días como PPL A/B más día corto de Core/Calves, sin nueva exposición
+   pesada;
+5. propuesta stateless con ID y hash canónico;
+6. confirmación idempotente por usuario y propuesta;
+7. desactivación de rutinas anteriores al confirmar una nueva propuesta.
 
-### Necesarias para estabilizar la política
+No quedan bloqueantes de modelo para comenzar V2.1. Antes de V2.2 deberá
+revisarse funcionalmente la clasificación curada del seed. Son calibraciones,
+no cambios de contrato:
 
-5. Definir la tabla curada de patrón, rol, tipo, dificultad y prioridad para
-   cada ejercicio actual.
-6. Confirmar los rangos de volumen por experiencia y objetivo.
-7. Confirmar si fuerza debe exigir al menos un compuesto primario por sesión.
-8. Definir cuándo una alternativa con peso corporal sustituye una variante con
-   equipamiento.
-9. Calibrar la estimación de 45 segundos por serie, transición y tolerancia del
-   10% con sesiones reales.
-10. Decidir si un usuario puede editar libremente la propuesta o sólo elegir
-    alternativas generadas por el motor.
-11. Definir versionado de política y el mecanismo de idempotencia de
-    confirmación.
-12. Decidir qué rutina queda activa cuando se confirma una nueva; el modelo
-    actual permite múltiples rutinas activas.
+- validar los rangos de volumen por experiencia y objetivo con uso real;
+- calibrar los 45 segundos por serie, transición y tolerancia del 10%;
+- decidir qué ajustes manuales ofrecerá la revisión de propuesta;
+- agregar dificultad o equivalencias sólo si una regla futura demuestra la
+  necesidad.
 
 ### Decisiones explícitas de V2 inicial
 
@@ -590,12 +596,12 @@ el día en `Nombre`.
 
 ## 19. Roadmap técnico recomendado
 
-### V2.0 — Contratos y política
+### V2.0 — Contratos y política (cerrado)
 
-- cerrar las ambigüedades bloqueantes;
-- definir input, propuesta, feasibility, reason codes y versión de política;
-- definir metadata de catálogo y matriz normativa;
-- crear tests de invariantes sin persistencia.
+- contratos y flujo de propuesta definidos;
+- metadata persistida y seed curado;
+- día semanal, idempotencia y activación resueltos;
+- política normativa documentada.
 
 ### V2.1 — Estructura semanal
 
@@ -645,9 +651,7 @@ el día en `Nombre`.
 
 ## 20. Criterio de inicio de implementación
 
-No debe comenzar V2.2 hasta que exista una fuente confiable de metadata de
-planificación para el catálogo. No debe comenzar V2.5 hasta resolver cómo se
-preservan los días semanales y cómo se evita una confirmación duplicada.
-
-V2.0 y V2.1 sí pueden implementarse antes, porque operan sobre contratos,
-política y estructura semanal pura sin inventar decisiones sobre ejercicios.
+V2.1 puede comenzar sobre estos contratos. V2.2 requiere una revisión funcional
+de la clasificación curada, pero no un nuevo modelo. V2.5 debe implementar la
+transacción de activación e idempotencia ya definida; no debe inventar otra
+política.

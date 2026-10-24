@@ -25,6 +25,10 @@ namespace Entrenate.Application.Routines.Validation
                 .GreaterThan(0)
                 .WithMessage("El orden del día debe ser mayor que cero.");
 
+            RuleFor(x => x.DiaSemana)
+                .Must(dia => dia is null || Enum.IsDefined(dia.Value))
+                .WithMessage("El día de semana no es válido.");
+
             RuleFor(x => x.Ejercicios)
                 .NotNull()
                 .WithMessage("La lista de ejercicios es obligatoria.")

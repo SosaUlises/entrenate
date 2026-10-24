@@ -13,6 +13,9 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
 
             builder.HasKey(x => x.Id);
 
+            builder.Property(x => x.Codigo)
+                .HasMaxLength(100);
+
             builder.Property(x => x.Nombre)
                 .IsRequired()
                 .HasMaxLength(150);
@@ -23,6 +26,10 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
             builder.Property(x => x.GrupoMuscularPrincipal)
                 .IsRequired()
                 .HasMaxLength(100);
+
+            builder.Property(x => x.PatronMovimiento);
+
+            builder.Property(x => x.TipoEjercicio);
 
             builder.Property(x => x.WorkoutGuideId)
                 .HasMaxLength(200);
@@ -36,6 +43,9 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
             builder.HasIndex(x => x.WorkoutGuideId)
                 .IsUnique();
 
+            builder.HasIndex(x => x.Codigo)
+                .IsUnique();
+
             builder.HasMany(x => x.Equipamientos)
                 .WithOne()
                 .HasForeignKey(x => x.EjercicioId)
@@ -43,6 +53,15 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
 
             builder.Navigation(x => x.Equipamientos)
                 .HasField("_equipamientos")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            builder.HasMany(x => x.GruposMuscularesSecundarios)
+                .WithOne()
+                .HasForeignKey(x => x.EjercicioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Navigation(x => x.GruposMuscularesSecundarios)
+                .HasField("_gruposMuscularesSecundarios")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }

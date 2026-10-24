@@ -37,6 +37,16 @@ namespace Entrenate.Application.Routines.Commands.UpdateRoutine
                     dias.Count)
                 .WithMessage(
                     "No se puede repetir el orden de los días " +
+                    "dentro de una rutina.")
+                .Must(dias =>
+                    dias is null ||
+                    dias
+                        .Where(x => x.DiaSemana.HasValue)
+                        .Select(x => x.DiaSemana)
+                        .Distinct()
+                        .Count() == dias.Count(x => x.DiaSemana.HasValue))
+                .WithMessage(
+                    "No se puede repetir el día de semana " +
                     "dentro de una rutina.");
 
             RuleForEach(x => x.Dias)

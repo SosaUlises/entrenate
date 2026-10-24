@@ -14,6 +14,8 @@ namespace Entrenate.Domain.Entidades
 
         public int Orden { get; private set; }
 
+        public Entrenate.Domain.Enums.DiaSemana? DiaSemana { get; private set; }
+
         public Rutina Rutina { get; private set; } = null!;
 
         public IReadOnlyCollection<EjercicioRutina> Ejercicios
@@ -27,12 +29,14 @@ namespace Entrenate.Domain.Entidades
             Guid rutinaId,
             string nombre,
             string? descripcion,
-            int orden)
+            int orden,
+            Entrenate.Domain.Enums.DiaSemana? diaSemana = null)
         {
             RutinaId = rutinaId;
             Nombre = nombre.Trim();
             Descripcion = descripcion?.Trim();
             Orden = orden;
+            DiaSemana = diaSemana;
         }
 
         public void Actualizar(
@@ -41,6 +45,12 @@ namespace Entrenate.Domain.Entidades
         {
             Nombre = nombre.Trim();
             Descripcion = descripcion?.Trim();
+        }
+
+        public void DefinirDiaSemana(
+            Entrenate.Domain.Enums.DiaSemana? diaSemana)
+        {
+            DiaSemana = diaSemana;
         }
 
         public EjercicioRutina AgregarEjercicio(

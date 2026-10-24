@@ -33,6 +33,9 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Activa)
                 .IsRequired();
 
+            builder.Property(x => x.PlannerProposalHash)
+                .HasMaxLength(64);
+
             builder.HasMany(x => x.Dias)
                 .WithOne(x => x.Rutina)
                 .HasForeignKey(x => x.RutinaId)
@@ -43,6 +46,13 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
 
             builder.HasIndex(x => x.UsuarioId);
+
+            builder.HasIndex(x => new
+            {
+                x.UsuarioId,
+                x.PlannerProposalId
+            })
+            .IsUnique();
         }
     }
 }

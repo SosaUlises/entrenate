@@ -1,3 +1,5 @@
+using Entrenate.Domain.Enums;
+
 namespace Entrenate.Application.Routines.DTOs
 {
     public record RoutineDayDto(
@@ -5,5 +7,6 @@ namespace Entrenate.Application.Routines.DTOs
         string Nombre,
         string? Descripcion,
         int Orden,
-        IReadOnlyCollection<RoutineExerciseDto> Ejercicios);
+        IReadOnlyCollection<RoutineExerciseDto> Ejercicios,
+        DiaSemana? DiaSemana);
 }
