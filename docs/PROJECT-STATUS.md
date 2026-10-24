@@ -33,6 +33,7 @@
 - Completed: Progress Coach exercise selection and exercise detail route.
 - Completed: Progress Coach GET integration and analysis presentation.
 - Completed: temporary Progress Coach conversation integration.
+- Completed: Progress Coach V1 frontend functional states.
 - Current block: responsive, accessibility and visual QA for Frontend Coach V1.
 
 ## Entrenate Coach

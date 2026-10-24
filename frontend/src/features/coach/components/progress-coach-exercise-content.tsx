@@ -84,6 +84,7 @@ export function ProgressCoachExerciseContent({
   return (
     <section
       aria-labelledby="progress-coach-exercise-title"
+      aria-busy={state.status === "loading"}
       className="mx-auto w-full min-w-0 max-w-xl"
     >
       <header className="max-w-lg">
@@ -247,7 +248,7 @@ function ProgressAnalysisSkeleton() {
   return (
     <div
       aria-label={"Cargando an\u00e1lisis de progreso"}
-      className="mt-8 animate-pulse"
+      className="mt-8 animate-pulse motion-reduce:animate-none"
       role="status"
     >
       <div className="border-y border-border/50 py-7">
@@ -258,12 +259,15 @@ function ProgressAnalysisSkeleton() {
         </div>
       </div>
       {[0, 1, 2].map((item) => (
-        <div className="border-b border-border/50 py-6" key={item}>
+        <div className="border-b border-border/50 py-5" key={item}>
           <div className="h-5 w-36 rounded bg-surface-elevated" />
           <div className="mt-3 h-4 w-full rounded bg-surface-elevated" />
           <div className="mt-2 h-4 w-4/5 rounded bg-surface-elevated" />
         </div>
       ))}
+      <div className="mt-3 border-t border-border/50 pt-6">
+        <div className="h-[3.25rem] w-full rounded-control bg-surface-elevated" />
+      </div>
     </div>
   );
 }

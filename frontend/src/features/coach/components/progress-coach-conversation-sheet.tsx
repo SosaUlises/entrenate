@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
+  useEffect,
   useId,
   useRef,
   useState,
@@ -36,7 +37,8 @@ type ConversationExchange = {
 
 type MarkdownBlock =
   | { lines: string[]; type: "paragraph" }
-  | { items: string[]; type: "ordered-list" | "unordered-list" };
+  | { items: string[]; type: "ordered-list" }
+  | { items: string[]; type: "unordered-list" };
 
 export function ProgressCoachConversationSheet({
   exerciseId,
@@ -48,6 +50,7 @@ export function ProgressCoachConversationSheet({
   const router = useRouter();
   const { invalidateSession } = useTrainingProfileGate();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const latestExchangeRef = useRef<HTMLLIElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const requestEpochRef = useRef(0);
   const exchangeIdRef = useRef(0);
@@ -63,6 +66,16 @@ export function ProgressCoachConversationSheet({
   const isTooLong = question.length > MAX_QUESTION_LENGTH;
   const canSubmit =
     trimmedQuestion.length > 0 && !isTooLong && !isSending;
+
+  useEffect(() => {
+    if (exchanges.length === 0) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      latestExchangeRef.current?.scrollIntoView({ block: "start" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [exchanges.length]);
 
   function openSheet() {
     const dialog = dialogRef.current;
@@ -216,8 +229,16 @@ export function ProgressCoachConversationSheet({
 
             {exchanges.length > 0 ? (
               <ol aria-live="polite" className="mt-5 border-t border-border/70">
-                {exchanges.map((exchange) => (
-                  <li className="border-b border-border/60 py-6" key={exchange.id}>
+                {exchanges.map((exchange, exchangeIndex) => (
+                  <li
+                    className="border-b border-border/60 py-6"
+                    key={exchange.id}
+                    ref={
+                      exchangeIndex === exchanges.length - 1
+                        ? latestExchangeRef
+                        : undefined
+                    }
+                  >
                     <dl>
                       <div>
                         <dt className="text-[0.8125rem] font-semibold leading-5 text-text-secondary">
@@ -231,7 +252,7 @@ export function ProgressCoachConversationSheet({
                         <dt className="text-sm font-semibold leading-5 text-info">
                           Coach
                         </dt>
-                        <dd className="mt-2.5 text-[0.9375rem] leading-7 text-text-primary">
+                        <dd className="mt-2.5 break-words text-[0.9375rem] leading-7 text-text-primary">
                           <CoachMarkdown content={exchange.answer} />
                         </dd>
                       </div>
@@ -243,6 +264,7 @@ export function ProgressCoachConversationSheet({
           </div>
 
           <form
+            aria-busy={isSending}
             className="shrink-0 border-t border-border/70 bg-surface-elevated px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:pb-5"
             noValidate
             onSubmit={handleSubmit}
@@ -254,9 +276,10 @@ export function ProgressCoachConversationSheet({
               Tu pregunta
             </label>
             <textarea
-              aria-describedby={`${textareaId}-counter${isTooLong ? ` ${textareaId}-error` : ""}`}
+              aria-describedby={`${textareaId}-counter${isTooLong ? ` ${textareaId}-error` : requestError ? ` ${textareaId}-request-error` : ""}`}
               aria-invalid={isTooLong}
-              className="mt-2.5 min-h-28 w-full resize-y rounded-control border border-border-strong bg-surface-interactive px-4 py-3.5 text-base leading-7 text-text-primary caret-thermal-accent outline-none transition-colors duration-150 placeholder:text-text-muted hover:border-border-strong focus:border-focus focus-visible:outline-none motion-reduce:transition-none"
+              className="mt-2.5 min-h-28 w-full resize-y rounded-control border border-border-strong bg-surface-interactive px-4 py-3.5 text-base leading-7 text-text-primary caret-thermal-accent outline-none transition-colors duration-150 placeholder:text-text-muted hover:border-border-strong focus:border-focus focus-visible:outline-none disabled:cursor-wait disabled:bg-surface-active disabled:text-text-secondary motion-reduce:transition-none"
+              disabled={isSending}
               id={textareaId}
               onChange={(event) => {
                 setQuestion(event.target.value);
@@ -281,6 +304,7 @@ export function ProgressCoachConversationSheet({
                 ) : requestError ? (
                   <p
                     className="text-[0.8125rem] leading-5 text-error"
+                    id={`${textareaId}-request-error`}
                     role="alert"
                   >
                     {requestError}
@@ -295,6 +319,12 @@ export function ProgressCoachConversationSheet({
               </span>
             </div>
 
+            {isSending ? (
+              <p aria-live="polite" className="sr-only">
+                Enviando pregunta al Coach.
+              </p>
+            ) : null}
+
             <div className="mt-4">
               {requestError && failedQuestion ? (
                 <Button
@@ -303,7 +333,7 @@ export function ProgressCoachConversationSheet({
                   onClick={() => void sendQuestion(failedQuestion)}
                   size="lg"
                 >
-                  Reintentar
+                  {isSending ? "Reintentando" : "Reintentar"}
                 </Button>
               ) : (
                 <Button
@@ -313,7 +343,7 @@ export function ProgressCoachConversationSheet({
                   size="lg"
                   type="submit"
                 >
-                  Enviar
+                  {isSending ? "Enviando" : "Enviar"}
                 </Button>
               )}
             </div>
