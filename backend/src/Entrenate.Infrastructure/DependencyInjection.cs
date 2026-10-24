@@ -1,6 +1,7 @@
 ﻿using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.Common.Settings;
 using Entrenate.Infrastructure.Authentication;
+using Entrenate.Infrastructure.Coach.Progress.Conversation;
 using Entrenate.Infrastructure.Email;
 using Entrenate.Infrastructure.Identity;
 using Entrenate.Infrastructure.Persistence;
@@ -12,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.Net.Http.Headers;
 using System.Text;
 
 
@@ -133,6 +135,31 @@ namespace Entrenate.Infrastructure
                     "Frontend:BaseUrl es obligatorio.")
                 .ValidateOnStart();
 
+            // Groq Progress Conversation
+            services
+                .AddOptions<GroqSettings>()
+                .Bind(configuration.GetSection("Groq"))
+                .Validate(
+                    settings =>
+                        Uri.TryCreate(
+                            settings.BaseUrl,
+                            UriKind.Absolute,
+                            out var baseUri) &&
+                        baseUri.Scheme == Uri.UriSchemeHttps,
+                    "Groq:BaseUrl debe ser una URL HTTPS absoluta.")
+                .Validate(
+                    settings => !string.IsNullOrWhiteSpace(settings.Model),
+                    "Groq:Model es obligatorio.")
+                .Validate(
+                    settings => settings.MaxOutputTokens is > 0 and <= 4096,
+                    "Groq:MaxOutputTokens debe estar entre 1 y 4096.")
+                .Validate(
+                    settings => settings.TimeoutSeconds is > 0 and <= 300,
+                    "Groq:TimeoutSeconds debe estar entre 1 y 300.")
+                .Validate(
+                    settings => !string.IsNullOrWhiteSpace(settings.ApiKey),
+                    "Groq:ApiKey es obligatorio.");
+
             // Authorization
             services.AddAuthorization();
 
@@ -141,6 +168,24 @@ namespace Entrenate.Infrastructure
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IIdentityService, IdentityService>();
             services.AddHttpClient<IEmailService, BrevoEmailService>();
+            services.AddHttpClient<
+                IProgressConversationProvider,
+                GroqProgressConversationProvider>((serviceProvider, client) =>
+                {
+                    var settings = serviceProvider
+                        .GetRequiredService<
+                            Microsoft.Extensions.Options.IOptions<GroqSettings>>()
+                        .Value;
+
+                    client.BaseAddress = new Uri(
+                        settings.BaseUrl.TrimEnd('/') + "/");
+                    client.Timeout = TimeSpan.FromSeconds(
+                        settings.TimeoutSeconds);
+                    client.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue(
+                            "Bearer",
+                            settings.ApiKey);
+                });
             services.AddScoped<DatabaseSeeder>();
 
             services.AddScoped<ITrainingProfileRepository,TrainingProfileRepository>();

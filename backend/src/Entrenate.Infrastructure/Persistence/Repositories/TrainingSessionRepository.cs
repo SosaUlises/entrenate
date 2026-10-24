@@ -1,4 +1,5 @@
 using Entrenate.Application.Common.Interfaces;
+using Entrenate.Application.Coach.Progress.Analysis;
 using Entrenate.Application.Progress.DTOs;
 using Entrenate.Application.TrainingSessions.DTOs;
 using Entrenate.Domain.Entidades;
@@ -9,6 +10,8 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
 {
     public class TrainingSessionRepository : ITrainingSessionRepository
     {
+        private const int ProgressCoachRecentSessionWindow = 3;
+
         private readonly EntrenateDbContext _context;
 
         public TrainingSessionRepository(EntrenateDbContext context)
@@ -260,6 +263,60 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                             y.Rir,
                             y.Completada,
                             y.FechaHoraRegistro))
+                        .ToList()))
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyCollection<ProgressExposure>>
+            GetRecentCompletedExerciseExposuresByUserIdAsync(
+                Guid exerciseId,
+                string userId,
+                CancellationToken cancellationToken = default)
+        {
+            var recentSessionIds = _context.SesionesEntrenamiento
+                .AsNoTracking()
+                .Where(x =>
+                    x.UsuarioId == userId &&
+                    x.Estado == EstadoSesionEntrenamiento.Completada &&
+                    x.Ejercicios.Any(y =>
+                        y.EjercicioId == exerciseId &&
+                        y.Series.Any(z => z.Completada)))
+                .OrderByDescending(x => x.HoraInicio)
+                .ThenByDescending(x => x.Id)
+                .Select(x => x.Id)
+                .Take(ProgressCoachRecentSessionWindow);
+
+            return await _context.EjerciciosSesion
+                .AsNoTracking()
+                .Where(x =>
+                    recentSessionIds.Contains(x.SesionEntrenamientoId) &&
+                    x.EjercicioId == exerciseId &&
+                    x.Series.Any(y => y.Completada))
+                .OrderByDescending(x => x.SesionEntrenamiento.HoraInicio)
+                .ThenByDescending(x => x.SesionEntrenamientoId)
+                .ThenBy(x => x.Orden)
+                .ThenBy(x => x.Id)
+                .Select(x => new ProgressExposure(
+                    x.Id,
+                    x.SesionEntrenamientoId,
+                    x.EjercicioId,
+                    x.SesionEntrenamiento.HoraInicio,
+                    new ProgressPrescriptionSnapshot(
+                        x.SeriesObjetivo,
+                        x.RepeticionesMinimasObjetivo,
+                        x.RepeticionesMaximasObjetivo,
+                        x.RirObjetivoMinimo,
+                        x.RirObjetivoMaximo,
+                        x.DescansoObjetivoSegundos),
+                    x.Series
+                        .Where(y => y.Completada)
+                        .OrderBy(y => y.NumeroSerie)
+                        .ThenBy(y => y.Id)
+                        .Select(y => new ProgressCompletedSet(
+                            y.NumeroSerie,
+                            y.Peso,
+                            y.Repeticiones,
+                            y.Rir))
                         .ToList()))
                 .ToListAsync(cancellationToken);
         }

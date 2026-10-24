@@ -1,4 +1,5 @@
 using Entrenate.Domain.Entidades;
+using Entrenate.Application.Coach.Progress.Analysis;
 using Entrenate.Application.Progress.DTOs;
 using Entrenate.Application.TrainingSessions.DTOs;
 
@@ -57,6 +58,12 @@ namespace Entrenate.Application.Common.Interfaces
 
         Task<IReadOnlyCollection<ExerciseProgressHubSourceDto>>
             GetCompletedExerciseProgressHubByUserIdAsync(
+                string userId,
+                CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyCollection<ProgressExposure>>
+            GetRecentCompletedExerciseExposuresByUserIdAsync(
+                Guid exerciseId,
                 string userId,
                 CancellationToken cancellationToken = default);
 
