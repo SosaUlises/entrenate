@@ -34,7 +34,7 @@ namespace Entrenate.Application.Coach.Progress.Conversation
         int BelowRangeSetCount,
         int InRangeSetCount,
         int TopRangeSetCount,
-        decimal? RirCoverage,
+        decimal? RirCoverageRatio,
         LoadClassification? LoadClassification,
         decimal? ReferenceLoad,
         bool HasRepetitionOverload,
