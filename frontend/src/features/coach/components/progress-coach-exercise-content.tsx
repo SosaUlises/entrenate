@@ -16,6 +16,7 @@ import type {
   CoachProgressEvidenceLevel,
   CoachProgressResponse,
 } from "../types/coach-progress.types";
+import { ProgressCoachConversationSheet } from "./progress-coach-conversation-sheet";
 
 type ProgressState =
   | { status: "loading" }
@@ -133,13 +134,25 @@ export function ProgressCoachExerciseContent({
           description={"No encontramos un an\u00e1lisis para este ejercicio."}
         />
       ) : (
-        <ProgressAnalysis progress={state.progress} />
+        <ProgressAnalysis
+          exerciseId={exerciseId}
+          exerciseName={exercise.nombre}
+          progress={state.progress}
+        />
       )}
     </section>
   );
 }
 
-function ProgressAnalysis({ progress }: { progress: CoachProgressResponse }) {
+function ProgressAnalysis({
+  exerciseId,
+  exerciseName,
+  progress,
+}: {
+  exerciseId: string;
+  exerciseName: string;
+  progress: CoachProgressResponse;
+}) {
   const decision = decisionLabels[progress.recommendation.decision];
   const evidence = evidenceLabels[progress.recommendation.evidenceLevel];
 
@@ -152,7 +165,7 @@ function ProgressAnalysis({ progress }: { progress: CoachProgressResponse }) {
         <div className="flex items-center gap-3">
           <span
             aria-hidden="true"
-            className="h-0.5 w-5 shrink-0 rounded-full bg-thermal-accent"
+            className="h-0.5 w-7 shrink-0 rounded-full bg-thermal-accent"
           />
           <h2
             className="font-brand text-2xl font-bold leading-tight text-text-primary"
@@ -162,8 +175,8 @@ function ProgressAnalysis({ progress }: { progress: CoachProgressResponse }) {
           </h2>
         </div>
 
-        <div className="mt-6 flex items-baseline justify-between gap-4 border-t border-border/60 pt-4">
-          <span className="text-sm font-medium text-text-secondary">
+        <div className="mt-5 flex items-center gap-2.5 border-t border-border/60 pt-3">
+          <span className="text-[0.8125rem] font-medium leading-5 text-text-secondary">
             Nivel de evidencia
           </span>
           <span className="text-[0.8125rem] font-semibold text-info">
@@ -189,17 +202,22 @@ function ProgressAnalysis({ progress }: { progress: CoachProgressResponse }) {
           title={"Por qu\u00e9"}
         />
       </section>
+
+      <ProgressCoachConversationSheet
+        exerciseId={exerciseId}
+        exerciseName={exerciseName}
+      />
     </div>
   );
 }
 
 function ExplanationSection({ body, title }: { body: string; title: string }) {
   return (
-    <div className="py-6">
+    <div className="py-5">
       <h2 className="font-brand text-lg font-bold leading-6 text-text-primary">
         {title}
       </h2>
-      <p className="mt-2 max-w-lg text-sm leading-6 text-text-secondary">
+      <p className="mt-2.5 max-w-lg text-sm leading-6 text-text-secondary">
         {body}
       </p>
     </div>

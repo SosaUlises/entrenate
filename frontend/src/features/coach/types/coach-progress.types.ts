@@ -54,3 +54,11 @@ export type CoachProgressResponse = {
     rationale: string;
   };
 };
+
+export type AskCoachProgressQuestionRequest = {
+  question: string;
+};
+
+export type CoachProgressConversationResponse = {
+  answer: string;
+};

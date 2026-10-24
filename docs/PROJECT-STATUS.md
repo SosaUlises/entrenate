@@ -32,7 +32,8 @@
 - Completed: primary navigation entry + Coach Hub.
 - Completed: Progress Coach exercise selection and exercise detail route.
 - Completed: Progress Coach GET integration and analysis presentation.
-- Current block: Progress Coach conversation integration.
+- Completed: temporary Progress Coach conversation integration.
+- Current block: responsive, accessibility and visual QA for Frontend Coach V1.
 
 ## Entrenate Coach
 
@@ -105,7 +106,6 @@ Current:
 
 Next:
 
-- Integrate Progress Coach conversation POST.
 - Close responsive/accessibility/visual QA.
 
 Coming-soon entries:
