@@ -23,3 +23,8 @@ export async function getAuthToken(): Promise<string | undefined> {
 
   return cookieStore.get(authTokenCookieName)?.value;
 }
+
+export async function clearAuthSession(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(authTokenCookieName);
+}

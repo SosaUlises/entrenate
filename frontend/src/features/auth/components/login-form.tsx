@@ -12,14 +12,13 @@ import { PasswordInput } from "@/components/ui/password-input";
 import {
   TrainingProfileGateStatus,
   usePostAuthTrainingProfileGate,
+  useTrainingProfileGate,
 } from "@/features/training-profile/gate/training-profile-gate";
 import { loginAction } from "../actions/login.action";
 import {
   loginSchema,
   type LoginFormValues,
 } from "../schemas/auth.schemas";
-import { AuthPageHeader } from "./auth-page-header";
-import { AuthSecondaryAction } from "./auth-secondary-action";
 
 const emailFieldId = "login-email";
 const passwordFieldId = "login-password";
@@ -35,8 +34,9 @@ export function LoginForm() {
   );
   const [profileCheckFailed, setProfileCheckFailed] = useState(false);
   const [isRetryingProfile, setIsRetryingProfile] = useState(false);
-  const { complete, isProfileReady, retry } =
+  const { complete, retry } =
     usePostAuthTrainingProfileGate();
+  const { invalidateSession } = useTrainingProfileGate();
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
@@ -90,6 +90,10 @@ export function LoginForm() {
       return;
     }
 
+    if (result.sessionExpired) {
+      invalidateSession();
+    }
+
     setProfileCheckFailed(result.profileCheckFailed === true);
 
     if (result.fieldErrors) {
@@ -125,83 +129,91 @@ export function LoginForm() {
     );
   }
 
-  if (isProfileReady) {
-    return <TrainingProfileGateStatus type="ready" />;
-  }
-
   return (
-    <div className="space-y-8 sm:space-y-9">
-      <AuthPageHeader
-        supportingText="Continuá tu progreso."
-        title="Bienvenido de nuevo"
-      />
+    <div>
+      <header className="space-y-4">
+        <h1 className="font-brand text-[2.25rem] font-extrabold leading-[1.05] tracking-[-0.025em] text-text-primary sm:text-[2.5rem]">
+          Bienvenido de nuevo
+        </h1>
+        <p className="text-[0.9375rem] leading-6 text-text-secondary">
+          Continuá tu progreso.
+        </p>
+      </header>
 
-      <form className="space-y-5" noValidate onSubmit={onSubmit}>
+      <form className="mt-7 space-y-5" noValidate onSubmit={onSubmit}>
         {submitFeedback ? (
           <Alert variant={submitFeedback.variant}>{submitFeedback.message}</Alert>
         ) : null}
 
-        <FormField
-          error={errors.email?.message}
-          id={emailFieldId}
-          label="Correo electrónico"
-        >
-          <Input
-            autoComplete="email"
-            hasError={Boolean(errors.email)}
-            id={emailFieldId}
-            inputMode="email"
-            placeholder="nombre@correo.com"
-            type="email"
-            {...register("email")}
-            aria-describedby={emailMessageId}
-            aria-invalid={Boolean(errors.email)}
-          />
-        </FormField>
-
-        <div className="space-y-3">
+        <div className="space-y-4">
           <FormField
-            error={errors.password?.message}
-            id={passwordFieldId}
-            label="Contraseña"
+            error={errors.email?.message}
+            id={emailFieldId}
+            label="Correo electrónico"
           >
-            <PasswordInput
-              autoComplete="current-password"
-              hasError={Boolean(errors.password)}
-              id={passwordFieldId}
-              placeholder="••••••••"
-              {...register("password")}
-              aria-describedby={passwordMessageId}
-              aria-invalid={Boolean(errors.password)}
+            <Input
+              autoComplete="email"
+              className="text-base font-medium"
+              hasError={Boolean(errors.email)}
+              id={emailFieldId}
+              inputMode="email"
+              placeholder="nombre@correo.com"
+              type="email"
+              {...register("email")}
+              aria-describedby={emailMessageId}
+              aria-invalid={Boolean(errors.email)}
             />
           </FormField>
 
-          <div className="flex justify-end">
-            <Link
-              className="min-h-12 content-center rounded-sm text-sm font-medium text-primary underline-offset-4 transition duration-200 hover:opacity-85 hover:underline focus-visible:outline-primary"
-              href="/forgot-password"
+          <div className="space-y-2">
+            <FormField
+              error={errors.password?.message}
+              id={passwordFieldId}
+              label="Contraseña"
             >
-              ¿Olvidaste tu contraseña?
-            </Link>
+              <PasswordInput
+                autoComplete="current-password"
+                className="text-base font-medium"
+                hasError={Boolean(errors.password)}
+                id={passwordFieldId}
+                placeholder="••••••••"
+                {...register("password")}
+                aria-describedby={passwordMessageId}
+                aria-invalid={Boolean(errors.password)}
+              />
+            </FormField>
+
+            <div className="flex justify-end">
+              <Link
+                className="inline-flex min-h-11 items-center rounded-control-sm px-1 text-[0.8125rem] font-semibold text-text-secondary transition-colors duration-200 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
+                href="/forgot-password"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
           </div>
         </div>
 
         <Button
-          className="min-h-14"
           fullWidth
           isLoading={isSubmitting}
+          size="lg"
           type="submit"
-          variant="gradient"
+          variant="secondary"
         >
           Iniciar sesión
         </Button>
       </form>
 
-      <AuthSecondaryAction
-        action="Crear cuenta"
-        href="/register"
-        prompt="¿No tenés cuenta?"
-      />
+      <p className="mt-4 flex min-h-12 items-center justify-center gap-2 border-t border-border pt-3 text-center text-sm text-text-secondary sm:mt-5 sm:pt-4">
+        <span>¿No tenés cuenta?</span>
+        <Link
+          className="inline-flex min-h-11 items-center rounded-control-sm font-semibold text-text-primary underline-offset-4 transition-colors duration-200 hover:text-thermal-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
+          href="/register"
+        >
+          Crear cuenta
+        </Link>
+      </p>
     </div>
   );
 }

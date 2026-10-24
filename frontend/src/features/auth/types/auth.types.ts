@@ -23,6 +23,11 @@ export type ResetPasswordRequest = {
   token: string;
 };
 
+export type ChangePasswordRequest = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export type ResetPasswordResponse = {
   message: string;
 };

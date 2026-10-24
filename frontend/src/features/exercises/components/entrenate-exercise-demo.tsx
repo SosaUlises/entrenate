@@ -1,0 +1,147 @@
+"use client";
+
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
+import type { EntrenateExerciseDemoDefinition } from "./exercise-demo-v2-registry";
+
+type DemoView = "movement" | "arms";
+
+function createPlaybackSequence(frameCount: number): number[] {
+  const forward = Array.from({ length: frameCount }, (_, index) => index);
+  return [...forward, ...forward.slice(1, -1).reverse()];
+}
+
+type EntrenateExerciseDemoProps = {
+  definition: EntrenateExerciseDemoDefinition;
+  onFailure?: () => void;
+};
+
+export function EntrenateExerciseDemo({
+  definition,
+  onFailure,
+}: EntrenateExerciseDemoProps) {
+  const [view, setView] = useState<DemoView>("movement");
+  const [sequenceIndex, setSequenceIndex] = useState(0);
+  const [loadedFrames, setLoadedFrames] = useState<Set<string>>(() => new Set());
+  const [failed, setFailed] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(true);
+
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setReducedMotion(preference.matches);
+    updatePreference();
+    preference.addEventListener("change", updatePreference);
+    return () => preference.removeEventListener("change", updatePreference);
+  }, []);
+
+  const currentFrames = useMemo(
+    () => view === "movement"
+      ? definition.movementFrames
+      : (definition.armPositionFrames ?? []),
+    [definition, view],
+  );
+  const playbackSequence = useMemo(
+    () => createPlaybackSequence(currentFrames.length),
+    [currentFrames.length],
+  );
+  const framesReady = currentFrames.length > 0 &&
+    currentFrames.every((frame) => loadedFrames.has(frame));
+
+  useEffect(() => {
+    if (!framesReady || reducedMotion || failed) return;
+    const interval = window.setInterval(() => {
+      setSequenceIndex((index) => (index + 1) % playbackSequence.length);
+    }, view === "movement" ? 650 : 1100);
+    return () => window.clearInterval(interval);
+  }, [failed, framesReady, playbackSequence.length, reducedMotion, view]);
+
+  const activeFrame = reducedMotion
+    ? view === "movement"
+      ? Math.floor((currentFrames.length - 1) / 2)
+      : 0
+    : playbackSequence[sequenceIndex];
+  const hasArmPositionView = Boolean(definition.armPositionFrames?.length);
+
+  const handleFrameError = () => {
+    setFailed(true);
+    onFailure?.();
+  };
+
+  return (
+    <section aria-label="Demostración Entrenate" className="mt-1 min-w-0 w-full max-w-full">
+      {hasArmPositionView ? (
+        <div aria-label="Vista de la demostración" className="grid min-w-0 grid-cols-2 gap-1 rounded-control-sm bg-background/45 p-1" role="group">
+          <button
+            aria-pressed={view === "movement"}
+            className={`min-h-11 min-w-0 rounded-control-sm px-3 text-[0.8125rem] font-semibold transition-colors focus-visible:outline-primary ${view === "movement" ? "bg-primary/12 text-primary" : "text-text-secondary hover:bg-surface/60 hover:text-text-primary"}`}
+            onClick={() => {
+              setView("movement");
+              setSequenceIndex(0);
+            }}
+            type="button"
+          >
+            Movimiento
+          </button>
+          <button
+            aria-pressed={view === "arms"}
+            className={`min-h-11 min-w-0 rounded-control-sm px-3 text-[0.8125rem] font-semibold transition-colors focus-visible:outline-primary ${view === "arms" ? "bg-primary/12 text-primary" : "text-text-secondary hover:bg-surface/60 hover:text-text-primary"}`}
+            onClick={() => {
+              setView("arms");
+              setSequenceIndex(0);
+            }}
+            type="button"
+          >
+            Posición de brazos
+          </button>
+        </div>
+      ) : null}
+
+      <div className="relative mx-auto mt-3 flex aspect-square w-full max-w-full items-center justify-center overflow-hidden rounded-control-sm bg-background/25">
+        {failed ? (
+          <p className="px-4 text-center text-sm text-text-secondary" role="status">
+            No pudimos cargar la demostración.
+          </p>
+        ) : reducedMotion && view === "arms" ? (
+          <div className="grid size-full grid-cols-2 items-center gap-1">
+            {definition.armPositionFrames?.map((source) => (
+              <Image
+                alt=""
+                className="h-auto w-full object-contain"
+                height={1024}
+                key={source}
+                onError={handleFrameError}
+                onLoad={() => setLoadedFrames((loaded) => new Set(loaded).add(source))}
+                src={source}
+                unoptimized
+                width={1024}
+              />
+            ))}
+          </div>
+        ) : (
+          <>
+            {currentFrames.map((source, index) => (
+              <Image
+                alt=""
+                aria-hidden="true"
+                className={`absolute inset-0 size-full object-contain transition-opacity duration-150 motion-reduce:transition-none ${activeFrame === index ? "opacity-100" : "opacity-0"}`}
+                height={1024}
+                key={source}
+                loading="eager"
+                onError={handleFrameError}
+                onLoad={() => setLoadedFrames((loaded) => new Set(loaded).add(source))}
+                src={source}
+                unoptimized
+                width={1024}
+              />
+            ))}
+            {!loadedFrames.has(currentFrames[0]) ? (
+              <span className="relative z-10 text-[0.8125rem] text-text-secondary">
+                Cargando demostración…
+              </span>
+            ) : null}
+          </>
+        )}
+      </div>
+    </section>
+  );
+}

@@ -1,0 +1,49 @@
+{
+  "title": "Training — composición operativa",
+  "question": "¿Qué estructura debe gobernar Guided, Rest y Carga libre sin cambiar sus capacidades actuales?",
+  "options": [
+    {
+      "id": "thumb-zone-deck",
+      "label": "Control al pulgar",
+      "kicker": "THE ROLL",
+      "lineage": "Flujo operativo con controles anclados a la zona de alcance",
+      "thesis": "El contexto vive arriba y el registro completo permanece estable junto al pulgar.",
+      "palette": ["#0c0c12", "#171923", "#8b5cf6", "#3b82f6", "#f5f5f7"],
+      "materials": ["tipografía de rendimiento", "divisores sutiles", "dock operativo"],
+      "viewport": "Progreso, ejercicio y objetivo ocupan la mitad superior; peso, reps, RIR y Completar serie forman un deck compacto en la inferior.",
+      "risk": "El teclado puede competir con el dock si no se adapta a visualViewport.",
+      "html": ".impeccable/mocks/decision/training-thumb-zone-deck.html",
+      "htmlFrame": "390x667",
+      "comp": ".impeccable/mocks/decision/training-thumb-zone-deck.png"
+    },
+    {
+      "id": "set-ledger",
+      "label": "Secuencia de series",
+      "lineage": "Registro cronológico con una única fila activa expandida",
+      "thesis": "La sesión se entiende como una secuencia: terminado, actual y pendiente conviven en una sola lectura.",
+      "palette": ["#0c0c12", "#171923", "#8b5cf6", "#22c55e", "#f5f5f7"],
+      "materials": ["filas abiertas", "estados tipográficos", "regla cronológica"],
+      "viewport": "El ejercicio lidera y debajo una lista compacta muestra series completas, la actual expandida y las pendientes.",
+      "risk": "Con muchas series, la acción primaria puede bajar demasiado si la fila activa no queda enfocada.",
+      "html": ".impeccable/mocks/decision/training-set-ledger.html",
+      "htmlFrame": "390x667",
+      "comp": ".impeccable/mocks/decision/training-set-ledger.png"
+    },
+    {
+      "id": "performance-rail",
+      "label": "Rail de rendimiento",
+      "lineage": "Orientación continua mediante una línea de progreso compacta",
+      "thesis": "Un rail lateral ubica ejercicio y serie mientras el plano principal queda dedicado al registro.",
+      "palette": ["#0c0c12", "#171923", "#8b5cf6", "#3b82f6", "#a1a1aa"],
+      "materials": ["rail de progreso", "nodos de estado", "plano operativo"],
+      "viewport": "Una línea vertical mínima acompaña ejercicio, objetivo e inputs y cambia de estado al guardar y descansar.",
+      "risk": "El rail consume ancho valioso y puede sentirse decorativo si no expresa progreso real.",
+      "html": ".impeccable/mocks/decision/training-performance-rail.html",
+      "htmlFrame": "390x667",
+      "comp": ".impeccable/mocks/decision/training-performance-rail.png"
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "buildPath": { "value": "code", "toggle": true },
+  "steer": true
+}

@@ -1,5 +1,6 @@
 using Entrenate.Api.Requests.Routines;
 using Entrenate.Application.Routines.Commands.CreateRoutine;
+using Entrenate.Application.Routines.Commands.DeleteRoutine;
 using Entrenate.Application.Routines.Commands.UpdateRoutine;
 using Entrenate.Application.Routines.Queries.GetRoutineById;
 using Entrenate.Application.Routines.Queries.GetRoutines;
@@ -72,6 +73,18 @@ namespace Entrenate.Api.Controllers
                     request.Nombre,
                     request.Descripcion,
                     request.Dias),
+                cancellationToken);
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> Delete(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            await _sender.Send(
+                new DeleteRoutineCommand(id),
                 cancellationToken);
 
             return NoContent();

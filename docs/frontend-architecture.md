@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-This document defines the initial frontend architecture for Entrenate MVP 1.
+This document defines the frontend architecture for Entrenate.
 
 The goal is to provide enough structure to keep the project consistent without overengineering it.
 
@@ -41,18 +41,15 @@ Do not mix frontend source files with backend projects.
 
 ---
 
-# 4. Initial project structure
+# 4. Feature structure reference
 
-Recommended direction:
+Use the implemented structure under `frontend/src/` as the source of truth. The intended boundaries are:
 
 ```text
 frontend/
 ├── public/
-│   └── branding/
-│       ├── logo/
-│       ├── symbol/
-│       ├── icons/
-│       └── decorative/
+│   └── brand/
+│       └── entrenate-wordmark-master.png
 │
 ├── src/
 │   ├── app/
@@ -290,24 +287,9 @@ Do not infer implemented contracts from the product spec when real backend code 
 
 ---
 
-# 14. Authentication milestone
+# 14. Current implementation
 
-Backend authentication already includes:
-
-- register;
-- login;
-- forgot password;
-- reset password.
-
-Frontend implementation order:
-
-1. foundation;
-2. Login;
-3. Register;
-4. Forgot Password;
-5. Reset Password.
-
-Implement one screen at a time.
+The frontend is initialized and contains authenticated product features in addition to authentication. Treat the implementation under `frontend/src/` as the source for current structure. Use this document for architectural boundaries, not as a delivery roadmap.
 
 ---
 
@@ -470,7 +452,7 @@ Prefer Next.js font loading mechanisms.
 Place assets under:
 
 ```text
-frontend/public/branding/
+frontend/public/brand/
 ```
 
 Do not use generated brand-sheet collages in the UI.
@@ -617,9 +599,9 @@ Avoid:
 
 ---
 
-# 33. Dependencies
+# 33. Dependency policy
 
-Initial likely dependencies beyond Next.js:
+Current foundational choices include:
 
 ```text
 react-hook-form
@@ -641,28 +623,15 @@ The Entrenate visual system is custom.
 
 ---
 
-# 34. First implementation task
+# 34. Evolution rule
 
-The first Codex frontend task should be limited to:
-
-1. initialize `frontend/`;
-2. configure Next.js + TypeScript + Tailwind;
-3. configure Raleway and Manrope;
-4. establish design tokens;
-5. configure global dark background;
-6. create initial reusable UI primitives required for auth;
-7. create auth layout foundation;
-8. do not integrate every auth endpoint yet;
-9. do not create Dashboard;
-10. do not modify backend.
-
-After review, implement Login as the first real screen.
+Evolve the existing frontend from real product needs. Preserve feature boundaries, typed service access, shared primitives and strict TypeScript. Do not use this architecture document to infer current screen scope; inspect the actual route and feature code.
 
 ---
 
-# 35. Future architecture
+# 35. Extension policy
 
-As MVP 1 grows:
+Keep product behavior grouped by feature:
 
 ```text
 features/

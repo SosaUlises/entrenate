@@ -116,7 +116,7 @@ export function OnboardingChoiceStep<T extends number>({
           fullWidth
           onClick={onContinue}
           type="button"
-          variant="gradient"
+          variant="primary"
         >
           Continuar
         </Button>

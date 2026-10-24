@@ -12,7 +12,7 @@ type LoginFieldErrors = Partial<Record<keyof LoginFormValues, string>>;
 
 export type LoginActionResult =
   | {
-      destination: string | null;
+      destination: string;
       ok: true;
       profilePresence: TrainingProfilePresence;
     }
@@ -21,6 +21,7 @@ export type LoginActionResult =
       message: string;
       ok: false;
       profileCheckFailed?: true;
+      sessionExpired?: true;
     };
 
 export async function loginAction(
@@ -54,11 +55,19 @@ export async function loginAction(
     authResponse.token,
   );
 
-  if (destinationResolution.status === "error") {
+  if (destinationResolution.status !== "resolved") {
+    if (destinationResolution.status === "error") {
+      return {
+        message: "No pudimos verificar tu perfil. Intentá nuevamente.",
+        ok: false,
+        profileCheckFailed: true,
+      };
+    }
+
     return {
-      message: "No pudimos verificar tu perfil. Intentá nuevamente.",
+      message: "Tu sesión venció. Iniciá sesión nuevamente.",
       ok: false,
-      profileCheckFailed: true,
+      sessionExpired: true,
     };
   }
 

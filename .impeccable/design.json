@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-20T00:00:00.000Z",
+  "title": "Design System: Entrenate — Acero Térmico",
+  "extensions": {
+    "colorMeta": {
+      "background": { "role": "neutral", "displayName": "Carbón", "canonical": "#10110f", "tonalRamp": ["#10110f", "#181a17", "#1d1f1b", "#22251f", "#292c25"] },
+      "surface": { "role": "neutral", "displayName": "Grafito", "canonical": "#181a17", "tonalRamp": ["#10110f", "#181a17", "#1d1f1b", "#22251f", "#292c25"] },
+      "surface-elevated": { "role": "neutral", "displayName": "Grafito elevado", "canonical": "#22251f", "tonalRamp": ["#10110f", "#181a17", "#1d1f1b", "#22251f", "#292c25"] },
+      "technical-white": { "role": "primary", "displayName": "Blanco técnico", "canonical": "#e8e7df", "tonalRamp": ["#151612", "#7e8178", "#b2b2a9", "#e8e7df", "#f2f1ea"] },
+      "thermal-accent": { "role": "secondary", "displayName": "Señal térmica", "canonical": "#e1734e", "tonalRamp": ["#44251c", "#713c2a", "#a65338", "#e1734e", "#f0ab8d"] },
+      "steel": { "role": "secondary", "displayName": "Acero", "canonical": "#7fa4ad", "tonalRamp": ["#263638", "#40565b", "#5c7980", "#7fa4ad", "#b3c9ce"] },
+      "text-primary": { "role": "neutral", "displayName": "Texto primario", "canonical": "#f2f1ea", "tonalRamp": ["#151612", "#7e8178", "#b2b2a9", "#e8e7df", "#f2f1ea"] },
+      "text-secondary": { "role": "neutral", "displayName": "Texto secundario", "canonical": "#b2b2a9", "tonalRamp": ["#151612", "#7e8178", "#b2b2a9", "#e8e7df", "#f2f1ea"] },
+      "success": { "role": "semantic", "displayName": "Éxito", "canonical": "#67b77a", "tonalRamp": ["#203c27", "#376d45", "#4e9360", "#67b77a", "#a1d6ad"] },
+      "warning": { "role": "semantic", "displayName": "Advertencia", "canonical": "#d8ae55", "tonalRamp": ["#493b1d", "#7d632d", "#ae8c43", "#d8ae55", "#ead18e"] },
+      "error": { "role": "semantic", "displayName": "Error", "canonical": "#d85d56", "tonalRamp": ["#4b211e", "#7f3732", "#ad4943", "#d85d56", "#e99b96"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Métricas, timers y cifras protagonistas en Raleway." },
+      "headline": { "displayName": "Headline", "purpose": "Títulos principales y estados en Raleway." },
+      "title": { "displayName": "Title", "purpose": "Entidades y secciones en Raleway." },
+      "body": { "displayName": "Body", "purpose": "Contenido legible en Manrope." },
+      "label": { "displayName": "Label", "purpose": "Controles y navegación en Manrope." },
+      "metadata": { "displayName": "Metadata", "purpose": "Contexto breve en Manrope, nunca menor a 13px." }
+    },
+    "shadows": [
+      { "name": "elevated", "value": "0 12px 28px rgba(0, 0, 0, 0.28)", "purpose": "Solo capas superpuestas: navegación, menús, dialogs, sheets y popovers." }
+    ],
+    "motion": [
+      { "name": "feedback-fast", "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Feedback inmediato." },
+      { "name": "state-standard", "value": "200ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Cambios de estado, color y superficie." },
+      { "name": "state-deliberate", "value": "220ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Entrada de overlays y cambios de contexto." },
+      { "name": "reduced-motion", "value": "prefers-reduced-motion: reduce", "purpose": "Eliminar movimiento no esencial." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción dominante con cerámica técnica controlada sobre grafito.",
+      "html": "<button class=\"ds-btn-primary\">Completar serie</button>",
+      "css": ".ds-btn-primary{min-height:48px;padding:0 20px;border:1px solid rgba(242,241,234,.20);border-radius:12px;background:color-mix(in srgb,#e8e7df 76%,#22251f);color:#151612;font:600 14px/1.25 Manrope,sans-serif;transition:background-color 200ms,transform 200ms}.ds-btn-primary:active{background:color-mix(in srgb,#e8e7df 68%,#22251f);transform:scale(.99)}.ds-btn-primary:focus-visible{outline:2px solid #e1734e;outline-offset:3px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acción secundaria mineral.",
+      "html": "<button class=\"ds-btn-secondary\">Cambiar modo</button>",
+      "css": ".ds-btn-secondary{min-height:48px;padding:0 20px;border:1px solid rgba(242,241,234,.20);border-radius:12px;background:#22251f;color:#f2f1ea;font:600 14px/1.25 Manrope,sans-serif}.ds-btn-secondary:hover{background:#292c25}.ds-btn-secondary:focus-visible{outline:2px solid #e1734e;outline-offset:3px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Entrada mineral con foco técnico, sin halo.",
+      "html": "<label class=\"ds-field\"><span>Nombre</span><input class=\"ds-input\"></label>",
+      "css": ".ds-field{display:grid;gap:8px;color:#f2f1ea;font:600 14px/1.25 Manrope,sans-serif}.ds-input{min-height:56px;padding:0 16px;border:1px solid rgba(242,241,234,.12);border-radius:12px;background:#1d1f1b;color:#f2f1ea;font:400 15px/1.6 Manrope,sans-serif}.ds-input:focus{border-color:#e1734e;box-shadow:inset 0 -1px 0 #e1734e;outline:none}.ds-input:focus-visible{outline:2px solid #e1734e;outline-offset:3px}"
+    },
+    {
+      "name": "Active Chip",
+      "kind": "chip",
+      "refersTo": "chip-active",
+      "description": "Selección compacta por contraste y marcador.",
+      "html": "<button aria-pressed=\"true\" class=\"ds-chip-active\">Espalda</button>",
+      "css": ".ds-chip-active{min-height:44px;padding:0 16px;border:1px solid rgba(242,241,234,.20);border-radius:9999px;background:#292c25;color:#f2f1ea;font:600 14px/1.25 Manrope,sans-serif;box-shadow:inset 0 -2px 0 #e1734e}.ds-chip-active:focus-visible{outline:2px solid #e1734e;outline-offset:3px}"
+    },
+    {
+      "name": "Floating Navigation",
+      "kind": "nav",
+      "refersTo": "nav-floating",
+      "description": "Navegación mineral elevada con marcador térmico corto.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-active\">Inicio</a><a class=\"ds-nav-item\">Rutinas</a></nav>",
+      "css": ".ds-nav{display:grid;grid-auto-flow:column;padding:4px;border:1px solid rgba(242,241,234,.12);border-radius:18px;background:#22251f;box-shadow:0 12px 28px rgba(0,0,0,.28)}.ds-nav-item{position:relative;display:flex;min-height:48px;align-items:center;justify-content:center;border-radius:8px;color:#b2b2a9;font:600 13px/1.25 Manrope,sans-serif}.ds-nav-active{color:#f2f1ea}.ds-nav-active:after{position:absolute;bottom:2px;width:16px;height:2px;border-radius:9999px;background:#e1734e;content:''}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Precisión en movimiento",
+    "overview": "Acero Térmico convierte Entrenate en un instrumento deportivo digital: carbón, grafito, acero, blanco técnico y una señal térmica contenida. Training es la referencia visual. La jerarquía nace de datos, tipografía, espacio, feedback y materialidad, sin decoración futurista.",
+    "keyCharacteristics": [
+      "Dark-first y mobile-first.",
+      "Cerámica técnica controlada para acciones y blanco técnico para datos protagonistas.",
+      "Señal térmica breve para foco, avance y performance.",
+      "Acero para información.",
+      "Superficies planas y capas elevadas solo cuando se superponen.",
+      "Targets de 44–48px y texto funcional mínimo de 13px."
+    ],
+    "rules": [
+      { "name": "Primary is not accent", "body": "Primary es una acción cerámica controlada sobre grafito; Thermal Accent es una señal pequeña y contextual.", "section": "colors" },
+      { "name": "Color is signal", "body": "El color comunica interacción, información o estado; nunca reemplaza jerarquía.", "section": "colors" },
+      { "name": "Flat by default", "body": "Espacio, tipografía, divisores y bordes resuelven jerarquía antes que elevación.", "section": "elevation" },
+      { "name": "Operational legibility", "body": "Datos y controles frecuentes priorizan lectura inmediata, targets amplios y una columna clara.", "section": "typography" },
+      { "name": "Firm geometry", "body": "Los radios 8/12/16/18 expresan escala sin suavizar toda la interfaz.", "section": "shapes" },
+      { "name": "Functional motion", "body": "El movimiento de 150–220ms confirma, encaja, avanza o guarda.", "section": "motion" }
+    ],
+    "dos": [
+      "Do usar cerámica técnica controlada para la acción primaria.",
+      "Do usar señal térmica como marcador contenido.",
+      "Do usar acero para información.",
+      "Do mantener foco visible y texto funcional desde 13px.",
+      "Do validar 390×667 antes que desktop."
+    ],
+    "donts": [
+      "Don't usar gradientes, glow, halos o glassmorphism.",
+      "Don't llenar superficies con el acento térmico.",
+      "Don't usar color semántico fuera de su función.",
+      "Don't anidar cards ni agregar sombras a contenido plano.",
+      "Don't introducir violeta o azul heredado como identidad."
+    ]
+  }
+}

@@ -9,45 +9,14 @@ import {
   type OnboardingDraft,
 } from "./types/onboarding.types";
 import type { CreateTrainingProfileRequest } from "./types/training-profile.types";
-
-export const objectiveLabels: Record<ObjetivoEntrenamiento, string> = {
-  [ObjetivoEntrenamiento.GanarMasaMuscular]: "Ganar masa muscular",
-  [ObjetivoEntrenamiento.GanarFuerza]: "Ganar fuerza",
-  [ObjetivoEntrenamiento.GanarmasaMuscularYFuerza]:
-    "Masa muscular y fuerza",
-  [ObjetivoEntrenamiento.AcondicionamientoGeneral]:
-    "Acondicionamiento general",
-};
-
-export const experienceLabels: Record<NivelExperiencia, string> = {
-  [NivelExperiencia.SinExperiencia]: "Sin experiencia",
-  [NivelExperiencia.Principiante]: "Principiante",
-  [NivelExperiencia.Intermedio]: "Intermedio",
-  [NivelExperiencia.Avanzado]: "Avanzado",
-};
-
-export const environmentLabels: Record<EntornoEntrenamiento, string> = {
-  [EntornoEntrenamiento.Casa]: "Casa",
-  [EntornoEntrenamiento.GimnasioPequeno]: "Gimnasio pequeño",
-  [EntornoEntrenamiento.Calistenia]: "Calistenia",
-  [EntornoEntrenamiento.GimnasioComercial]: "Gimnasio comercial",
-};
-
-export const sexLabels: Record<Sexo, string> = {
-  [Sexo.Masculino]: "Masculino",
-  [Sexo.Femenino]: "Femenino",
-  [Sexo.PrefieroNoInformarlo]: "Prefiero no informarlo",
-};
-
-const dayLabels: Record<DiaSemana, string> = {
-  [DiaSemana.Lunes]: "Lun",
-  [DiaSemana.Martes]: "Mar",
-  [DiaSemana.Miercoles]: "Mié",
-  [DiaSemana.Jueves]: "Jue",
-  [DiaSemana.Viernes]: "Vie",
-  [DiaSemana.Sabado]: "Sáb",
-  [DiaSemana.Domingo]: "Dom",
-};
+export {
+  environmentLabels,
+  experienceLabels,
+  formatPreferredDays,
+  formatWeight,
+  objectiveLabels,
+  sexLabels,
+} from "../shared/training-profile-options";
 
 const objectiveValues = Object.values(ObjetivoEntrenamiento);
 const experienceValues = Object.values(NivelExperiencia);
@@ -146,23 +115,6 @@ export function createTrainingProfileRequestFromDraft(
     pesoKg: draft.pesoKg!,
     sexo: draft.sexo!,
   };
-}
-
-export function formatPreferredDays(days: DiaSemana[]): string {
-  return days.length === 0
-    ? "Sin días fijos"
-    : [...days]
-        .sort((firstDay, secondDay) => firstDay - secondDay)
-        .map((day) => dayLabels[day])
-        .join(" · ");
-}
-
-export function formatWeight(weight: number | null): string {
-  return weight === null
-    ? "No informado"
-    : `${new Intl.NumberFormat("es-AR", {
-        maximumFractionDigits: 2,
-      }).format(weight)} kg`;
 }
 
 function isValidPreferredDays(

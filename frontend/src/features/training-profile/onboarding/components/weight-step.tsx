@@ -60,10 +60,7 @@ export function WeightStep() {
 
   return (
     <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[560px] flex-col sm:min-h-[calc(100dvh-4rem)] md:justify-center">
-      <OnboardingStepHeader
-        currentStep={9}
-        onBack={goBack}
-      />
+      <OnboardingStepHeader currentStep={9} onBack={goBack} />
 
       <div className="mt-7 sm:mt-8">
         <h1 className="font-brand text-[1.75rem] leading-tight font-bold tracking-tight text-text-primary sm:text-3xl md:text-[2rem]">
@@ -74,45 +71,48 @@ export function WeightStep() {
         </p>
       </div>
 
-      <div className="mt-10 flex flex-col items-center md:mt-12">
-        <div
+      <div className="mt-6 flex flex-col items-center md:mt-8">
+        <label
           className={cn(
-            "flex h-28 w-44 items-center justify-center rounded-card border bg-surface px-4 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-primary focus-within:bg-[color-mix(in_srgb,var(--primary)_7%,var(--surface))] focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background",
-            showError && "border-error",
+            "flex h-28 w-full max-w-[20rem] cursor-text flex-col items-center justify-center rounded-card border border-border bg-surface-interactive px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-thermal-accent/45 focus-within:bg-surface-active focus-within:ring-2 focus-within:ring-thermal-accent focus-within:ring-offset-2 focus-within:ring-offset-background",
+            showError && "border-error/70",
           )}
+          htmlFor="peso-kg"
         >
-          <label className="sr-only" htmlFor="peso-kg">
+          <span className="sr-only">
             Peso actual en kilogramos
-          </label>
+          </span>
           <input
             aria-describedby={
               showError ? "weight-unit weight-error" : "weight-unit"
             }
             aria-invalid={showError}
             autoComplete="off"
-            className="w-full bg-transparent text-center text-text-primary outline-none placeholder:text-text-secondary"
+            className="w-full max-w-52 border-0 bg-transparent text-center font-brand font-extrabold tracking-[-0.04em] text-text-primary caret-thermal-accent shadow-none outline-none placeholder:text-text-muted focus:border-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none"
             id="peso-kg"
             inputMode="decimal"
             onBlur={handleBlur}
             onChange={handleChange}
             placeholder="—"
             style={{
+              border: 0,
+              boxShadow: "none",
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "clamp(3rem, 4vw, 3.5rem)",
-              fontWeight: 700,
+              fontSize: "clamp(3rem, 9vw, 3.5rem)",
+              fontWeight: 800,
               lineHeight: 1,
+              outline: "none",
             }}
             type="text"
             value={inputValue}
           />
-        </div>
-
-        <p
-          className="mt-2 text-base leading-6 font-semibold text-text-secondary"
-          id="weight-unit"
-        >
-          kg
-        </p>
+          <span
+            className="mt-1 text-[0.8125rem] font-semibold leading-5 text-text-secondary"
+            id="weight-unit"
+          >
+            kg
+          </span>
+        </label>
 
         <div className="mt-2 min-h-5" aria-live="polite">
           {showError ? (
@@ -123,22 +123,23 @@ export function WeightStep() {
         </div>
       </div>
 
-      <div className="mt-5 flex flex-col items-center gap-3">
+      <div className="mt-2 flex flex-col items-center gap-2.5 md:mt-3">
         <Button
-          className="min-h-12 px-4"
+          className="px-4 text-text-secondary"
           onClick={handleSkip}
+          size="sm"
           type="button"
-          variant="text"
+          variant="ghost"
         >
           Omitir por ahora
         </Button>
         <Button
-          className="min-h-14"
           disabled={validWeight === undefined}
           fullWidth
           onClick={handleContinue}
+          size="lg"
           type="button"
-          variant="gradient"
+          variant="primary"
         >
           Continuar
         </Button>

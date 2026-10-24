@@ -4,6 +4,7 @@ using Entrenate.Application.TrainingSessions.Commands.CompleteTrainingSession;
 using Entrenate.Application.TrainingSessions.Commands.StartTrainingSession;
 using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
 using Entrenate.Application.TrainingSessions.Queries.GetActiveTrainingSession;
+using Entrenate.Application.TrainingSessions.Queries.GetTrainingActivity;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionHistory;
 using MediatR;
@@ -58,6 +59,20 @@ namespace Entrenate.Api.Controllers
                 cancellationToken);
 
             return Ok(sessions);
+        }
+
+        [HttpGet("activity")]
+        public async Task<IActionResult> GetActivity(
+            [FromQuery] DateOnly? from,
+            [FromQuery] DateOnly? to,
+            [FromQuery] string? timeZone,
+            CancellationToken cancellationToken)
+        {
+            var activity = await _sender.Send(
+                new GetTrainingActivityQuery(from, to, timeZone),
+                cancellationToken);
+
+            return Ok(activity);
         }
 
         [HttpGet("{id:guid}")]

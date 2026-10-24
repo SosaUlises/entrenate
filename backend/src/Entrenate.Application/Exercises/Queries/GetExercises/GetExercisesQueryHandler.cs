@@ -53,7 +53,8 @@ namespace Entrenate.Application.Exercises.Queries.GetExercises
                             x.Id,
                             x.Nombre,
                             x.Categoria))
-                        .ToList()))
+                        .ToList(),
+                    exercise.WorkoutGuideId))
                 .ToList();
         }
     }

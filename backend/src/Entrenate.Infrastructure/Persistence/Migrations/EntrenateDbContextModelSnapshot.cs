@@ -426,7 +426,14 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("DiaRutinaId");
 
+                    b.HasIndex("UsuarioId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_SesionesEntrenamiento_UsuarioId_Active")
+                        .HasFilter("\"Estado\" = 1");
+
                     b.HasIndex("UsuarioId", "Fecha");
+
+                    b.HasIndex("UsuarioId", "Estado", "HoraInicio");
 
                     b.ToTable("SesionesEntrenamiento", (string)null);
                 });

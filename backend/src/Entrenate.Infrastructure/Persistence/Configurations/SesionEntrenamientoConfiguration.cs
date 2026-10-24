@@ -49,6 +49,18 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 x.UsuarioId,
                 x.Fecha
             });
+
+            builder.HasIndex(x => new
+            {
+                x.UsuarioId,
+                x.Estado,
+                x.HoraInicio
+            });
+
+            builder.HasIndex(x => x.UsuarioId)
+                .HasDatabaseName("IX_SesionesEntrenamiento_UsuarioId_Active")
+                .IsUnique()
+                .HasFilter("\"Estado\" = 1");
         }
     }
 }

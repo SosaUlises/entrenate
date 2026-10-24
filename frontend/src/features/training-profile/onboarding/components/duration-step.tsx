@@ -18,10 +18,7 @@ export function DurationStep() {
 
   return (
     <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[560px] flex-col sm:min-h-[calc(100dvh-4rem)] md:justify-center">
-      <OnboardingStepHeader
-        currentStep={5}
-        onBack={goBack}
-      />
+      <OnboardingStepHeader currentStep={5} onBack={goBack} />
 
       <div className="mt-7 sm:mt-8">
         <h1 className="font-brand text-[1.75rem] leading-tight font-bold tracking-tight text-text-primary sm:text-3xl md:text-[2rem]">
@@ -32,7 +29,7 @@ export function DurationStep() {
         </p>
       </div>
 
-      <fieldset className="mt-6 grid grid-cols-2 gap-3 md:mt-8 md:grid-cols-3">
+      <fieldset className="mt-6 grid grid-cols-2 gap-3.5 md:mt-8">
         <legend className="sr-only">Duración del entrenamiento</legend>
         {duracionSesionMinutosValues.map((duration) => {
           const isSelected = selectedDuration === duration;
@@ -50,35 +47,36 @@ export function DurationStep() {
               />
               <span
                 className={cn(
-                  "relative flex min-h-24 flex-col items-center justify-center rounded-card border px-3 py-3 transition-[background-color,border-color,box-shadow] duration-200 hover:border-border-strong peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
+                  "relative flex h-[5.25rem] flex-col items-center justify-center rounded-card border px-3 py-3 transition-[background-color,border-color,box-shadow,transform] duration-200 active:scale-[0.99] peer-focus-visible:ring-2 peer-focus-visible:ring-thermal-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
                   isSelected
-                    ? "border-primary bg-[color-mix(in_srgb,var(--primary)_7%,var(--surface))]"
-                    : "border-border bg-surface",
+                    ? "border-thermal-accent/40 bg-surface-active shadow-[inset_0_0_0_1px_rgba(225,115,78,0.18)]"
+                    : "border-border bg-surface-interactive hover:border-border-strong",
                 )}
               >
-                {isSelected ? (
-                  <Check
-                    aria-hidden="true"
-                    className="absolute top-3 right-3 text-primary"
-                    size={16}
-                    strokeWidth={2.5}
-                  />
-                ) : null}
-                <span
-                  className={cn(
-                    "font-brand text-3xl leading-none font-bold sm:text-[2rem]",
-                    isSelected ? "text-primary" : "text-text-primary",
-                  )}
-                >
+                <span className="font-brand text-[2rem] font-extrabold leading-none tracking-[-0.03em] text-text-primary">
                   {duration}
                 </span>
+                <span className="mt-1 text-[0.8125rem] font-semibold leading-5 text-text-secondary">
+                  min
+                </span>
+
                 <span
+                  aria-hidden="true"
                   className={cn(
-                    "mt-1.5 text-sm font-semibold",
-                    isSelected ? "text-text-primary" : "text-text-secondary",
+                    "absolute right-2.5 top-2.5 flex size-5 items-center justify-center rounded-full border transition-[background-color,border-color,color,transform] duration-200",
+                    isSelected
+                      ? "scale-100 border-thermal-accent/60 bg-thermal-accent/15 text-thermal-accent"
+                      : "scale-95 border-border-strong/70 bg-surface text-transparent",
                   )}
                 >
-                  min
+                  <Check
+                    className={cn(
+                      "transition-transform duration-200",
+                      isSelected ? "scale-100" : "scale-0",
+                    )}
+                    size={11}
+                    strokeWidth={2.25}
+                  />
                 </span>
               </span>
             </label>
@@ -86,14 +84,14 @@ export function DurationStep() {
         })}
       </fieldset>
 
-      <div className="mt-6 md:mt-8">
+      <div className="mt-6 md:mt-7">
         <Button
-          className="min-h-14"
           disabled={selectedDuration === undefined}
           fullWidth
           onClick={goNext}
+          size="lg"
           type="button"
-          variant="gradient"
+          variant="primary"
         >
           Continuar
         </Button>

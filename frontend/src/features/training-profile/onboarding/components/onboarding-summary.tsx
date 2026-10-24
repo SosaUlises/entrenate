@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -41,7 +40,7 @@ export function OnboardingSummary({
 }: OnboardingSummaryProps) {
   const router = useRouter();
   const { draft } = useOnboarding();
-  const { markProfileCreated } = useTrainingProfileGate();
+  const { invalidateSession, markProfileCreated } = useTrainingProfileGate();
   const isSubmittingRef = useRef(false);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [errorMessage, setErrorMessage] = useState<string>();
@@ -88,13 +87,19 @@ export function OnboardingSummary({
 
       if (result.ok) {
         markProfileCreated();
-        setSubmitState("success");
+        router.replace("/home");
         return;
       }
 
       if (result.kind === "already_exists") {
         markProfileCreated();
         setSubmitState("already-exists");
+        return;
+      }
+
+      if (result.kind === "unauthenticated") {
+        invalidateSession();
+        router.replace("/login");
         return;
       }
 
@@ -116,8 +121,7 @@ export function OnboardingSummary({
           onBack={() => router.push("/onboarding/sex")}
         />
         <div className="my-auto flex flex-col items-center py-10 text-center">
-          <GymBro />
-          <h1 className="mt-5 font-brand text-3xl font-bold text-text-primary">
+          <h1 className="font-brand text-3xl font-bold text-text-primary">
             {submitState === "success"
               ? "¡Perfil creado!"
               : "¡Tu perfil ya está listo!"}
@@ -139,8 +143,7 @@ export function OnboardingSummary({
       />
 
       <div className="mt-8 flex flex-col items-center text-center sm:mt-9">
-        <GymBro />
-        <h1 className="mt-5 font-brand text-[28px] leading-tight font-bold tracking-tight text-text-primary sm:text-3xl">
+        <h1 className="font-brand text-[28px] leading-tight font-bold tracking-tight text-text-primary sm:text-3xl">
           {greeting}
         </h1>
         <p className="mt-2 max-w-md text-base leading-6 text-text-primary">
@@ -237,7 +240,7 @@ export function OnboardingSummary({
           isLoading={submitState === "submitting"}
           onClick={handleSubmit}
           type="button"
-          variant="gradient"
+          variant="primary"
         >
           {submitState === "submitting"
             ? "Creando tu perfil..."
@@ -247,21 +250,6 @@ export function OnboardingSummary({
         </Button>
       </div>
     </article>
-  );
-}
-
-function GymBro() {
-  return (
-    <div className="relative mx-auto h-[clamp(10.5rem,30dvh,17rem)] w-full max-w-[19rem] shrink-0 lg:h-[min(52dvh,26.25rem)] lg:max-w-[26.25rem]">
-      <Image
-        alt="GymBro celebrando"
-        className="object-contain"
-        fill
-        priority
-        sizes="(max-width: 640px) 76vw, (max-width: 1023px) 304px, 420px"
-        src="/gymbro/half-body/gymbro-halfbody-thumbs-up.png"
-      />
-    </div>
   );
 }
 

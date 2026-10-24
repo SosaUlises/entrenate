@@ -29,6 +29,7 @@ type TrainingProfileGateContextValue = {
   allowCurrentSummary: boolean;
   check: () => Promise<CheckTrainingProfileActionResult>;
   clearSummaryAllowance: () => void;
+  invalidateSession: () => void;
   markProfileCreated: () => void;
   recordPresence: (presence: TrainingProfilePresence) => void;
   state: TrainingProfileGateState;
@@ -72,6 +73,11 @@ export function TrainingProfileGateProvider({
     setAllowCurrentSummary(false);
   }, []);
 
+  const invalidateSession = useCallback(() => {
+    setAllowCurrentSummary(false);
+    updateState({ status: "unauthenticated" });
+  }, [updateState]);
+
   const check = useCallback(async () => {
     const currentState = stateRef.current;
 
@@ -103,6 +109,7 @@ export function TrainingProfileGateProvider({
         allowCurrentSummary,
         check,
         clearSummaryAllowance,
+        invalidateSession,
         markProfileCreated,
         recordPresence,
         state,
@@ -128,24 +135,18 @@ export function useTrainingProfileGate() {
 export function usePostAuthTrainingProfileGate() {
   const router = useRouter();
   const { check, recordPresence } = useTrainingProfileGate();
-  const [isProfileReady, setIsProfileReady] = useState(false);
 
   const complete = useCallback(
     ({
       destination,
       presence,
     }: {
-      destination: string | null;
+      destination: string;
       presence: TrainingProfilePresence;
     }) => {
       recordPresence(presence);
 
-      if (destination) {
-        router.replace(destination);
-        return;
-      }
-
-      setIsProfileReady(true);
+      router.replace(destination);
     },
     [recordPresence, router],
   );
@@ -169,7 +170,7 @@ export function usePostAuthTrainingProfileGate() {
     return "resolved" as const;
   }, [check, complete, router]);
 
-  return { complete, isProfileReady, retry };
+  return { complete, retry };
 }
 
 export function TrainingProfileGate({
@@ -215,7 +216,7 @@ export function TrainingProfileGate({
     if (access === "onboarding" && state.presence === "exists") {
       const destination = getDestinationForTrainingProfile("exists");
 
-      if (destination && !canShowCreatedSummary) {
+      if (!canShowCreatedSummary) {
         router.replace(destination);
       }
       return;
@@ -239,13 +240,7 @@ export function TrainingProfileGate({
       return children;
     }
 
-    const destination = getDestinationForTrainingProfile("exists");
-
-    return destination ? (
-      <TrainingProfileGateStatus type="loading" />
-    ) : (
-      <TrainingProfileGateStatus type="ready" />
-    );
+    return <TrainingProfileGateStatus type="loading" />;
   }
 
   return state.presence === "exists" ? (
@@ -260,26 +255,13 @@ export function TrainingProfileGateStatus({
   type,
 }: {
   onRetry?: () => void;
-  type: "error" | "loading" | "ready";
+  type: "error" | "loading";
 }) {
   if (type === "loading") {
     return (
       <div className="m-auto flex min-h-64 flex-col items-center justify-center gap-3 text-center">
         <Spinner className="size-6 text-primary" label="Verificando tu perfil" />
         <p className="text-sm text-text-secondary">Verificando tu perfil...</p>
-      </div>
-    );
-  }
-
-  if (type === "ready") {
-    return (
-      <div className="m-auto flex min-h-64 max-w-sm flex-col items-center justify-center text-center">
-        <h1 className="font-brand text-2xl font-bold text-text-primary">
-          Tu perfil ya está listo.
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-text-secondary">
-          Entrenate ya está preparado para continuar.
-        </p>
       </div>
     );
   }

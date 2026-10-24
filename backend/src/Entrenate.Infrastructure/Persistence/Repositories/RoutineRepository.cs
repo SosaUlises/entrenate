@@ -1,5 +1,6 @@
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Domain.Entidades;
+using Entrenate.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Entrenate.Infrastructure.Persistence.Repositories
@@ -75,6 +76,21 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                     cancellationToken);
         }
 
+        public Task<bool> HasActiveSessionAsync(
+            Guid routineId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            return _context.SesionesEntrenamiento
+                .AsNoTracking()
+                .AnyAsync(
+                    x => x.UsuarioId == userId &&
+                        x.Estado == EstadoSesionEntrenamiento.EnCurso &&
+                        x.DiaRutinaId.HasValue &&
+                        x.DiaRutina!.RutinaId == routineId,
+                    cancellationToken);
+        }
+
         public async Task AddAsync(
             Rutina rutina,
             CancellationToken cancellationToken = default)
@@ -82,6 +98,11 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
             await _context.Rutinas.AddAsync(
                 rutina,
                 cancellationToken);
+        }
+
+        public void Remove(Rutina rutina)
+        {
+            _context.Rutinas.Remove(rutina);
         }
 
         public Task SaveChangesAsync(

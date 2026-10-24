@@ -1,4 +1,5 @@
 import { ApiClientError } from "@/services/api-client";
+import { clearAuthSession } from "@/features/auth/services/session.service";
 import { getMyTrainingProfile } from "../onboarding/services/training-profile.service";
 import {
   getDestinationForTrainingProfile,
@@ -11,17 +12,17 @@ export type TrainingProfileGateResolution =
       status: "resolved";
     }
   | {
-      status: "error";
+      status: "error" | "unauthenticated";
     };
 
 export type PostAuthDestinationResolution =
   | {
-      destination: string | null;
+      destination: string;
       presence: TrainingProfilePresence;
       status: "resolved";
     }
   | {
-      status: "error";
+      status: "error" | "unauthenticated";
     };
 
 export async function resolveTrainingProfileGate(
@@ -36,6 +37,11 @@ export async function resolveTrainingProfileGate(
       return { presence: "missing", status: "resolved" };
     }
 
+    if (error instanceof ApiClientError && error.status === 401) {
+      await clearAuthSession();
+      return { status: "unauthenticated" };
+    }
+
     return { status: "error" };
   }
 }
@@ -45,7 +51,7 @@ export async function resolvePostAuthDestination(
 ): Promise<PostAuthDestinationResolution> {
   const gateResolution = await resolveTrainingProfileGate(authToken);
 
-  if (gateResolution.status === "error") {
+  if (gateResolution.status !== "resolved") {
     return gateResolution;
   }
 

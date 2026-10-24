@@ -1,6 +1,6 @@
 "use server";
 
-import { getAuthToken } from "@/features/auth/services/session.service";
+import { clearAuthSession, getAuthToken } from "@/features/auth/services/session.service";
 import { ApiClientError } from "@/services/api-client";
 import { createTrainingProfile } from "../services/training-profile.service";
 import type { CreateTrainingProfileRequest } from "../types/training-profile.types";
@@ -8,6 +8,7 @@ import type { CreateTrainingProfileRequest } from "../types/training-profile.typ
 export type CreateTrainingProfileActionResult =
   | { id: string; ok: true }
   | { kind: "already_exists"; ok: false }
+  | { kind: "unauthenticated"; ok: false }
   | { kind: "error"; message?: string; ok: false };
 
 export async function createTrainingProfileAction(
@@ -16,7 +17,7 @@ export async function createTrainingProfileAction(
   const authToken = await getAuthToken();
 
   if (!authToken) {
-    return { kind: "error", ok: false };
+    return { kind: "unauthenticated", ok: false };
   }
 
   try {
@@ -24,6 +25,11 @@ export async function createTrainingProfileAction(
 
     return { id: response.id, ok: true };
   } catch (error) {
+    if (error instanceof ApiClientError && error.status === 401) {
+      await clearAuthSession();
+      return { kind: "unauthenticated", ok: false };
+    }
+
     if (error instanceof ApiClientError && error.status === 409) {
       return { kind: "already_exists", ok: false };
     }

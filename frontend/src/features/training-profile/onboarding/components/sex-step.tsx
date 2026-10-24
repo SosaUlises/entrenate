@@ -1,7 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import { EyeOff, Mars, Venus, type LucideIcon } from "lucide-react";
+import { Check, EyeOff, Mars, Venus, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/class-names";
 import { useOnboarding } from "../context/onboarding-context";
@@ -13,19 +12,16 @@ import {
 import { OnboardingStepHeader } from "./onboarding-step-header";
 
 const primaryOptions: ReadonlyArray<{
-  accent: "feminine" | "masculine";
   icon: LucideIcon;
   title: string;
   value: SexoValue;
 }> = [
   {
-    accent: "masculine",
     icon: Mars,
     title: "Masculino",
     value: Sexo.Masculino,
   },
   {
-    accent: "feminine",
     icon: Venus,
     title: "Femenino",
     value: Sexo.Femenino,
@@ -48,19 +44,8 @@ export function SexStep() {
   };
 
   return (
-    <article
-      className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[640px] flex-col sm:min-h-[calc(100dvh-4rem)] md:justify-center"
-      style={
-        {
-          "--sex-feminine":
-            "color-mix(in srgb, var(--primary) 55%, var(--error))",
-        } as CSSProperties
-      }
-    >
-      <OnboardingStepHeader
-        currentStep={10}
-        onBack={goBack}
-      />
+    <article className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-[560px] flex-col sm:min-h-[calc(100dvh-4rem)] md:justify-center">
+      <OnboardingStepHeader currentStep={10} onBack={goBack} />
 
       <div className="mt-7 sm:mt-8">
         <h1 className="font-brand text-[1.75rem] leading-tight font-bold tracking-tight text-text-primary sm:text-3xl md:text-[2rem]">
@@ -74,7 +59,7 @@ export function SexStep() {
       <fieldset className="mt-6 md:mt-8">
         <legend className="sr-only">Sexo</legend>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3.5">
           {primaryOptions.map((option) => {
             const isSelected = selectedSex === option.value;
             const Icon = option.icon;
@@ -91,39 +76,47 @@ export function SexStep() {
                 />
                 <span
                   className={cn(
-                    "flex min-h-40 flex-col items-center justify-center gap-4 rounded-card border px-4 py-6 text-center transition-[background-color,border-color,box-shadow] duration-200 hover:border-border-strong peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
-                    !isSelected && "border-border bg-surface",
-                    isSelected &&
-                      option.accent === "masculine" &&
-                      "border-secondary bg-[color-mix(in_srgb,var(--secondary)_9%,var(--surface))]",
-                    isSelected &&
-                      option.accent === "feminine" &&
-                      "border-[var(--sex-feminine)] bg-[color-mix(in_srgb,var(--sex-feminine)_9%,var(--surface))]",
+                    "relative flex h-36 flex-col overflow-hidden rounded-card border text-center transition-[background-color,border-color,box-shadow,transform] duration-200 active:scale-[0.99] peer-focus-visible:ring-2 peer-focus-visible:ring-thermal-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
+                    isSelected
+                      ? "border-thermal-accent/40 bg-surface-active shadow-[inset_0_0_0_1px_rgba(225,115,78,0.18)]"
+                      : "border-border bg-surface-interactive hover:border-border-strong",
                   )}
                 >
                   <span
                     className={cn(
-                      "flex size-16 items-center justify-center rounded-control transition-[background-color,color] duration-200",
-                      option.accent === "masculine" &&
-                        "bg-[color-mix(in_srgb,var(--secondary)_9%,var(--surface-elevated))] text-[color-mix(in_srgb,var(--secondary)_72%,var(--text-secondary))]",
-                      option.accent === "feminine" &&
-                        "bg-[color-mix(in_srgb,var(--sex-feminine)_9%,var(--surface-elevated))] text-[color-mix(in_srgb,var(--sex-feminine)_72%,var(--text-secondary))]",
-                      isSelected &&
-                        option.accent === "masculine" &&
-                        "bg-[color-mix(in_srgb,var(--secondary)_17%,var(--surface-elevated))] text-secondary",
-                      isSelected &&
-                        option.accent === "feminine" &&
-                        "bg-[color-mix(in_srgb,var(--sex-feminine)_17%,var(--surface-elevated))] text-[var(--sex-feminine)]",
+                      "flex h-[5.5rem] w-full shrink-0 items-center justify-center border-b transition-[background-color,border-color,color] duration-200",
+                      isSelected
+                        ? "border-thermal-accent/15 bg-surface-elevated/50 text-text-primary"
+                        : "border-border/60 bg-surface/50 text-text-secondary",
                     )}
                   >
                     <Icon
                       aria-hidden="true"
-                      size={40}
-                      strokeWidth={2}
+                      size={48}
+                      strokeWidth={1.8}
                     />
                   </span>
-                  <span className="text-base leading-5 font-semibold text-text-primary">
+                  <span className="flex flex-1 items-center justify-center px-3 py-2 font-brand text-base font-bold leading-5 text-text-primary">
                     {option.title}
+                  </span>
+
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "absolute right-2.5 top-2.5 flex size-5 items-center justify-center rounded-full border transition-[background-color,border-color,color,transform] duration-200",
+                      isSelected
+                        ? "scale-100 border-thermal-accent/60 bg-thermal-accent/15 text-thermal-accent"
+                        : "scale-95 border-border-strong/70 bg-surface text-transparent",
+                    )}
+                  >
+                    <Check
+                      className={cn(
+                        "transition-transform duration-200",
+                        isSelected ? "scale-100" : "scale-0",
+                      )}
+                      size={11}
+                      strokeWidth={2.25}
+                    />
                   </span>
                 </span>
               </label>
@@ -142,24 +135,44 @@ export function SexStep() {
           />
           <span
             className={cn(
-              "flex min-h-18 items-center gap-3 rounded-card border px-4 py-3 transition-[background-color,border-color,box-shadow] duration-200 hover:border-border-strong peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
+              "flex min-h-16 items-center gap-3 border-y px-1 py-3 transition-[background-color,border-color] duration-200 hover:bg-surface-interactive peer-focus-visible:ring-2 peer-focus-visible:ring-thermal-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
               selectedSex === Sexo.PrefieroNoInformarlo
-                ? "border-primary bg-[color-mix(in_srgb,var(--primary)_7%,var(--surface))]"
-                : "border-border bg-surface",
+                ? "border-thermal-accent/35 bg-surface-active/60"
+                : "border-border/70 bg-transparent",
             )}
           >
             <span
               className={cn(
                 "flex size-10 shrink-0 items-center justify-center rounded-control-sm bg-surface-elevated transition-colors",
                 selectedSex === Sexo.PrefieroNoInformarlo
-                  ? "text-primary"
-                  : "text-text-secondary",
+                  ? "text-thermal-accent"
+                  : "text-text-muted",
               )}
             >
               <EyeOff aria-hidden="true" size={22} strokeWidth={2} />
             </span>
-            <span className="text-base leading-5 font-semibold text-text-primary">
+            <span className="min-w-0 flex-1 text-sm font-semibold leading-5 text-text-primary sm:text-base">
               Prefiero no informarlo
+            </span>
+            <span
+              aria-hidden="true"
+              className={cn(
+                "flex size-6 shrink-0 items-center justify-center rounded-full border transition-[background-color,border-color,color,transform] duration-200",
+                selectedSex === Sexo.PrefieroNoInformarlo
+                  ? "scale-100 border-thermal-accent/60 bg-thermal-accent/15 text-thermal-accent"
+                  : "scale-95 border-border-strong bg-surface text-transparent",
+              )}
+            >
+              <Check
+                className={cn(
+                  "transition-transform duration-200",
+                  selectedSex === Sexo.PrefieroNoInformarlo
+                    ? "scale-100"
+                    : "scale-0",
+                )}
+                size={13}
+                strokeWidth={2.25}
+              />
             </span>
           </span>
         </label>
@@ -167,12 +180,12 @@ export function SexStep() {
 
       <div className="mt-6 md:mt-8">
         <Button
-          className="min-h-14"
           disabled={selectedSex === undefined}
           fullWidth
           onClick={handleContinue}
+          size="lg"
           type="button"
-          variant="gradient"
+          variant="primary"
         >
           Continuar
         </Button>

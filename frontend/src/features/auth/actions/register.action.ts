@@ -15,7 +15,7 @@ type RegisterFieldErrors = Partial<Record<keyof RegisterFormValues, string>>;
 
 export type RegisterActionResult =
   | {
-      destination: string | null;
+      destination: string;
       ok: true;
       profilePresence: TrainingProfilePresence;
     }
@@ -24,6 +24,7 @@ export type RegisterActionResult =
       message: string;
       ok: false;
       profileCheckFailed?: true;
+      sessionExpired?: true;
     };
 
 export async function registerAction(
@@ -56,11 +57,19 @@ export async function registerAction(
     authResponse.token,
   );
 
-  if (destinationResolution.status === "error") {
+  if (destinationResolution.status !== "resolved") {
+    if (destinationResolution.status === "error") {
+      return {
+        message: "No pudimos verificar tu perfil. Intentá nuevamente.",
+        ok: false,
+        profileCheckFailed: true,
+      };
+    }
+
     return {
-      message: "No pudimos verificar tu perfil. Intentá nuevamente.",
+      message: "Tu sesión venció. Iniciá sesión nuevamente.",
       ok: false,
-      profileCheckFailed: true,
+      sessionExpired: true,
     };
   }
 

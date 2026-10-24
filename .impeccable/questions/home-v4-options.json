@@ -1,0 +1,55 @@
+{
+  "title": "Elegí la composición de Home V4",
+  "question": "Las tres opciones respetan Precisión en movimiento y el flujo rutina → día → sesión. Elegí cómo querés que Home haga ese lanzamiento.",
+  "options": [
+    {
+      "id": "focus-sheet",
+      "label": "Lista + selector flotante",
+      "kicker": "THE ROLL",
+      "lineage": "Filas operativas con selección contextual",
+      "thesis": "Las rutinas permanecen simples y el día se elige en una capa compacta solo cuando hace falta.",
+      "palette": ["#0c0c12", "#171923", "#8b5cf6", "#f5f5f7", "#a1a1aa"],
+      "materials": ["tipografía de performance", "divisores finos", "sheet funcional"],
+      "viewport": "Header bajo, sección ENTRENAR con filas de rutinas y un bottom sheet de días sobre la lista seleccionada.",
+      "risk": "La capa debe ser muy contenida para no sentirse como un paso pesado.",
+      "html": ".impeccable/mocks/decision/home-focus-sheet.html",
+      "htmlFrame": "390x844",
+      "comp": ".impeccable/mocks/decision/home-focus-sheet.webp"
+    },
+    {
+      "id": "inline-reveal",
+      "label": "Lista con apertura inline",
+      "lineage": "Filas jerárquicas de expansión directa",
+      "thesis": "La rutina elegida abre sus días dentro del mismo ritmo vertical, sin cambiar de contexto.",
+      "palette": ["#0c0c12", "#171923", "#8b5cf6", "#f5f5f7", "#a1a1aa"],
+      "materials": ["filas editoriales", "índices compositivos", "divisores"],
+      "viewport": "Header compacto, lista numerada y una rutina expandida que muestra sus días como acciones subordinadas.",
+      "risk": "Una rutina con muchos días puede desplazar demasiado el resto de la lista.",
+      "html": ".impeccable/mocks/decision/home-inline-reveal.html",
+      "htmlFrame": "390x844",
+      "comp": ".impeccable/mocks/decision/home-inline-reveal.webp"
+    },
+    {
+      "id": "focused-drilldown",
+      "label": "Escenario de dos pasos",
+      "lineage": "Launcher que concentra una decisión por vez",
+      "thesis": "Home muestra todas las rutinas y transforma el área de trabajo en selector de días al elegir una.",
+      "palette": ["#0c0c12", "#171923", "#8b5cf6", "#f5f5f7", "#a1a1aa"],
+      "materials": ["tipografía amplia", "transición de estado", "filas sin cards"],
+      "viewport": "La lista se reemplaza por el nombre de la rutina, acción de volver y filas de días listas para iniciar.",
+      "risk": "Oculta temporalmente las demás rutinas y exige una navegación interna claramente reversible.",
+      "html": ".impeccable/mocks/decision/home-focused-drilldown.html",
+      "htmlFrame": "390x844",
+      "comp": ".impeccable/mocks/decision/home-focused-drilldown.webp"
+    }
+  ],
+  "reroll": {
+    "registers": ["safer", "bolder"]
+  },
+  "buildPath": {
+    "value": "code",
+    "toggle": true
+  },
+  "canon": false,
+  "steer": true
+}

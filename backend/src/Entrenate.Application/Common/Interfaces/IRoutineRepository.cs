@@ -23,9 +23,16 @@ namespace Entrenate.Application.Common.Interfaces
             string userId,
             CancellationToken cancellationToken = default);
 
+        Task<bool> HasActiveSessionAsync(
+            Guid routineId,
+            string userId,
+            CancellationToken cancellationToken = default);
+
         Task AddAsync(
             Rutina rutina,
             CancellationToken cancellationToken = default);
+
+        void Remove(Rutina rutina);
 
         Task SaveChangesAsync(
             CancellationToken cancellationToken = default);
