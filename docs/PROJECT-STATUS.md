@@ -28,6 +28,12 @@
 
 - Onboarding V5
 
+## Entrenate Coach
+
+- Progress V1.0/V1.1 is available through the authenticated backend endpoint
+  `GET /api/coach/progress/exercises/{exerciseId}`.
+- V1.2 explanation and V1.3 conversation are not implemented.
+
 ### Onboarding
 
 - Welcome is completed.
