@@ -264,7 +264,7 @@ function ExerciseSelectionSkeleton() {
   return (
     <div
       aria-label="Cargando ejercicios"
-      className="mt-5 animate-pulse"
+      className="mt-5 animate-pulse motion-reduce:animate-none"
       role="status"
     >
       <div className="h-14 rounded-control bg-surface-elevated" />

@@ -28,13 +28,10 @@
 
 ## Current work
 
-- Frontend Coach V1
-- Completed: primary navigation entry + Coach Hub.
-- Completed: Progress Coach exercise selection and exercise detail route.
-- Completed: Progress Coach GET integration and analysis presentation.
-- Completed: temporary Progress Coach conversation integration.
-- Completed: Progress Coach V1 frontend functional states.
-- Current block: responsive, accessibility and visual QA for Frontend Coach V1.
+- Frontend Progress Coach V1 closed.
+- Next: return to Entrenate Coach backend work.
+- Known external blocker: the currently configured local Groq credential returns
+  `401 invalid_api_key`; the frontend and backend contracts remain unchanged.
 
 ## Entrenate Coach
 
@@ -95,19 +92,21 @@ Progress V1.3:
 - Mutations must respect Domain/Application rules.
 - Future Coach capabilities must not be implemented prematurely.
 
-### Frontend Coach V1 plan
+### Frontend Progress Coach V1
 
-Current:
+Closed:
 
 - Coach is available as the fifth primary navigation destination.
 - Coach Hub exposes Progress as its active entry.
 - Progress Coach exercise selection and deterministic analysis are available.
+- Temporary, non-persistent Progress Coach conversation is available.
+- Loading, empty, error, retry, insufficient-data and disabled states are covered.
 - Routine Planner, Adaptive Training and Nutrition Coach remain disabled as
   coming-soon capabilities.
 
 Next:
 
-- Close responsive/accessibility/visual QA.
+- Return to Entrenate Coach backend work.
 
 Coming-soon entries:
 
