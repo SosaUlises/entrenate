@@ -3,7 +3,8 @@ namespace Entrenate.Application.Coach.Progress.DTOs
     public record CoachProgressDto(
         Guid ExerciseId,
         CoachProgressAnalysisDto Analysis,
-        CoachProgressRecommendationDto Recommendation);
+        CoachProgressRecommendationDto Recommendation,
+        CoachProgressExplanationDto Explanation);
 
     public record CoachProgressAnalysisDto(
         int ValidExposureCount,
@@ -40,4 +41,9 @@ namespace Entrenate.Application.Coach.Progress.DTOs
         string Decision,
         string EvidenceLevel,
         IReadOnlyCollection<string> ReasonCodes);
+
+    public record CoachProgressExplanationDto(
+        string Detection,
+        string Recommendation,
+        string Rationale);
 }

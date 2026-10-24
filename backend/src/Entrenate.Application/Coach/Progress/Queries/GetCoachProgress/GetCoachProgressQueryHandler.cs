@@ -1,5 +1,6 @@
 using Entrenate.Application.Coach.Progress.Analysis;
 using Entrenate.Application.Coach.Progress.DTOs;
+using Entrenate.Application.Coach.Progress.Explanations;
 using Entrenate.Application.Coach.Progress.Recommendations;
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
@@ -56,13 +57,17 @@ namespace Entrenate.Application.Coach.Progress.Queries.GetCoachProgress
                 exposures);
             var recommendation = ProgressRecommendationEngine.Recommend(
                 analysis);
+            var explanation = ProgressExplanationGenerator.Generate(
+                recommendation,
+                analysis);
 
-            return Map(analysis, recommendation);
+            return Map(analysis, recommendation, explanation);
         }
 
         private static CoachProgressDto Map(
             ProgressAnalysis analysis,
-            ProgressRecommendation recommendation)
+            ProgressRecommendation recommendation,
+            ProgressExplanation explanation)
         {
             return new CoachProgressDto(
                 analysis.ExerciseId,
@@ -78,7 +83,11 @@ namespace Entrenate.Application.Coach.Progress.Queries.GetCoachProgress
                     recommendation.EvidenceLevel.ToString(),
                     recommendation.ReasonCodes
                         .Select(reason => reason.ToString())
-                        .ToList()));
+                        .ToList()),
+                new CoachProgressExplanationDto(
+                    explanation.Detection,
+                    explanation.Recommendation,
+                    explanation.Rationale));
         }
 
         private static CoachProgressLatestExposureDto? MapLatestExposure(
