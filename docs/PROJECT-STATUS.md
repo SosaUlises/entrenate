@@ -35,7 +35,8 @@
 - Progress V1.2 adds a deterministic explanation to that endpoint.
 - Progress V1.3 has a structured Application context, controlled prompt builder
   and provider-agnostic contract. Infrastructure includes a Groq Responses API
-  adapter; no conversation endpoint is implemented.
+  adapter and the authenticated stateless conversation endpoint is available at
+  `POST /api/coach/progress/exercises/{exerciseId}/conversation`.
 
 ### Onboarding
 

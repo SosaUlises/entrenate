@@ -48,6 +48,14 @@ namespace Entrenate.Api.ExceptionHandling
                         Detail = exception.Message
                     },
 
+                ExternalServiceException =>
+                    new ProblemDetails
+                    {
+                        Status = StatusCodes.Status502BadGateway,
+                        Title = "Servicio externo no disponible",
+                        Detail = exception.Message
+                    },
+
                 _ =>
                     new ProblemDetails
                     {
@@ -57,8 +65,9 @@ namespace Entrenate.Api.ExceptionHandling
                     }
             };
 
-            if (problemDetails.Status
-                == StatusCodes.Status500InternalServerError)
+            if (problemDetails.Status is
+                StatusCodes.Status500InternalServerError or
+                StatusCodes.Status502BadGateway)
             {
                 _logger.LogError(
                     exception,

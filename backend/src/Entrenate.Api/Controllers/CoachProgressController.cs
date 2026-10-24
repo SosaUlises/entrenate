@@ -1,3 +1,5 @@
+using Entrenate.Api.Requests.Coach;
+using Entrenate.Application.Coach.Progress.Conversation.Commands.AskProgressConversation;
 using Entrenate.Application.Coach.Progress.Queries.GetCoachProgress;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -27,6 +29,21 @@ namespace Entrenate.Api.Controllers
                 cancellationToken);
 
             return Ok(progress);
+        }
+
+        [HttpPost("exercises/{exerciseId:guid}/conversation")]
+        public async Task<IActionResult> AskProgressConversation(
+            Guid exerciseId,
+            AskProgressConversationRequest request,
+            CancellationToken cancellationToken)
+        {
+            var response = await _sender.Send(
+                new AskProgressConversationCommand(
+                    exerciseId,
+                    request.Question),
+                cancellationToken);
+
+            return Ok(response);
         }
     }
 }
