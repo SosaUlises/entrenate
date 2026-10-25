@@ -2,7 +2,7 @@
 
 ## 1. Estado y propósito
 
-Estado: V2.0 cerrado — contratos, metadata y política normativa.
+Estado: V2.1 cerrado — estructura semanal determinística implementada.
 
 V2 propone una rutina de entrenamiento a partir del perfil del usuario y del
 catálogo real de Entrenate. La planificación es determinística y produce una
@@ -299,6 +299,12 @@ duración no permiten un día útil sin exceder volumen, el resultado es
 - Los empates se resuelven de lunes a domingo.
 - Cada día inferido se marca con `ScheduledDayWasInferred = true` para permitir
   revisión.
+
+Para que esta política sea reproducible, V2.1 evalúa las combinaciones que
+contienen todos los días preferidos y compara sus distancias circulares
+ordenadas de menor a mayor. Maximiza primero la menor distancia, luego las
+restantes en orden; si dos calendarios siguen empatados, elige la secuencia de
+días más temprana de lunes a domingo.
 
 La asignación nunca cambia la cantidad de días solicitada. Días consecutivos
 elegidos explícitamente se respetan; el split debe evitar repetir el mismo foco
@@ -603,12 +609,12 @@ no cambios de contrato:
 - día semanal, idempotencia y activación resueltos;
 - política normativa documentada.
 
-### V2.1 — Estructura semanal
+### V2.1 — Estructura semanal (cerrado)
 
-- implementar calendario, días inferidos y matriz de splits;
-- implementar cuotas de patrones por día;
-- cubrir 1 a 7 días y casos consecutivos;
-- mantenerlo puro y sin selección de ejercicios.
+- calendario, días inferidos y matriz de splits implementados en Application;
+- estructura pura en memoria para 1 a 7 días;
+- días preferidos preservados y días derivados marcados explícitamente;
+- sin selección de ejercicios ni persistencia.
 
 ### V2.2 — Elegibilidad y selección
 
