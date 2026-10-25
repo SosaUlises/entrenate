@@ -51,6 +51,9 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<int?>("DiaSemana")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -63,6 +66,9 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RutinaId", "DiaSemana")
+                        .IsUnique();
 
                     b.HasIndex("RutinaId", "Orden")
                         .IsUnique();
@@ -78,6 +84,10 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
 
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("Codigo")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("Descripcion")
                         .HasMaxLength(1000)
@@ -97,11 +107,20 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<int?>("PatronMovimiento")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TipoEjercicio")
+                        .HasColumnType("integer");
+
                     b.Property<string>("WorkoutGuideId")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique();
 
                     b.HasIndex("WorkoutGuideId")
                         .IsUnique();
@@ -128,6 +147,28 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("EjercicioEquipamientos", (string)null);
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.EjercicioGrupoMuscularSecundario", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EjercicioId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("GrupoMuscular")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EjercicioId", "GrupoMuscular")
+                        .IsUnique();
+
+                    b.ToTable("EjercicioGruposMuscularesSecundarios", (string)null);
                 });
 
             modelBuilder.Entity("Entrenate.Domain.Entidades.EjercicioRutina", b =>
@@ -344,6 +385,13 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("PlannerProposalHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("PlannerProposalId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("UsuarioId")
                         .IsRequired()
                         .HasMaxLength(450)
@@ -352,6 +400,9 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("UsuarioId");
+
+                    b.HasIndex("UsuarioId", "PlannerProposalId")
+                        .IsUnique();
 
                     b.ToTable("Rutinas", (string)null);
                 });
@@ -674,6 +725,15 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Entrenate.Domain.Entidades.EjercicioGrupoMuscularSecundario", b =>
+                {
+                    b.HasOne("Entrenate.Domain.Entidades.Ejercicio", null)
+                        .WithMany("GruposMuscularesSecundarios")
+                        .HasForeignKey("EjercicioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Entrenate.Domain.Entidades.EjercicioRutina", b =>
                 {
                     b.HasOne("Entrenate.Domain.Entidades.DiaRutina", "DiaRutina")
@@ -816,6 +876,8 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Entrenate.Domain.Entidades.Ejercicio", b =>
                 {
                     b.Navigation("Equipamientos");
+
+                    b.Navigation("GruposMuscularesSecundarios");
                 });
 
             modelBuilder.Entity("Entrenate.Domain.Entidades.EjercicioSesion", b =>

@@ -21,6 +21,7 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                 .Ejercicios
                 .AsNoTracking()
                 .Include(x => x.Equipamientos)
+                .Include(x => x.GruposMuscularesSecundarios)
                 .Where(x => x.Activo)
                 .OrderBy(x => x.GrupoMuscularPrincipal)
                 .ThenBy(x => x.Nombre)
@@ -35,6 +36,7 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                 .Ejercicios
                 .AsNoTracking()
                 .Include(x => x.Equipamientos)
+                .Include(x => x.GruposMuscularesSecundarios)
                 .FirstOrDefaultAsync(
                     x => x.Id == id && x.Activo,
                     cancellationToken);

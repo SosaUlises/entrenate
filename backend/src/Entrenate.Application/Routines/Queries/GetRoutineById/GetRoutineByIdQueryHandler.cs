@@ -69,7 +69,8 @@ namespace Entrenate.Application.Routines.Queries.GetRoutineById
                                 exercise.DescansoSegundos,
                                 exercise.Orden,
                                 exercise.Notas))
-                            .ToList()))
+                            .ToList(),
+                        day.DiaSemana))
                     .ToList());
         }
     }

@@ -1,4 +1,4 @@
-namespace Entrenate.Infrastructure.Coach.Progress.Conversation
+namespace Entrenate.Infrastructure.Coach.Conversation
 {
     public class GroqSettings
     {

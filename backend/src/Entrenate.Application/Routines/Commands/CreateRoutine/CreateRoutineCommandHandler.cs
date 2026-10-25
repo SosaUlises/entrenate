@@ -49,7 +49,8 @@ namespace Entrenate.Application.Routines.Commands.CreateRoutine
                 var dia = rutina.AgregarDia(
                     dayInput.Nombre,
                     dayInput.Descripcion,
-                    dayInput.Orden);
+                    dayInput.Orden,
+                    dayInput.DiaSemana);
 
                 foreach (var exerciseInput in dayInput.Ejercicios)
                 {

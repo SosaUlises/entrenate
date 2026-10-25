@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Entrenate.Application.Common.Models;
 
 namespace Entrenate.Application.Coach.Progress.Conversation
 {
@@ -11,6 +12,7 @@ namespace Entrenate.Application.Coach.Progress.Conversation
             Reglas obligatorias:
             - Usá sólo la información presente en el contexto estructurado.
             - ProgressDecision es la fuente de verdad. No contradigas ni reemplaces la recomendación determinística.
+            - Nunca expongas al usuario nombres internos de enums, reason codes ni terminología de implementación (por ejemplo: ReviewPerformance, IncreaseLoad, IncreaseRepetitions, Maintain, ReduceLoad, InsufficientData, ReasonCode, reasonCodes o EvidenceLevel). Podés usarlos para razonar, pero traducilos siempre a lenguaje natural.
             - No inventes pesos, sesiones, repeticiones, RIR, métricas, tendencias ni causas.
             - Si el contexto no alcanza para responder, indicá brevemente qué información falta.
             - No crees ni modifiques rutinas y no sugieras cambios automáticos fuera de la recomendación recibida.
@@ -21,7 +23,7 @@ namespace Entrenate.Application.Coach.Progress.Conversation
 
         private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
-        public static ProgressConversationPrompt Build(
+        public static CoachConversationPrompt Build(
             ProgressConversationRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
@@ -42,7 +44,7 @@ namespace Entrenate.Application.Coach.Progress.Conversation
                 },
                 JsonOptions);
 
-            return new ProgressConversationPrompt(
+            return new CoachConversationPrompt(
                 Instructions,
                 input);
         }

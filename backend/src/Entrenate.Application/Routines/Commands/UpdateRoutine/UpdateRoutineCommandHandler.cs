@@ -67,13 +67,19 @@ namespace Entrenate.Application.Routines.Commands.UpdateRoutine
                     dia = rutina.AgregarDia(
                         dayInput.Nombre,
                         dayInput.Descripcion,
-                        dayInput.Orden);
+                        dayInput.Orden,
+                        dayInput.DiaSemana);
                 }
                 else
                 {
                     dia.Actualizar(
                         dayInput.Nombre,
                         dayInput.Descripcion);
+
+                    if (dayInput.DiaSemana.HasValue)
+                    {
+                        dia.DefinirDiaSemana(dayInput.DiaSemana);
+                    }
                 }
 
                 dia.EliminarEjerciciosExcepto(

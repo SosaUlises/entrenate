@@ -39,6 +39,9 @@ namespace Entrenate.Application.UnitTests.Coach.Progress.Conversation
                 "ProgressDecision es la fuente de verdad",
                 prompt.Instructions);
             Assert.Contains(
+                "Nunca expongas al usuario nombres internos de enums, reason codes ni terminología de implementación",
+                prompt.Instructions);
+            Assert.Contains(
                 "No inventes pesos, sesiones, repeticiones, RIR, métricas",
                 prompt.Instructions);
             Assert.Contains("nutrición", prompt.Instructions);

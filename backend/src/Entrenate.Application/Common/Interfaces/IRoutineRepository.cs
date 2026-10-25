@@ -1,4 +1,5 @@
 using Entrenate.Domain.Entidades;
+using Entrenate.Application.Coach.RoutinePlanner.Confirmation;
 
 namespace Entrenate.Application.Common.Interfaces
 {
@@ -30,6 +31,10 @@ namespace Entrenate.Application.Common.Interfaces
 
         Task AddAsync(
             Rutina rutina,
+            CancellationToken cancellationToken = default);
+
+        Task<RoutineProposalPersistenceResult> ConfirmPlannerProposalAsync(
+            Rutina routine,
             CancellationToken cancellationToken = default);
 
         void Remove(Rutina rutina);

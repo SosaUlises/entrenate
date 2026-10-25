@@ -1,7 +1,7 @@
 ﻿using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.Common.Settings;
 using Entrenate.Infrastructure.Authentication;
-using Entrenate.Infrastructure.Coach.Progress.Conversation;
+using Entrenate.Infrastructure.Coach.Conversation;
 using Entrenate.Infrastructure.Email;
 using Entrenate.Infrastructure.Identity;
 using Entrenate.Infrastructure.Persistence;
@@ -135,7 +135,7 @@ namespace Entrenate.Infrastructure
                     "Frontend:BaseUrl es obligatorio.")
                 .ValidateOnStart();
 
-            // Groq Progress Conversation
+            // Groq Coach Conversation
             services
                 .AddOptions<GroqSettings>()
                 .Bind(configuration.GetSection("Groq"))
@@ -169,8 +169,8 @@ namespace Entrenate.Infrastructure
             services.AddScoped<IIdentityService, IdentityService>();
             services.AddHttpClient<IEmailService, BrevoEmailService>();
             services.AddHttpClient<
-                IProgressConversationProvider,
-                GroqProgressConversationProvider>((serviceProvider, client) =>
+                ICoachConversationProvider,
+                GroqCoachConversationProvider>((serviceProvider, client) =>
                 {
                     var settings = serviceProvider
                         .GetRequiredService<

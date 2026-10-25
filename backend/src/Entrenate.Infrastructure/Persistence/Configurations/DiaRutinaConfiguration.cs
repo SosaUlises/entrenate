@@ -23,6 +23,8 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Orden)
                 .IsRequired();
 
+            builder.Property(x => x.DiaSemana);
+
             builder.HasMany(x => x.Ejercicios)
                 .WithOne(x => x.DiaRutina)
                 .HasForeignKey(x => x.DiaRutinaId)
@@ -36,6 +38,13 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
             {
                 x.RutinaId,
                 x.Orden
+            })
+            .IsUnique();
+
+            builder.HasIndex(x => new
+            {
+                x.RutinaId,
+                x.DiaSemana
             })
             .IsUnique();
         }

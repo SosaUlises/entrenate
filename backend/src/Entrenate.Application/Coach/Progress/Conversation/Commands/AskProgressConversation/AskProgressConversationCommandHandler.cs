@@ -15,13 +15,13 @@ namespace Entrenate.Application.Coach.Progress.Conversation.Commands.AskProgress
         private readonly ICurrentUserService _currentUserService;
         private readonly IExerciseRepository _exerciseRepository;
         private readonly ITrainingSessionRepository _sessionRepository;
-        private readonly IProgressConversationProvider _conversationProvider;
+        private readonly ICoachConversationProvider _conversationProvider;
 
         public AskProgressConversationCommandHandler(
             ICurrentUserService currentUserService,
             IExerciseRepository exerciseRepository,
             ITrainingSessionRepository sessionRepository,
-            IProgressConversationProvider conversationProvider)
+            ICoachConversationProvider conversationProvider)
         {
             _currentUserService = currentUserService;
             _exerciseRepository = exerciseRepository;
@@ -75,9 +75,12 @@ namespace Entrenate.Application.Coach.Progress.Conversation.Commands.AskProgress
 
             try
             {
-                return await _conversationProvider.GenerateResponseAsync(
+                var response = await _conversationProvider
+                    .GenerateResponseAsync(
                     prompt,
                     cancellationToken);
+
+                return new ProgressConversationResponse(response.Answer);
             }
             catch (OperationCanceledException)
                 when (cancellationToken.IsCancellationRequested)

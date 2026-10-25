@@ -260,6 +260,223 @@ namespace Entrenate.Infrastructure.Persistence.Seed
                 ("Crunch abdominal", "Core", Array.Empty<string>())
             };
 
+            var metadataPorNombre = new Dictionary<
+                string,
+                ExercisePlanningMetadata>(
+                    StringComparer.OrdinalIgnoreCase)
+            {
+                ["Press banca con barra"] = new(
+                    "barbell-bench-press",
+                    PatronMovimiento.EmpujeHorizontal,
+                    TipoEjercicio.Compuesto,
+                    ["Tríceps", "Hombros"]),
+                ["Press banca con mancuernas"] = new(
+                    "dumbbell-bench-press",
+                    PatronMovimiento.EmpujeHorizontal,
+                    TipoEjercicio.Compuesto,
+                    ["Tríceps", "Hombros"]),
+                ["Press inclinado con mancuernas"] = new(
+                    "incline-dumbbell-press",
+                    PatronMovimiento.EmpujeHorizontal,
+                    TipoEjercicio.Compuesto,
+                    ["Tríceps", "Hombros"]),
+                ["Aperturas con mancuernas"] = new(
+                    "dumbbell-fly",
+                    PatronMovimiento.EmpujeHorizontal,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Peck deck"] = new(
+                    "pec-deck",
+                    PatronMovimiento.EmpujeHorizontal,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Flexiones"] = new(
+                    "push-up",
+                    PatronMovimiento.EmpujeHorizontal,
+                    TipoEjercicio.Compuesto,
+                    ["Tríceps", "Hombros"]),
+                ["Dominadas"] = new(
+                    "pull-up",
+                    PatronMovimiento.TraccionVertical,
+                    TipoEjercicio.Compuesto,
+                    ["Bíceps"]),
+                ["Remo con barra"] = new(
+                    "barbell-row",
+                    PatronMovimiento.TraccionHorizontal,
+                    TipoEjercicio.Compuesto,
+                    ["Bíceps"]),
+                ["Remo con mancuerna"] = new(
+                    "dumbbell-row",
+                    PatronMovimiento.TraccionHorizontal,
+                    TipoEjercicio.Compuesto,
+                    ["Bíceps"]),
+                ["Jalón al pecho"] = new(
+                    "lat-pulldown",
+                    PatronMovimiento.TraccionVertical,
+                    TipoEjercicio.Compuesto,
+                    ["Bíceps"]),
+                ["Remo en polea baja"] = new(
+                    "seated-cable-row",
+                    PatronMovimiento.TraccionHorizontal,
+                    TipoEjercicio.Compuesto,
+                    ["Bíceps"]),
+                ["Press militar con barra"] = new(
+                    "barbell-overhead-press",
+                    PatronMovimiento.EmpujeVertical,
+                    TipoEjercicio.Compuesto,
+                    ["Tríceps"]),
+                ["Press de hombros con mancuernas"] = new(
+                    "dumbbell-shoulder-press",
+                    PatronMovimiento.EmpujeVertical,
+                    TipoEjercicio.Compuesto,
+                    ["Tríceps"]),
+                ["Elevaciones laterales con mancuernas"] = new(
+                    "dumbbell-lateral-raise",
+                    PatronMovimiento.AbduccionHombro,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Face pull"] = new(
+                    "face-pull",
+                    PatronMovimiento.RotacionExternaHombro,
+                    TipoEjercicio.Aislamiento,
+                    ["Espalda"]),
+                ["Pike push-up"] = new(
+                    "pike-push-up",
+                    PatronMovimiento.EmpujeVertical,
+                    TipoEjercicio.Compuesto,
+                    ["Tríceps"]),
+                ["Curl con mancuernas"] = new(
+                    "dumbbell-curl",
+                    PatronMovimiento.FlexionCodo,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Curl con barra EZ"] = new(
+                    "ez-bar-curl",
+                    PatronMovimiento.FlexionCodo,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Curl en polea"] = new(
+                    "cable-curl",
+                    PatronMovimiento.FlexionCodo,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Extensión de tríceps en polea"] = new(
+                    "cable-triceps-extension",
+                    PatronMovimiento.ExtensionCodo,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Press francés con barra EZ"] = new(
+                    "ez-bar-skull-crusher",
+                    PatronMovimiento.ExtensionCodo,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Fondos en paralelas"] = new(
+                    "parallel-bar-dip",
+                    PatronMovimiento.EmpujeVertical,
+                    TipoEjercicio.Compuesto,
+                    ["Pecho", "Hombros"]),
+                ["Sentadilla con barra"] = new(
+                    "barbell-back-squat",
+                    PatronMovimiento.DominanteRodilla,
+                    TipoEjercicio.Compuesto,
+                    ["Glúteos"]),
+                ["Sentadilla goblet"] = new(
+                    "goblet-squat",
+                    PatronMovimiento.DominanteRodilla,
+                    TipoEjercicio.Compuesto,
+                    ["Glúteos"]),
+                ["Sentadilla con peso corporal"] = new(
+                    "bodyweight-squat",
+                    PatronMovimiento.DominanteRodilla,
+                    TipoEjercicio.Compuesto,
+                    ["Glúteos"]),
+                ["Prensa de piernas"] = new(
+                    "leg-press",
+                    PatronMovimiento.DominanteRodilla,
+                    TipoEjercicio.Compuesto,
+                    ["Glúteos"]),
+                ["Hack squat"] = new(
+                    "hack-squat",
+                    PatronMovimiento.DominanteRodilla,
+                    TipoEjercicio.Compuesto,
+                    ["Glúteos"]),
+                ["Extensión de cuádriceps"] = new(
+                    "leg-extension",
+                    PatronMovimiento.ExtensionRodilla,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Zancadas con mancuernas"] = new(
+                    "dumbbell-lunge",
+                    PatronMovimiento.DominanteRodilla,
+                    TipoEjercicio.Compuesto,
+                    ["Glúteos"]),
+                ["Peso muerto rumano con barra"] = new(
+                    "barbell-romanian-deadlift",
+                    PatronMovimiento.BisagraCadera,
+                    TipoEjercicio.Compuesto,
+                    ["Glúteos"]),
+                ["Curl femoral"] = new(
+                    "leg-curl",
+                    PatronMovimiento.FlexionRodilla,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Hip thrust con barra"] = new(
+                    "barbell-hip-thrust",
+                    PatronMovimiento.ExtensionCadera,
+                    TipoEjercicio.Compuesto,
+                    ["Isquiotibiales"]),
+                ["Puente de glúteos"] = new(
+                    "glute-bridge",
+                    PatronMovimiento.ExtensionCadera,
+                    TipoEjercicio.Compuesto,
+                    ["Isquiotibiales"]),
+                ["Elevación de gemelos en máquina"] = new(
+                    "machine-calf-raise",
+                    PatronMovimiento.FlexionPlantar,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Elevación de gemelos de pie"] = new(
+                    "standing-calf-raise",
+                    PatronMovimiento.FlexionPlantar,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Plancha"] = new(
+                    "plank",
+                    PatronMovimiento.CoreAntiExtension,
+                    TipoEjercicio.Aislamiento,
+                    []),
+                ["Crunch abdominal"] = new(
+                    "crunch",
+                    PatronMovimiento.CoreFlexion,
+                    TipoEjercicio.Aislamiento,
+                    [])
+            };
+
+            var ejerciciosSinMetadata = definiciones
+                .Select(x => x.Item1)
+                .Where(x => !metadataPorNombre.ContainsKey(x))
+                .ToList();
+
+            if (ejerciciosSinMetadata.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Falta metadata de planificación para: " +
+                    string.Join(", ", ejerciciosSinMetadata));
+            }
+
+            var codigosDuplicados = metadataPorNombre.Values
+                .GroupBy(x => x.Codigo, StringComparer.OrdinalIgnoreCase)
+                .Where(x => x.Count() > 1)
+                .Select(x => x.Key)
+                .ToList();
+
+            if (codigosDuplicados.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Hay códigos de ejercicios duplicados: " +
+                    string.Join(", ", codigosDuplicados));
+            }
+
             var workoutGuideIdsPorNombre = new Dictionary<string, string>(
                 StringComparer.OrdinalIgnoreCase)
             {
@@ -320,6 +537,7 @@ namespace Entrenate.Infrastructure.Persistence.Seed
 
             var ejerciciosExistentes = await _context
                 .Ejercicios
+                .Include(x => x.GruposMuscularesSecundarios)
                 .ToListAsync(cancellationToken);
 
             var ejerciciosPorNombre = ejerciciosExistentes.ToDictionary(
@@ -331,6 +549,8 @@ namespace Entrenate.Infrastructure.Persistence.Seed
 
             foreach (var definicion in definiciones)
             {
+                var metadata = metadataPorNombre[definicion.Item1];
+
                 workoutGuideIdsPorNombre.TryGetValue(
                     definicion.Item1,
                     out var workoutGuideId);
@@ -339,10 +559,44 @@ namespace Entrenate.Infrastructure.Persistence.Seed
                     definicion.Item1,
                     out var existente))
                 {
+                    var idsSecundariosExistentes = existente
+                        .GruposMuscularesSecundarios
+                        .Select(x => x.Id)
+                        .ToHashSet();
+                    var secundariosActuales = existente
+                        .GruposMuscularesSecundarios
+                        .Select(x => x.GrupoMuscular)
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    var metadataCambio =
+                        existente.Codigo != metadata.Codigo ||
+                        existente.PatronMovimiento != metadata.PatronMovimiento ||
+                        existente.TipoEjercicio != metadata.TipoEjercicio ||
+                        !secundariosActuales.SetEquals(
+                            metadata.GruposMuscularesSecundarios);
+
                     if (workoutGuideId is not null &&
                         existente.WorkoutGuideId != workoutGuideId)
                     {
                         existente.WorkoutGuideId = workoutGuideId;
+                        metadataCambio = true;
+                    }
+
+                    existente.ConfigurarMetadataPlanificacion(
+                        metadata.Codigo,
+                        metadata.PatronMovimiento,
+                        metadata.TipoEjercicio,
+                        metadata.GruposMuscularesSecundarios);
+
+                    foreach (var secundarioNuevo in existente
+                        .GruposMuscularesSecundarios
+                        .Where(x => !idsSecundariosExistentes.Contains(x.Id)))
+                    {
+                        _context.Entry(secundarioNuevo).State =
+                            EntityState.Added;
+                    }
+
+                    if (metadataCambio)
+                    {
                         ejerciciosActualizados++;
                     }
 
@@ -359,6 +613,12 @@ namespace Entrenate.Infrastructure.Persistence.Seed
                     ImagenPrincipalUrl = null,
                     Activo = true
                 };
+
+                ejercicio.ConfigurarMetadataPlanificacion(
+                    metadata.Codigo,
+                    metadata.PatronMovimiento,
+                    metadata.TipoEjercicio,
+                    metadata.GruposMuscularesSecundarios);
 
                 var equipamientoIds = definicion.Item3
                     .Select(x => equipamientosPorNombre[x].Id);
@@ -390,5 +650,11 @@ namespace Entrenate.Infrastructure.Persistence.Seed
                 nuevosEjercicios.Count,
                 ejerciciosActualizados);
         }
+
+        private sealed record ExercisePlanningMetadata(
+            string Codigo,
+            PatronMovimiento PatronMovimiento,
+            TipoEjercicio TipoEjercicio,
+            IReadOnlyCollection<string> GruposMuscularesSecundarios);
     }
 }
