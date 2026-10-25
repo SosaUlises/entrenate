@@ -2,15 +2,15 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Entrenate.Application.Coach.Progress.Conversation;
 using Entrenate.Application.Common.Interfaces;
+using Entrenate.Application.Common.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Entrenate.Infrastructure.Coach.Progress.Conversation
+namespace Entrenate.Infrastructure.Coach.Conversation
 {
-    public class GroqProgressConversationProvider
-        : IProgressConversationProvider
+    public class GroqCoachConversationProvider
+        : ICoachConversationProvider
     {
         private const string ResponsesPath = "responses";
 
@@ -21,20 +21,20 @@ namespace Entrenate.Infrastructure.Coach.Progress.Conversation
 
         private readonly HttpClient _httpClient;
         private readonly GroqSettings _settings;
-        private readonly ILogger<GroqProgressConversationProvider> _logger;
+        private readonly ILogger<GroqCoachConversationProvider> _logger;
 
-        public GroqProgressConversationProvider(
+        public GroqCoachConversationProvider(
             HttpClient httpClient,
             IOptions<GroqSettings> options,
-            ILogger<GroqProgressConversationProvider> logger)
+            ILogger<GroqCoachConversationProvider> logger)
         {
             _httpClient = httpClient;
             _settings = options.Value;
             _logger = logger;
         }
 
-        public async Task<ProgressConversationResponse> GenerateResponseAsync(
-            ProgressConversationPrompt prompt,
+        public async Task<CoachConversationResponse> GenerateResponseAsync(
+            CoachConversationPrompt prompt,
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(prompt);
@@ -121,7 +121,7 @@ namespace Entrenate.Infrastructure.Coach.Progress.Conversation
 
                     var answer = ExtractAnswer(groqResponse);
 
-                    return new ProgressConversationResponse(answer);
+                    return new CoachConversationResponse(answer);
                 }
                 catch (JsonException exception)
                 {

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Entrenate.Application.Common.Models;
 
 namespace Entrenate.Application.Coach.Progress.Conversation
 {
@@ -22,7 +23,7 @@ namespace Entrenate.Application.Coach.Progress.Conversation
 
         private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
-        public static ProgressConversationPrompt Build(
+        public static CoachConversationPrompt Build(
             ProgressConversationRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
@@ -43,7 +44,7 @@ namespace Entrenate.Application.Coach.Progress.Conversation
                 },
                 JsonOptions);
 
-            return new ProgressConversationPrompt(
+            return new CoachConversationPrompt(
                 Instructions,
                 input);
         }

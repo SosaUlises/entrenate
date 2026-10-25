@@ -4,10 +4,6 @@ namespace Entrenate.Application.Coach.Progress.Conversation
         string Question,
         ProgressConversationContext Context);
 
-    public record ProgressConversationPrompt(
-        string Instructions,
-        string Input);
-
     public record ProgressConversationResponse(
         string Answer);
 }
