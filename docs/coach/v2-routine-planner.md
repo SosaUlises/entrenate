@@ -2,8 +2,8 @@
 
 ## 1. Estado y propósito
 
-Estado: V2.2 cerrado — estructura semanal, elegibilidad y selección
-determinística de ejercicios implementadas.
+Estado: V2.3 cerrado — estructura semanal, selección, prescripción inicial y
+control determinístico de duración implementados.
 
 V2 propone una rutina de entrenamiento a partir del perfil del usuario y del
 catálogo real de Entrenate. La planificación es determinística y produce una
@@ -361,6 +361,13 @@ Aplicación por objetivo:
 - objetivo combinado: usa el centro del rango;
 - `AcondicionamientoGeneral`: usa la mitad inferior con cobertura equilibrada.
 
+V2.3 fija esos puntos de forma determinística: fuerza y acondicionamiento usan
+el mínimo, el objetivo combinado usa el punto medio entero e hipertrofia usa el
+máximo. Para compuestos, el presupuesto se calcula por `PatronMovimiento`; para
+aislamientos, por grupo muscular principal. Si la cantidad de exposiciones y el
+rango permitido por ejercicio impiden alcanzar el rango semanal, se conserva
+la cobertura y se emite `WeeklyVolumeTargetUnreachable`.
+
 La duración siempre puede reducir el volumen hacia el mínimo del rango. El
 motor no baja del mínimo sin emitir `FeasibleWithWarnings`; si tampoco cabe una
 propuesta utilizable, devuelve `NotFeasible`.
@@ -444,6 +451,10 @@ producir la misma propuesta.
 | Combinado | 5–8 | 8–12 | 150 s | 90 s |
 | Acondicionamiento general | 8–12 | 10–15 | 90 s | 60 s |
 
+Cuando el descanso accesorio es un rango, V2.3 usa el extremo superior para un
+compuesto secundario y el inferior para un aislamiento: fuerza asigna 120/90 s
+e hipertrofia 90/60 s, respectivamente.
+
 ### 13.2 RIR
 
 - Sin experiencia: 3–4.
@@ -466,6 +477,13 @@ El motor reparte el presupuesto semanal y luego limita cada ejercicio a estos
 rangos. No compensa falta de ejercicios concentrando más de cuatro series en un
 ejercicio durante V2 inicial.
 
+La distribución empieza en el mínimo por ejercicio y agrega una serie por
+exposición, en orden semanal y de slot, hasta alcanzar el punto objetivo o el
+máximo disponible. Para un mismo patrón o grupo, las exposiciones difieren como
+máximo en una serie. Los mínimos por ejercicio son duros; el rango semanal es
+un objetivo y puede quedar fuera sólo con warning cuando la cobertura y la
+cantidad real de exposiciones lo hacen inevitable.
+
 ## 14. Estimación y ajuste de duración
 
 V2 necesita una fórmula única, visible y testeable:
@@ -473,11 +491,13 @@ V2 necesita una fórmula única, visible y testeable:
 ```text
 duración estimada =
   5 minutos de preparación general
-  + 60 segundos de transición por ejercicio
+  + 60 segundos por transición entre ejercicios
   + suma por ejercicio de:
       (45 segundos × series)
       + (descanso × (series - 1))
 ```
+
+Una sesión con `n` ejercicios tiene `max(0, n - 1)` transiciones.
 
 La estimación no afirma medir la duración real. Su propósito es evitar
 propuestas evidentemente incompatibles con el perfil.
@@ -490,6 +510,12 @@ Cuando excede el presupuesto, el ajuste ocurre en este orden:
 3. reducir series secundarias hasta su mínimo;
 4. alternar accesorios entre días equivalentes;
 5. reducir patrones principales sólo hasta el mínimo semanal permitido.
+
+En V2.3, quitar un accesorio opcional únicamente de la sesión que excede el
+tiempo materializa también la alternancia entre días equivalentes: el accesorio
+permanece en los días que sí entran en presupuesto. Luego se reducen, sin bajar
+del mínimo por ejercicio, accesorios requeridos, compuestos secundarios y por
+último compuestos primarios. Cada eliminación o reducción queda registrada.
 
 No se eliminan silenciosamente patrones esenciales. Si aun así no cabe, se
 devuelve `NotFeasible` con la duración mínima estimada y los patrones que no
@@ -666,12 +692,12 @@ volumen secundario en V2. Son calibraciones futuras, no cambios de contrato:
 - matriz de slots, ranking y variación A/B/C determinísticos;
 - factibilidad y diagnósticos estructurados sin persistencia.
 
-### V2.3 — Prescripción y duración
+### V2.3 — Prescripción y duración (cerrado)
 
-- distribuir volumen por experiencia y objetivo;
-- asignar repeticiones, RIR y descansos;
-- estimar duración y aplicar reducción por prioridad;
-- validar límites compatibles con `EjercicioRutina`.
+- volumen distribuido por experiencia, objetivo y exposiciones reales;
+- repeticiones, RIR y descansos compatibles con `EjercicioRutina`;
+- duración estimada con tolerancia del 10% y reducción por prioridad;
+- factibilidad y diagnósticos estructurados, sin persistencia.
 
 ### V2.4 — Propuesta completa
 

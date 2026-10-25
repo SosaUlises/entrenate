@@ -211,6 +211,15 @@ namespace Entrenate.Application.Coach.RoutinePlanner.ExerciseSelection
                             selected.Code!,
                             selected.Name,
                             selected.PrimaryMuscleGroup,
+                            selected.SecondaryMuscleGroups
+                                .Where(group =>
+                                    !string.IsNullOrWhiteSpace(group))
+                                .Select(group => group.Trim())
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .OrderBy(
+                                    group => group,
+                                    StringComparer.Ordinal)
+                                .ToArray(),
                             selected.MovementPattern.Value,
                             selected.ExerciseType!.Value);
                     }

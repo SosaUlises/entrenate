@@ -7,6 +7,7 @@ namespace Entrenate.Application.Coach.RoutinePlanner.ExerciseSelection
         string Code,
         string Name,
         string PrimaryMuscleGroup,
+        IReadOnlyCollection<string> SecondaryMuscleGroups,
         PatronMovimiento MovementPattern,
         TipoEjercicio ExerciseType);
 }
