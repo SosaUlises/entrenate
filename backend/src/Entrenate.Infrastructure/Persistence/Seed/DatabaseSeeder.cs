@@ -559,6 +559,10 @@ namespace Entrenate.Infrastructure.Persistence.Seed
                     definicion.Item1,
                     out var existente))
                 {
+                    var idsSecundariosExistentes = existente
+                        .GruposMuscularesSecundarios
+                        .Select(x => x.Id)
+                        .ToHashSet();
                     var secundariosActuales = existente
                         .GruposMuscularesSecundarios
                         .Select(x => x.GrupoMuscular)
@@ -582,6 +586,14 @@ namespace Entrenate.Infrastructure.Persistence.Seed
                         metadata.PatronMovimiento,
                         metadata.TipoEjercicio,
                         metadata.GruposMuscularesSecundarios);
+
+                    foreach (var secundarioNuevo in existente
+                        .GruposMuscularesSecundarios
+                        .Where(x => !idsSecundariosExistentes.Contains(x.Id)))
+                    {
+                        _context.Entry(secundarioNuevo).State =
+                            EntityState.Added;
+                    }
 
                     if (metadataCambio)
                     {
