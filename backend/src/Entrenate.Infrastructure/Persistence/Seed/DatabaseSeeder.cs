@@ -338,7 +338,7 @@ namespace Entrenate.Infrastructure.Persistence.Seed
                 ["Face pull"] = new(
                     "face-pull",
                     PatronMovimiento.RotacionExternaHombro,
-                    TipoEjercicio.Compuesto,
+                    TipoEjercicio.Aislamiento,
                     ["Espalda"]),
                 ["Pike push-up"] = new(
                     "pike-push-up",

@@ -2,7 +2,8 @@
 
 ## 1. Estado y propósito
 
-Estado: V2.1 cerrado — estructura semanal determinística implementada.
+Estado: V2.1 cerrado — estructura semanal determinística implementada y
+metadata curada del catálogo auditada para V2.2.
 
 V2 propone una rutina de entrenamiento a partir del perfil del usuario y del
 catálogo real de Entrenate. La planificación es determinística y produce una
@@ -580,9 +581,10 @@ V2.0 cierra como normativas:
 6. confirmación idempotente por usuario y propuesta;
 7. desactivación de rutinas anteriores al confirmar una nueva propuesta.
 
-No quedan bloqueantes de modelo para comenzar V2.1. Antes de V2.2 deberá
-revisarse funcionalmente la clasificación curada del seed. Son calibraciones,
-no cambios de contrato:
+No quedan bloqueantes de modelo para comenzar V2.2. La clasificación curada de
+los 37 ejercicios del seed fue auditada funcionalmente. `Face pull` se clasifica
+como aislamiento accesorio para evitar que ocupe cupos compuestos o compute
+volumen secundario en V2. Son calibraciones futuras, no cambios de contrato:
 
 - validar los rangos de volumen por experiencia y objetivo con uso real;
 - calibrar los 45 segundos por serie, transición y tolerancia del 10%;
@@ -657,7 +659,6 @@ no cambios de contrato:
 
 ## 20. Criterio de inicio de implementación
 
-V2.1 puede comenzar sobre estos contratos. V2.2 requiere una revisión funcional
-de la clasificación curada, pero no un nuevo modelo. V2.5 debe implementar la
-transacción de activación e idempotencia ya definida; no debe inventar otra
-política.
+V2.2 puede comenzar sobre estos contratos y la metadata auditada, sin un nuevo
+modelo. V2.5 debe implementar la transacción de activación e idempotencia ya
+definida; no debe inventar otra política.
