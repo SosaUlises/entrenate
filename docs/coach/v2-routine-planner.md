@@ -2,8 +2,8 @@
 
 ## 1. Estado y propósito
 
-Estado: V2.4 cerrado — propuesta completa, identidad reproducible y hash
-canónico implementados en memoria.
+Estado: V2.5a cerrado — generación autenticada y stateless de propuestas
+disponible por API, sin persistencia ni confirmación.
 
 V2 propone una rutina de entrenamiento a partir del perfil del usuario y del
 catálogo real de Entrenate. La planificación es determinística y produce una
@@ -733,13 +733,20 @@ volumen secundario en V2. Son calibraciones futuras, no cambios de contrato:
 - hash SHA-256 canónico y `ProposalId` dirigido por contenido;
 - tests de composición y determinismo en Application.
 
-### V2.5 — Casos de uso y API
+### V2.5a — Generación y API (cerrado)
 
-- exponer generación autenticada sin persistencia;
+- generación autenticada sin persistencia mediante
+  `POST /api/coach/routine-planner/proposals`;
+- perfil, equipamiento declarado y catálogo activo proyectados al input V2.4;
+- propuesta completa y diagnósticos devueltos también cuando el resultado es
+  `NotFeasible`.
+
+### V2.5b — Confirmación y persistencia
+
 - exponer confirmación explícita e idempotente;
 - revalidar perfil, catálogo, ownership y propuesta;
 - crear mediante las reglas existentes de Rutinas;
-- resolver previamente la persistencia tipada de días semanales.
+- persistir los días semanales tipados ya disponibles.
 
 ### V2.6 — Coach explanation/conversation
 

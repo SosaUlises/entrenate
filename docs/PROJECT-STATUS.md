@@ -28,8 +28,9 @@
 
 ## Current work
 
-- Frontend Progress Coach V1 closed.
-- Next: return to Entrenate Coach backend work.
+- Routine Planner V2.5a backend closed: authenticated proposal generation is
+  available without persistence.
+- Next: Routine Planner V2.5b confirmation and idempotent persistence.
 - Known external blocker: the currently configured local Groq credential returns
   `401 invalid_api_key`; the frontend and backend contracts remain unchanged.
 
@@ -51,10 +52,11 @@ Entrenate Coach is the premium intelligent layer of Entrenate.
 Available:
 
 - Progress Coach
+- Routine Planner proposal generation
 
 Planned:
 
-- Routine Planner
+- Routine Planner confirmation
 - Adaptive Training
 - Nutrition Coach
 - Proactive Coach
@@ -81,6 +83,19 @@ Progress V1.3:
 - authenticated stateless conversation endpoint:
   `POST /api/coach/progress/exercises/{exerciseId}/conversation`;
 - real E2E flow validated against PostgreSQL + Groq.
+
+### Routine Planner backend
+
+Routine Planner V2.0–V2.4:
+
+- deterministic weekly structure, exercise selection and prescription;
+- complete in-memory proposal with canonical hash and content-derived ID.
+
+Routine Planner V2.5a:
+
+- authenticated, stateless proposal endpoint:
+  `POST /api/coach/routine-planner/proposals`;
+- no routine creation, confirmation or persistence yet.
 
 ### Coach principles
 
