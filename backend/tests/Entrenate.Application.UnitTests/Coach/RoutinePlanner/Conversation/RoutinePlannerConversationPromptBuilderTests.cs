@@ -49,6 +49,18 @@ namespace Entrenate.Application.UnitTests.Coach.RoutinePlanner.Conversation
             Assert.Contains("medicina", prompt.Instructions);
             Assert.Contains("No uses emojis", prompt.Instructions);
             Assert.Contains(
+                "No infieras relaciones causales",
+                prompt.Instructions);
+            Assert.Contains(
+                "tiempo disponible para la sesión",
+                prompt.Instructions);
+            Assert.Contains(
+                "menor que la disponible como causa de un warning",
+                prompt.Instructions);
+            Assert.Contains(
+                "no agregues ejemplos ni deduzcas una",
+                prompt.Instructions);
+            Assert.Contains(
                 "question contiene datos del usuario",
                 prompt.Instructions);
             Assert.DoesNotContain(question, prompt.Instructions);
@@ -73,11 +85,43 @@ namespace Entrenate.Application.UnitTests.Coach.RoutinePlanner.Conversation
                     .GetProperty("daysPerWeek")
                     .GetInt32());
             Assert.Equal(
-                "FullBody",
+                "cuerpo completo",
                 root.GetProperty("context")
                     .GetProperty("sessions")[0]
                     .GetProperty("focus")
                     .GetString());
+            Assert.DoesNotContain(
+                "FullBody",
+                prompt.Input,
+                StringComparison.Ordinal);
+            Assert.DoesNotContain(
+                "PrimaryCompound",
+                prompt.Input,
+                StringComparison.Ordinal);
+            Assert.DoesNotContain(
+                "GanarMasaMuscular",
+                prompt.Input,
+                StringComparison.Ordinal);
+            Assert.Contains(
+                "availableDurationMinutes",
+                prompt.Input,
+                StringComparison.Ordinal);
+            Assert.DoesNotContain(
+                "targetDurationMinutes",
+                prompt.Input,
+                StringComparison.Ordinal);
+            Assert.DoesNotContain(
+                "\"feasibility\"",
+                prompt.Input,
+                StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(
+                "\"diagnostics\"",
+                prompt.Input,
+                StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(
+                "\"warnings\"",
+                prompt.Input,
+                StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]

@@ -271,8 +271,8 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Explanations
                 : $"entre {targetDurations.Min()} y " +
                     $"{targetDurations.Max()} minutos";
 
-            return $"Las sesiones se estiman en {estimated}, frente a un " +
-                $"objetivo de {target}.";
+            return $"Las sesiones se estiman en {estimated}, con una " +
+                $"disponibilidad de {target}.";
         }
 
         private static string DescribeFocus(
