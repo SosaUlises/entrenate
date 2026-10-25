@@ -2,8 +2,8 @@
 
 ## 1. Estado y propósito
 
-Estado: V2.3 cerrado — estructura semanal, selección, prescripción inicial y
-control determinístico de duración implementados.
+Estado: V2.4 cerrado — propuesta completa, identidad reproducible y hash
+canónico implementados en memoria.
 
 V2 propone una rutina de entrenamiento a partir del perfil del usuario y del
 catálogo real de Entrenate. La planificación es determinística y produce una
@@ -484,6 +484,12 @@ máximo en una serie. Los mínimos por ejercicio son duros; el rango semanal es
 un objetivo y puede quedar fuera sólo con warning cuando la cobertura y la
 cantidad real de exposiciones lo hacen inevitable.
 
+Antes de distribuir series, si varios slots accesorios opcionales del mismo
+grupo obligarían a superar su máximo semanal aun usando el mínimo por ejercicio,
+V2.3 elimina primero las exposiciones opcionales más tardías. Los accesorios
+obligatorios no se eliminan; si sólo ellos hacen inalcanzable el rango, se
+conservan con warning.
+
 ## 14. Estimación y ajuste de duración
 
 V2 necesita una fórmula única, visible y testeable:
@@ -613,11 +619,32 @@ El flujo recomendado es:
 5. **Create:** sólo entonces se usa el caso de uso normal de creación de rutina
    en una única operación.
 
-V2 inicial no persiste drafts ni conversaciones. Cada propuesta incluye un
-`ProposalId` aleatorio y un hash SHA-256 de su representación canónica, que
-incluye perfil, catálogo relevante, versión de política y contenido propuesto.
-La confirmación no confía en datos descriptivos enviados por el cliente:
-regenera y revalida la propuesta antes de comparar el hash.
+V2 inicial no persiste drafts ni conversaciones. Cada propuesta incluye un hash
+SHA-256 de su representación canónica y un `ProposalId` reproducible derivado de
+los primeros 128 bits de ese hash. El propio ID y el hash quedan excluidos de la
+representación para evitar circularidad. La confirmación no confía en datos
+descriptivos enviados por el cliente: regenera y revalida la propuesta antes de
+comparar el hash.
+
+La representación canónica V2.4 es binaria, versionada y con orden explícito.
+Incluye:
+
+- versión de política, objetivo, experiencia, días, preferencias y duración;
+- conjunto ordenado de equipamiento declarado;
+- catálogo proyectado ordenado por `Codigo`, con metadata de planificación,
+  actividad y requisitos de equipamiento;
+- factibilidad, calendario, focos, prescripción y duraciones resultantes;
+- volumen semanal y diagnósticos estructurados de selección/prescripción.
+
+No incluye nombres visibles de ejercicios, timestamps, orden incidental de
+colecciones, `ProposalId`, el propio hash ni `UserId`. Los ejercicios se
+identifican canónicamente por `Codigo`; sus GUID reales siguen presentes en la
+propuesta para una futura confirmación. `UserId` no es parte del contenido
+porque la idempotencia persistida ya está acotada por la unicidad compuesta de
+usuario y propuesta.
+
+Una propuesta `NotFeasible` conserva estructura y diagnósticos para poder
+explicarse, pero no es confirmable.
 
 La rutina creada guarda `PlannerProposalId` y `PlannerProposalHash`. Existe una
 unicidad por usuario y `PlannerProposalId`:
@@ -699,13 +726,12 @@ volumen secundario en V2. Son calibraciones futuras, no cambios de contrato:
 - duración estimada con tolerancia del 10% y reducción por prioridad;
 - factibilidad y diagnósticos estructurados, sin persistencia.
 
-### V2.4 — Propuesta completa
+### V2.4 — Propuesta completa (cerrado)
 
-- componer estructura, selección y prescripción;
-- incluir snapshot/versiones y warnings;
-- generar explicación determinística inicial;
-- ejecutar tests de escenarios representativos de extremo a extremo en
-  Application.
+- orquestación pura de estructura, selección y prescripción;
+- contrato completo para revisión con factibilidad y diagnósticos;
+- hash SHA-256 canónico y `ProposalId` dirigido por contenido;
+- tests de composición y determinismo en Application.
 
 ### V2.5 — Casos de uso y API
 

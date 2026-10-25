@@ -53,6 +53,9 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Prescription
                 policy,
                 rir);
 
+            TrimOptionalAccessoriesToWeeklyMaximum(
+                sessionPlans,
+                policy.MaxAccessoryWeeklySets);
             AllocateWeeklySeries(
                 sessionPlans,
                 profile.Goal,
@@ -198,6 +201,46 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Prescription
             }
         }
 
+        private static void TrimOptionalAccessoriesToWeeklyMaximum(
+            IReadOnlyCollection<SessionPlan> sessions,
+            int maximumWeeklySets)
+        {
+            var accessoryGroups = sessions
+                .SelectMany(session => session.Exercises)
+                .Where(exercise =>
+                    exercise.ExerciseType == TipoEjercicio.Aislamiento)
+                .GroupBy(
+                    exercise => exercise.PrimaryMuscleGroup,
+                    StringComparer.OrdinalIgnoreCase)
+                .OrderBy(group => group.Key, StringComparer.Ordinal)
+                .ToArray();
+
+            foreach (var group in accessoryGroups)
+            {
+                var exercises = group.ToList();
+
+                while (exercises.Sum(exercise => exercise.MinSets) >
+                    maximumWeeklySets)
+                {
+                    var removable = exercises
+                        .Where(exercise => !exercise.IsRequired)
+                        .OrderByDescending(exercise => exercise.DayOrder)
+                        .ThenByDescending(exercise => exercise.SlotPosition)
+                        .FirstOrDefault();
+
+                    if (removable is null)
+                    {
+                        break;
+                    }
+
+                    var session = sessions.Single(candidate =>
+                        candidate.DayOrder == removable.DayOrder);
+                    session.Exercises.Remove(removable);
+                    exercises.Remove(removable);
+                }
+            }
+        }
+
         private static void AllocateSeries(
             IReadOnlyList<ExercisePlan> exercises,
             int weeklyTarget,
@@ -276,7 +319,8 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Prescription
                     RoutinePrescriptionDiagnosticCode
                         .OptionalExerciseRemovedForDuration,
                     session.DayOrder,
-                    exercise.ExerciseId));
+                    exercise.ExerciseId,
+                    ExerciseCode: exercise.Code));
 
                 if (!ExceedsDuration(session, maximumDurationSeconds))
                 {
@@ -353,7 +397,8 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Prescription
                             RoutinePrescriptionDiagnosticCode
                                 .ExerciseSetsReducedForDuration,
                             session.DayOrder,
-                            exercise.ExerciseId));
+                            exercise.ExerciseId,
+                            ExerciseCode: exercise.Code));
                     }
                 }
             }

@@ -7,5 +7,6 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Prescription
         int? DayOrder = null,
         Guid? ExerciseId = null,
         PatronMovimiento? MovementPattern = null,
-        string? MuscleGroup = null);
+        string? MuscleGroup = null,
+        string? ExerciseCode = null);
 }
