@@ -2,8 +2,8 @@
 
 ## 1. Estado y propósito
 
-Estado: V2.1 cerrado — estructura semanal determinística implementada y
-metadata curada del catálogo auditada para V2.2.
+Estado: V2.2 cerrado — estructura semanal, elegibilidad y selección
+determinística de ejercicios implementadas.
 
 V2 propone una rutina de entrenamiento a partir del perfil del usuario y del
 catálogo real de Entrenate. La planificación es determinística y produce una
@@ -370,13 +370,54 @@ un mismo patrón, salvo que el foco del split exija una diferencia explícita.
 
 ## 12. Selección de ejercicios
 
+### 12.1 Slots por foco
+
+V2.2 usa la siguiente matriz antes de prescribir volumen. Los slots esenciales
+son obligatorios; si no tienen un candidato elegible, la selección es
+`NotFeasible`. La ausencia de un accesorio opcional conserva el slot vacío y
+produce un warning estructurado.
+
+| Foco | Slots compuestos obligatorios | Core obligatorio | Otros slots |
+| --- | --- | --- | --- |
+| Full Body | dominante de rodilla; bisagra o extensión de cadera; empuje horizontal o vertical; tracción horizontal o vertical | anti-extensión o flexión | ninguno |
+| Upper | empuje horizontal; tracción horizontal; empuje vertical; tracción vertical | no | abducción de hombro; flexión de codo; extensión de codo |
+| Lower | dominante de rodilla; bisagra o extensión de cadera | anti-extensión o flexión | extensión de rodilla; flexión de rodilla; flexión plantar |
+| Push | empuje horizontal; empuje vertical | no | abducción de hombro; extensión de codo |
+| Pull | tracción vertical; tracción horizontal | no | flexión de codo; rotación externa de hombro |
+| Legs | dominante de rodilla; bisagra o extensión de cadera | anti-extensión o flexión | extensión de rodilla; flexión de rodilla; flexión plantar |
+| Core/Calves | ninguno | anti-extensión o flexión | flexión plantar obligatoria para este foco |
+
+Los slots compuestos se ordenan antes que los accesorios. Un ejercicio no se
+repite dentro de una misma sesión. La matriz representa cobertura y selección;
+no implica todavía una cantidad de series ni garantiza que todos los accesorios
+se mantengan después del ajuste de duración de V2.3.
+
+### 12.2 Elegibilidad y ranking
+
+La compatibilidad de equipamiento usa semántica `AND`: todos los equipamientos
+requeridos por el ejercicio deben estar activos en el catálogo y declarados por
+el usuario. Una colección vacía representa un ejercicio de peso corporal. El
+entorno no agrega equipamiento implícito.
+
 Para cada cupo de patrón, el ranking determinístico es:
 
 1. elegibilidad por actividad, metadata y equipamiento;
 2. `TipoEjercicio` requerido por el cupo contextual;
-3. menor volumen semanal ya asignado al patrón y grupo principal;
-4. penalización por repetir el ejercicio en la sesión anterior;
-5. `Codigo` como desempate estable.
+3. menor cantidad de slots ya asignados al patrón y grupo principal;
+4. menor uso previo dentro del mismo foco para favorecer variantes A/B/C;
+5. penalización por repetir el ejercicio en la sesión inmediatamente anterior;
+6. menor uso total semanal del ejercicio;
+7. `Codigo` ordinal como desempate estable;
+8. `ExerciseId` sólo como desempate final defensivo.
+
+En V2.2 la cantidad de slots es la única medida disponible: todavía no existe
+volumen prescripto. V2.3 reemplazará esa aproximación por series semanales donde
+corresponda, sin alterar la elegibilidad.
+
+Si una variante debe reutilizar un ejercicio porque no quedan alternativas
+elegibles, la selección continúa y emite
+`ExerciseReusedAcrossVariants`. La falta normal de candidatos nunca se expresa
+mediante una excepción.
 
 No existe ranking por dificultad en V2 inicial. Cuando dos ejercicios siguen
 empatados, el código estable produce una selección reproducible sin depender
@@ -618,13 +659,12 @@ volumen secundario en V2. Son calibraciones futuras, no cambios de contrato:
 - días preferidos preservados y días derivados marcados explícitamente;
 - sin selección de ejercicios ni persistencia.
 
-### V2.2 — Elegibilidad y selección
+### V2.2 — Elegibilidad y selección (cerrado)
 
-- incorporar metadata curada;
-- proyectar catálogo activo con equipamientos;
-- filtrar por equipamiento completo;
-- implementar ranking, variedad y fallback determinísticos;
-- devolver factibilidad y diagnósticos.
+- contrato puro de catálogo y equipamientos implementado en Application;
+- filtrado por metadata completa y compatibilidad `AND` de equipamiento;
+- matriz de slots, ranking y variación A/B/C determinísticos;
+- factibilidad y diagnósticos estructurados sin persistencia.
 
 ### V2.3 — Prescripción y duración
 
