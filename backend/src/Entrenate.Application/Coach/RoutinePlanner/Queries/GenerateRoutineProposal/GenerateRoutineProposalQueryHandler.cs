@@ -1,9 +1,6 @@
 using Entrenate.Application.Coach.RoutinePlanner.DTOs;
-using Entrenate.Application.Coach.RoutinePlanner.ExerciseSelection;
 using Entrenate.Application.Coach.RoutinePlanner.Proposal;
-using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
-using Entrenate.Domain.Entidades;
 using MediatR;
 
 namespace Entrenate.Application.Coach.RoutinePlanner.Queries.GenerateRoutineProposal
@@ -14,20 +11,14 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Queries.GenerateRoutineProp
             RoutinePlannerProposalDto>
     {
         private readonly ICurrentUserService _currentUserService;
-        private readonly ITrainingProfileRepository _profileRepository;
-        private readonly IExerciseRepository _exerciseRepository;
-        private readonly IEquipmentRepository _equipmentRepository;
+        private readonly RoutinePlannerProposalGenerator _proposalGenerator;
 
         public GenerateRoutineProposalQueryHandler(
             ICurrentUserService currentUserService,
-            ITrainingProfileRepository profileRepository,
-            IExerciseRepository exerciseRepository,
-            IEquipmentRepository equipmentRepository)
+            RoutinePlannerProposalGenerator proposalGenerator)
         {
             _currentUserService = currentUserService;
-            _profileRepository = profileRepository;
-            _exerciseRepository = exerciseRepository;
-            _equipmentRepository = equipmentRepository;
+            _proposalGenerator = proposalGenerator;
         }
 
         public async Task<RoutinePlannerProposalDto> Handle(
@@ -42,78 +33,11 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Queries.GenerateRoutineProp
                     "No se pudo identificar al usuario autenticado.");
             }
 
-            var profile = await _profileRepository.GetByUserIdAsync(
+            var proposal = await _proposalGenerator.GenerateForUserAsync(
                 userId,
                 cancellationToken);
 
-            if (profile is null)
-            {
-                throw new NotFoundException(
-                    "El usuario todavía no tiene un perfil de entrenamiento.");
-            }
-
-            var exercises = await _exerciseRepository.GetActiveAsync(
-                cancellationToken);
-            var equipmentIds = profile.Equipamientos
-                .Select(item => item.EquipamientoId)
-                .Concat(exercises
-                    .SelectMany(exercise => exercise.Equipamientos)
-                    .Select(item => item.EquipamientoId))
-                .Distinct()
-                .ToArray();
-            var equipment = await _equipmentRepository.GetByIdsAsync(
-                equipmentIds,
-                cancellationToken);
-            var activeEquipmentIds = equipment
-                .Where(item => item.Activo)
-                .Select(item => item.Id)
-                .ToHashSet();
-            var declaredEquipmentIds = profile.Equipamientos
-                .Select(item => item.EquipamientoId)
-                .ToArray();
-            var catalog = exercises
-                .Select(exercise => MapCandidate(
-                    exercise,
-                    activeEquipmentIds))
-                .ToArray();
-            var input = new RoutinePlannerInput(
-                RoutinePlannerProposalBuilder.PolicyVersion,
-                profile.Objetivo,
-                profile.NivelExperiencia,
-                profile.DiasEntrenamientoPorSemana,
-                profile.DiasPreferidos
-                    .Select(day => day.Dia)
-                    .ToArray(),
-                profile.DuracionSesionMinutos,
-                declaredEquipmentIds,
-                catalog);
-            var proposal = RoutinePlannerProposalBuilder.Build(input);
-
             return MapProposal(proposal);
-        }
-
-        private static PlannerExerciseCandidate MapCandidate(
-            Ejercicio exercise,
-            IReadOnlySet<Guid> activeEquipmentIds)
-        {
-            return new PlannerExerciseCandidate(
-                exercise.Id,
-                exercise.Codigo,
-                exercise.Nombre,
-                exercise.GrupoMuscularPrincipal,
-                exercise.GruposMuscularesSecundarios
-                    .Select(group => group.GrupoMuscular)
-                    .ToArray(),
-                exercise.PatronMovimiento,
-                exercise.TipoEjercicio,
-                exercise.Activo,
-                exercise.Equipamientos
-                    .Select(requirement =>
-                        new ExerciseEquipmentRequirement(
-                            requirement.EquipamientoId,
-                            activeEquipmentIds.Contains(
-                                requirement.EquipamientoId)))
-                    .ToArray());
         }
 
         private static RoutinePlannerProposalDto MapProposal(

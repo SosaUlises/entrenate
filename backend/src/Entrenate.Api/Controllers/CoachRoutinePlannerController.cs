@@ -1,3 +1,5 @@
+using Entrenate.Api.Requests.Coach;
+using Entrenate.Application.Coach.RoutinePlanner.Commands.ConfirmRoutineProposal;
 using Entrenate.Application.Coach.RoutinePlanner.Queries.GenerateRoutineProposal;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -26,6 +28,21 @@ namespace Entrenate.Api.Controllers
                 cancellationToken);
 
             return Ok(proposal);
+        }
+
+        [HttpPost("proposals/{proposalId:guid}/confirm")]
+        public async Task<IActionResult> ConfirmProposal(
+            Guid proposalId,
+            ConfirmRoutineProposalRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _sender.Send(
+                new ConfirmRoutineProposalCommand(
+                    proposalId,
+                    request.ProposalHash),
+                cancellationToken);
+
+            return Ok(result);
         }
     }
 }

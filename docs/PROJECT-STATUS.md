@@ -28,9 +28,9 @@
 
 ## Current work
 
-- Routine Planner V2.5a backend closed: authenticated proposal generation is
-  available without persistence.
-- Next: Routine Planner V2.5b confirmation and idempotent persistence.
+- Routine Planner V2.5 backend closed: authenticated proposal generation and
+  idempotent transactional confirmation are available.
+- Next: validate Routine Planner end-to-end before V2.6.
 - Known external blocker: the currently configured local Groq credential returns
   `401 invalid_api_key`; the frontend and backend contracts remain unchanged.
 
@@ -53,10 +53,10 @@ Available:
 
 - Progress Coach
 - Routine Planner proposal generation
+- Routine Planner confirmation
 
 Planned:
 
-- Routine Planner confirmation
 - Adaptive Training
 - Nutrition Coach
 - Proactive Coach
@@ -95,7 +95,14 @@ Routine Planner V2.5a:
 
 - authenticated, stateless proposal endpoint:
   `POST /api/coach/routine-planner/proposals`;
-- no routine creation, confirmation or persistence yet.
+- no draft persistence.
+
+Routine Planner V2.5b:
+
+- authenticated confirmation endpoint:
+  `POST /api/coach/routine-planner/proposals/{proposalId}/confirm`;
+- backend regeneration and stale-proposal detection;
+- transactional activation and idempotent persistence scoped by user.
 
 ### Coach principles
 

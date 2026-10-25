@@ -2,8 +2,8 @@
 
 ## 1. Estado y propósito
 
-Estado: V2.5a cerrado — generación autenticada y stateless de propuestas
-disponible por API, sin persistencia ni confirmación.
+Estado: V2.5b cerrado — generación, confirmación idempotente y persistencia
+transaccional disponibles por API.
 
 V2 propone una rutina de entrenamiento a partir del perfil del usuario y del
 catálogo real de Entrenate. La planificación es determinística y produce una
@@ -741,12 +741,18 @@ volumen secundario en V2. Son calibraciones futuras, no cambios de contrato:
 - propuesta completa y diagnósticos devueltos también cuando el resultado es
   `NotFeasible`.
 
-### V2.5b — Confirmación y persistencia
+### V2.5b — Confirmación y persistencia (cerrado)
 
-- exponer confirmación explícita e idempotente;
-- revalidar perfil, catálogo, ownership y propuesta;
-- crear mediante las reglas existentes de Rutinas;
-- persistir los días semanales tipados ya disponibles.
+- confirmación explícita mediante
+  `POST /api/coach/routine-planner/proposals/{proposalId}/confirm`;
+- regeneración completa desde perfil, equipamiento y catálogo vigentes antes
+  de comparar identidad y hash;
+- conflicto controlado para propuestas desactualizadas o `NotFeasible`;
+- idempotencia por `(UsuarioId, PlannerProposalId)`, incluida la carrera de
+  doble submit;
+- desactivación de rutinas anteriores y creación de la nueva rutina, días y
+  ejercicios dentro de una única transacción;
+- persistencia del día semanal, prescripción, `PlannerProposalId` y hash.
 
 ### V2.6 — Coach explanation/conversation
 
@@ -758,6 +764,6 @@ volumen secundario en V2. Son calibraciones futuras, no cambios de contrato:
 
 ## 20. Criterio de inicio de implementación
 
-V2.2 puede comenzar sobre estos contratos y la metadata auditada, sin un nuevo
-modelo. V2.5 debe implementar la transacción de activación e idempotencia ya
-definida; no debe inventar otra política.
+V2.5 quedó implementado sin drafts persistidos: preview y confirmación
+regeneran mediante la misma proyección. V2.6 puede explicar la propuesta, pero
+no cambiarla ni persistir ajustes sin repetir preview y confirmación.

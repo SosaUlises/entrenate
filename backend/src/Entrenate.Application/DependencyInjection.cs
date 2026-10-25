@@ -1,5 +1,6 @@
 ﻿using Entrenate.Application.Common.Behaviors;
 using FluentValidation;
+using Entrenate.Application.Coach.RoutinePlanner.Proposal;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Entrenate.Application
@@ -20,6 +21,8 @@ namespace Entrenate.Application
 
             services.AddValidatorsFromAssembly(
                 typeof(DependencyInjection).Assembly);
+
+            services.AddScoped<RoutinePlannerProposalGenerator>();
 
             return services;
         }
