@@ -73,10 +73,11 @@ export async function apiRequest<
     requestHeaders.set("Authorization", `Bearer ${authToken}`);
   }
 
+  const requestUrl = buildApiUrl(path);
   let response: Response;
 
   try {
-    response = await fetch(buildApiUrl(path), {
+    response = await fetch(requestUrl, {
       ...requestOptions,
       body: body === undefined ? undefined : JSON.stringify(body),
       headers: requestHeaders,
