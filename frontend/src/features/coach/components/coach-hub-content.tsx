@@ -16,11 +16,6 @@ type PlannedCapability = {
 
 const plannedCapabilities: PlannedCapability[] = [
   {
-    description: "Planific\u00e1 seg\u00fan tus objetivos.",
-    icon: ClipboardList,
-    title: "Rutinas",
-  },
-  {
     description: "Ajust\u00e1 seg\u00fan tiempo y equipamiento.",
     icon: RefreshCw,
     title: "Adaptaci\u00f3n",
@@ -51,33 +46,18 @@ export function CoachHubContent() {
       </header>
 
       <ul className="mt-11 divide-y divide-border/70 border-y border-border/70">
-        <li>
-          <Link
-            className="group flex min-h-28 items-center gap-3 rounded-control-sm px-2 py-5 transition-[background-color,transform] duration-150 hover:bg-surface-interactive/55 active:scale-[0.99] active:bg-surface-active/55 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100"
-            href="/coach/progress"
-          >
-            <CapabilityIcon icon={TrendingUp} />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <h2 className="font-brand text-xl font-bold leading-7 text-text-primary">
-                  Progreso
-                </h2>
-                <span className="text-[0.8125rem] font-semibold leading-5 text-info">
-                  Disponible
-                </span>
-              </div>
-              <p className="mt-1.5 truncate text-sm leading-5 text-text-secondary">
-                Analiz&aacute; tu evoluci&oacute;n con contexto.
-              </p>
-            </div>
-            <span
-              aria-hidden="true"
-              className="flex size-11 shrink-0 items-center justify-center text-text-muted transition-colors duration-150 group-hover:text-text-primary group-active:text-thermal-accent motion-reduce:transition-none"
-            >
-              <ChevronRight size={20} strokeWidth={1.8} />
-            </span>
-          </Link>
-        </li>
+        <AvailableCapability
+          description="Analiz&aacute; tu evoluci&oacute;n con contexto."
+          href="/coach/progress"
+          icon={TrendingUp}
+          title="Progreso"
+        />
+        <AvailableCapability
+          description="Gener&aacute; una propuesta desde tu perfil actual."
+          href="/coach/routines"
+          icon={ClipboardList}
+          title="Rutinas"
+        />
 
         {plannedCapabilities.map((capability) => (
           <li key={capability.title}>
@@ -104,6 +84,43 @@ export function CoachHubContent() {
         ))}
       </ul>
     </section>
+  );
+}
+
+function AvailableCapability({
+  description,
+  href,
+  icon,
+  title,
+}: PlannedCapability & { href: string }) {
+  return (
+    <li>
+      <Link
+        className="group flex min-h-28 items-center gap-3 rounded-control-sm px-2 py-5 transition-[background-color,transform] duration-150 hover:bg-surface-interactive/55 active:scale-[0.99] active:bg-surface-active/55 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100"
+        href={href}
+      >
+        <CapabilityIcon icon={icon} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <h2 className="font-brand text-xl font-bold leading-7 text-text-primary">
+              {title}
+            </h2>
+            <span className="text-[0.8125rem] font-semibold leading-5 text-info">
+              Disponible
+            </span>
+          </div>
+          <p className="mt-1.5 truncate text-sm leading-5 text-text-secondary">
+            {description}
+          </p>
+        </div>
+        <span
+          aria-hidden="true"
+          className="flex size-11 shrink-0 items-center justify-center text-text-muted transition-colors duration-150 group-hover:text-text-primary group-active:text-thermal-accent motion-reduce:transition-none"
+        >
+          <ChevronRight size={20} strokeWidth={1.8} />
+        </span>
+      </Link>
+    </li>
   );
 }
 
