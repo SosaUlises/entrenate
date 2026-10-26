@@ -83,22 +83,14 @@ namespace Entrenate.Infrastructure.Email
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation(
-                    "Email enviado correctamente a {ToEmail}.",
-                    toEmail);
+                    "Email enviado correctamente mediante Brevo.");
 
                 return;
             }
 
-            var responseBody =
-                await response.Content.ReadAsStringAsync(
-                    cancellationToken);
-
             _logger.LogError(
-                "Error enviando email con Brevo a {ToEmail}. " +
-                "Status: {StatusCode}. Response: {ResponseBody}",
-                toEmail,
-                (int)response.StatusCode,
-                responseBody);
+                "Error enviando email mediante Brevo. Status: {StatusCode}.",
+                (int)response.StatusCode);
 
             throw new InvalidOperationException(
                 "No se pudo enviar el email.");

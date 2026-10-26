@@ -7,12 +7,15 @@ using Entrenate.Infrastructure.Identity;
 using Entrenate.Infrastructure.Persistence;
 using Entrenate.Infrastructure.Persistence.Repositories;
 using Entrenate.Infrastructure.Persistence.Seed;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -23,13 +26,18 @@ namespace Entrenate.Infrastructure
     {
         public static IServiceCollection AddInfrastructure(
             this IServiceCollection services,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IHostEnvironment environment)
         {
             // PostgreSQL
             var connectionString =
                 configuration.GetConnectionString("PostgreConnectionString")
                 ?? throw new InvalidOperationException(
                     "No se encontró la connection string PostgreConnectionString.");
+
+            ValidateDatabaseTransport(
+                connectionString,
+                environment);
 
             services.AddDbContext<EntrenateDbContext>(options =>
             {
@@ -38,7 +46,26 @@ namespace Entrenate.Infrastructure
 
 
             // Data Protection
-            services.AddDataProtection();
+            var dataProtection = services
+                .AddDataProtection()
+                .SetApplicationName("Entrenate");
+            var dataProtectionKeysPath =
+                configuration["DataProtection:KeysPath"];
+
+            if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+            {
+                if (environment.IsProduction() &&
+                    !Path.IsPathFullyQualified(dataProtectionKeysPath))
+                {
+                    throw new InvalidOperationException(
+                        "DataProtection:KeysPath debe ser una ruta absoluta " +
+                        "en Production.");
+                }
+
+                Directory.CreateDirectory(dataProtectionKeysPath);
+                dataProtection.PersistKeysToFileSystem(
+                    new DirectoryInfo(dataProtectionKeysPath));
+            }
 
 
             // ASP.NET Core Identity
@@ -59,8 +86,26 @@ namespace Entrenate.Infrastructure
 
 
             // JWT Settings
-            services.Configure<JwtSettings>(
-                configuration.GetSection("Jwt"));
+            services
+                .AddOptions<JwtSettings>()
+                .Bind(configuration.GetSection("Jwt"))
+                .Validate(
+                    settings =>
+                        Encoding.UTF8.GetByteCount(settings.Key) >= 32,
+                    "Jwt:Key debe tener al menos 32 bytes.")
+                .Validate(
+                    settings =>
+                        !string.IsNullOrWhiteSpace(settings.Issuer),
+                    "Jwt:Issuer es obligatorio.")
+                .Validate(
+                    settings =>
+                        !string.IsNullOrWhiteSpace(settings.Audience),
+                    "Jwt:Audience es obligatorio.")
+                .Validate(
+                    settings =>
+                        settings.ExpirationMinutes is > 0 and <= 1440,
+                    "Jwt:ExpirationMinutes debe estar entre 1 y 1440.")
+                .ValidateOnStart();
 
             var jwtSettings = configuration.GetSection("Jwt");
 
@@ -197,6 +242,39 @@ namespace Entrenate.Infrastructure
 
 
             return services;
+        }
+
+        private static void ValidateDatabaseTransport(
+            string connectionString,
+            IHostEnvironment environment)
+        {
+            if (!environment.IsProduction())
+            {
+                return;
+            }
+
+            NpgsqlConnectionStringBuilder builder;
+
+            try
+            {
+                builder = new NpgsqlConnectionStringBuilder(
+                    connectionString);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new InvalidOperationException(
+                    "La connection string PostgreConnectionString no es válida.",
+                    exception);
+            }
+
+            if (builder.SslMode is
+                SslMode.Disable or
+                SslMode.Allow or
+                SslMode.Prefer)
+            {
+                throw new InvalidOperationException(
+                    "PostgreConnectionString debe exigir SSL/TLS en Production.");
+            }
         }
     }
 }
