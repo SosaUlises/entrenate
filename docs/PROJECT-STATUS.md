@@ -28,8 +28,10 @@
 
 ## Current work
 
-- Frontend Routine Planner V2 proposal generation and base preview completed.
-- Next: extend proposal review and integrate explicit confirmation when requested.
+- Frontend Routine Planner V2 proposal review completed through full exercise
+  prescription and planner observations.
+- Next: integrate Routine Planner conversation or explicit confirmation when
+  requested.
 - Known external blocker: the currently configured local Groq credential returns
   `401 invalid_api_key`; the frontend and backend contracts remain unchanged.
 
@@ -136,19 +138,21 @@ Coming-soon entries:
 
 ### Frontend Routine Planner V2
 
-Current:
+Completed:
 
 - Coach Hub exposes Routine Planner as an available capability.
 - The entry screen presents the user's current training-profile context.
 - `Generar propuesta` opens a real preview generated through
   `POST /api/coach/routine-planner/proposals`.
 - The preview presents feasibility, structure, availability, weekly calendar
-  and collapsible session summaries without exposing internal identifiers.
+  and collapsible sessions with complete exercise prescription.
+- Planner warnings and feasibility restrictions are presented in natural
+  language without exposing diagnostic codes or internal identifiers.
 
 Next:
 
-- Extend proposal review and integrate explicit confirmation without changing
-  backend contracts.
+- Integrate Routine Planner conversation or explicit confirmation without
+  changing backend contracts.
 
 ## Onboarding
 

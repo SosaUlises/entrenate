@@ -25,6 +25,18 @@ export type RoutinePlannerSessionFocus =
 
 export type RoutinePlannerSessionVariant = "None" | "A" | "B" | "C";
 
+export type RoutinePlannerSelectionDiagnosticCode =
+  | "ExerciseReusedAcrossVariants"
+  | "MissingOptionalExercise"
+  | "MissingRequiredExercise";
+
+export type RoutinePlannerPrescriptionDiagnosticCode =
+  | "ExerciseSetsReducedForDuration"
+  | "OptionalExerciseRemovedForDuration"
+  | "SelectionNotFeasible"
+  | "SessionDurationExceeded"
+  | "WeeklyVolumeTargetUnreachable";
+
 export type RoutinePlannerProposalExercise = {
   code: string;
   exerciseId: string;
@@ -59,7 +71,7 @@ export type RoutinePlannerProposalResponse = {
   goal: string;
   policyVersion: string;
   prescriptionDiagnostics: Array<{
-    code: string;
+    code: RoutinePlannerPrescriptionDiagnosticCode;
     dayOrder: number | null;
     exerciseCode: string | null;
     movementPattern: string | null;
@@ -69,7 +81,7 @@ export type RoutinePlannerProposalResponse = {
   proposalId: string;
   requestedDaysPerWeek: number;
   selectionDiagnostics: Array<{
-    code: string;
+    code: RoutinePlannerSelectionDiagnosticCode;
     dayOrder: number;
     slotPosition: number;
   }>;

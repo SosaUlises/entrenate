@@ -14,7 +14,9 @@ import type {
   RoutinePlannerDayOrigin,
   RoutinePlannerProposalDay,
   RoutinePlannerProposalResponse,
+  RoutinePlannerPrescriptionDiagnosticCode,
   RoutinePlannerScheduledDay,
+  RoutinePlannerSelectionDiagnosticCode,
   RoutinePlannerSessionFocus,
   RoutinePlannerSessionVariant,
   RoutineProposalFeasibility,
@@ -239,9 +241,53 @@ function ProposalContent({
         </p>
       </section>
 
+      <ProposalObservations proposal={proposal} />
       <WeeklyCalendar days={proposal.days} />
       <SessionList days={proposal.days} />
     </div>
+  );
+}
+
+function ProposalObservations({
+  proposal,
+}: {
+  proposal: RoutinePlannerProposalResponse;
+}) {
+  const observations = buildProposalObservations(proposal);
+
+  if (observations.length === 0) return null;
+
+  const isNotFeasible = proposal.feasibility === "NotFeasible";
+
+  return (
+    <section
+      aria-labelledby="proposal-observations-title"
+      className="mt-10 border-y border-border/70 py-5"
+    >
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="size-1.5 shrink-0 rounded-full bg-thermal-accent"
+        />
+        <h2
+          className="font-brand text-lg font-bold leading-6 text-text-primary"
+          id="proposal-observations-title"
+        >
+          {isNotFeasible ? "Qué limita la propuesta" : "Observaciones"}
+        </h2>
+      </div>
+
+      <ul className="mt-3 divide-y divide-border/50">
+        {observations.map((observation, index) => (
+          <li
+            className="py-3 text-sm leading-6 text-text-secondary first:pt-1 last:pb-0"
+            key={`${observation}-${index}`}
+          >
+            {observation}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -403,14 +449,22 @@ function SessionDisclosure({
           <ol className="divide-y divide-border/50">
             {day.exercises.map((exercise) => (
               <li
-                className="flex min-h-12 items-center gap-3 py-3"
+                className="flex min-h-20 items-start gap-3 py-4"
                 key={exercise.exerciseId}
               >
-                <span className="w-6 shrink-0 text-[0.8125rem] font-semibold text-text-muted tabular-nums">
+                <span className="mt-0.5 w-6 shrink-0 text-[0.8125rem] font-semibold leading-5 text-text-muted tabular-nums">
                   {String(exercise.order).padStart(2, "0")}
                 </span>
-                <span className="min-w-0 break-words text-sm font-semibold leading-5 text-text-primary">
-                  {exercise.name}
+                <span className="min-w-0 flex-1">
+                  <span className="block break-words text-sm font-semibold leading-5 text-text-primary">
+                    {exercise.name}
+                  </span>
+                  <span className="mt-1.5 block text-[0.8125rem] leading-5 text-text-secondary tabular-nums">
+                    {formatSets(exercise.sets)} · {formatRange(exercise.minReps, exercise.maxReps)} reps
+                  </span>
+                  <span className="mt-0.5 block text-[0.8125rem] leading-5 text-text-muted tabular-nums">
+                    RIR {formatRange(exercise.minRir, exercise.maxRir)} · {exercise.restSeconds} s
+                  </span>
                 </span>
               </li>
             ))}
@@ -492,4 +546,76 @@ function formatDuration(totalSeconds: number): string {
   if (minutes === 0) return `${seconds} s`;
   if (seconds === 0) return `${minutes} min`;
   return `${minutes} min ${seconds} s`;
+}
+
+function formatSets(sets: number): string {
+  return `${sets} ${sets === 1 ? "serie" : "series"}`;
+}
+
+function formatRange(minimum: number, maximum: number): string {
+  return minimum === maximum ? String(minimum) : `${minimum}–${maximum}`;
+}
+
+function buildProposalObservations(
+  proposal: RoutinePlannerProposalResponse,
+): string[] {
+  const observations = [
+    ...proposal.selectionDiagnostics.map((diagnostic) =>
+      describeSelectionDiagnostic(diagnostic.code),
+    ),
+    ...proposal.prescriptionDiagnostics.map((diagnostic) =>
+      describePrescriptionDiagnostic(diagnostic.code),
+    ),
+  ];
+  const uniqueObservations = [...new Set(observations)];
+
+  if (uniqueObservations.length > 0) return uniqueObservations;
+
+  if (proposal.feasibility === "FeasibleWithWarnings") {
+    return [
+      "La propuesta es factible, pero incluye observaciones para revisar antes de confirmarla.",
+    ];
+  }
+
+  if (proposal.feasibility === "NotFeasible") {
+    return [
+      "No se pudo construir una rutina utilizable con las restricciones actuales.",
+    ];
+  }
+
+  return [];
+}
+
+function describeSelectionDiagnostic(
+  code: RoutinePlannerSelectionDiagnosticCode,
+): string {
+  switch (code) {
+    case "MissingRequiredExercise":
+      return "No se encontró una opción compatible para cubrir todos los movimientos necesarios.";
+    case "MissingOptionalExercise":
+      return "No se encontró una opción compatible para uno de los complementos opcionales.";
+    case "ExerciseReusedAcrossVariants":
+      return "Se reutilizó un ejercicio entre sesiones porque no había una alternativa compatible equivalente.";
+    default:
+      return "La propuesta incluye una observación adicional del planificador.";
+  }
+}
+
+function describePrescriptionDiagnostic(
+  code: RoutinePlannerPrescriptionDiagnosticCode,
+): string {
+  switch (code) {
+    case "SelectionNotFeasible":
+      return "La selección no cubre todos los ejercicios necesarios para completar la rutina.";
+    case "WeeklyVolumeTargetUnreachable":
+      return "No se pudo alcanzar todo el volumen semanal previsto con las restricciones actuales.";
+    case "OptionalExerciseRemovedForDuration":
+      return "Se retiraron complementos opcionales para respetar el tiempo disponible.";
+    case "ExerciseSetsReducedForDuration":
+      return "Se redujeron algunas series para ajustar las sesiones al tiempo disponible.";
+    case "SessionDurationExceeded":
+      return "Al menos una sesión supera la duración objetivo incluso después de los ajustes.";
+    default:
+      return "La propuesta incluye una observación adicional del planificador.";
+  }
 }
