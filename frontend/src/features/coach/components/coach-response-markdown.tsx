@@ -53,6 +53,7 @@ const coachPresentationLabels = {
   Preferred: "preferido",
   Principiante: "principiante",
   PrimaryCompound: "ejercicio principal",
+  PolicyVersion: "versión de planificación",
   ProposalHash: "identificador de la propuesta",
   ProposalId: "identificador de la propuesta",
   Pull: "tracción",
@@ -72,8 +73,12 @@ const coachPresentationLabels = {
   Upper: "tren superior",
   WeeklyVolumeTargetUnreachable:
     "volumen semanal previsto no alcanzado con las restricciones actuales",
+  diagnosticCodes: "observaciones",
   diagnostics: "observaciones",
   feasibility: "factibilidad",
+  policyVersion: "versión de planificación",
+  proposalHash: "identificador de la propuesta",
+  proposalId: "identificador de la propuesta",
   warnings: "observaciones",
 } as const;
 
