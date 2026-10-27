@@ -28,12 +28,12 @@
 
 ## Current work
 
-- Frontend Routine Planner V2 proposal review completed through full exercise
-  prescription and planner observations.
-- Next: integrate Routine Planner conversation or explicit confirmation when
-  requested.
-- Known external blocker: the currently configured local Groq credential returns
-  `401 invalid_api_key`; the frontend and backend contracts remain unchanged.
+- Frontend Routine Planner V2 proposal review and temporary proposal
+  conversation completed.
+- Next: integrate explicit Routine Planner confirmation when requested.
+- The shared Groq conversation provider retries once with a larger output
+  budget when the provider reports `incomplete` due to `max_output_tokens`;
+  partial answers are never returned as completed responses.
 
 ## Entrenate Coach
 
@@ -105,6 +105,13 @@ Routine Planner V2.5b:
 - backend regeneration and stale-proposal detection;
 - transactional activation and idempotent persistence scoped by user.
 
+Routine Planner V2.6:
+
+- authenticated stateless conversation endpoint:
+  `POST /api/coach/routine-planner/proposals/{proposalId}/conversation`;
+- shared provider output-limit handling applies equally to Routine Planner and
+  Progress Coach without changing their API contracts.
+
 ### Coach principles
 
 - Deterministic engines and product rules are the source of truth.
@@ -148,11 +155,13 @@ Completed:
   and collapsible sessions with complete exercise prescription.
 - Planner warnings and feasibility restrictions are presented in natural
   language without exposing diagnostic codes or internal identifiers.
+- Temporary, non-persistent conversation about the current proposal is
+  available and handles stale proposals through explicit regeneration.
 
 Next:
 
-- Integrate Routine Planner conversation or explicit confirmation without
-  changing backend contracts.
+- Integrate explicit Routine Planner confirmation without changing backend
+  contracts.
 
 ## Onboarding
 

@@ -90,3 +90,12 @@ export type RoutinePlannerProposalResponse = {
     muscleGroup: string;
   }>;
 };
+
+export type AskRoutinePlannerQuestionRequest = {
+  proposalHash: string;
+  question: string;
+};
+
+export type RoutinePlannerConversationResponse = {
+  answer: string;
+};

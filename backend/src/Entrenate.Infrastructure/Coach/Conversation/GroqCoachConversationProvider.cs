@@ -13,6 +13,10 @@ namespace Entrenate.Infrastructure.Coach.Conversation
         : ICoachConversationProvider
     {
         private const string ResponsesPath = "responses";
+        private const string CompletedStatus = "completed";
+        private const string IncompleteStatus = "incomplete";
+        private const string MaxOutputTokensReason = "max_output_tokens";
+        private const int MaximumRetryOutputTokens = 4096;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
@@ -47,11 +51,45 @@ namespace Entrenate.Infrastructure.Coach.Conversation
                     nameof(prompt));
             }
 
+            var outputTokens = _settings.MaxOutputTokens;
+            var groqResponse = await SendAsync(
+                prompt,
+                outputTokens,
+                cancellationToken);
+
+            if (ShouldRetryForOutputLimit(groqResponse, outputTokens))
+            {
+                var retryOutputTokens = Math.Min(
+                    outputTokens * 2,
+                    MaximumRetryOutputTokens);
+
+                _logger.LogWarning(
+                    "Groq alcanzó el límite de salida de {OutputTokens} " +
+                        "tokens. Se reintenta una vez con {RetryOutputTokens}.",
+                    outputTokens,
+                    retryOutputTokens);
+
+                groqResponse = await SendAsync(
+                    prompt,
+                    retryOutputTokens,
+                    cancellationToken);
+            }
+
+            var answer = ExtractAnswer(groqResponse);
+
+            return new CoachConversationResponse(answer);
+        }
+
+        private async Task<GroqResponseEnvelope?> SendAsync(
+            CoachConversationPrompt prompt,
+            int maxOutputTokens,
+            CancellationToken cancellationToken)
+        {
             var payload = new GroqResponseRequest(
                 _settings.Model,
                 prompt.Instructions,
                 prompt.Input,
-                _settings.MaxOutputTokens);
+                maxOutputTokens);
 
             using var request = new HttpRequestMessage(
                 HttpMethod.Post,
@@ -66,13 +104,30 @@ namespace Entrenate.Infrastructure.Coach.Conversation
             request.Headers.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
 
-            HttpResponseMessage response;
-
             try
             {
-                response = await _httpClient.SendAsync(
+                using var response = await _httpClient.SendAsync(
                     request,
                     cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError(
+                        "Groq respondió con status HTTP {StatusCode}.",
+                        (int)response.StatusCode);
+
+                    throw new InvalidOperationException(
+                        "El proveedor de conversación rechazó la solicitud.");
+                }
+
+                await using var responseStream = await response.Content
+                    .ReadAsStreamAsync(cancellationToken);
+
+                return await JsonSerializer.DeserializeAsync<
+                    GroqResponseEnvelope>(
+                        responseStream,
+                        JsonOptions,
+                        cancellationToken);
             }
             catch (OperationCanceledException exception)
                 when (!cancellationToken.IsCancellationRequested)
@@ -96,45 +151,32 @@ namespace Entrenate.Infrastructure.Coach.Conversation
                         "conversación.",
                     exception);
             }
-
-            using (response)
+            catch (JsonException exception)
             {
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogError(
-                        "Groq respondió con status HTTP {StatusCode}.",
-                        (int)response.StatusCode);
+                _logger.LogError(
+                    exception,
+                    "Groq devolvió una respuesta con formato inválido.");
 
-                    throw new InvalidOperationException(
-                        "El proveedor de conversación rechazó la solicitud.");
-                }
-
-                try
-                {
-                    await using var responseStream = await response.Content
-                        .ReadAsStreamAsync(cancellationToken);
-                    var groqResponse = await JsonSerializer.DeserializeAsync<
-                        GroqResponseEnvelope>(
-                            responseStream,
-                            JsonOptions,
-                            cancellationToken);
-
-                    var answer = ExtractAnswer(groqResponse);
-
-                    return new CoachConversationResponse(answer);
-                }
-                catch (JsonException exception)
-                {
-                    _logger.LogError(
-                        exception,
-                        "Groq devolvió una respuesta con formato inválido.");
-
-                    throw new InvalidOperationException(
-                        "El proveedor de conversación devolvió una " +
-                            "respuesta inválida.",
-                        exception);
-                }
+                throw new InvalidOperationException(
+                    "El proveedor de conversación devolvió una respuesta " +
+                        "inválida.",
+                    exception);
             }
+        }
+
+        private static bool ShouldRetryForOutputLimit(
+            GroqResponseEnvelope? response,
+            int outputTokens)
+        {
+            return outputTokens < MaximumRetryOutputTokens &&
+                string.Equals(
+                    response?.Status,
+                    IncompleteStatus,
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    response?.IncompleteDetails?.Reason,
+                    MaxOutputTokensReason,
+                    StringComparison.OrdinalIgnoreCase);
         }
 
         private static string ExtractAnswer(
@@ -143,7 +185,7 @@ namespace Entrenate.Infrastructure.Coach.Conversation
             if (response is null ||
                 !string.Equals(
                     response.Status,
-                    "completed",
+                    CompletedStatus,
                     StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
@@ -185,7 +227,12 @@ namespace Entrenate.Infrastructure.Coach.Conversation
         private sealed record GroqResponseEnvelope(
             [property: JsonPropertyName("status")] string? Status,
             [property: JsonPropertyName("output")]
-                IReadOnlyCollection<GroqOutputItem>? Output);
+                IReadOnlyCollection<GroqOutputItem>? Output,
+            [property: JsonPropertyName("incomplete_details")]
+                GroqIncompleteDetails? IncompleteDetails);
+
+        private sealed record GroqIncompleteDetails(
+            [property: JsonPropertyName("reason")] string? Reason);
 
         private sealed record GroqOutputItem(
             [property: JsonPropertyName("type")] string? Type,

@@ -21,6 +21,7 @@ import type {
   RoutinePlannerSessionVariant,
   RoutineProposalFeasibility,
 } from "../types/routine-planner.types";
+import { RoutinePlannerConversationSheet } from "./routine-planner-conversation-sheet";
 
 type ProposalState =
   | { status: "error" }
@@ -168,15 +169,20 @@ export function RoutinePlannerProposalPreview() {
           </Button>
         </div>
       ) : (
-        <ProposalContent proposal={state.proposal} />
+        <ProposalContent
+          onRegenerate={generateProposal}
+          proposal={state.proposal}
+        />
       )}
     </section>
   );
 }
 
 function ProposalContent({
+  onRegenerate,
   proposal,
 }: {
+  onRegenerate: () => Promise<void>;
   proposal: RoutinePlannerProposalResponse;
 }) {
   const estimatedDuration = formatDurationRange(
@@ -244,6 +250,10 @@ function ProposalContent({
       <ProposalObservations proposal={proposal} />
       <WeeklyCalendar days={proposal.days} />
       <SessionList days={proposal.days} />
+      <RoutinePlannerConversationSheet
+        onRegenerate={onRegenerate}
+        proposal={proposal}
+      />
     </div>
   );
 }
