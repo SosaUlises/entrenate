@@ -79,8 +79,10 @@ spacing:
   16: "64px"
 components:
   button-primary:
-    backgroundColor: "color-mix(in srgb, {colors.technical-white} 76%, {colors.surface-elevated})"
-    textColor: "{colors.primary-foreground}"
+    backgroundColor: "color-mix(in srgb, {colors.surface-active} 84%, {colors.technical-white})"
+    textColor: "{colors.text-primary}"
+    iconColor: "{colors.thermal-accent}"
+    borderColor: "color-mix(in srgb, {colors.technical-white} 24%, transparent)"
     typography: "{typography.label}"
     rounded: "{rounded.medium}"
     padding: "12px 20px"
@@ -140,7 +142,7 @@ La tecnología se expresa mediante jerarquía, datos, motion funcional y feedbac
 - **Text Primary `#F2F1EA`, Secondary `#B2B2A9`, Muted `#7E8178`:** jerarquía de lectura.
 - **Success `#67B77A`, Warning `#D8AE55`, Error `#D85D56`:** estados semánticos exclusivos.
 
-`primary` supplies the ceramic action color; the shared primary button tempers it with elevated graphite so large controls remain enabled without reading as white plates. `thermalAccent` never replaces success, warning, error, or info and never fills large surfaces.
+Technical White carries critical content and contrast. The shared primary button uses a firm mineral surface, technical white text and Thermal Accent only on a compact icon or signal. `thermalAccent` never replaces success, warning, error, or info and never fills large surfaces.
 
 Do not use gradients, halos, glow, inherited violet/blue tints, or color to artificially elevate a composition.
 
@@ -172,7 +174,7 @@ Touch targets measure at least 44–48px. Borders are technical, thin, and discr
 
 ## Components
 
-- **Primary button:** controlled ceramic blend (76% technical white / 24% elevated graphite), carbon text, technical border, 48px minimum, 12px radius.
+- **Primary button:** dark mineral surface, technical white text, subtle technical border and Thermal Accent limited to a compact icon; 48px minimum, 12px radius.
 - **Secondary button:** elevated surface, strong border, primary text.
 - **Outline button:** transparent surface, strong border, primary text.
 - **Ghost button:** neutral until interaction.

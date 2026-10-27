@@ -14,7 +14,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "border border-border-strong bg-[color-mix(in_srgb,var(--technical-white)_76%,var(--surface-elevated))] text-primary-foreground hover:bg-[color-mix(in_srgb,var(--technical-white)_82%,var(--surface-elevated))] active:bg-[color-mix(in_srgb,var(--technical-white)_68%,var(--surface-elevated))] focus-visible:outline-focus",
+    "border border-[color-mix(in_srgb,var(--technical-white)_24%,transparent)] bg-[color-mix(in_srgb,var(--surface-active)_84%,var(--technical-white))] text-text-primary hover:bg-[color-mix(in_srgb,var(--surface-active)_78%,var(--technical-white))] active:bg-[color-mix(in_srgb,var(--surface-active)_92%,var(--technical-white))] focus-visible:outline-focus [&_svg]:text-thermal-accent",
   secondary:
     "border border-border-strong bg-surface-elevated text-text-primary hover:bg-surface-active focus-visible:outline-focus",
   outline:
@@ -43,7 +43,7 @@ export function buttonClassName({
   variant?: ButtonVariant;
 } = {}): string {
   return cn(
-    "inline-flex items-center justify-center gap-2 rounded-control font-semibold transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-active disabled:text-text-muted disabled:opacity-100 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100 [&_svg]:size-4 [&_svg]:shrink-0",
+    "inline-flex items-center justify-center gap-2 rounded-control font-semibold transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-active disabled:text-text-muted disabled:opacity-100 disabled:active:scale-100 disabled:[&_svg]:text-text-muted motion-reduce:transition-none motion-reduce:active:scale-100 [&_svg]:size-4 [&_svg]:shrink-0",
     sizeClasses[size],
     variantClasses[variant],
     fullWidth && "w-full",
