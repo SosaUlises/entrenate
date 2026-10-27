@@ -28,9 +28,9 @@
 
 ## Current work
 
-- Frontend Routine Planner V2 proposal review and temporary proposal
-  conversation completed.
-- Next: integrate explicit Routine Planner confirmation when requested.
+- Frontend Routine Planner V2 is closed with proposal generation, review,
+  temporary conversation and explicit confirmation/persistence.
+- Next: continue Entrenate Coach backend or the next requested capability.
 - The shared Groq conversation provider retries once with a larger output
   budget when the provider reports `incomplete` due to `max_output_tokens`;
   partial answers are never returned as completed responses.
@@ -157,11 +157,15 @@ Completed:
   language without exposing diagnostic codes or internal identifiers.
 - Temporary, non-persistent conversation about the current proposal is
   available and handles stale proposals through explicit regeneration.
+- Valid proposals can be explicitly confirmed and persisted through the
+  backend-owned confirmation contract.
+- Confirmation handles idempotent success, stale proposals and navigation to
+  the real routine detail; `NotFeasible` proposals remain reviewable but cannot
+  be confirmed.
 
 Next:
 
-- Integrate explicit Routine Planner confirmation without changing backend
-  contracts.
+- Frontend Routine Planner V2 is closed.
 
 ## Onboarding
 

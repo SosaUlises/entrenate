@@ -179,11 +179,9 @@ export function RoutinePlannerConversationSheet({
 
   return (
     <>
-      <div className="mt-10 border-t border-border/70 pt-6">
-        <Button fullWidth onClick={openSheet} size="lg">
-          Preguntar al Coach
-        </Button>
-      </div>
+      <Button fullWidth onClick={openSheet} size="lg" variant="secondary">
+        Preguntar al Coach
+      </Button>
 
       <dialog
         aria-labelledby="routine-planner-conversation-title"

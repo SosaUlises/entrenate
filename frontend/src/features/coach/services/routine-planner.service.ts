@@ -1,7 +1,9 @@
 import { apiRequest } from "@/services/api-client";
 import type {
   AskRoutinePlannerQuestionRequest,
+  ConfirmRoutinePlannerProposalRequest,
   RoutinePlannerConversationResponse,
+  RoutinePlannerConfirmationResponse,
   RoutinePlannerProposalResponse,
 } from "../types/routine-planner.types";
 
@@ -32,6 +34,25 @@ export function askRoutinePlannerQuestion(
     {
       authToken,
       body: { proposalHash, question },
+      cache: "no-store",
+      method: "POST",
+    },
+  );
+}
+
+export function confirmRoutinePlannerProposal(
+  proposalId: string,
+  proposalHash: string,
+  authToken: string,
+): Promise<RoutinePlannerConfirmationResponse> {
+  return apiRequest<
+    RoutinePlannerConfirmationResponse,
+    ConfirmRoutinePlannerProposalRequest
+  >(
+    `/api/coach/routine-planner/proposals/${encodeURIComponent(proposalId)}/confirm`,
+    {
+      authToken,
+      body: { proposalHash },
       cache: "no-store",
       method: "POST",
     },

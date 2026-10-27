@@ -21,6 +21,7 @@ import type {
   RoutinePlannerSessionVariant,
   RoutineProposalFeasibility,
 } from "../types/routine-planner.types";
+import { RoutinePlannerConfirmationSheet } from "./routine-planner-confirmation-sheet";
 import { RoutinePlannerConversationSheet } from "./routine-planner-conversation-sheet";
 
 type ProposalState =
@@ -250,10 +251,16 @@ function ProposalContent({
       <ProposalObservations proposal={proposal} />
       <WeeklyCalendar days={proposal.days} />
       <SessionList days={proposal.days} />
-      <RoutinePlannerConversationSheet
-        onRegenerate={onRegenerate}
-        proposal={proposal}
-      />
+      <div className="mt-10 space-y-3 border-t border-border/70 pt-6">
+        <RoutinePlannerConversationSheet
+          onRegenerate={onRegenerate}
+          proposal={proposal}
+        />
+        <RoutinePlannerConfirmationSheet
+          onRegenerate={onRegenerate}
+          proposal={proposal}
+        />
+      </div>
     </div>
   );
 }

@@ -99,3 +99,14 @@ export type AskRoutinePlannerQuestionRequest = {
 export type RoutinePlannerConversationResponse = {
   answer: string;
 };
+
+export type ConfirmRoutinePlannerProposalRequest = {
+  proposalHash: string;
+};
+
+export type RoutinePlannerConfirmationResponse = {
+  createdNow: boolean;
+  isActive: boolean;
+  proposalId: string;
+  routineId: string;
+};
