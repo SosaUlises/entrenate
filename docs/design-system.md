@@ -17,13 +17,13 @@ The CSS variables in `frontend/src/app/globals.css` implement the canonical toke
 - `border`, `borderStrong`, `focus`;
 - `success`, `warning`, `error`, `info`.
 
-`primary` supplies the ceramic action color. The shared primary button blends it with elevated graphite to control brightness; it is not a brand accent. `thermalAccent` is a small interaction or performance signal. `steel` and `info` communicate neutral information. Semantic colors retain their own meanings.
+Technical White carries critical content and contrast. The shared primary button uses a firm mineral surface with technical white text; it is not a brand accent. `thermalAccent` is limited to a small icon or interaction signal. `steel` and `info` communicate neutral information. Semantic colors retain their own meanings.
 
 A temporary `secondary` alias exists only for feature screens awaiting scoped migration. Do not use it in new shared components.
 
 ## Shared component contract
 
-- Primary buttons use a controlled ceramic blend of technical white and elevated graphite, with carbon text and a technical border.
+- Primary buttons use a dark mineral surface, technical white text, a subtle technical border and Thermal Accent limited to compact icons.
 - Secondary buttons use an elevated mineral surface and technical border.
 - Outline buttons use a transparent surface, strong technical border and primary text.
 - Ghost actions stay neutral until interaction.

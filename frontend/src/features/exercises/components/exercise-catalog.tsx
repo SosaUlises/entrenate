@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronRight, Plus, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MainPageHeader } from "@/components/layout/main-page-header";
 import { Button } from "@/components/ui/button";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { getExercisesAction, type GetExercisesActionResult } from "../actions/get-exercises.action";
@@ -16,6 +16,7 @@ import {
 } from "../exercise-muscle-filters";
 import type { Exercise } from "../types/exercise.types";
 import { hasEntrenateExerciseDemoV2 } from "./exercise-demo-v2-registry";
+import { MuscleFilterRail } from "./muscle-filter-rail";
 
 const ExerciseMovementDemo = dynamic(() => import("./exercise-movement-demo"), { ssr: false });
 
@@ -89,33 +90,35 @@ export function ExerciseCatalog(props: ExerciseCatalogProps) {
   return (
     <section aria-labelledby="exercises-title" className={`mx-auto w-full min-w-0 max-w-xl ${props.mode === "select" ? "pb-[calc(6rem+env(safe-area-inset-bottom))]" : ""}`}>
       {props.mode === "select" ? (
-        <div className="flex items-center gap-1">
-          <Link
-            aria-label={backLabel}
-            className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
-            href={backHref}
-          >
-            <ArrowLeft aria-hidden="true" size={20} />
-          </Link>
-          <h1 className="font-brand text-xl font-bold text-text-primary" id="exercises-title">
-            {title}
-          </h1>
-        </div>
+        <>
+          <div className="flex items-center gap-1">
+            <Link
+              aria-label={backLabel}
+              className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
+              href={backHref}
+            >
+              <ArrowLeft aria-hidden="true" size={20} />
+            </Link>
+            <h1 className="font-brand text-xl font-bold text-text-primary" id="exercises-title">
+              {title}
+            </h1>
+          </div>
+          <p className="mt-1 pl-12 text-sm text-text-secondary">
+            {description}
+          </p>
+        </>
       ) : (
-        <div className="max-w-lg">
-          <h1 className="font-brand text-[2rem] font-bold leading-[1.08] text-text-primary" id="exercises-title">
-            {title}
-          </h1>
-        </div>
+        <MainPageHeader
+          description={description}
+          id="exercises-title"
+          title={title}
+        />
       )}
-      <p className={`text-text-secondary ${props.mode === "select" ? "mt-1 pl-12 text-sm" : "mt-3 max-w-md text-[0.9375rem] leading-6"}`}>
-        {description}
-      </p>
 
       {state.status === "loading" ? (
         <ExerciseCatalogSkeleton mode={props.mode} />
       ) : state.status === "error" ? (
-        <div className="mt-8">
+        <div className={props.mode === "select" ? "mt-8" : undefined}>
           <p className="text-sm text-text-primary">No pudimos cargar los ejercicios.</p>
           <Button
             className="mt-5"
@@ -168,7 +171,7 @@ function ExerciseCatalogSkeleton({ mode }: { mode: "browse" | "select" }) {
   const compact = mode === "select";
 
   return (
-    <div aria-label="Cargando ejercicios" className={`${compact ? "mt-4" : "mt-6"} animate-pulse`} role="status">
+    <div aria-label="Cargando ejercicios" className={`${compact ? "mt-4" : ""} animate-pulse`} role="status">
       <div className={`${compact ? "h-12 rounded-control-sm" : "h-14 rounded-control"} w-full bg-surface-elevated`} />
       <div className={`${compact ? "mt-3 gap-1.5" : "mt-5 gap-2"} flex overflow-hidden`}>
         {[0, 1, 2, 3].map((item) => (
@@ -250,7 +253,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
   };
 
   return (
-    <div className={`${mode === "select" ? "mt-4" : "mt-6"} min-w-0`}>
+    <div className={`${mode === "select" ? "mt-4" : ""} min-w-0`}>
       <label className="sr-only" htmlFor="exercise-search">
         Buscar ejercicio
       </label>
@@ -278,39 +281,12 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
       </div>
 
       {exercises.length > 0 ? (
-        <div className={`relative ${mode === "select" ? "mt-3" : "mt-5"}`}>
-          <div
-            aria-label="Filtrar por grupo muscular"
-            className={`flex touch-pan-x overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${mode === "select" ? "gap-1.5 pb-1" : "gap-2 pb-2"}`}
-            role="group"
-          >
-            {muscleFilters.map((filter) => {
-              const selected = selectedMuscleFilter.id === filter.id;
-              return (
-                <button
-                  aria-label={`Filtrar por ${filter.label}`}
-                  aria-pressed={selected}
-                  className={`relative flex shrink-0 flex-col items-center justify-start px-1.5 transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${mode === "select" ? "h-[5.25rem] min-w-[4.5rem] rounded-control-sm pb-1.5" : "h-24 min-w-20 rounded-control pb-2"} ${selected ? "bg-surface-active/55 text-text-primary" : mode === "select" ? "text-text-secondary hover:bg-surface/20 hover:text-text-primary" : "text-text-secondary hover:bg-surface-interactive/55 hover:text-text-primary"}`}
-                  key={filter.id}
-                  onClick={() => setMuscleFilterId(filter.id)}
-                  type="button"
-                >
-                  <Image
-                    alt=""
-                    aria-hidden="true"
-                    className={`${mode === "select" ? "size-12" : "size-14"} shrink-0 object-contain ${filter.id === ALL_MUSCLE_FILTER_ID ? "scale-[1.12]" : ""} ${mode === "browse" ? `transition-opacity duration-150 motion-reduce:transition-none ${selected ? "opacity-100" : "opacity-70"}` : ""}`}
-                    height={mode === "select" ? 48 : 56}
-                    sizes={mode === "select" ? "48px" : "56px"}
-                    src={filter.imageSrc}
-                    width={mode === "select" ? 48 : 56}
-                  />
-                  <span className={`${mode === "select" ? "mt-1" : "mt-2"} whitespace-nowrap text-[0.8125rem] font-semibold leading-4`}>{filter.label}</span>
-                  <span aria-hidden="true" className={`absolute bottom-0 h-0.5 rounded-full bg-thermal-accent transition-opacity duration-150 motion-reduce:transition-none ${mode === "select" ? "w-8" : "w-6"} ${selected ? "opacity-100" : "opacity-0"}`} />
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <MuscleFilterRail
+          className={mode === "select" ? "mt-3" : "mt-5"}
+          filters={muscleFilters}
+          onSelect={setMuscleFilterId}
+          selectedId={selectedMuscleFilter.id}
+        />
       ) : null}
 
       {exercises.length === 0 ? (

@@ -43,9 +43,9 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Acción dominante con cerámica técnica controlada sobre grafito.",
+      "description": "Acción dominante sobre superficie mineral oscura, texto blanco técnico y acento térmico limitado al icono.",
       "html": "<button class=\"ds-btn-primary\">Completar serie</button>",
-      "css": ".ds-btn-primary{min-height:48px;padding:0 20px;border:1px solid rgba(242,241,234,.20);border-radius:12px;background:color-mix(in srgb,#e8e7df 76%,#22251f);color:#151612;font:600 14px/1.25 Manrope,sans-serif;transition:background-color 200ms,transform 200ms}.ds-btn-primary:active{background:color-mix(in srgb,#e8e7df 68%,#22251f);transform:scale(.99)}.ds-btn-primary:focus-visible{outline:2px solid #e1734e;outline-offset:3px}"
+      "css": ".ds-btn-primary{min-height:48px;padding:0 20px;border:1px solid color-mix(in srgb,#e8e7df 24%,transparent);border-radius:12px;background:color-mix(in srgb,#292c25 84%,#e8e7df);color:#f2f1ea;font:600 14px/1.25 Manrope,sans-serif;transition:background-color 200ms,transform 200ms}.ds-btn-primary:hover{background:color-mix(in srgb,#292c25 78%,#e8e7df)}.ds-btn-primary:active{background:color-mix(in srgb,#292c25 92%,#e8e7df);transform:scale(.99)}.ds-btn-primary:focus-visible{outline:2px solid #e1734e;outline-offset:3px}.ds-btn-primary svg{color:#e1734e}"
     },
     {
       "name": "Secondary Button",

@@ -1,16 +1,17 @@
 "use client";
 
 import { ArrowDown, ArrowRight, ArrowUp, ChevronRight, CircleHelp, Search, X } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { MainPageHeader } from "@/components/layout/main-page-header";
 import { Button } from "@/components/ui/button";
 import {
   ALL_MUSCLE_FILTER_ID,
   getVisibleMuscleFilters,
   matchesMuscleFilter,
 } from "@/features/exercises/exercise-muscle-filters";
+import { MuscleFilterRail } from "@/features/exercises/components/muscle-filter-rail";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { getExerciseProgressHubAction } from "../actions/get-exercise-progress-hub.action";
 import { formatCompactProgressDate, formatProgressDate, formatProgressValue } from "../progress-formatters";
@@ -72,15 +73,16 @@ export function ProgressHubContent() {
 
   return (
     <section aria-labelledby="progress-hub-title" className="mx-auto w-full min-w-0 max-w-xl overflow-x-clip">
-      <header>
-        <h1 className="font-brand text-3xl font-bold leading-tight text-text-primary" id="progress-hub-title">Progreso</h1>
-        <p className="mt-2 text-base leading-6 text-text-secondary">Mirá cómo viene tu rendimiento.</p>
-      </header>
+      <MainPageHeader
+        description="Mirá cómo viene tu rendimiento."
+        id="progress-hub-title"
+        title="Progreso"
+      />
 
       {state.status === "loading" ? (
         <HubSkeleton />
       ) : state.status === "error" ? (
-        <div className="mt-8" role="alert">
+        <div role="alert">
           <p className="text-base text-text-primary">No pudimos cargar tu progreso.</p>
           <Button
             className="mt-5"
@@ -97,7 +99,7 @@ export function ProgressHubContent() {
         <EmptyHub />
       ) : (
         <>
-          <div className="relative mt-5">
+          <div className="relative">
             <Search aria-hidden="true" className="absolute top-1/2 left-4 -translate-y-1/2 text-steel" size={19} />
             <label className="sr-only" htmlFor="progress-search">Buscar ejercicio</label>
             <input
@@ -121,42 +123,12 @@ export function ProgressHubContent() {
             ) : null}
           </div>
 
-          <div
-            aria-label="Filtrar por grupo muscular"
-            className="mt-4 flex w-full min-w-0 touch-pan-x gap-2.5 overflow-x-auto overscroll-x-contain pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            role="group"
-          >
-            {muscleFilters.map((filter) => {
-              const selected = selectedMuscleFilter.id === filter.id;
-              return (
-                <button
-                  aria-label={`Filtrar por ${filter.label}`}
-                  aria-pressed={selected}
-                  className={`relative flex h-28 min-w-[5.75rem] w-max shrink-0 flex-col items-center justify-start rounded-control-sm px-2 pb-2 transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2 motion-reduce:transition-none motion-reduce:active:scale-100 ${selected ? "bg-surface-active/55 text-text-primary" : "text-text-secondary hover:bg-surface-interactive/55 hover:text-text-primary"}`}
-                  key={filter.id}
-                  onClick={() => setMuscleFilterId(filter.id)}
-                  type="button"
-                >
-                  <Image
-                    alt=""
-                    aria-hidden="true"
-                    className={`size-[4.75rem] shrink-0 object-contain ${filter.id === ALL_MUSCLE_FILTER_ID ? "scale-[1.14]" : ""}`}
-                    height={76}
-                    sizes="76px"
-                    src={filter.imageSrc}
-                    width={76}
-                  />
-                  <span className="mt-2 whitespace-nowrap text-[0.8125rem] leading-4 font-semibold">
-                    {filter.label}
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className={`absolute bottom-0 h-0.5 w-8 rounded-full bg-thermal-accent transition-opacity duration-150 motion-reduce:transition-none ${selected ? "opacity-100" : "opacity-0"}`}
-                  />
-                </button>
-              );
-            })}
-          </div>
+          <MuscleFilterRail
+            className="mt-4"
+            filters={muscleFilters}
+            onSelect={setMuscleFilterId}
+            selectedId={selectedMuscleFilter.id}
+          />
 
           <div className="mt-7">
             <div className="flex min-h-11 items-center justify-between gap-4">
@@ -250,7 +222,7 @@ function ProgressChange({ value }: { value: number | null }) {
 
 function EmptyHub() {
   return (
-    <div className="mt-10 border-t border-border/60 pt-7">
+    <div className="border-t border-border/60 pt-7">
       <h2 className="font-brand text-xl font-bold leading-7 text-text-primary">Todavía no tenés ejercicios con registros.</h2>
       <p className="mt-2 max-w-md text-base leading-6 text-text-secondary">
         Cuando completes entrenamientos, vas a poder seguir tu evolución desde acá.
@@ -265,7 +237,7 @@ function EmptyHub() {
 
 function HubSkeleton() {
   return (
-    <div aria-label="Cargando progreso" className="mt-6 animate-pulse" role="status">
+    <div aria-label="Cargando progreso" className="animate-pulse" role="status">
       <div className="h-14 w-full rounded-control bg-surface-interactive" />
       <div className="mt-4 flex gap-2.5 overflow-hidden">
         {[0, 1, 2, 3].map((item) => (

@@ -28,11 +28,12 @@
 
 ## Current work
 
-- Routine Planner V2.5 backend closed: authenticated proposal generation and
-  idempotent transactional confirmation are available.
-- Next: validate Routine Planner end-to-end before V2.6.
-- Known external blocker: the currently configured local Groq credential returns
-  `401 invalid_api_key`; the frontend and backend contracts remain unchanged.
+- Frontend Routine Planner V2 is closed with proposal generation, review,
+  temporary conversation and explicit confirmation/persistence.
+- Next: continue Entrenate Coach backend or the next requested capability.
+- The shared Groq conversation provider retries once with a larger output
+  budget when the provider reports `incomplete` due to `max_output_tokens`;
+  partial answers are never returned as completed responses.
 
 ## Entrenate Coach
 
@@ -104,6 +105,13 @@ Routine Planner V2.5b:
 - backend regeneration and stale-proposal detection;
 - transactional activation and idempotent persistence scoped by user.
 
+Routine Planner V2.6:
+
+- authenticated stateless conversation endpoint:
+  `POST /api/coach/routine-planner/proposals/{proposalId}/conversation`;
+- shared provider output-limit handling applies equally to Routine Planner and
+  Progress Coach without changing their API contracts.
+
 ### Coach principles
 
 - Deterministic engines and product rules are the source of truth.
@@ -123,8 +131,8 @@ Closed:
 - Progress Coach exercise selection and deterministic analysis are available.
 - Temporary, non-persistent Progress Coach conversation is available.
 - Loading, empty, error, retry, insufficient-data and disabled states are covered.
-- Routine Planner, Adaptive Training and Nutrition Coach remain disabled as
-  coming-soon capabilities.
+- Adaptive Training and Nutrition Coach remain disabled as coming-soon
+  capabilities.
 
 Next:
 
@@ -132,9 +140,32 @@ Next:
 
 Coming-soon entries:
 
-- Routine Planner
 - Adaptive Training
 - Nutrition Coach
+
+### Frontend Routine Planner V2
+
+Completed:
+
+- Coach Hub exposes Routine Planner as an available capability.
+- The entry screen presents the user's current training-profile context.
+- `Generar propuesta` opens a real preview generated through
+  `POST /api/coach/routine-planner/proposals`.
+- The preview presents feasibility, structure, availability, weekly calendar
+  and collapsible sessions with complete exercise prescription.
+- Planner warnings and feasibility restrictions are presented in natural
+  language without exposing diagnostic codes or internal identifiers.
+- Temporary, non-persistent conversation about the current proposal is
+  available and handles stale proposals through explicit regeneration.
+- Valid proposals can be explicitly confirmed and persisted through the
+  backend-owned confirmation contract.
+- Confirmation handles idempotent success, stale proposals and navigation to
+  the real routine detail; `NotFeasible` proposals remain reviewable but cannot
+  be confirmed.
+
+Next:
+
+- Frontend Routine Planner V2 is closed.
 
 ## Onboarding
 

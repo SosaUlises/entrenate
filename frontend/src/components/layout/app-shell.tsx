@@ -2,11 +2,18 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ClipboardList, Compass, Dumbbell, Home, LogOut, TrendingUp, UserRound } from "lucide-react";
+import { LogOut, UserRound } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  CoachNavIcon,
+  ExercisesNavIcon,
+  HomeNavIcon,
+  ProgressNavIcon,
+  RoutinesNavIcon,
+} from "@/components/layout/bottom-nav-icons";
 import {
   getCurrentUserAction,
   type GetCurrentUserActionResult,
@@ -189,54 +196,54 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Navegación principal"
         className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-[color-mix(in_srgb,var(--surface-elevated)_72%,var(--background))]"
       >
-        <div className="mx-auto grid w-full max-w-2xl grid-cols-5 gap-0.5 px-1 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-1 sm:px-10">
+        <div className="mx-auto grid w-full max-w-2xl grid-cols-5 gap-0.5 px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-1 sm:px-10">
           <Link
             aria-current={isHomePage ? "page" : undefined}
-            className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isHomePage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
+            className={`group relative flex min-h-[3.75rem] min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isHomePage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/home"
           >
-            <span className="flex flex-col items-center gap-1 px-1 py-1">
-              <Home aria-hidden="true" className={isHomePage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isHomePage ? 2.25 : 1.85} />
+            <span className="flex flex-col items-center gap-1.5 px-1 py-1">
+              <HomeNavIcon active={isHomePage} className={`size-[1.4375rem] ${isHomePage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_88%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"}`} />
               <span>Inicio</span>
             </span>
           </Link>
           <Link
             aria-current={isRoutinesPage ? "page" : undefined}
-            className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isRoutinesPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
+            className={`group relative flex min-h-[3.75rem] min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isRoutinesPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/routines"
           >
-            <span className="flex flex-col items-center gap-1 px-1 py-1">
-              <ClipboardList aria-hidden="true" className={isRoutinesPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isRoutinesPage ? 2.25 : 1.85} />
+            <span className="flex flex-col items-center gap-1.5 px-1 py-1">
+              <RoutinesNavIcon active={isRoutinesPage} className={`size-[1.4375rem] ${isRoutinesPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_88%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"}`} />
               <span>Rutinas</span>
             </span>
           </Link>
           <Link
             aria-current={isCoachPage ? "page" : undefined}
-            className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isCoachPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
+            className={`group relative flex min-h-[3.75rem] min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isCoachPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-8 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/coach"
           >
-            <span className="flex flex-col items-center gap-1 px-1 py-1">
-              <Compass aria-hidden="true" className={isCoachPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isCoachPage ? 2.25 : 1.85} />
+            <span className="flex flex-col items-center gap-[6px] px-1 py-0.5">
+              <CoachNavIcon active={isCoachPage} className="h-[1.8125rem] w-[1.9875rem] -translate-y-px transition-opacity duration-150 group-hover:opacity-100 motion-reduce:transition-none" />
               <span>Coach</span>
             </span>
           </Link>
           <Link
             aria-current={isProgressPage ? "page" : undefined}
-            className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isProgressPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
+            className={`group relative flex min-h-[3.75rem] min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isProgressPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/progress"
           >
-            <span className="flex flex-col items-center gap-1 px-1 py-1">
-              <TrendingUp aria-hidden="true" className={isProgressPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isProgressPage ? 2.25 : 1.85} />
+            <span className="flex flex-col items-center gap-1.5 px-1 py-1">
+              <ProgressNavIcon active={isProgressPage} className={`size-[1.4375rem] ${isProgressPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_88%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"}`} />
               <span>Progreso</span>
             </span>
           </Link>
           <Link
             aria-current={isExercisesPage ? "page" : undefined}
-            className={`group relative flex min-h-14 min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isExercisesPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
+            className={`group relative flex min-h-[3.75rem] min-w-0 items-center justify-center rounded-control-sm text-[0.8125rem] transition-[background-color,color,transform] duration-150 active:scale-[0.98] active:bg-surface-active/55 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${isExercisesPage ? "font-semibold text-text-primary after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-7 after:-translate-x-1/2 after:rounded-full after:bg-thermal-accent" : "font-medium text-text-secondary hover:text-text-primary"}`}
             href="/exercises"
           >
-            <span className="flex flex-col items-center gap-1 px-1 py-1">
-              <Dumbbell aria-hidden="true" className={isExercisesPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_84%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"} size={19} strokeWidth={isExercisesPage ? 2.25 : 1.85} />
+            <span className="flex flex-col items-center gap-1.5 px-1 py-1">
+              <ExercisesNavIcon active={isExercisesPage} className={`size-[1.4375rem] ${isExercisesPage ? "text-text-primary" : "text-[color-mix(in_srgb,var(--text-secondary)_88%,var(--text-primary))] transition-colors duration-150 group-hover:text-text-primary motion-reduce:transition-none"}`} />
               <span>Ejercicios</span>
             </span>
           </Link>
