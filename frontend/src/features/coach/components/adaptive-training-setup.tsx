@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowLeft, Check, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, RotateCcw, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
@@ -12,12 +12,16 @@ import {
 } from "@/features/training-profile/shared/training-profile-options";
 import { cn } from "@/lib/class-names";
 import {
+  generateSessionAdaptationProposalAction,
+} from "../actions/generate-session-adaptation-proposal.action";
+import {
   getAdaptiveTrainingSetupAction,
   type AdaptiveTrainingSetupData,
   type GetAdaptiveTrainingSetupActionResult,
 } from "../actions/get-adaptive-training-setup.action";
 import type {
   SessionAdaptationRequest,
+  SessionAdaptationProposalResponse,
   SessionEffortPreference,
 } from "../types/adaptive-training.types";
 
@@ -26,6 +30,12 @@ type SetupState =
   | { status: "loading" }
   | { status: "not-found" }
   | { data: AdaptiveTrainingSetupData; status: "ready" };
+
+type ProposalState =
+  | { status: "idle" }
+  | { request: SessionAdaptationRequest; status: "loading" }
+  | { proposal: SessionAdaptationProposalResponse; request: SessionAdaptationRequest; status: "ready" }
+  | { request: SessionAdaptationRequest; status: "error" | "validation-error" };
 
 export function AdaptiveTrainingSetup({
   routineDayId,
@@ -140,6 +150,9 @@ export function AdaptiveTrainingSetup({
 }
 
 function AdaptiveTrainingForm({ data }: { data: AdaptiveTrainingSetupData }) {
+  const router = useRouter();
+  const { invalidateSession } = useTrainingProfileGate();
+  const requestInFlightRef = useRef(false);
   const habitualEquipmentIds = useMemo(
     () => data.profile.equipamientos.map((item) => item.id),
     [data.profile.equipamientos],
@@ -156,6 +169,7 @@ function AdaptiveTrainingForm({ data }: { data: AdaptiveTrainingSetupData }) {
   const [availableEquipmentIds, setAvailableEquipmentIds] = useState<string[] | null>(null);
   const [excludedExerciseIds, setExcludedExerciseIds] = useState<string[]>([]);
   const [effortPreference, setEffortPreference] = useState<SessionEffortPreference>("Normal");
+  const [proposalState, setProposalState] = useState<ProposalState>({ status: "idle" });
 
   const exercises = useMemo(() => {
     const byId = new Map<string, (typeof data.day.ejercicios)[number]>();
@@ -181,6 +195,40 @@ function AdaptiveTrainingForm({ data }: { data: AdaptiveTrainingSetupData }) {
     request.availableMinutes < 15 ||
     request.availableMinutes > 240
   );
+  const hasAdaptationCondition = request.availableMinutes !== null ||
+    request.availableEquipmentIds !== null ||
+    request.excludedExerciseIds.length > 0 ||
+    request.effortPreference === "Lighter";
+
+  const generateProposal = async (sourceRequest: SessionAdaptationRequest) => {
+    if (requestInFlightRef.current) return;
+
+    requestInFlightRef.current = true;
+    setProposalState({ request: sourceRequest, status: "loading" });
+
+    try {
+      const result = await generateSessionAdaptationProposalAction(sourceRequest);
+
+      if (result.status === "unauthenticated") {
+        invalidateSession();
+        router.replace("/login");
+        return;
+      }
+
+      if (result.status === "ready") {
+        setProposalState({
+          proposal: result.proposal,
+          request: sourceRequest,
+          status: "ready",
+        });
+        return;
+      }
+
+      setProposalState({ request: sourceRequest, status: result.status });
+    } finally {
+      requestInFlightRef.current = false;
+    }
+  };
 
   const toggleAvailableEquipment = (equipmentId: string) => {
     setAvailableEquipmentIds((current) => {
@@ -203,6 +251,30 @@ function AdaptiveTrainingForm({ data }: { data: AdaptiveTrainingSetupData }) {
     : request.availableEquipmentIds.length === 0
       ? "Sin equipamiento hoy"
       : `${request.availableEquipmentIds.length} ${request.availableEquipmentIds.length === 1 ? "elemento disponible" : "elementos disponibles"}`;
+
+  if (proposalState.status === "loading") {
+    return <AdaptiveTrainingProposalSkeleton />;
+  }
+
+  if (proposalState.status === "ready") {
+    return (
+      <AdaptiveTrainingProposalPreview
+        onEdit={() => setProposalState({ status: "idle" })}
+        proposal={proposalState.proposal}
+        request={proposalState.request}
+      />
+    );
+  }
+
+  if (proposalState.status === "error" || proposalState.status === "validation-error") {
+    return (
+      <ProposalError
+        onEdit={() => setProposalState({ status: "idle" })}
+        onRetry={() => void generateProposal(proposalState.request)}
+        validation={proposalState.status === "validation-error"}
+      />
+    );
+  }
 
   return (
     <div className="mt-8">
@@ -411,6 +483,23 @@ function AdaptiveTrainingForm({ data }: { data: AdaptiveTrainingSetupData }) {
           {" · "}{request.effortPreference === "Normal" ? "Intensidad normal" : "Más liviana"}
         </p>
       </section>
+
+      <div className="mt-6">
+        <Button
+          disabled={hasInvalidMinutes || !hasAdaptationCondition}
+          fullWidth
+          onClick={() => void generateProposal(request)}
+          size="lg"
+        >
+          Generar adaptaci&oacute;n
+          <ArrowRight aria-hidden="true" />
+        </Button>
+        {!hasAdaptationCondition ? (
+          <p className="mt-2 text-center text-[0.8125rem] leading-5 text-text-muted">
+            Indic&aacute; al menos una condici&oacute;n distinta para adaptar la sesi&oacute;n.
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -489,6 +578,272 @@ function SetupError({ onRetry }: { onRetry: () => void }) {
       </Button>
     </div>
   );
+}
+
+function AdaptiveTrainingProposalPreview({
+  onEdit,
+  proposal,
+  request,
+}: {
+  onEdit: () => void;
+  proposal: SessionAdaptationProposalResponse;
+  request: SessionAdaptationRequest;
+}) {
+  const feasibility = getFeasibilityPresentation(proposal.feasibility);
+  const observations = getDiagnosticMessages(proposal.diagnostics);
+  const exercises = [...proposal.adaptedExercises].sort((first, second) => first.order - second.order);
+  const isNotFeasible = proposal.feasibility === "NotFeasible";
+
+  return (
+    <div className="mt-8">
+      <header className="border-y border-border/70 py-5">
+        <h2 className="font-brand text-2xl font-bold leading-tight text-text-primary">
+          Tu sesi&oacute;n de hoy
+        </h2>
+        <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-text-secondary">
+          <span>Original</span>
+          <ArrowRight aria-hidden="true" className="text-steel-muted" size={15} />
+          <span className="text-text-primary">Adaptada</span>
+        </div>
+      </header>
+
+      <section aria-labelledby="adaptation-summary-title" className="mt-7">
+        <div className="flex items-start gap-3">
+          <span aria-hidden="true" className="mt-1 h-7 w-px shrink-0 bg-thermal-accent" />
+          <div>
+            <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-text-muted">
+              Factibilidad
+            </p>
+            <h3 className="mt-1 font-brand text-[1.375rem] font-extrabold leading-7 text-text-primary" id="adaptation-summary-title">
+              {feasibility.label}
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-text-secondary">
+              {feasibility.description}
+            </p>
+          </div>
+        </div>
+
+        <dl className="mt-8 grid grid-cols-2 border-y border-border/70">
+          <Metric label="Duraci&oacute;n original" value={formatDuration(proposal.originalDurationSeconds)} />
+          <Metric label="Duraci&oacute;n adaptada" value={formatDuration(proposal.adaptedDurationSeconds)} />
+          {request.availableMinutes !== null ? (
+            <Metric label="L&iacute;mite disponible" value={`${request.availableMinutes} min`} />
+          ) : null}
+          <Metric
+            label="Cambios aplicados"
+            value={`${proposal.changes.length}`}
+          />
+        </dl>
+      </section>
+
+      {observations.length > 0 || isNotFeasible ? (
+        <section aria-labelledby="adaptation-observations-title" className="mt-8 border-t border-border/70 pt-6">
+          <h3 className="font-brand text-lg font-bold leading-6 text-text-primary" id="adaptation-observations-title">
+            {isNotFeasible ? "Antes de continuar" : "Cambios y observaciones"}
+          </h3>
+          <ul className="mt-4 divide-y divide-border/50 border-y border-border/60">
+            {(observations.length > 0
+              ? observations
+              : ["La propuesta no puede confirmarse con las condiciones actuales."]
+            ).map((observation) => (
+              <li className="py-4 text-sm leading-6 text-text-secondary" key={observation}>
+                {observation}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section aria-labelledby="adapted-session-title" className="mt-8 border-t border-border/70 pt-6">
+        <div className="flex items-end justify-between gap-4">
+          <h3 className="font-brand text-lg font-bold leading-6 text-text-primary" id="adapted-session-title">
+            Sesi&oacute;n adaptada
+          </h3>
+          <span className="text-[0.75rem] font-semibold text-text-muted">
+            {exercises.length} {exercises.length === 1 ? "ejercicio" : "ejercicios"}
+          </span>
+        </div>
+
+        {exercises.length > 0 ? (
+          <ol className="mt-3 divide-y divide-border/55 border-y border-border/70">
+            {exercises.map((exercise) => (
+              <li className="py-5" key={`${exercise.order}-${exercise.exerciseId}`}>
+                <div className="flex items-baseline gap-3">
+                  <span aria-hidden="true" className="w-5 shrink-0 text-[0.6875rem] font-bold tabular-nums text-text-muted">
+                    {String(exercise.order).padStart(2, "0")}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-brand text-[0.9375rem] font-bold leading-6 text-text-primary">
+                      {exercise.name}
+                    </p>
+                    <p className="mt-1.5 text-[0.8125rem] font-semibold leading-5 text-text-secondary">
+                      {exercise.sets} {exercise.sets === 1 ? "serie" : "series"} &middot; {formatRange(exercise.minReps, exercise.maxReps)} reps
+                    </p>
+                    <p className="mt-1 text-[0.8125rem] leading-5 text-text-muted">
+                      RIR {formatRange(exercise.minRir, exercise.maxRir)} &middot; {formatRest(exercise.restSeconds)}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="mt-3 border-y border-border/70 py-4 text-sm leading-6 text-text-secondary">
+            La propuesta no incluye ejercicios finales para estas condiciones.
+          </p>
+        )}
+      </section>
+
+      <Button className="mt-7" fullWidth onClick={onEdit} variant="outline">
+        Editar condiciones
+      </Button>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 border-b border-r border-border/50 px-1 py-4 even:border-r-0 [&:nth-last-child(-n+2)]:border-b-0">
+      <dt className="text-[0.6875rem] font-bold uppercase leading-4 tracking-[0.06em] text-text-muted">
+        {label}
+      </dt>
+      <dd className="mt-1.5 font-brand text-lg font-bold leading-6 tabular-nums text-text-primary">
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function ProposalError({
+  onEdit,
+  onRetry,
+  validation,
+}: {
+  onEdit: () => void;
+  onRetry: () => void;
+  validation: boolean;
+}) {
+  return (
+    <div className="mt-8 border-y border-border/70 py-6" role="alert">
+      <h2 className="font-brand text-lg font-bold text-text-primary">
+        {validation ? "Revisá las condiciones" : "No pudimos generar la adaptación"}
+      </h2>
+      <p className="mt-2 text-sm leading-6 text-text-secondary">
+        {validation
+          ? "Alguna condición no es válida para preparar la sesión. Podés volver y corregirla."
+          : "Conservamos las condiciones que elegiste. Podés reintentar sin configurarlas de nuevo."}
+      </p>
+      {validation ? (
+        <Button className="mt-5" fullWidth onClick={onEdit}>
+          Editar condiciones
+        </Button>
+      ) : (
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <Button onClick={onEdit} variant="secondary">
+            Editar
+          </Button>
+          <Button onClick={onRetry}>
+            Reintentar
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdaptiveTrainingProposalSkeleton() {
+  return (
+    <div aria-label="Generando adaptaci&oacute;n" className="mt-8 animate-pulse motion-reduce:animate-none" role="status">
+      <div className="border-y border-border/50 py-5">
+        <div className="h-3 w-24 rounded bg-surface-elevated" />
+        <div className="mt-3 h-7 w-48 rounded bg-surface-elevated" />
+        <div className="mt-3 h-4 w-32 rounded bg-surface-elevated" />
+      </div>
+      <div className="mt-7 h-20 rounded-control-sm bg-surface-elevated" />
+      <div className="mt-6 grid grid-cols-2 gap-px bg-border/50">
+        {[0, 1, 2, 3].map((item) => (
+          <div className="h-20 bg-background p-4" key={item}>
+            <div className="h-3 w-20 rounded bg-surface-elevated" />
+            <div className="mt-3 h-5 w-12 rounded bg-surface-elevated" />
+          </div>
+        ))}
+      </div>
+      <span className="sr-only">Preparando tu sesi&oacute;n adaptada.</span>
+    </div>
+  );
+}
+
+function getFeasibilityPresentation(feasibility: SessionAdaptationProposalResponse["feasibility"]): {
+  description: string;
+  label: string;
+} {
+  switch (feasibility) {
+    case "Feasible":
+      return {
+        description: "La sesión puede realizarse con las condiciones que elegiste.",
+        label: "Factible",
+      };
+    case "FeasibleWithChanges":
+      return {
+        description: "La sesión puede realizarse con los ajustes indicados.",
+        label: "Factible con ajustes",
+      };
+    case "NotFeasible":
+      return {
+        description: "La propuesta puede revisarse, pero todavía no puede confirmarse.",
+        label: "No confirmable",
+      };
+  }
+}
+
+function getDiagnosticMessages(diagnostics: SessionAdaptationProposalResponse["diagnostics"]): string[] {
+  const messages: Array<string | null> = diagnostics.map((diagnostic) => {
+    switch (diagnostic.code) {
+      case "ExerciseSubstituted":
+        return "Se reemplazó al menos un ejercicio para respetar las condiciones de hoy.";
+      case "OptionalExerciseRemovedNoSubstitute":
+        return "Se retiró un accesorio opcional que no tenía un reemplazo compatible.";
+      case "RequiredExerciseHasNoSubstitute":
+        return "Un ejercicio requerido no tiene un reemplazo válido con las condiciones de hoy.";
+      case "OptionalAccessoryRemovedForTime":
+        return "Se retiró trabajo accesorio para respetar el tiempo disponible.";
+      case "ExerciseSetsReducedForTime":
+        return "Se ajustaron series para respetar el tiempo disponible.";
+      case "MinimumSessionExceedsAvailableTime":
+        return "Incluso la sesión mínima permitida supera el tiempo disponible.";
+      case "RirIncreased":
+        return "Se aumentó el RIR objetivo para preparar una sesión más liviana.";
+      case "OptionalAccessorySetsReducedForLighter":
+        return "Se redujo trabajo accesorio para preparar una sesión más liviana.";
+      case "NeutralLighterTransformation":
+        return "La preferencia más liviana no requirió cambios adicionales en la prescripción.";
+      default:
+        return null;
+    }
+  });
+
+  return [...new Set(messages.filter((message): message is string => message !== null))];
+}
+
+function formatDuration(totalSeconds: number): string {
+  const safeSeconds = Math.max(0, Math.round(totalSeconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+
+  if (seconds === 0) return `${minutes} min`;
+  return `${minutes} min ${seconds} s`;
+}
+
+function formatRange(minimum: number, maximum: number): string {
+  return minimum === maximum ? `${minimum}` : `${minimum}–${maximum}`;
+}
+
+function formatRest(totalSeconds: number): string {
+  if (totalSeconds < 60) return `${totalSeconds} s`;
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds} s`;
 }
 
 function AdaptiveTrainingSetupSkeleton() {
