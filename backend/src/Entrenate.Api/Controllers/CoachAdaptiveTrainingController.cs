@@ -1,5 +1,6 @@
 using Entrenate.Api.Requests.Coach;
 using Entrenate.Application.Coach.AdaptiveTraining.Commands.ConfirmSessionAdaptationProposal;
+using Entrenate.Application.Coach.AdaptiveTraining.Conversation.Commands.AskSessionAdaptationConversation;
 using Entrenate.Application.Coach.AdaptiveTraining.Proposal;
 using Entrenate.Application.Coach.AdaptiveTraining.Queries.GenerateSessionAdaptationProposal;
 using MediatR;
@@ -59,6 +60,29 @@ namespace Entrenate.Api.Controllers
                 cancellationToken);
 
             return Ok(result);
+        }
+
+        [HttpPost("proposals/{proposalId}/conversation")]
+        public async Task<IActionResult> AskProposalConversation(
+            string proposalId,
+            [FromBody] AskSessionAdaptationConversationRequest request,
+            CancellationToken cancellationToken)
+        {
+            var effort = ParseEffortPreference(request.EffortPreference);
+
+            var response = await _sender.Send(
+                new AskSessionAdaptationConversationCommand(
+                    proposalId,
+                    request.ProposalHash,
+                    request.RoutineDayId,
+                    request.AvailableMinutes,
+                    request.AvailableEquipmentIds,
+                    request.ExcludedExerciseIds,
+                    effort,
+                    request.Question),
+                cancellationToken);
+
+            return Ok(response);
         }
 
         private static SessionEffortPreference ParseEffortPreference(string? preference)
