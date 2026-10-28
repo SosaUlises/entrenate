@@ -282,15 +282,16 @@ accesorio opcional puede eliminarse por completo; un ejercicio requerido no.
 
 Orden normativo de ajuste, recalculando duración después de cada operación:
 
-1. reducir accesorios opcionales, de una serie por iteración y en orden
-   inverso de `Orden` y `Codigo`, hasta su `effectiveMinimum`;
-2. eliminar accesorios opcionales, en ese mismo orden inverso;
-3. reducir aislamientos requeridos, de una serie por iteración, hasta su
+1. eliminar accesorios opcionales de menor prioridad, en orden inverso de
+   `Orden` y `Codigo`, mientras quede más de un accesorio opcional;
+2. reducir el accesorio opcional prioritario que permanezca, de una serie por
+   iteración, hasta su `effectiveMinimum`;
+3. si todavía no entra, eliminar ese último accesorio siempre que la sesión
+   conserve al menos un ejercicio;
+4. reducir aislamientos requeridos, de una serie por iteración, hasta su
    `effectiveMinimum`;
-4. reducir compuestos requeridos `SecondaryCompound`, de una serie por
-   iteración, hasta su `effectiveMinimum`;
-5. reducir compuestos requeridos `PrimaryCompound`, de una serie por
-   iteración, hasta su `effectiveMinimum`;
+5. reducir compuestos requeridos, de una serie por iteración y en orden inverso
+   de `Orden` y `Codigo`, hasta su `effectiveMinimum`;
 6. si el mínimo requerido sigue excediendo el presupuesto, devolver
    `NotFeasible`.
 
