@@ -1,3 +1,5 @@
+﻿using Entrenate.Application.Coach.AdaptiveTraining.DTOs;
+using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.Coach.Progress.Analysis;
 using Entrenate.Application.Progress.DTOs;
@@ -328,6 +330,123 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
             await _context.SesionesEntrenamiento.AddAsync(
                 session,
                 cancellationToken);
+        }
+
+
+        public async Task<AdaptiveSessionPersistenceResult> ConfirmAdaptiveSessionAsync(
+            SesionEntrenamiento session,
+            SesionAdaptacion adaptation,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(session);
+            ArgumentNullException.ThrowIfNull(adaptation);
+
+            try
+            {
+                await using var transaction = await _context.Database
+                    .BeginTransactionAsync(cancellationToken);
+
+                var existing = await _context.SesionesAdaptacion
+                    .AsNoTracking()
+                    .SingleOrDefaultAsync(
+                        a => a.UsuarioId == adaptation.UsuarioId &&
+                             a.AdaptationProposalId == adaptation.AdaptationProposalId,
+                        cancellationToken);
+
+                if (existing is not null)
+                {
+                    return ResolveExistingAdaptation(
+                        existing,
+                        adaptation.ProposalHash);
+                }
+
+                var hasActiveSession = await _context.SesionesEntrenamiento
+                    .AnyAsync(
+                        s => s.UsuarioId == session.UsuarioId &&
+                             s.Estado == EstadoSesionEntrenamiento.EnCurso,
+                        cancellationToken);
+
+                if (hasActiveSession)
+                {
+                    throw new ConflictException(
+                        "Ya existe una sesión de entrenamiento en curso.");
+                }
+
+                session.AsignarAdaptacion(adaptation);
+
+                await _context.SesionesEntrenamiento.AddAsync(
+                    session,
+                    cancellationToken);
+
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                return new AdaptiveSessionPersistenceResult(
+                    session.Id,
+                    adaptation.AdaptationProposalId,
+                    true);
+            }
+            catch (DbUpdateException exception) when (
+                IsAdaptationProposalUniquenessViolation(exception))
+            {
+                _context.ChangeTracker.Clear();
+
+                var existing = await _context.SesionesAdaptacion
+                    .AsNoTracking()
+                    .SingleOrDefaultAsync(
+                        a => a.UsuarioId == adaptation.UsuarioId &&
+                             a.AdaptationProposalId == adaptation.AdaptationProposalId,
+                        cancellationToken);
+
+                if (existing is null)
+                {
+                    throw new ConflictException(
+                        "No se pudo confirmar la adaptación de sesión.");
+                }
+
+                return ResolveExistingAdaptation(
+                    existing,
+                    adaptation.ProposalHash);
+            }
+            catch (DbUpdateException exception) when (
+                exception.InnerException is Npgsql.PostgresException
+                {
+                    SqlState: Npgsql.PostgresErrorCodes.UniqueViolation,
+                    ConstraintName: "IX_SesionesEntrenamiento_UsuarioId_Active"
+                })
+            {
+                throw new ConflictException(
+                    "Ya existe una sesión de entrenamiento en curso.");
+            }
+        }
+
+        private static AdaptiveSessionPersistenceResult ResolveExistingAdaptation(
+            SesionAdaptacion existing,
+            string expectedHash)
+        {
+            if (!string.Equals(
+                existing.ProposalHash,
+                expectedHash,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ConflictException(
+                    "La propuesta ya fue confirmada con otro contenido.");
+            }
+
+            return new AdaptiveSessionPersistenceResult(
+                existing.SesionEntrenamientoId,
+                existing.AdaptationProposalId,
+                false);
+        }
+
+        private static bool IsAdaptationProposalUniquenessViolation(
+            DbUpdateException exception)
+        {
+            return exception.InnerException is Npgsql.PostgresException
+            {
+                SqlState: Npgsql.PostgresErrorCodes.UniqueViolation,
+                ConstraintName: "IX_SesionesAdaptacion_UsuarioId_AdaptationProposalId"
+            };
         }
 
         public async Task SaveChangesAsync(

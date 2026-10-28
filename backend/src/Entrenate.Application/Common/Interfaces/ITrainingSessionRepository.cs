@@ -1,5 +1,6 @@
 using Entrenate.Domain.Entidades;
 using Entrenate.Application.Coach.Progress.Analysis;
+using Entrenate.Application.Coach.AdaptiveTraining.DTOs;
 using Entrenate.Application.Progress.DTOs;
 using Entrenate.Application.TrainingSessions.DTOs;
 
@@ -69,6 +70,11 @@ namespace Entrenate.Application.Common.Interfaces
 
         Task AddAsync(
             SesionEntrenamiento session,
+            CancellationToken cancellationToken = default);
+
+        Task<AdaptiveSessionPersistenceResult> ConfirmAdaptiveSessionAsync(
+            SesionEntrenamiento session,
+            SesionAdaptacion adaptation,
             CancellationToken cancellationToken = default);
 
         Task SaveChangesAsync(

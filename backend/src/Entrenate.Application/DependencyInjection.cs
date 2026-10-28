@@ -1,6 +1,7 @@
-﻿using Entrenate.Application.Common.Behaviors;
-using FluentValidation;
+using Entrenate.Application.Coach.AdaptiveTraining.Proposal;
 using Entrenate.Application.Coach.RoutinePlanner.Proposal;
+using Entrenate.Application.Common.Behaviors;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Entrenate.Application
@@ -23,6 +24,7 @@ namespace Entrenate.Application
                 typeof(DependencyInjection).Assembly);
 
             services.AddScoped<RoutinePlannerProposalGenerator>();
+            services.AddScoped<SessionAdaptationProposalGenerator>();
 
             return services;
         }

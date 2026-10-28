@@ -77,6 +77,50 @@ namespace Entrenate.Domain.Entidades
             }
         }
 
+        public SesionEntrenamiento(
+            string usuarioId,
+            Guid diaRutinaId,
+            DateTime fechaHoraInicio,
+            IEnumerable<EjercicioSesion> ejercicios)
+        {
+            if (string.IsNullOrWhiteSpace(usuarioId))
+            {
+                throw new ArgumentException(
+                    "El usuario es obligatorio.",
+                    nameof(usuarioId));
+            }
+
+            if (diaRutinaId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "El día de rutina es obligatorio.",
+                    nameof(diaRutinaId));
+            }
+
+            if (fechaHoraInicio.Kind != DateTimeKind.Utc)
+            {
+                throw new ArgumentException(
+                    "La fecha y hora de inicio debe estar expresada en UTC.",
+                    nameof(fechaHoraInicio));
+            }
+
+            ArgumentNullException.ThrowIfNull(ejercicios);
+
+            Id = Guid.NewGuid();
+            UsuarioId = usuarioId;
+            DiaRutinaId = diaRutinaId;
+            HoraInicio = fechaHoraInicio;
+            Fecha = fechaHoraInicio.Date;
+            HoraFin = null;
+            Estado = EstadoSesionEntrenamiento.EnCurso;
+
+            foreach (var ejercicio in ejercicios
+                .OrderBy(x => x.Orden))
+            {
+                _ejercicios.Add(ejercicio);
+            }
+        }
+
         public void AsignarAdaptacion(SesionAdaptacion adaptacion)
         {
             ArgumentNullException.ThrowIfNull(adaptacion);
