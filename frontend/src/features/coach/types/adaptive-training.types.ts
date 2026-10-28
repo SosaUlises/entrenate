@@ -25,9 +25,29 @@ export type SessionAdaptationExercise = {
   restSeconds: number;
 };
 
+export type SessionAdaptationChangeType =
+  | "ExerciseSubstituted"
+  | "OptionalAccessoryRemovedNoSubstitute"
+  | "RequiredExerciseUnavailable"
+  | "ExerciseSetsReducedForTime"
+  | "OptionalAccessoryRemovedForTime"
+  | "RirIncreased"
+  | "OptionalAccessorySetsReducedForLighter";
+
 export type SessionAdaptationChange = {
-  changeType: string;
+  adaptedExerciseCode: string | null;
+  adaptedExerciseId: string | null;
+  adaptedRirMax: number | null;
+  adaptedRirMin: number | null;
+  adaptedSets: number | null;
+  changeType: SessionAdaptationChangeType;
+  originalExerciseCode: string | null;
+  originalExerciseId: string;
+  originalRirMax: number | null;
+  originalRirMin: number | null;
+  originalSets: number | null;
   reason: string | null;
+  sourceRoutineExerciseId: string;
 };
 
 export type SessionAdaptationDiagnostic = {

@@ -28,9 +28,9 @@
 
 ## Current work
 
-- Frontend Adaptive Training V3 block 2 generates a real proposal from today's
-  time, equipment, exercise exclusions and effort context, then presents its
-  feasibility, duration, observations and final exercise prescription.
+- Frontend Adaptive Training V3 block 3 generates a real proposal from today's
+  context and presents feasibility, duration, structured before/after changes,
+  observations and the final exercise prescription.
 - Adaptive Training conversation, confirmation and session creation remain
   pending.
 - Adaptive Training remains unavailable from Coach Hub until the complete

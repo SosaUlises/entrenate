@@ -592,6 +592,7 @@ function AdaptiveTrainingProposalPreview({
   const feasibility = getFeasibilityPresentation(proposal.feasibility);
   const observations = getDiagnosticMessages(proposal.diagnostics);
   const exercises = [...proposal.adaptedExercises].sort((first, second) => first.order - second.order);
+  const structuredChanges = getStructuredChangePresentations(proposal);
   const isNotFeasible = proposal.feasibility === "NotFeasible";
 
   return (
@@ -654,6 +655,38 @@ function AdaptiveTrainingProposalPreview({
         </section>
       ) : null}
 
+      {structuredChanges.length > 0 ? (
+        <section aria-labelledby="structured-changes-title" className="mt-8 border-t border-border/70 pt-6">
+          <h3 className="font-brand text-lg font-bold leading-6 text-text-primary" id="structured-changes-title">
+            Antes y despu&eacute;s
+          </h3>
+          <div className="mt-4 divide-y divide-border/55 border-y border-border/70">
+            {structuredChanges.map((change) => (
+              <div className="py-5" key={change.key}>
+                <p className="text-[0.6875rem] font-bold uppercase tracking-[0.07em] text-text-muted">
+                  {change.label}
+                </p>
+                {change.exerciseName ? (
+                  <p className="mt-1.5 font-brand text-[0.9375rem] font-bold leading-6 text-text-primary">
+                    {change.exerciseName}
+                  </p>
+                ) : null}
+                <div className="mt-3 grid grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)] items-center gap-2">
+                  <ChangeValue label="Original" value={change.originalValue} />
+                  <ArrowRight aria-hidden="true" className="text-thermal-accent" size={16} strokeWidth={1.8} />
+                  <ChangeValue emphasized label="Adaptado" value={change.adaptedValue} />
+                </div>
+                {change.reason ? (
+                  <p className="mt-3 text-[0.8125rem] leading-5 text-text-secondary">
+                    {change.reason}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section aria-labelledby="adapted-session-title" className="mt-8 border-t border-border/70 pt-6">
         <div className="flex items-end justify-between gap-4">
           <h3 className="font-brand text-lg font-bold leading-6 text-text-primary" id="adapted-session-title">
@@ -699,6 +732,177 @@ function AdaptiveTrainingProposalPreview({
       </Button>
     </div>
   );
+}
+
+function ChangeValue({
+  emphasized = false,
+  label,
+  value,
+}: {
+  emphasized?: boolean;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <span className="block text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-text-muted">
+        {label}
+      </span>
+      <span className={cn(
+        "mt-1 block text-sm font-semibold leading-5",
+        emphasized ? "text-text-primary" : "text-text-secondary",
+      )}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+type StructuredChangePresentation = {
+  adaptedValue: string;
+  exerciseName: string | null;
+  key: string;
+  label: string;
+  originalValue: string;
+  reason: string | null;
+};
+
+function getStructuredChangePresentations(
+  proposal: SessionAdaptationProposalResponse,
+): StructuredChangePresentation[] {
+  const originalNames = new Map(
+    proposal.originalExercises.map((exercise) => [exercise.exerciseId, exercise.name]),
+  );
+  const adaptedNames = new Map(
+    proposal.adaptedExercises.map((exercise) => [exercise.exerciseId, exercise.name]),
+  );
+
+  return proposal.changes.flatMap((change): StructuredChangePresentation[] => {
+    const originalName = originalNames.get(change.originalExerciseId);
+    const key = `${change.sourceRoutineExerciseId}-${change.changeType}`;
+
+    switch (change.changeType) {
+      case "ExerciseSubstituted": {
+        const adaptedName = change.adaptedExerciseId
+          ? adaptedNames.get(change.adaptedExerciseId)
+          : undefined;
+
+        if (!originalName || !adaptedName) return [];
+
+        return [{
+          adaptedValue: adaptedName,
+          exerciseName: null,
+          key,
+          label: "Sustitución de ejercicio",
+          originalValue: originalName,
+          reason: getSubstitutionReason(change.reason),
+        }];
+      }
+
+      case "ExerciseSetsReducedForTime":
+      case "OptionalAccessorySetsReducedForLighter":
+        if (!originalName || change.originalSets === null || change.adaptedSets === null) return [];
+
+        return [{
+          adaptedValue: formatSeries(change.adaptedSets),
+          exerciseName: originalName,
+          key,
+          label: "Cambio de series",
+          originalValue: formatSeries(change.originalSets),
+          reason: change.changeType === "ExerciseSetsReducedForTime"
+            ? "Para respetar el tiempo disponible."
+            : "Para preparar una sesión más liviana.",
+        }];
+
+      case "RirIncreased":
+        if (
+          !originalName ||
+          change.originalRirMin === null ||
+          change.originalRirMax === null ||
+          change.adaptedRirMin === null ||
+          change.adaptedRirMax === null
+        ) return [];
+
+        return [{
+          adaptedValue: `RIR ${formatRange(change.adaptedRirMin, change.adaptedRirMax)}`,
+          exerciseName: originalName,
+          key,
+          label: "Cambio de RIR",
+          originalValue: `RIR ${formatRange(change.originalRirMin, change.originalRirMax)}`,
+          reason: "Para preparar una sesión más liviana.",
+        }];
+
+      case "OptionalAccessoryRemovedNoSubstitute":
+      case "OptionalAccessoryRemovedForTime":
+        if (!originalName) return [];
+
+        return [{
+          adaptedValue: "Fuera de la sesión",
+          exerciseName: null,
+          key,
+          label: "Ejercicio eliminado",
+          originalValue: originalName,
+          reason: change.changeType === "OptionalAccessoryRemovedForTime"
+            ? "Para respetar el tiempo disponible."
+            : getRemovalReason(change.reason),
+        }];
+
+      case "RequiredExerciseUnavailable":
+        if (!originalName) return [];
+
+        return [{
+          adaptedValue: "Sin reemplazo compatible",
+          exerciseName: null,
+          key,
+          label: "Ejercicio no disponible",
+          originalValue: originalName,
+          reason: getRequiredUnavailableReason(change.reason),
+        }];
+    }
+  });
+}
+
+function getSubstitutionReason(reason: string | null): string | null {
+  const reasons = getKnownSubstitutionReasons(reason);
+
+  if (reasons.has("EquipmentUnavailable") && reasons.has("UserExcludedExercise")) {
+    return "El equipamiento necesario no está disponible y elegiste no realizar el ejercicio original hoy.";
+  }
+  if (reasons.has("EquipmentUnavailable")) {
+    return "El equipamiento necesario no está disponible hoy.";
+  }
+  if (reasons.has("UserExcludedExercise")) {
+    return "Elegiste no realizar el ejercicio original hoy.";
+  }
+
+  return null;
+}
+
+function getRemovalReason(reason: string | null): string {
+  const naturalReason = getSubstitutionReason(reason);
+  return naturalReason
+    ? `${naturalReason} No había un reemplazo compatible.`
+    : "No había un reemplazo compatible con las condiciones de hoy.";
+}
+
+function getRequiredUnavailableReason(reason: string | null): string {
+  const naturalReason = getSubstitutionReason(reason);
+  return naturalReason
+    ? `${naturalReason} No hay un reemplazo compatible.`
+    : "No hay un reemplazo compatible con las condiciones de hoy.";
+}
+
+function getKnownSubstitutionReasons(reason: string | null): Set<string> {
+  return new Set(
+    (reason ?? "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item === "EquipmentUnavailable" || item === "UserExcludedExercise"),
+  );
+}
+
+function formatSeries(value: number): string {
+  return `${value} ${value === 1 ? "serie" : "series"}`;
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
