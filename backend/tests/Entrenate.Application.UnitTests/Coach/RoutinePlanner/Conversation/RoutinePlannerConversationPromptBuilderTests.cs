@@ -49,6 +49,21 @@ namespace Entrenate.Application.UnitTests.Coach.RoutinePlanner.Conversation
             Assert.Contains("medicina", prompt.Instructions);
             Assert.Contains("No uses emojis", prompt.Instructions);
             Assert.Contains(
+                "Respondé directamente a la pregunta",
+                prompt.Instructions);
+            Assert.Contains(
+                "entre 2 y 4 párrafos breves",
+                prompt.Instructions);
+            Assert.Contains(
+                "No omitas información necesaria",
+                prompt.Instructions);
+            Assert.Contains(
+                "listas sólo cuando realmente mejoren la claridad",
+                prompt.Instructions);
+            Assert.Contains(
+                "fácil de leer en mobile",
+                prompt.Instructions);
+            Assert.Contains(
                 "No infieras relaciones causales",
                 prompt.Instructions);
             Assert.Contains(
