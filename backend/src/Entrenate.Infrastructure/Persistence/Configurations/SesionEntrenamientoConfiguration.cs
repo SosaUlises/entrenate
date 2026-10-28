@@ -1,4 +1,4 @@
-﻿using Entrenate.Domain.Entidades;
+using Entrenate.Domain.Entidades;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -34,6 +34,11 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 .WithMany()
                 .HasForeignKey(x => x.DiaRutinaId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(x => x.Adaptacion)
+                .WithOne(x => x.SesionEntrenamiento)
+                .HasForeignKey<SesionAdaptacion>(x => x.SesionEntrenamientoId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(x => x.Ejercicios)
                 .WithOne(x => x.SesionEntrenamiento)

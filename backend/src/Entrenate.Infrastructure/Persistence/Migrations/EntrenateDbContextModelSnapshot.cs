@@ -446,6 +446,167 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.ToTable("SeriesEntrenamiento", (string)null);
                 });
 
+            modelBuilder.Entity("Entrenate.Domain.Entidades.SesionAdaptacion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AdaptationProposalId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("AvailableMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EffortPreference")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Factibilidad")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaConfirmacionUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PolicyVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProposalHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("SesionEntrenamientoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProposalHash")
+                        .HasDatabaseName("IX_SesionesAdaptacion_ProposalHash");
+
+                    b.HasIndex("SesionEntrenamientoId")
+                        .IsUnique();
+
+                    b.HasIndex("UsuarioId", "AdaptationProposalId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_SesionesAdaptacion_UsuarioId_AdaptationProposalId");
+
+                    b.ToTable("SesionesAdaptacion", (string)null);
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.SesionAdaptacionCambio", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EjercicioAdaptadoCodigo")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("EjercicioAdaptadoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EjercicioOriginalCodigo")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("EjercicioOriginalId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("Motivo")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirMaximoAdaptado")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirMaximoOriginal")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirMinimoAdaptado")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirMinimoOriginal")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SeriesAdaptada")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SeriesOriginal")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SesionAdaptacionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SourceRoutineExerciseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TipoCambio")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EjercicioAdaptadoId");
+
+                    b.HasIndex("EjercicioOriginalId");
+
+                    b.HasIndex("SesionAdaptacionId", "Orden")
+                        .IsUnique();
+
+                    b.ToTable("SesionAdaptacionCambios", (string)null);
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.SesionAdaptacionEjercicioExcluido", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EjercicioId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SesionAdaptacionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EjercicioId");
+
+                    b.HasIndex("SesionAdaptacionId", "EjercicioId")
+                        .IsUnique();
+
+                    b.ToTable("SesionAdaptacionEjerciciosExcluidos", (string)null);
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.SesionAdaptacionEquipamientoDisponible", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EquipamientoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SesionAdaptacionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EquipamientoId");
+
+                    b.HasIndex("SesionAdaptacionId", "EquipamientoId")
+                        .IsUnique();
+
+                    b.ToTable("SesionAdaptacionEquipamientosDisponibles", (string)null);
+                });
+
             modelBuilder.Entity("Entrenate.Domain.Entidades.SesionEntrenamiento", b =>
                 {
                     b.Property<Guid>("Id")
@@ -810,6 +971,80 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.Navigation("EjercicioSesion");
                 });
 
+            modelBuilder.Entity("Entrenate.Domain.Entidades.SesionAdaptacion", b =>
+                {
+                    b.HasOne("Entrenate.Domain.Entidades.SesionEntrenamiento", "SesionEntrenamiento")
+                        .WithOne("Adaptacion")
+                        .HasForeignKey("Entrenate.Domain.Entidades.SesionAdaptacion", "SesionEntrenamientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SesionEntrenamiento");
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.SesionAdaptacionCambio", b =>
+                {
+                    b.HasOne("Entrenate.Domain.Entidades.Ejercicio", "EjercicioAdaptado")
+                        .WithMany()
+                        .HasForeignKey("EjercicioAdaptadoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Entrenate.Domain.Entidades.Ejercicio", "EjercicioOriginal")
+                        .WithMany()
+                        .HasForeignKey("EjercicioOriginalId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Entrenate.Domain.Entidades.SesionAdaptacion", "SesionAdaptacion")
+                        .WithMany("Cambios")
+                        .HasForeignKey("SesionAdaptacionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EjercicioAdaptado");
+
+                    b.Navigation("EjercicioOriginal");
+
+                    b.Navigation("SesionAdaptacion");
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.SesionAdaptacionEjercicioExcluido", b =>
+                {
+                    b.HasOne("Entrenate.Domain.Entidades.Ejercicio", "Ejercicio")
+                        .WithMany()
+                        .HasForeignKey("EjercicioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Entrenate.Domain.Entidades.SesionAdaptacion", "SesionAdaptacion")
+                        .WithMany("EjerciciosExcluidos")
+                        .HasForeignKey("SesionAdaptacionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ejercicio");
+
+                    b.Navigation("SesionAdaptacion");
+                });
+
+            modelBuilder.Entity("Entrenate.Domain.Entidades.SesionAdaptacionEquipamientoDisponible", b =>
+                {
+                    b.HasOne("Entrenate.Domain.Entidades.Equipamiento", "Equipamiento")
+                        .WithMany()
+                        .HasForeignKey("EquipamientoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Entrenate.Domain.Entidades.SesionAdaptacion", "SesionAdaptacion")
+                        .WithMany("EquipamientosDisponibles")
+                        .HasForeignKey("SesionAdaptacionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Equipamiento");
+
+                    b.Navigation("SesionAdaptacion");
+                });
+
             modelBuilder.Entity("Entrenate.Domain.Entidades.SesionEntrenamiento", b =>
                 {
                     b.HasOne("Entrenate.Domain.Entidades.DiaRutina", "DiaRutina")
@@ -900,8 +1135,19 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.Navigation("Dias");
                 });
 
+            modelBuilder.Entity("Entrenate.Domain.Entidades.SesionAdaptacion", b =>
+                {
+                    b.Navigation("Cambios");
+
+                    b.Navigation("EjerciciosExcluidos");
+
+                    b.Navigation("EquipamientosDisponibles");
+                });
+
             modelBuilder.Entity("Entrenate.Domain.Entidades.SesionEntrenamiento", b =>
                 {
+                    b.Navigation("Adaptacion");
+
                     b.Navigation("Ejercicios");
                 });
 #pragma warning restore 612, 618

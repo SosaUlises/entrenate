@@ -1,4 +1,4 @@
-﻿using Entrenate.Domain.Enums;
+using Entrenate.Domain.Enums;
 
 namespace Entrenate.Domain.Entidades
 {
@@ -23,6 +23,8 @@ namespace Entrenate.Domain.Entidades
         public string? Notas { get; private set; }
 
         public DiaRutina? DiaRutina { get; private set; }
+
+        public SesionAdaptacion? Adaptacion { get; private set; }
 
         public IReadOnlyCollection<EjercicioSesion> Ejercicios
             => _ejercicios.AsReadOnly();
@@ -60,6 +62,7 @@ namespace Entrenate.Domain.Entidades
 
             ArgumentNullException.ThrowIfNull(ejerciciosRutina);
 
+            Id = Guid.NewGuid();
             UsuarioId = usuarioId;
             DiaRutinaId = diaRutinaId;
             HoraInicio = fechaHoraInicio;
@@ -72,6 +75,31 @@ namespace Entrenate.Domain.Entidades
             {
                 _ejercicios.Add(new EjercicioSesion(ejercicioRutina));
             }
+        }
+
+        public void AsignarAdaptacion(SesionAdaptacion adaptacion)
+        {
+            ArgumentNullException.ThrowIfNull(adaptacion);
+
+            if (adaptacion.SesionEntrenamientoId != Id)
+            {
+                throw new InvalidOperationException(
+                    "La adaptación no corresponde a esta sesión.");
+            }
+
+            if (adaptacion.UsuarioId != UsuarioId)
+            {
+                throw new InvalidOperationException(
+                    "La adaptación pertenece a un usuario diferente.");
+            }
+
+            if (Adaptacion != null && Adaptacion.Id != adaptacion.Id)
+            {
+                throw new InvalidOperationException(
+                    "La sesión ya posee una adaptación asignada.");
+            }
+
+            Adaptacion = adaptacion;
         }
 
         public void Completar(DateTime fechaHoraFin)
