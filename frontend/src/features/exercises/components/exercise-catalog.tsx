@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,6 +16,7 @@ import {
 } from "../exercise-muscle-filters";
 import type { Exercise } from "../types/exercise.types";
 import { hasEntrenateExerciseDemoV2 } from "./exercise-demo-v2-registry";
+import { MuscleFilterRail } from "./muscle-filter-rail";
 
 const ExerciseMovementDemo = dynamic(() => import("./exercise-movement-demo"), { ssr: false });
 
@@ -281,39 +281,12 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
       </div>
 
       {exercises.length > 0 ? (
-        <div className={`relative ${mode === "select" ? "mt-3" : "mt-5"}`}>
-          <div
-            aria-label="Filtrar por grupo muscular"
-            className={`flex touch-pan-x overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${mode === "select" ? "gap-1.5 pb-1" : "gap-2 pb-2"}`}
-            role="group"
-          >
-            {muscleFilters.map((filter) => {
-              const selected = selectedMuscleFilter.id === filter.id;
-              return (
-                <button
-                  aria-label={`Filtrar por ${filter.label}`}
-                  aria-pressed={selected}
-                  className={`relative flex shrink-0 flex-col items-center justify-start px-1.5 transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100 ${mode === "select" ? "h-[5.25rem] min-w-[4.5rem] rounded-control-sm pb-1.5" : "h-24 min-w-20 rounded-control pb-2"} ${selected ? "bg-surface-active/55 text-text-primary" : mode === "select" ? "text-text-secondary hover:bg-surface/20 hover:text-text-primary" : "text-text-secondary hover:bg-surface-interactive/55 hover:text-text-primary"}`}
-                  key={filter.id}
-                  onClick={() => setMuscleFilterId(filter.id)}
-                  type="button"
-                >
-                  <Image
-                    alt=""
-                    aria-hidden="true"
-                    className={`${mode === "select" ? "size-12" : "size-14"} shrink-0 object-contain ${filter.id === ALL_MUSCLE_FILTER_ID ? "scale-[1.12]" : ""} ${mode === "browse" ? `transition-opacity duration-150 motion-reduce:transition-none ${selected ? "opacity-100" : "opacity-70"}` : ""}`}
-                    height={mode === "select" ? 48 : 56}
-                    sizes={mode === "select" ? "48px" : "56px"}
-                    src={filter.imageSrc}
-                    width={mode === "select" ? 48 : 56}
-                  />
-                  <span className={`${mode === "select" ? "mt-1" : "mt-2"} whitespace-nowrap text-[0.8125rem] font-semibold leading-4`}>{filter.label}</span>
-                  <span aria-hidden="true" className={`absolute bottom-0 h-0.5 rounded-full bg-thermal-accent transition-opacity duration-150 motion-reduce:transition-none ${mode === "select" ? "w-8" : "w-6"} ${selected ? "opacity-100" : "opacity-0"}`} />
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <MuscleFilterRail
+          className={mode === "select" ? "mt-3" : "mt-5"}
+          filters={muscleFilters}
+          onSelect={setMuscleFilterId}
+          selectedId={selectedMuscleFilter.id}
+        />
       ) : null}
 
       {exercises.length === 0 ? (

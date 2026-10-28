@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowDown, ArrowRight, ArrowUp, ChevronRight, CircleHelp, Search, X } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -12,6 +11,7 @@ import {
   getVisibleMuscleFilters,
   matchesMuscleFilter,
 } from "@/features/exercises/exercise-muscle-filters";
+import { MuscleFilterRail } from "@/features/exercises/components/muscle-filter-rail";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { getExerciseProgressHubAction } from "../actions/get-exercise-progress-hub.action";
 import { formatCompactProgressDate, formatProgressDate, formatProgressValue } from "../progress-formatters";
@@ -123,42 +123,12 @@ export function ProgressHubContent() {
             ) : null}
           </div>
 
-          <div
-            aria-label="Filtrar por grupo muscular"
-            className="mt-4 flex w-full min-w-0 touch-pan-x gap-2.5 overflow-x-auto overscroll-x-contain pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            role="group"
-          >
-            {muscleFilters.map((filter) => {
-              const selected = selectedMuscleFilter.id === filter.id;
-              return (
-                <button
-                  aria-label={`Filtrar por ${filter.label}`}
-                  aria-pressed={selected}
-                  className={`relative flex h-28 min-w-[5.75rem] w-max shrink-0 flex-col items-center justify-start rounded-control-sm px-2 pb-2 transition-[background-color,color,transform] duration-150 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2 motion-reduce:transition-none motion-reduce:active:scale-100 ${selected ? "bg-surface-active/55 text-text-primary" : "text-text-secondary hover:bg-surface-interactive/55 hover:text-text-primary"}`}
-                  key={filter.id}
-                  onClick={() => setMuscleFilterId(filter.id)}
-                  type="button"
-                >
-                  <Image
-                    alt=""
-                    aria-hidden="true"
-                    className={`size-[4.75rem] shrink-0 object-contain ${filter.id === ALL_MUSCLE_FILTER_ID ? "scale-[1.14]" : ""}`}
-                    height={76}
-                    sizes="76px"
-                    src={filter.imageSrc}
-                    width={76}
-                  />
-                  <span className="mt-2 whitespace-nowrap text-[0.8125rem] leading-4 font-semibold">
-                    {filter.label}
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className={`absolute bottom-0 h-0.5 w-8 rounded-full bg-thermal-accent transition-opacity duration-150 motion-reduce:transition-none ${selected ? "opacity-100" : "opacity-0"}`}
-                  />
-                </button>
-              );
-            })}
-          </div>
+          <MuscleFilterRail
+            className="mt-4"
+            filters={muscleFilters}
+            onSelect={setMuscleFilterId}
+            selectedId={selectedMuscleFilter.id}
+          />
 
           <div className="mt-7">
             <div className="flex min-h-11 items-center justify-between gap-4">
