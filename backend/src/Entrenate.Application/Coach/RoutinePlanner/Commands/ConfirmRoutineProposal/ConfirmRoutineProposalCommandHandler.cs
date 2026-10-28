@@ -109,7 +109,8 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Commands.ConfirmRoutineProp
                         exercise.MaxRir,
                         exercise.RestSeconds,
                         exercise.Order,
-                        null);
+                        null,
+                        exercise.IsRequired);
                 }
             }
 

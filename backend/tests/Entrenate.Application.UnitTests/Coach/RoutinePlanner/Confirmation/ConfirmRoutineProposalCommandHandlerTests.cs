@@ -42,6 +42,48 @@ namespace Entrenate.Application.UnitTests.Coach.RoutinePlanner.Confirmation
         }
 
         [Fact]
+        public async Task Handle_PersistsAdaptationIntentFromPlannerSlots()
+        {
+            var context = CreateContext(
+                CreateCompleteCatalog(),
+                daysPerWeek: 4);
+            var proposal = await context.Generator.GenerateForUserAsync(UserId);
+
+            await context.Handler.Handle(
+                new ConfirmRoutineProposalCommand(
+                    proposal.ProposalId,
+                    proposal.CanonicalHash),
+                CancellationToken.None);
+
+            var expectedExercises = proposal.Days
+                .SelectMany(day => day.Exercises.Select(exercise => new
+                {
+                    DayOrder = day.Order,
+                    Exercise = exercise
+                }))
+                .ToArray();
+            Assert.Contains(
+                expectedExercises,
+                item => item.Exercise.IsRequired);
+            Assert.Contains(
+                expectedExercises,
+                item => !item.Exercise.IsRequired);
+
+            foreach (var expected in expectedExercises)
+            {
+                var persisted = context.RoutineRepository.LastRoutine.Dias
+                    .Single(day => day.Orden == expected.DayOrder)
+                    .Ejercicios
+                    .Single(exercise =>
+                        exercise.Orden == expected.Exercise.Order);
+
+                Assert.Equal(
+                    expected.Exercise.IsRequired,
+                    persisted.IsRequiredForAdaptation);
+            }
+        }
+
+        [Fact]
         public async Task Handle_SameProposalTwiceReturnsSameRoutine()
         {
             var context = CreateContext(CreateCompleteCatalog());
@@ -106,7 +148,8 @@ namespace Entrenate.Application.UnitTests.Coach.RoutinePlanner.Confirmation
         }
 
         private static TestContext CreateContext(
-            IReadOnlyCollection<Ejercicio> exercises)
+            IReadOnlyCollection<Ejercicio> exercises,
+            int daysPerWeek = 1)
         {
             var profile = new PerfilEntrenamiento(
                 UserId,
@@ -115,10 +158,18 @@ namespace Entrenate.Application.UnitTests.Coach.RoutinePlanner.Confirmation
                 30,
                 null,
                 null,
-                1,
+                daysPerWeek,
                 120,
                 EntornoEntrenamiento.Calistenia);
-            profile.DefinirDiasPreferidos([DiaSemana.Lunes]);
+            profile.DefinirDiasPreferidos(
+                new[]
+                {
+                    DiaSemana.Lunes,
+                    DiaSemana.Martes,
+                    DiaSemana.Jueves,
+                    DiaSemana.Viernes
+                }
+                .Take(daysPerWeek));
 
             var generator = new RoutinePlannerProposalGenerator(
                 new TrainingProfileRepositoryFake(profile),
@@ -160,6 +211,46 @@ namespace Entrenate.Application.UnitTests.Coach.RoutinePlanner.Confirmation
                     "Espalda",
                     PatronMovimiento.TraccionHorizontal,
                     TipoEjercicio.Compuesto),
+                Exercise(
+                    "press-vertical",
+                    "Hombros",
+                    PatronMovimiento.EmpujeVertical,
+                    TipoEjercicio.Compuesto),
+                Exercise(
+                    "dominadas",
+                    "Espalda",
+                    PatronMovimiento.TraccionVertical,
+                    TipoEjercicio.Compuesto),
+                Exercise(
+                    "elevaciones-laterales",
+                    "Hombros",
+                    PatronMovimiento.AbduccionHombro,
+                    TipoEjercicio.Aislamiento),
+                Exercise(
+                    "curl-biceps",
+                    "Bíceps",
+                    PatronMovimiento.FlexionCodo,
+                    TipoEjercicio.Aislamiento),
+                Exercise(
+                    "extension-triceps",
+                    "Tríceps",
+                    PatronMovimiento.ExtensionCodo,
+                    TipoEjercicio.Aislamiento),
+                Exercise(
+                    "extension-cuadriceps",
+                    "Cuádriceps",
+                    PatronMovimiento.ExtensionRodilla,
+                    TipoEjercicio.Aislamiento),
+                Exercise(
+                    "curl-femoral",
+                    "Isquiotibiales",
+                    PatronMovimiento.FlexionRodilla,
+                    TipoEjercicio.Aislamiento),
+                Exercise(
+                    "elevacion-gemelos",
+                    "Gemelos",
+                    PatronMovimiento.FlexionPlantar,
+                    TipoEjercicio.Aislamiento),
                 Exercise(
                     "plancha",
                     "Core",

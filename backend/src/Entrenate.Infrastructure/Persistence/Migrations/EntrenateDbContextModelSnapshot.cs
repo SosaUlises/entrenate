@@ -189,6 +189,9 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("EjercicioId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool?>("IsRequiredForAdaptation")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Notas")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");

@@ -96,7 +96,7 @@ namespace Entrenate.Application.UnitTests.Coach.RoutinePlanner.Explanations
 
             return new RoutinePlannerProposal(
                 Guid.Parse("10000000-0000-0000-0000-000000000001"),
-                "2.4",
+                "2.5",
                 new string('a', 64),
                 feasibility,
                 ObjetivoEntrenamiento.GanarMasaMuscular,
@@ -143,6 +143,7 @@ namespace Entrenate.Application.UnitTests.Coach.RoutinePlanner.Explanations
                         PatronMovimiento.EmpujeHorizontal,
                         TipoEjercicio.Compuesto,
                         ExerciseSlotRole.PrimaryCompound,
+                        true,
                         3,
                         8,
                         12,

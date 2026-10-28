@@ -55,22 +55,19 @@ El modelo actual persiste:
   de Routine Planner;
 - `DiaRutina`: nombre, descripción, orden y `DiaSemana?`;
 - `EjercicioRutina`: ejercicio, orden, series, rango de repeticiones, rango de
-  RIR, descanso y notas.
+  RIR, descanso, notas e intención nullable `IsRequiredForAdaptation`.
 
 No persiste actualmente:
 
 - foco tipado del día;
 - rol contextual del ejercicio (`PrimaryCompound`, `SecondaryCompound`,
   `Accessory`);
-- obligatoriedad de un slot;
 - intención explícita de la sesión.
 
-La comparación con los slots de Routine Planner confirma que esta intención no
-puede reconstruirse exactamente: V2 considera requeridos todos sus compuestos,
-pero distingue aislamientos requeridos y opcionales aun cuando ambos puedan ser
-la única cobertura de su patrón. No debe compensarse interpretando el nombre
-del día o del ejercicio. La política normativa y el fallback para rutinas que
-no tienen esa intención persistida se definen en la sección 6.
+Routine Planner V2.5 copia la obligatoriedad estructurada de cada slot a
+`IsRequiredForAdaptation`. En rutinas legacy o manuales el valor permanece
+`null`; no debe compensarse interpretando el nombre del día o del ejercicio.
+La política normativa y su fallback se definen en la sección 6.
 
 ### 3.2 Inicio de sesión
 
@@ -223,8 +220,8 @@ y requerido en `CoreCalves`. `FullBody` requiere core aunque conviva con
 compuestos. Las rutinas manuales tampoco contienen una señal que permita
 distinguir esos casos.
 
-Por eso, la única metadata nueva justificada es una intención nullable por
-`EjercicioRutina`, conceptualmente `IsRequiredForAdaptation?`:
+La metadata persistida mínima es `IsRequiredForAdaptation?` en
+`EjercicioRutina`:
 
 - Routine Planner debe copiar el `IsRequired` de su slot al crear la rutina;
 - `true` y `false` son autoritativos para aislamientos;
@@ -236,9 +233,9 @@ Por eso, la única metadata nueva justificada es una intención nullable por
 
 Esta metadata preserva la diferencia real entre `Upper`, `Lower`, `Push`,
 `Pull`, `Legs`, `FullBody` y `CoreCalves` sin acoplar Adaptive Training a los
-nombres visibles ni exigir que toda rutina provenga de V2. Hasta que exista,
-AT puede operar sobre rutinas legacy con menor capacidad de reducción, pero no
-puede eliminar un aislamiento cuya intención sea ambigua.
+nombres visibles ni exigir que toda rutina provenga de V2. Las rutinas legacy
+y manuales continúan operando con el fallback conservador y menor capacidad de
+reducción cuando la intención sea ambigua.
 
 ## 7. Estimación de duración
 
@@ -801,7 +798,7 @@ versiones decimales de producto.
 
 ### AT-1 — Adaptación por tiempo
 
-- **Siguiente bloque recomendado.**
+- **Estado: implementado.**
 - contratos puros de Application para plan, prescripción y contexto;
 - metadata nullable mínima de intención requerida y fallback legacy;
 - proyección del día y clasificación determinística de slots;

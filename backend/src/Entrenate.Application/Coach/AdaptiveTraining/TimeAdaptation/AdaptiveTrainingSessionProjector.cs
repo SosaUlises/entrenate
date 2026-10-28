@@ -24,7 +24,7 @@ namespace Entrenate.Application.Coach.AdaptiveTraining.TimeAdaptation
                     exercise.Ejercicio.PatronMovimiento,
                     exercise.Ejercicio.TipoEjercicio,
                     exercise.Ejercicio.GrupoMuscularPrincipal,
-                    IsRequiredForAdaptation: null,
+                    exercise.IsRequiredForAdaptation,
                     new AdaptiveTrainingPrescription(
                         exercise.CantidadSeries,
                         exercise.RepeticionesMinimas,
