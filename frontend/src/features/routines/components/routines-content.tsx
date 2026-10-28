@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { MainPageHeader } from "@/components/layout/main-page-header";
 import { Button, buttonClassName } from "@/components/ui/button";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import {
@@ -49,26 +50,19 @@ export function RoutinesContent() {
 
   return (
     <section aria-labelledby="routines-title" className="mx-auto w-full max-w-xl">
-      <header className="sm:flex sm:items-start sm:justify-between sm:gap-6">
-        <div className="min-w-0">
-          <h1 className="font-brand text-2xl font-bold text-text-primary" id="routines-title">
-            Mis rutinas
-          </h1>
-          <p className="mt-1.5 max-w-md text-sm leading-6 text-text-secondary">
-            Organizá y prepará tus entrenamientos.
-          </p>
-        </div>
-        {state.status === "ready" && state.routines.length > 0 ? (
-          <div className="mt-4 sm:mt-0">
-            <CreateRoutineLink label="Nueva rutina" variant="header" />
-          </div>
-        ) : null}
-      </header>
+      <MainPageHeader
+        action={state.status === "ready" && state.routines.length > 0
+          ? <CreateRoutineLink label="Nueva rutina" variant="header" />
+          : undefined}
+        description="Organizá y prepará tus entrenamientos."
+        id="routines-title"
+        title="Mis rutinas"
+      />
 
       {state.status === "loading" ? (
         <RoutinesSkeleton />
       ) : state.status === "error" ? (
-        <div className="mt-8">
+        <div>
           <p className="text-sm text-text-primary">No pudimos cargar tus rutinas.</p>
           <Button
             className="mt-4"
@@ -82,7 +76,7 @@ export function RoutinesContent() {
           </Button>
         </div>
       ) : state.routines.length === 0 ? (
-        <div className="mt-10 max-w-sm">
+        <div className="max-w-sm">
           <h2 className="font-brand text-2xl font-bold leading-tight text-text-primary">
             Todavía no tenés rutinas.
           </h2>
@@ -94,7 +88,7 @@ export function RoutinesContent() {
           </div>
         </div>
       ) : (
-        <ul className="mt-8 divide-y divide-border/60 border-y border-border/60">
+        <ul className="divide-y divide-border/60 border-y border-border/60">
           {state.routines.map((routine) => (
             <li key={routine.id}>
               <Link
@@ -148,7 +142,7 @@ function formatDayNames(dayNames: string[]): string {
 
 function RoutinesSkeleton() {
   return (
-    <div aria-label="Cargando rutinas" className="mt-7 animate-pulse border-y border-border/50" role="status">
+    <div aria-label="Cargando rutinas" className="animate-pulse border-y border-border/50" role="status">
       {[0, 1, 2].map((item) => (
         <div className="flex min-h-24 items-center gap-3 border-b border-border/50 py-5 last:border-b-0" key={item}>
           <div className="min-w-0 flex-1">

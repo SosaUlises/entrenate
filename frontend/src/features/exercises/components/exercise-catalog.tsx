@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronRight, Plus, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MainPageHeader } from "@/components/layout/main-page-header";
 import { Button } from "@/components/ui/button";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
 import { getExercisesAction, type GetExercisesActionResult } from "../actions/get-exercises.action";
@@ -89,33 +90,35 @@ export function ExerciseCatalog(props: ExerciseCatalogProps) {
   return (
     <section aria-labelledby="exercises-title" className={`mx-auto w-full min-w-0 max-w-xl ${props.mode === "select" ? "pb-[calc(6rem+env(safe-area-inset-bottom))]" : ""}`}>
       {props.mode === "select" ? (
-        <div className="flex items-center gap-1">
-          <Link
-            aria-label={backLabel}
-            className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
-            href={backHref}
-          >
-            <ArrowLeft aria-hidden="true" size={20} />
-          </Link>
-          <h1 className="font-brand text-xl font-bold text-text-primary" id="exercises-title">
-            {title}
-          </h1>
-        </div>
+        <>
+          <div className="flex items-center gap-1">
+            <Link
+              aria-label={backLabel}
+              className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
+              href={backHref}
+            >
+              <ArrowLeft aria-hidden="true" size={20} />
+            </Link>
+            <h1 className="font-brand text-xl font-bold text-text-primary" id="exercises-title">
+              {title}
+            </h1>
+          </div>
+          <p className="mt-1 pl-12 text-sm text-text-secondary">
+            {description}
+          </p>
+        </>
       ) : (
-        <div className="max-w-lg">
-          <h1 className="font-brand text-[2rem] font-bold leading-[1.08] text-text-primary" id="exercises-title">
-            {title}
-          </h1>
-        </div>
+        <MainPageHeader
+          description={description}
+          id="exercises-title"
+          title={title}
+        />
       )}
-      <p className={`text-text-secondary ${props.mode === "select" ? "mt-1 pl-12 text-sm" : "mt-3 max-w-md text-[0.9375rem] leading-6"}`}>
-        {description}
-      </p>
 
       {state.status === "loading" ? (
         <ExerciseCatalogSkeleton mode={props.mode} />
       ) : state.status === "error" ? (
-        <div className="mt-8">
+        <div className={props.mode === "select" ? "mt-8" : undefined}>
           <p className="text-sm text-text-primary">No pudimos cargar los ejercicios.</p>
           <Button
             className="mt-5"
@@ -168,7 +171,7 @@ function ExerciseCatalogSkeleton({ mode }: { mode: "browse" | "select" }) {
   const compact = mode === "select";
 
   return (
-    <div aria-label="Cargando ejercicios" className={`${compact ? "mt-4" : "mt-6"} animate-pulse`} role="status">
+    <div aria-label="Cargando ejercicios" className={`${compact ? "mt-4" : ""} animate-pulse`} role="status">
       <div className={`${compact ? "h-12 rounded-control-sm" : "h-14 rounded-control"} w-full bg-surface-elevated`} />
       <div className={`${compact ? "mt-3 gap-1.5" : "mt-5 gap-2"} flex overflow-hidden`}>
         {[0, 1, 2, 3].map((item) => (
@@ -250,7 +253,7 @@ export function ExerciseSelector({ exercises, initialSelectedIds = [], mode, onS
   };
 
   return (
-    <div className={`${mode === "select" ? "mt-4" : "mt-6"} min-w-0`}>
+    <div className={`${mode === "select" ? "mt-4" : ""} min-w-0`}>
       <label className="sr-only" htmlFor="exercise-search">
         Buscar ejercicio
       </label>

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { MainPageHeader } from "@/components/layout/main-page-header";
 import { Button } from "@/components/ui/button";
 import {
   ALL_MUSCLE_FILTER_ID,
@@ -72,15 +73,16 @@ export function ProgressHubContent() {
 
   return (
     <section aria-labelledby="progress-hub-title" className="mx-auto w-full min-w-0 max-w-xl overflow-x-clip">
-      <header>
-        <h1 className="font-brand text-3xl font-bold leading-tight text-text-primary" id="progress-hub-title">Progreso</h1>
-        <p className="mt-2 text-base leading-6 text-text-secondary">Mirá cómo viene tu rendimiento.</p>
-      </header>
+      <MainPageHeader
+        description="Mirá cómo viene tu rendimiento."
+        id="progress-hub-title"
+        title="Progreso"
+      />
 
       {state.status === "loading" ? (
         <HubSkeleton />
       ) : state.status === "error" ? (
-        <div className="mt-8" role="alert">
+        <div role="alert">
           <p className="text-base text-text-primary">No pudimos cargar tu progreso.</p>
           <Button
             className="mt-5"
@@ -97,7 +99,7 @@ export function ProgressHubContent() {
         <EmptyHub />
       ) : (
         <>
-          <div className="relative mt-5">
+          <div className="relative">
             <Search aria-hidden="true" className="absolute top-1/2 left-4 -translate-y-1/2 text-steel" size={19} />
             <label className="sr-only" htmlFor="progress-search">Buscar ejercicio</label>
             <input
@@ -250,7 +252,7 @@ function ProgressChange({ value }: { value: number | null }) {
 
 function EmptyHub() {
   return (
-    <div className="mt-10 border-t border-border/60 pt-7">
+    <div className="border-t border-border/60 pt-7">
       <h2 className="font-brand text-xl font-bold leading-7 text-text-primary">Todavía no tenés ejercicios con registros.</h2>
       <p className="mt-2 max-w-md text-base leading-6 text-text-secondary">
         Cuando completes entrenamientos, vas a poder seguir tu evolución desde acá.
@@ -265,7 +267,7 @@ function EmptyHub() {
 
 function HubSkeleton() {
   return (
-    <div aria-label="Cargando progreso" className="mt-6 animate-pulse" role="status">
+    <div aria-label="Cargando progreso" className="animate-pulse" role="status">
       <div className="h-14 w-full rounded-control bg-surface-interactive" />
       <div className="mt-4 flex gap-2.5 overflow-hidden">
         {[0, 1, 2, 3].map((item) => (
