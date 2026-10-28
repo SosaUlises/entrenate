@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, CalendarDays, ChevronRight, Search, X } from "lucide-react";
+import { ArrowRight, CalendarDays, ChevronRight, Search, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -331,11 +331,6 @@ function RoutinesAvailableState({
         setStartError({ routineId, kind: "empty" });
         return;
       }
-      if (days.length === 1) {
-        await startDay(routineId, days[0].id);
-        return;
-      }
-
       setSelectedRoutine({ ...result.routine, dias: days });
     } catch {
       setStartError({ routineId, kind: "detail" });
@@ -487,9 +482,9 @@ function DayPickerDialog({
 
         <ul className="border-y border-border">
           {routine.dias.map((day) => (
-            <li className="border-b border-border last:border-b-0" key={day.id}>
+            <li className="border-b border-border px-5 py-2 last:border-b-0 sm:px-6" key={day.id}>
               <button
-                className="group flex min-h-[4.75rem] w-full min-w-0 items-center gap-4 px-5 py-3 text-left transition-colors duration-200 hover:bg-surface-active/60 focus-visible:bg-surface-active/60 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none sm:px-6"
+                className="group flex min-h-[4.25rem] w-full min-w-0 items-center gap-4 rounded-control-sm px-1 py-2 text-left transition-colors duration-200 hover:bg-surface-active/60 focus-visible:bg-surface-active/60 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"
                 disabled={Boolean(startingDayId)}
                 onClick={() => onSelect(day.id)}
                 type="button"
@@ -508,6 +503,15 @@ function DayPickerDialog({
                   <ChevronRight aria-hidden="true" className="shrink-0 text-text-muted transition-[color,transform] duration-200 group-hover:translate-x-0.5 group-hover:text-steel motion-reduce:transition-none" size={20} />
                 )}
               </button>
+              {routine.activa ? (
+                <Link
+                  className="mb-1 flex min-h-11 w-full items-center gap-2 rounded-control-sm px-1 text-[0.8125rem] font-semibold text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
+                  href={`/coach/adaptive-training/${encodeURIComponent(routine.id)}/${encodeURIComponent(day.id)}`}
+                >
+                  <SlidersHorizontal aria-hidden="true" className="text-steel" size={16} />
+                  Adaptar entrenamiento de hoy
+                </Link>
+              ) : null}
             </li>
           ))}
         </ul>
