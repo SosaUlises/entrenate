@@ -13,6 +13,16 @@ export type AskSessionAdaptationQuestionRequest = SessionAdaptationRequest & {
   question: string;
 };
 
+export type ConfirmSessionAdaptationProposalRequest = SessionAdaptationRequest & {
+  proposalHash: string;
+};
+
+export type SessionAdaptationConfirmationResponse = {
+  createdNow: boolean;
+  proposalId: string;
+  sessionId: string;
+};
+
 export type SessionAdaptationConversationResponse = {
   answer: string;
 };

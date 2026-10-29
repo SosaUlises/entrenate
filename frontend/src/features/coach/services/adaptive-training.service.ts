@@ -1,6 +1,8 @@
 import { apiRequest } from "@/services/api-client";
 import type {
   AskSessionAdaptationQuestionRequest,
+  ConfirmSessionAdaptationProposalRequest,
+  SessionAdaptationConfirmationResponse,
   SessionAdaptationConversationResponse,
   SessionAdaptationProposalResponse,
   SessionAdaptationRequest,
@@ -39,6 +41,29 @@ export function askSessionAdaptationQuestion(
         ...request,
         proposalHash,
         question,
+      },
+      cache: "no-store",
+      method: "POST",
+    },
+  );
+}
+
+export function confirmSessionAdaptationProposal(
+  proposalId: string,
+  proposalHash: string,
+  request: SessionAdaptationRequest,
+  authToken: string,
+): Promise<SessionAdaptationConfirmationResponse> {
+  return apiRequest<
+    SessionAdaptationConfirmationResponse,
+    ConfirmSessionAdaptationProposalRequest
+  >(
+    `/api/coach/adaptive-training/proposals/${encodeURIComponent(proposalId)}/confirm`,
+    {
+      authToken,
+      body: {
+        ...request,
+        proposalHash,
       },
       cache: "no-store",
       method: "POST",

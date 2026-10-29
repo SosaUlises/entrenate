@@ -24,6 +24,7 @@ import type {
   SessionAdaptationProposalResponse,
   SessionEffortPreference,
 } from "../types/adaptive-training.types";
+import { AdaptiveTrainingConfirmationSheet } from "./adaptive-training-confirmation-sheet";
 import { AdaptiveTrainingConversationSheet } from "./adaptive-training-conversation-sheet";
 
 type SetupState =
@@ -732,6 +733,12 @@ function AdaptiveTrainingProposalPreview({
       </section>
 
       <div className="mt-7 space-y-3">
+        <AdaptiveTrainingConfirmationSheet
+          onInvalidate={onEdit}
+          onRegenerate={onRegenerate}
+          proposal={proposal}
+          request={request}
+        />
         <AdaptiveTrainingConversationSheet
           onInvalidate={onEdit}
           onRegenerate={onRegenerate}
