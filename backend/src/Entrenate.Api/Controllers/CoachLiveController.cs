@@ -2,7 +2,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Entrenate.Api.Requests.Coach;
+using Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach;
 using Entrenate.Application.Coach.LiveCoach.Commands.TranscribeLiveAudio;
+using Entrenate.Application.Coach.LiveCoach.Context;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Models;
 using MediatR;
@@ -172,6 +174,63 @@ namespace Entrenate.Api.Controllers
                         Status = StatusCodes.Status500InternalServerError
                     })
             };
+        }
+
+        [HttpPost("respond")]
+        public async Task<IActionResult> Respond(
+            [FromBody] RespondLiveCoachRequest request,
+            CancellationToken cancellationToken)
+        {
+            if (request.SessionId == Guid.Empty)
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Sesión requerida",
+                    Detail = "El campo sessionId es obligatorio.",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.ClientTurnId))
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "TurnId obligatorio",
+                    Detail = "El campo clientTurnId es obligatorio.",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Text))
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Texto obligatorio",
+                    Detail = "El texto de la consulta es obligatorio.",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            ClientSnapshotInput? snapshotInput = null;
+            if (request.ClientSnapshot != null)
+            {
+                snapshotInput = new ClientSnapshotInput(
+                    request.ClientSnapshot.ExerciseId,
+                    request.ClientSnapshot.SetIndex,
+                    request.ClientSnapshot.RestTimer?.IsActive,
+                    request.ClientSnapshot.RestTimer?.RemainingSeconds,
+                    request.ClientSnapshot.RestTimer?.CapturedAtUtc);
+            }
+
+            var command = new RespondLiveCoachCommand(
+                request.SessionId,
+                request.ClientTurnId,
+                string.IsNullOrWhiteSpace(request.InputKind) ? "AudioTranscript" : request.InputKind,
+                request.Text,
+                snapshotInput);
+
+            var response = await _sender.Send(command, cancellationToken);
+            return Ok(response);
         }
     }
 }

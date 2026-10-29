@@ -1,5 +1,9 @@
 import { apiRequest } from "@/services/api-client";
-import type { LiveCoachTranscriptionResponse } from "../types/live-coach.types";
+import type {
+  LiveCoachRespondRequest,
+  LiveCoachRespondResponse,
+  LiveCoachTranscriptionResponse,
+} from "../types/live-coach.types";
 
 export function transcribeLiveAudio(
   formData: FormData,
@@ -10,6 +14,21 @@ export function transcribeLiveAudio(
     {
       authToken,
       body: formData,
+      cache: "no-store",
+      method: "POST",
+    },
+  );
+}
+
+export function respondLiveCoach(
+  payload: LiveCoachRespondRequest,
+  authToken: string,
+): Promise<LiveCoachRespondResponse> {
+  return apiRequest<LiveCoachRespondResponse, LiveCoachRespondRequest>(
+    "/api/coach/live/respond",
+    {
+      authToken,
+      body: payload,
       cache: "no-store",
       method: "POST",
     },

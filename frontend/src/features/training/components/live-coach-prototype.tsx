@@ -1,16 +1,23 @@
 "use client";
 
-import { AlertCircle, Mic, RotateCcw, Square, X } from "lucide-react";
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { AlertCircle, ArrowRight, MessageSquare, Mic, RotateCcw, Square, X } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { respondLiveCoachAction } from "@/features/coach/actions/respond-live-coach.action";
 import { transcribeLiveAudioAction } from "@/features/coach/actions/transcribe-live-audio.action";
+import type {
+  LiveCoachClientSnapshot,
+  LiveCoachRespondResponse,
+} from "@/features/coach/types/live-coach.types";
 import { cn } from "@/lib/class-names";
+import type { TrainingSession } from "../types/training.types";
 
 type LiveCoachState =
   | "idle"
   | "requestingPermission"
   | "listening"
   | "transcribing"
+  | "answering"
   | "success"
   | "error";
 
@@ -24,7 +31,7 @@ type StatePresentation = {
 
 const statePresentations: Record<LiveCoachState, StatePresentation> = {
   idle: {
-    description: "Tocá el micrófono para hacer una consulta corta sobre tu entrenamiento.",
+    description: "Tocá el micrófono o escribí para consultar sobre tu sesión en curso.",
     indicatorClassName: "bg-text-muted",
     label: "En espera",
   },
@@ -34,22 +41,27 @@ const statePresentations: Record<LiveCoachState, StatePresentation> = {
     label: "Permiso",
   },
   listening: {
-    description: "Grabando audio... Tocá detener para transcribir (máximo 15 s).",
+    description: "Grabando audio... Tocá detener para enviar tu consulta (máximo 15 s).",
     indicatorClassName: "bg-thermal-accent motion-safe:animate-pulse",
     label: "Escuchando",
   },
   transcribing: {
-    description: "Transcribiendo habla con Groq Whisper...",
+    description: "Transcribiendo habla con Whisper...",
     indicatorClassName: "bg-steel motion-safe:animate-pulse",
     label: "Transcribiendo",
   },
+  answering: {
+    description: "Consultando al Coach con el estado de tu sesión...",
+    indicatorClassName: "bg-thermal-accent motion-safe:animate-pulse",
+    label: "Pensando",
+  },
   success: {
-    description: "Transcripción reconocida exitosamente.",
+    description: "Respuesta del Coach lista.",
     indicatorClassName: "bg-success",
-    label: "Completado",
+    label: "Respondido",
   },
   error: {
-    description: "No se pudo completar la grabación o la transcripción.",
+    description: "No se pudo procesar la consulta.",
     indicatorClassName: "bg-error",
     label: "No disponible",
   },
@@ -63,6 +75,7 @@ function mapToFaceState(state: LiveCoachState): FaceState {
     case "listening":
       return "listening";
     case "transcribing":
+    case "answering":
       return "thinking";
     case "success":
       return "success";
@@ -98,11 +111,18 @@ function getAudioFileExtension(mimeType: string): string {
   return "audio.webm";
 }
 
-export function LiveCoachPrototype() {
+type LiveCoachPrototypeProps = {
+  session?: TrainingSession | null;
+};
+
+export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<LiveCoachState>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
+  const [coachResponse, setCoachResponse] = useState<LiveCoachRespondResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [textInput, setTextInput] = useState("");
+  const [showTextInput, setShowTextInput] = useState(false);
 
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -136,10 +156,68 @@ export function LiveCoachPrototype() {
     };
   }, []);
 
+  function getClientSnapshot(): LiveCoachClientSnapshot {
+    const currentExercise =
+      session?.ejercicios.find((e) => e.series.length < e.seriesObjetivo) ??
+      session?.ejercicios[session.ejercicios.length - 1];
+
+    const currentSetIndex = currentExercise
+      ? Math.min(currentExercise.series.length + 1, currentExercise.seriesObjetivo)
+      : null;
+
+    return {
+      exerciseId: currentExercise?.ejercicioId ?? null,
+      restCapturedAtUtc: new Date().toISOString(),
+      restIsActive: false,
+      restRemainingSeconds: null,
+      setIndex: currentSetIndex,
+    };
+  }
+
+  async function askCoach(questionText: string, inputKind: "audio" | "text") {
+    if (!session?.id) {
+      setErrorMessage("No hay una sesión activa de entrenamiento.");
+      setState("error");
+      return;
+    }
+
+    setState("answering");
+
+    const snapshot = getClientSnapshot();
+
+    const result = await respondLiveCoachAction({
+      clientSnapshot: snapshot,
+      clientTurnId: crypto.randomUUID(),
+      inputKind,
+      sessionId: session.id,
+      text: questionText,
+    });
+
+    if (result.status === "success") {
+      setCoachResponse(result.data);
+      setState("success");
+    } else {
+      setErrorMessage(result.message ?? "No se pudo obtener la respuesta del Coach.");
+      setState("error");
+    }
+  }
+
+  async function handleTextSubmit(event: FormEvent) {
+    event.preventDefault();
+    const query = textInput.trim();
+    if (!query) return;
+
+    setTranscript(query);
+    setTextInput("");
+    setShowTextInput(false);
+    await askCoach(query, "text");
+  }
+
   async function startRecording() {
     cleanupMedia();
     setErrorMessage(null);
     setTranscript(null);
+    setCoachResponse(null);
 
     if (
       typeof window === "undefined" ||
@@ -157,10 +235,10 @@ export function LiveCoachPrototype() {
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
           autoGainControl: true,
           channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
         },
       });
     } catch (err: unknown) {
@@ -229,8 +307,9 @@ export function LiveCoachPrototype() {
       const result = await transcribeLiveAudioAction(formData);
 
       if (result.status === "success") {
-        setTranscript(result.data.transcript);
-        setState("success");
+        const text = result.data.transcript;
+        setTranscript(text);
+        await askCoach(text, "audio");
       } else {
         setErrorMessage(result.message || "Ocurrió un error al procesar el audio.");
         setState("error");
@@ -259,11 +338,22 @@ export function LiveCoachPrototype() {
     }
   }
 
+  function handleReset() {
+    cleanupMedia();
+    setState("idle");
+    setTranscript(null);
+    setCoachResponse(null);
+    setErrorMessage(null);
+    setTextInput("");
+  }
+
   function handleCancelOrClose() {
     cleanupMedia();
     setState("idle");
     setTranscript(null);
+    setCoachResponse(null);
     setErrorMessage(null);
+    setTextInput("");
     dialogRef.current?.close();
   }
 
@@ -324,7 +414,7 @@ export function LiveCoachPrototype() {
                 className="mt-2 max-w-sm text-sm leading-6 text-text-secondary"
                 id="live-coach-prototype-description"
               >
-                Asistencia de voz en tiempo real para tu entrenamiento.
+                Consultas en tiempo real sobre tu sesión en el gimnasio.
               </p>
             </div>
             <button
@@ -370,14 +460,48 @@ export function LiveCoachPrototype() {
           {/* Interactive Control Area */}
           <div className="mt-6 space-y-4">
             {state === "idle" && (
-              <button
-                className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm bg-thermal-accent px-4 py-3 text-sm font-semibold text-black transition-colors duration-150 hover:bg-thermal-accent/90 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-                onClick={startRecording}
-                type="button"
-              >
-                <Mic aria-hidden="true" size={18} />
-                <span>Hablar al Coach</span>
-              </button>
+              <div className="space-y-3">
+                <button
+                  className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm bg-thermal-accent px-4 py-3 text-sm font-semibold text-black transition-colors duration-150 hover:bg-thermal-accent/90 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                  onClick={startRecording}
+                  type="button"
+                >
+                  <Mic aria-hidden="true" size={18} />
+                  <span>Hablar al Coach</span>
+                </button>
+
+                {!showTextInput ? (
+                  <button
+                    className="flex min-h-10 w-full items-center justify-center gap-2 rounded-control-sm text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                    onClick={() => setShowTextInput(true)}
+                    type="button"
+                  >
+                    <MessageSquare aria-hidden="true" size={15} />
+                    <span>Escribir por texto</span>
+                  </button>
+                ) : (
+                  <form className="space-y-2 pt-1" onSubmit={handleTextSubmit}>
+                    <div className="flex gap-2">
+                      <input
+                        aria-label="Pregunta al Live Coach"
+                        className="min-h-11 flex-1 rounded-control-sm border border-border bg-surface-interactive px-3.5 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-2 focus-visible:outline-focus"
+                        onChange={(e) => setTextInput(e.target.value)}
+                        placeholder="Ej: ¿Qué ejercicio sigue?"
+                        type="text"
+                        value={textInput}
+                      />
+                      <button
+                        aria-label="Enviar pregunta"
+                        className="flex size-11 shrink-0 items-center justify-center rounded-control-sm bg-thermal-accent text-black transition-colors duration-150 hover:bg-thermal-accent/90 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none disabled:opacity-50"
+                        disabled={!textInput.trim()}
+                        type="submit"
+                      >
+                        <ArrowRight aria-hidden="true" size={18} />
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             )}
 
             {state === "requestingPermission" && (
@@ -394,35 +518,60 @@ export function LiveCoachPrototype() {
                 type="button"
               >
                 <Square aria-hidden="true" className="fill-current" size={16} />
-                <span>Detener y transcribir</span>
+                <span>Detener y enviar</span>
               </button>
             )}
 
             {state === "transcribing" && (
               <div className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-secondary">
                 <Spinner className="size-4" />
-                <span>Transcribiendo habla...</span>
+                <span>Transcribiendo audio...</span>
               </div>
             )}
 
-            {state === "success" && transcript && (
+            {state === "answering" && (
+              <div className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-secondary">
+                <Spinner className="size-4" />
+                <span>Pensando respuesta...</span>
+              </div>
+            )}
+
+            {state === "success" && coachResponse && (
               <div className="space-y-4">
-                <div className="rounded-control-sm border border-border-strong bg-surface-interactive p-4">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-                    Transcripción reconocida
-                  </span>
-                  <p className="mt-2 text-base font-medium leading-relaxed text-text-primary">
-                    &ldquo;{transcript}&rdquo;
+                {transcript && (
+                  <div className="rounded-control-sm border border-border/80 bg-surface-interactive/60 p-3">
+                    <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted">
+                      Tu consulta
+                    </span>
+                    <p className="mt-1 text-sm font-medium text-text-secondary">
+                      &ldquo;{transcript}&rdquo;
+                    </p>
+                  </div>
+                )}
+
+                <div className="rounded-control-sm border border-thermal-accent/40 bg-surface-interactive p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-thermal-accent">
+                      Respuesta del Coach
+                    </span>
+                    {coachResponse.isStaleContext && (
+                      <span className="inline-flex items-center rounded bg-warning/15 px-1.5 py-0.5 text-[0.6875rem] font-medium text-warning">
+                        Contexto actualizado
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-base font-semibold leading-relaxed text-text-primary">
+                    {coachResponse.text}
                   </p>
                 </div>
 
                 <button
                   className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-border-strong bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-primary transition-colors duration-150 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-                  onClick={startRecording}
+                  onClick={handleReset}
                   type="button"
                 >
                   <RotateCcw aria-hidden="true" size={16} />
-                  <span>Grabar otra consulta</span>
+                  <span>Hacer otra consulta</span>
                 </button>
               </div>
             )}
@@ -436,18 +585,18 @@ export function LiveCoachPrototype() {
 
                 <button
                   className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-border-strong bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-primary transition-colors duration-150 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-                  onClick={startRecording}
+                  onClick={handleReset}
                   type="button"
                 >
                   <RotateCcw aria-hidden="true" size={16} />
-                  <span>Reintentar grabación</span>
+                  <span>Reintentar</span>
                 </button>
               </div>
             )}
           </div>
 
           <p className="mt-6 border-t border-border/60 pt-4 text-[0.8125rem] leading-5 text-text-muted">
-            Live Coach V0 STT — El audio se procesa en memoria y nunca se almacena en el servidor.
+            Live Coach V0 — Respuestas contextuales basadas en tu sesión activa. Sin mutaciones de datos.
           </p>
         </div>
       </dialog>

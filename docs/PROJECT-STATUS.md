@@ -34,8 +34,7 @@
   GroqLiveCoachSpeechToTextAdapter (whisper-large-v3-turbo), in-memory transient audio
   processing without persistence, typed error handling, and real transcript display in
   the Training Live Coach sheet.
-- Next for Live Coach: Live Coach Turn / Respond endpoint (session context projection,
-  intent routing, read-only tools, and grounded LLM text generation).
+- Live Coach V0 — contextual text response vertical slice is closed: authenticated endpoint POST /api/coach/live/respond, authoritative active session projection, ILiveCoachContextBuilder, 7 read-only deterministic tools in LiveCoachToolRegistry, intent routing for queries/mutations/out-of-scope, grounded LLM response via shared ICoachConversationProvider (Groq), ephemeral response cache (ILiveCoachResponseCache), non-authoritative clientSnapshot for drift detection, and full frontend integration in Training with live voice-to-text-to-coach response and text fallback.
 - Frontend Adaptive Training V3 is closed. It configures today's conditions,
   generates and reviews the adapted proposal, presents structured before/after
   changes, supports temporary conversation and explicitly confirms the proposal

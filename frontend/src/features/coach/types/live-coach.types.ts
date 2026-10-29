@@ -8,3 +8,27 @@ export type LiveCoachTranscriptionResponse = {
   status: string;
 };
 
+export type LiveCoachClientSnapshot = {
+  exerciseId?: string | null;
+  setIndex?: number | null;
+  restIsActive?: boolean | null;
+  restRemainingSeconds?: number | null;
+  restCapturedAtUtc?: string | null;
+};
+
+export type LiveCoachRespondRequest = {
+  sessionId: string;
+  clientTurnId: string;
+  inputKind: "audio" | "text";
+  text: string;
+  clientSnapshot?: LiveCoachClientSnapshot | null;
+};
+
+export type LiveCoachRespondResponse = {
+  responseId: string;
+  clientTurnId: string;
+  text: string;
+  intentKind: string;
+  isStaleContext: boolean;
+  canSynthesizeVoice: boolean;
+};

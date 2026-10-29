@@ -259,6 +259,7 @@ namespace Entrenate.Infrastructure
             services.AddScoped<IExerciseRepository, ExerciseRepository>();
             services.AddScoped<IRoutineRepository, RoutineRepository>();
             services.AddScoped<ITrainingSessionRepository, TrainingSessionRepository>();
+            services.AddSingleton<ILiveCoachResponseCache, MemoryLiveCoachResponseCache>();
 
 
 
