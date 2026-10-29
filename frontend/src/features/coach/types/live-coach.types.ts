@@ -28,7 +28,6 @@ export type LiveCoachRespondResponse = {
   responseId: string;
   clientTurnId: string;
   text: string;
-  intentKind: string;
   isStaleContext: boolean;
   canSynthesizeVoice: boolean;
 };

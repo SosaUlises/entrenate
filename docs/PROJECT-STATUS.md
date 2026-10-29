@@ -34,6 +34,7 @@
   GroqLiveCoachSpeechToTextAdapter (whisper-large-v3-turbo), in-memory transient audio
   processing without persistence, typed error handling, and real transcript display in
   the Training Live Coach sheet.
+- Live Coach V0 — TTS vertical slice is closed: authenticated endpoint POST /api/coach/live/speech, ILiveCoachTextToSpeech abstraction, ElevenLabsLiveCoachTextToSpeechAdapter, strict responseId validation against ephemeral cache (TTL 60s), zero arbitrary text acceptance from client, audio/mpeg stream response, voice preference toggle, speaking state animation in Acero Térmico V5, audio playback lifecycle management with URL cleanup, and robust error recovery where text remains visible if TTS fails.
 - Live Coach V0 — contextual text response vertical slice is closed: authenticated endpoint POST /api/coach/live/respond, authoritative active session projection, ILiveCoachContextBuilder, 7 read-only deterministic tools in LiveCoachToolRegistry, intent routing for queries/mutations/out-of-scope, grounded LLM response via shared ICoachConversationProvider (Groq), ephemeral response cache (ILiveCoachResponseCache), non-authoritative clientSnapshot for drift detection, and full frontend integration in Training with live voice-to-text-to-coach response and text fallback.
 - Frontend Adaptive Training V3 is closed. It configures today's conditions,
   generates and reviews the adapted proposal, presents structured before/after

@@ -92,7 +92,6 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     directId,
                     request.ClientTurnId,
                     routing.DirectAnswer,
-                    routing.Kind.ToString(),
                     false,
                     true);
             }
@@ -148,7 +147,6 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 responseId,
                 request.ClientTurnId,
                 answerText,
-                routing.Kind.ToString(),
                 context.IsStaleContext,
                 true);
         }

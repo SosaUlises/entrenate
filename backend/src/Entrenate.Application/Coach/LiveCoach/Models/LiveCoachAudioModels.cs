@@ -31,4 +31,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Models
         string? DetectedLocale,
         bool IsFinal,
         LiveCoachTranscriptStatus Status);
+
+    public sealed record LiveCoachSpeechAudio(
+        Stream AudioStream,
+        string ContentType);
 }

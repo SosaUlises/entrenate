@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Entrenate.Api.Requests.Coach;
 using Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach;
+using Entrenate.Application.Coach.LiveCoach.Commands.SynthesizeLiveSpeech;
 using Entrenate.Application.Coach.LiveCoach.Commands.TranscribeLiveAudio;
 using Entrenate.Application.Coach.LiveCoach.Context;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
@@ -231,6 +232,31 @@ namespace Entrenate.Api.Controllers
 
             var response = await _sender.Send(command, cancellationToken);
             return Ok(response);
+        }
+
+        [HttpPost("speech")]
+        [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status502BadGateway)]
+        public async Task<IActionResult> SynthesizeSpeech(
+            [FromBody] SynthesizeLiveSpeechRequest request,
+            CancellationToken cancellationToken)
+        {
+            if (request.ResponseId == Guid.Empty)
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "ID de respuesta requerido",
+                    Detail = "El campo responseId es obligatorio.",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            var command = new SynthesizeLiveSpeechCommand(request.ResponseId);
+            var speechAudio = await _sender.Send(command, cancellationToken);
+
+            return File(speechAudio.AudioStream, speechAudio.ContentType, enableRangeProcessing: true);
         }
     }
 }

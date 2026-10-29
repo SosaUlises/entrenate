@@ -500,7 +500,6 @@ nunca puede sobreescribir ni definir el estado del entrenamiento.
   "responseId": "8f2a1b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
   "clientTurnId": "c4d3a2b1-0000-0000-0000-000000000000",
   "text": "Te tocan entre 8 y 10 repeticiones con 2 RIR.",
-  "intentKind": "DataQuery",
   "isStaleContext": false,
   "canSynthesizeVoice": true
 }

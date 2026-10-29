@@ -1,9 +1,20 @@
 "use client";
 
-import { AlertCircle, ArrowRight, MessageSquare, Mic, RotateCcw, Square, X } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  MessageSquare,
+  Mic,
+  RotateCcw,
+  Square,
+  Volume2,
+  VolumeX,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { respondLiveCoachAction } from "@/features/coach/actions/respond-live-coach.action";
+import { synthesizeLiveSpeechAction } from "@/features/coach/actions/synthesize-live-speech.action";
 import { transcribeLiveAudioAction } from "@/features/coach/actions/transcribe-live-audio.action";
 import type {
   LiveCoachClientSnapshot,
@@ -18,6 +29,7 @@ type LiveCoachState =
   | "listening"
   | "transcribing"
   | "answering"
+  | "speaking"
   | "success"
   | "error";
 
@@ -55,6 +67,11 @@ const statePresentations: Record<LiveCoachState, StatePresentation> = {
     indicatorClassName: "bg-thermal-accent motion-safe:animate-pulse",
     label: "Pensando",
   },
+  speaking: {
+    description: "Reproduciendo respuesta hablada del Coach...",
+    indicatorClassName: "bg-thermal-accent motion-safe:animate-pulse",
+    label: "Hablando",
+  },
   success: {
     description: "Respuesta del Coach lista.",
     indicatorClassName: "bg-success",
@@ -77,6 +94,8 @@ function mapToFaceState(state: LiveCoachState): FaceState {
     case "transcribing":
     case "answering":
       return "thinking";
+    case "speaking":
+      return "speaking";
     case "success":
       return "success";
     case "error":
@@ -111,6 +130,16 @@ function getAudioFileExtension(mimeType: string): string {
   return "audio.webm";
 }
 
+function base64ToBlob(base64: string, mimeType: string): Blob {
+  const byteCharacters = atob(base64);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mimeType });
+}
+
 type LiveCoachPrototypeProps = {
   session?: TrainingSession | null;
 };
@@ -123,12 +152,38 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [textInput, setTextInput] = useState("");
   const [showTextInput, setShowTextInput] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      const saved = localStorage.getItem("entrenate.live_coach.voice_enabled");
+      return saved !== null ? saved === "true" : true;
+    } catch {
+      return true;
+    }
+  });
 
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const currentAudioUrlRef = useRef<string | null>(null);
+
+  function stopAudio() {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+    if (currentAudioUrlRef.current) {
+      URL.revokeObjectURL(currentAudioUrlRef.current);
+      currentAudioUrlRef.current = null;
+    }
+  }
 
   function cleanupMedia() {
     if (timerRef.current) {
@@ -153,8 +208,21 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
   useEffect(() => {
     return () => {
       cleanupMedia();
+      stopAudio();
     };
   }, []);
+
+  function toggleVoice() {
+    setVoiceEnabled((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("entrenate.live_coach.voice_enabled", String(next));
+      } catch {
+        // Ignore
+      }
+      return next;
+    });
+  }
 
   function getClientSnapshot(): LiveCoachClientSnapshot {
     const currentExercise =
@@ -174,6 +242,44 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
     };
   }
 
+  async function playSpokenAnswer(responseId: string) {
+    stopAudio();
+    setState("speaking");
+
+    const ttsResult = await synthesizeLiveSpeechAction(responseId);
+
+    if (ttsResult.status === "success") {
+      try {
+        const blob = base64ToBlob(ttsResult.audioBase64, ttsResult.contentType);
+        const url = URL.createObjectURL(blob);
+        currentAudioUrlRef.current = url;
+
+        const audio = new Audio(url);
+        audioRef.current = audio;
+
+        audio.onended = () => {
+          stopAudio();
+          setState("success");
+        };
+
+        audio.onerror = () => {
+          stopAudio();
+          setState("success");
+        };
+
+        await audio.play();
+      } catch {
+        // Autoplay policy blocked or interrupted: text remains visible
+        stopAudio();
+        setState("success");
+      }
+    } else {
+      // TTS failure: text remains visible, Training continues normally
+      stopAudio();
+      setState("success");
+    }
+  }
+
   async function askCoach(questionText: string, inputKind: "audio" | "text") {
     if (!session?.id) {
       setErrorMessage("No hay una sesión activa de entrenamiento.");
@@ -181,6 +287,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
       return;
     }
 
+    stopAudio();
     setState("answering");
 
     const snapshot = getClientSnapshot();
@@ -195,7 +302,12 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
 
     if (result.status === "success") {
       setCoachResponse(result.data);
-      setState("success");
+
+      if (result.data.canSynthesizeVoice && voiceEnabled) {
+        await playSpokenAnswer(result.data.responseId);
+      } else {
+        setState("success");
+      }
     } else {
       setErrorMessage(result.message ?? "No se pudo obtener la respuesta del Coach.");
       setState("error");
@@ -215,6 +327,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
 
   async function startRecording() {
     cleanupMedia();
+    stopAudio();
     setErrorMessage(null);
     setTranscript(null);
     setCoachResponse(null);
@@ -340,6 +453,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
 
   function handleReset() {
     cleanupMedia();
+    stopAudio();
     setState("idle");
     setTranscript(null);
     setCoachResponse(null);
@@ -349,6 +463,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
 
   function handleCancelOrClose() {
     cleanupMedia();
+    stopAudio();
     setState("idle");
     setTranscript(null);
     setCoachResponse(null);
@@ -417,14 +532,30 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
                 Consultas en tiempo real sobre tu sesión en el gimnasio.
               </p>
             </div>
-            <button
-              aria-label="Cerrar Live Coach"
-              className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors duration-150 hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-              onClick={handleCancelOrClose}
-              type="button"
-            >
-              <X aria-hidden="true" size={20} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                aria-label={voiceEnabled ? "Desactivar respuestas por voz" : "Activar respuestas por voz"}
+                className={cn(
+                  "flex size-11 shrink-0 items-center justify-center rounded-control-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none",
+                  voiceEnabled
+                    ? "text-thermal-accent hover:bg-thermal-accent/15"
+                    : "text-text-muted hover:bg-surface-interactive hover:text-text-secondary",
+                )}
+                onClick={toggleVoice}
+                title={voiceEnabled ? "Voz activada" : "Voz desactivada"}
+                type="button"
+              >
+                {voiceEnabled ? <Volume2 aria-hidden="true" size={20} /> : <VolumeX aria-hidden="true" size={20} />}
+              </button>
+              <button
+                aria-label="Cerrar Live Coach"
+                className="flex size-11 shrink-0 items-center justify-center rounded-control-sm text-text-secondary transition-colors duration-150 hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                onClick={handleCancelOrClose}
+                type="button"
+              >
+                <X aria-hidden="true" size={20} />
+              </button>
+            </div>
           </header>
 
           <section
@@ -536,6 +667,49 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
               </div>
             )}
 
+            {state === "speaking" && coachResponse && (
+              <div className="space-y-4">
+                <div className="rounded-control-sm border border-thermal-accent/60 bg-surface-interactive p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-thermal-accent">
+                      <Volume2 aria-hidden="true" className="motion-safe:animate-pulse" size={14} />
+                      Coach respondiendo
+                    </span>
+                    {coachResponse.isStaleContext && (
+                      <span className="inline-flex items-center rounded bg-warning/15 px-1.5 py-0.5 text-[0.6875rem] font-medium text-warning">
+                        Contexto actualizado
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-base font-semibold leading-relaxed text-text-primary">
+                    {coachResponse.text}
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control-sm border border-thermal-accent/50 bg-thermal-accent/15 px-4 py-3 text-sm font-semibold text-thermal-accent transition-colors duration-150 hover:bg-thermal-accent/25 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                    onClick={() => {
+                      stopAudio();
+                      setState("success");
+                    }}
+                    type="button"
+                  >
+                    <Square aria-hidden="true" className="fill-current" size={15} />
+                    <span>Detener voz</span>
+                  </button>
+                  <button
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-primary transition-colors duration-150 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                    onClick={handleReset}
+                    type="button"
+                  >
+                    <RotateCcw aria-hidden="true" size={16} />
+                    <span>Otra consulta</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {state === "success" && coachResponse && (
               <div className="space-y-4">
                 {transcript && (
@@ -565,14 +739,27 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
                   </p>
                 </div>
 
-                <button
-                  className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-border-strong bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-primary transition-colors duration-150 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-                  onClick={handleReset}
-                  type="button"
-                >
-                  <RotateCcw aria-hidden="true" size={16} />
-                  <span>Hacer otra consulta</span>
-                </button>
+                <div className="flex gap-2">
+                  {coachResponse.canSynthesizeVoice && (
+                    <button
+                      className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-primary transition-colors duration-150 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                      onClick={() => playSpokenAnswer(coachResponse.responseId)}
+                      type="button"
+                    >
+                      <Volume2 aria-hidden="true" size={16} />
+                      <span>Escuchar</span>
+                    </button>
+                  )}
+
+                  <button
+                    className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-primary transition-colors duration-150 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                    onClick={handleReset}
+                    type="button"
+                  >
+                    <RotateCcw aria-hidden="true" size={16} />
+                    <span>Hacer otra consulta</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -596,7 +783,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
           </div>
 
           <p className="mt-6 border-t border-border/60 pt-4 text-[0.8125rem] leading-5 text-text-muted">
-            Live Coach V0 — Respuestas contextuales basadas en tu sesión activa. Sin mutaciones de datos.
+            Live Coach V0 — Respuestas contextuales y voz en tiempo real basadas en tu sesión activa. Sin mutaciones.
           </p>
         </div>
       </dialog>

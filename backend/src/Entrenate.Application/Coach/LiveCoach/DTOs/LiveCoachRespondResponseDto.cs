@@ -6,7 +6,6 @@ namespace Entrenate.Application.Coach.LiveCoach.DTOs
         Guid ResponseId,
         string ClientTurnId,
         string Text,
-        string IntentKind,
         bool IsStaleContext,
         bool CanSynthesizeVoice);
 }

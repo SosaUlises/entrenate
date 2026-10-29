@@ -252,6 +252,30 @@ namespace Entrenate.Infrastructure
                             "Bearer",
                             settings.ApiKey);
                 });
+
+            services.AddOptions<ElevenLabsSettings>()
+                .Bind(configuration.GetSection("ElevenLabs"));
+
+            services.AddHttpClient<
+                ILiveCoachTextToSpeech,
+                ElevenLabsLiveCoachTextToSpeechAdapter>((serviceProvider, client) =>
+                {
+                    var settings = serviceProvider
+                        .GetRequiredService<
+                            Microsoft.Extensions.Options.IOptions<ElevenLabsSettings>>()
+                        .Value;
+
+                    var baseUrl = string.IsNullOrWhiteSpace(settings.BaseUrl)
+                        ? "https://api.elevenlabs.io/v1/"
+                        : settings.BaseUrl;
+
+                    client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+                    var timeoutSeconds = settings.TimeoutSeconds > 0
+                        ? settings.TimeoutSeconds
+                        : 15;
+                    client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+                });
+
             services.AddScoped<DatabaseSeeder>();
 
             services.AddScoped<ITrainingProfileRepository,TrainingProfileRepository>();

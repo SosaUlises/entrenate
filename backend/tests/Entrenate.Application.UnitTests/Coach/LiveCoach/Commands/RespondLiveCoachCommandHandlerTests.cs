@@ -128,7 +128,6 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.NotNull(result);
             Assert.Equal("turn-out-of-scope", result.ClientTurnId);
-            Assert.Equal("OutOfScope", result.IntentKind);
             Assert.Contains("sesión activa de entrenamiento", result.Text, StringComparison.OrdinalIgnoreCase);
             Assert.Equal(0, _conversationProvider.CallCount);
             Assert.True(_responseCache.Cache.ContainsKey(result.ResponseId));
@@ -151,7 +150,6 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.NotNull(result);
             Assert.Equal("turn-mut", result.ClientTurnId);
-            Assert.Equal("MutationRequest", result.IntentKind);
             Assert.Contains("registro de series", result.Text, StringComparison.OrdinalIgnoreCase);
             Assert.Equal(0, _conversationProvider.CallCount);
             Assert.True(_responseCache.Cache.ContainsKey(result.ResponseId));
