@@ -16,6 +16,7 @@ import { areTargetSetsComplete } from "../training-position";
 import type { TrainingSession, TrainingSet } from "../types/training.types";
 import { FreeTrainingView } from "./free-training-view";
 import { GuidedTrainingView } from "./guided-training-view";
+import { LiveCoachPrototype } from "./live-coach-prototype";
 
 type ViewState = { status: "loading" | "empty" | "error" } | { status: "ready"; session: TrainingSession };
 type FinishMode = "complete" | "cancel";
@@ -213,6 +214,7 @@ export function ActiveTrainingContent() {
         <div className="min-w-0 flex-1 pt-3">
           <h1 className="truncate text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.08em] text-text-secondary" id="training-title">Entrenamiento en curso</h1>
         </div>
+        {session ? <LiveCoachPrototype /> : null}
         {showTrainingActions || showModeSelectionActions ? (
           <details className="group relative shrink-0" ref={actionsRef}>
             <summary aria-label="Acciones del entrenamiento" className="flex size-12 cursor-pointer list-none items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus group-open:bg-surface-active group-open:text-text-primary [&::-webkit-details-marker]:hidden" ref={actionsTriggerRef}>
