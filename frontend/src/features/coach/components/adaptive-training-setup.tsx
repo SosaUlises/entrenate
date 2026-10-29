@@ -24,6 +24,7 @@ import type {
   SessionAdaptationProposalResponse,
   SessionEffortPreference,
 } from "../types/adaptive-training.types";
+import { AdaptiveTrainingConversationSheet } from "./adaptive-training-conversation-sheet";
 
 type SetupState =
   | { status: "error" }
@@ -260,6 +261,7 @@ function AdaptiveTrainingForm({ data }: { data: AdaptiveTrainingSetupData }) {
     return (
       <AdaptiveTrainingProposalPreview
         onEdit={() => setProposalState({ status: "idle" })}
+        onRegenerate={() => generateProposal(proposalState.request)}
         proposal={proposalState.proposal}
         request={proposalState.request}
       />
@@ -582,10 +584,12 @@ function SetupError({ onRetry }: { onRetry: () => void }) {
 
 function AdaptiveTrainingProposalPreview({
   onEdit,
+  onRegenerate,
   proposal,
   request,
 }: {
   onEdit: () => void;
+  onRegenerate: () => Promise<void>;
   proposal: SessionAdaptationProposalResponse;
   request: SessionAdaptationRequest;
 }) {
@@ -727,9 +731,17 @@ function AdaptiveTrainingProposalPreview({
         )}
       </section>
 
-      <Button className="mt-7" fullWidth onClick={onEdit} variant="outline">
-        Editar condiciones
-      </Button>
+      <div className="mt-7 space-y-3">
+        <AdaptiveTrainingConversationSheet
+          onInvalidate={onEdit}
+          onRegenerate={onRegenerate}
+          proposal={proposal}
+          request={request}
+        />
+        <Button fullWidth onClick={onEdit} variant="outline">
+          Editar condiciones
+        </Button>
+      </div>
     </div>
   );
 }

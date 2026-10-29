@@ -28,11 +28,10 @@
 
 ## Current work
 
-- Frontend Adaptive Training V3 block 3 generates a real proposal from today's
-  context and presents feasibility, duration, structured before/after changes,
-  observations and the final exercise prescription.
-- Adaptive Training conversation, confirmation and session creation remain
-  pending.
+- Frontend Adaptive Training V3 block 4 generates and reviews the adapted
+  proposal, presents structured before/after changes and supports temporary,
+  non-persistent conversation about today's adaptation with stale recovery.
+- Adaptive Training confirmation and session creation remain pending.
 - Adaptive Training remains unavailable from Coach Hub until the complete
   vertical is closed.
 - Frontend Routine Planner V2 is closed with proposal generation, review,

@@ -8,6 +8,15 @@ export type SessionAdaptationRequest = {
   routineDayId: string;
 };
 
+export type AskSessionAdaptationQuestionRequest = SessionAdaptationRequest & {
+  proposalHash: string;
+  question: string;
+};
+
+export type SessionAdaptationConversationResponse = {
+  answer: string;
+};
+
 export type SessionAdaptationFeasibility =
   | "Feasible"
   | "FeasibleWithChanges"
