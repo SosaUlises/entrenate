@@ -1,4 +1,4 @@
-﻿using Entrenate.Domain.Entidades;
+using Entrenate.Domain.Entidades;
 using Entrenate.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +47,18 @@ namespace Entrenate.Infrastructure.Persistence
 
         public DbSet<SesionEntrenamiento> SesionesEntrenamiento =>
             Set<SesionEntrenamiento>();
+
+        public DbSet<SesionAdaptacion> SesionesAdaptacion =>
+            Set<SesionAdaptacion>();
+
+        public DbSet<SesionAdaptacionCambio> SesionAdaptacionCambios =>
+            Set<SesionAdaptacionCambio>();
+
+        public DbSet<SesionAdaptacionEquipamientoDisponible> SesionAdaptacionEquipamientosDisponibles =>
+            Set<SesionAdaptacionEquipamientoDisponible>();
+
+        public DbSet<SesionAdaptacionEjercicioExcluido> SesionAdaptacionEjerciciosExcluidos =>
+            Set<SesionAdaptacionEjercicioExcluido>();
 
         public DbSet<EjercicioSesion> EjerciciosSesion =>
             Set<EjercicioSesion>();

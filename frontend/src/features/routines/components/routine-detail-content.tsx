@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronDown } from "lucide-react";
+import { ArrowLeft, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useTrainingProfileGate } from "@/features/training-profile/gate/training-profile-gate";
@@ -195,9 +195,20 @@ export function RoutineDetailContent({ id }: { id: string }) {
                       </ul>
                     )}
                     {day.ejercicios.length > 0 ? (
-                      <Button className="mt-7 sm:max-w-xs" disabled={Boolean(startingDayId)} fullWidth isLoading={startingDayId === day.id} onClick={() => void handleStart(day.id)} size="md">
-                        {startingDayId === day.id ? "Iniciando..." : `Iniciar ${day.nombre}`}
-                      </Button>
+                      <div className="mt-7 sm:max-w-xs">
+                        <Button disabled={Boolean(startingDayId)} fullWidth isLoading={startingDayId === day.id} onClick={() => void handleStart(day.id)} size="md">
+                          {startingDayId === day.id ? "Iniciando..." : `Iniciar ${day.nombre}`}
+                        </Button>
+                        {state.routine.activa ? (
+                          <Link
+                            className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-control-sm px-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
+                            href={`/coach/adaptive-training/${encodeURIComponent(state.routine.id)}/${encodeURIComponent(day.id)}`}
+                          >
+                            <SlidersHorizontal aria-hidden="true" className="text-steel" size={17} />
+                            Adaptar hoy
+                          </Link>
+                        ) : null}
+                      </div>
                     ) : null}
                     {startError?.dayId === day.id ? (
                       <div className="mt-3 text-sm" role="alert">

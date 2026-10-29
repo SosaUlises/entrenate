@@ -2,10 +2,14 @@ import type { ReactNode } from "react";
 
 const coachPresentationLabels = {
   AcondicionamientoGeneral: "acondicionamiento general",
+  AdaptedExerciseId: "ejercicio adaptado",
+  AdaptiveSubstitutionReason: "motivo del ajuste",
   Accessory: "accesorio",
   AbduccionHombro: "abducción de hombro",
   Aislamiento: "aislamiento",
   Avanzado: "avanzado",
+  AvailableEquipmentIds: "equipamiento disponible",
+  AvailableMinutes: "tiempo disponible",
   BisagraCadera: "bisagra de cadera",
   Compuesto: "compuesto",
   CoreCalves: "core y gemelos",
@@ -15,7 +19,9 @@ const coachPresentationLabels = {
   DominanteRodilla: "dominante de rodilla",
   EmpujeHorizontal: "empuje horizontal",
   EmpujeVertical: "empuje vertical",
+  EquipmentUnavailable: "equipamiento no disponible hoy",
   EvidenceLevel: "nivel de evidencia",
+  ExcludedExerciseIds: "ejercicios excluidos",
   ExerciseReusedAcrossVariants:
     "ejercicio reutilizado entre sesiones por falta de una alternativa compatible",
   ExerciseSetsReducedForDuration:
@@ -23,7 +29,11 @@ const coachPresentationLabels = {
   ExtensionCadera: "extensión de cadera",
   ExtensionCodo: "extensión de codo",
   ExtensionRodilla: "extensión de rodilla",
+  ExerciseSetsReducedForTime:
+    "series reducidas para respetar el tiempo disponible",
+  ExerciseSubstituted: "ejercicio sustituido",
   Feasible: "factible",
+  FeasibleWithChanges: "factible con ajustes",
   FeasibleWithWarnings: "factible con observaciones",
   FlexionCodo: "flexión de codo",
   FlexionPlantar: "flexión plantar",
@@ -38,6 +48,7 @@ const coachPresentationLabels = {
   InsufficientData: "Datos insuficientes",
   Intermedio: "intermedio",
   Legs: "piernas",
+  Lighter: "más liviana",
   Low: "bajo",
   Lower: "tren inferior",
   Maintain: "Mantener el enfoque actual",
@@ -46,10 +57,23 @@ const coachPresentationLabels = {
     "sin una opción compatible para un complemento opcional",
   MissingRequiredExercise:
     "sin una opción compatible para un movimiento necesario",
+  MinimumSessionExceedsAvailableTime:
+    "la sesión mínima supera el tiempo disponible",
+  NeutralLighterTransformation: "sin cambios adicionales de intensidad",
   None: "sin variante",
+  Normal: "normal",
   NotFeasible: "no confirmable",
   OptionalExerciseRemovedForDuration:
     "complemento opcional retirado para respetar el tiempo disponible",
+  OptionalAccessoryRemovedForTime:
+    "accesorio opcional retirado para respetar el tiempo disponible",
+  OptionalAccessoryRemovedNoSubstitute:
+    "accesorio opcional retirado sin reemplazo compatible",
+  OptionalAccessorySetsReducedForLighter:
+    "series accesorias reducidas para una sesión más liviana",
+  OptionalExerciseRemovedNoSubstitute:
+    "accesorio opcional retirado sin reemplazo compatible",
+  OriginalExerciseId: "ejercicio original",
   Preferred: "preferido",
   Principiante: "principiante",
   PrimaryCompound: "ejercicio principal",
@@ -59,18 +83,28 @@ const coachPresentationLabels = {
   Pull: "tracción",
   Push: "empuje",
   ReduceLoad: "Reducir la carga",
+  RequiredExerciseHasNoSubstitute:
+    "ejercicio requerido sin reemplazo compatible",
+  RequiredExerciseUnavailable: "ejercicio requerido no disponible",
   reasonCodes: "motivos",
   ReasonCode: "motivo",
   ReviewPerformance: "Revisar el rendimiento",
   RotacionExternaHombro: "rotación externa de hombro",
+  RoutineDayId: "día de rutina",
+  RirIncreased: "RIR aumentado para una sesión más liviana",
+  SessionAdaptationChangeType: "tipo de ajuste",
+  SessionAdaptationFeasibility: "factibilidad",
+  SessionEffortPreference: "preferencia de intensidad",
   SecondaryCompound: "ejercicio secundario",
   SelectionNotFeasible:
     "selección incompleta para cubrir los ejercicios necesarios",
   SessionDurationExceeded: "sesión por encima de la duración objetivo",
   SinExperiencia: "inicial",
+  SourceRoutineExerciseId: "ejercicio de la rutina",
   TraccionHorizontal: "tracción horizontal",
   TraccionVertical: "tracción vertical",
   Upper: "tren superior",
+  UserExcludedExercise: "ejercicio excluido para hoy",
   WeeklyVolumeTargetUnreachable:
     "volumen semanal previsto no alcanzado con las restricciones actuales",
   diagnosticCodes: "observaciones",

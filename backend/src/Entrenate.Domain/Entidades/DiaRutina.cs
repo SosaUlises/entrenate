@@ -62,7 +62,8 @@ namespace Entrenate.Domain.Entidades
             int rirObjetivoMaximo,
             int descansoSegundos,
             int orden,
-            string? notas)
+            string? notas,
+            bool? isRequiredForAdaptation = null)
         {
             var ejercicio = new EjercicioRutina(
                 Id,
@@ -74,7 +75,8 @@ namespace Entrenate.Domain.Entidades
                 rirObjetivoMaximo,
                 descansoSegundos,
                 orden,
-                notas);
+                notas,
+                isRequiredForAdaptation);
 
             _ejercicios.Add(ejercicio);
 

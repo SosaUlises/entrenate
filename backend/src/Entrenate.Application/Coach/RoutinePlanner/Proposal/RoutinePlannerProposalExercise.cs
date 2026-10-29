@@ -11,6 +11,7 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Proposal
         PatronMovimiento MovementPattern,
         TipoEjercicio ExerciseType,
         ExerciseSlotRole Role,
+        bool IsRequired,
         int Sets,
         int MinReps,
         int MaxReps,

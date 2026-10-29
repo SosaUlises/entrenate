@@ -24,6 +24,8 @@
 
         public string? Notas { get; private set; }
 
+        public bool? IsRequiredForAdaptation { get; private set; }
+
         public DiaRutina DiaRutina { get; private set; } = null!;
 
         public Ejercicio Ejercicio { get; private set; } = null!;
@@ -42,7 +44,8 @@
             int rirObjetivoMaximo,
             int descansoSegundos,
             int orden,
-            string? notas)
+            string? notas,
+            bool? isRequiredForAdaptation = null)
         {
             DiaRutinaId = diaRutinaId;
 
@@ -56,6 +59,8 @@
                 descansoSegundos,
                 orden,
                 notas);
+
+            IsRequiredForAdaptation = isRequiredForAdaptation;
         }
 
         public void Actualizar(

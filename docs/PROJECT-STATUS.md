@@ -28,6 +28,14 @@
 
 ## Current work
 
+- Frontend Adaptive Training V3 is closed. It configures today's conditions,
+  generates and reviews the adapted proposal, presents structured before/after
+  changes, supports temporary conversation and explicitly confirms the proposal
+  to create the backend-owned active training session.
+- Adaptive Training confirmation handles idempotent success, stale proposals,
+  existing active-session recovery and direct navigation into Training.
+- Coach Hub exposes Adaptive Training through the existing routine/day
+  selection flow; Home and routine detail retain their contextual entries.
 - Frontend Routine Planner V2 is closed with proposal generation, review,
   temporary conversation and explicit confirmation/persistence.
 - Next: continue Entrenate Coach backend or the next requested capability.
@@ -55,10 +63,10 @@ Available:
 - Progress Coach
 - Routine Planner proposal generation
 - Routine Planner confirmation
+- Adaptive Training
 
 Planned:
 
-- Adaptive Training
 - Nutrition Coach
 - Proactive Coach
 
@@ -131,8 +139,7 @@ Closed:
 - Progress Coach exercise selection and deterministic analysis are available.
 - Temporary, non-persistent Progress Coach conversation is available.
 - Loading, empty, error, retry, insufficient-data and disabled states are covered.
-- Adaptive Training and Nutrition Coach remain disabled as coming-soon
-  capabilities.
+- Nutrition Coach remains disabled as a coming-soon capability.
 
 Next:
 
@@ -140,7 +147,6 @@ Next:
 
 Coming-soon entries:
 
-- Adaptive Training
 - Nutrition Coach
 
 ### Frontend Routine Planner V2

@@ -48,6 +48,21 @@ namespace Entrenate.Application.UnitTests.Coach.Progress.Conversation
             Assert.Contains("lesiones", prompt.Instructions);
             Assert.Contains("medicina", prompt.Instructions);
             Assert.Contains("No uses emojis", prompt.Instructions);
+            Assert.Contains(
+                "Respondé directamente a la pregunta",
+                prompt.Instructions);
+            Assert.Contains(
+                "entre 2 y 4 párrafos breves",
+                prompt.Instructions);
+            Assert.Contains(
+                "No omitas información necesaria",
+                prompt.Instructions);
+            Assert.Contains(
+                "listas sólo cuando realmente mejoren la claridad",
+                prompt.Instructions);
+            Assert.Contains(
+                "fácil de leer en mobile",
+                prompt.Instructions);
 
             using var document = JsonDocument.Parse(prompt.Input);
             var root = document.RootElement;

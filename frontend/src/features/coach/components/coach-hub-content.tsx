@@ -17,11 +17,6 @@ type PlannedCapability = {
 
 const plannedCapabilities: PlannedCapability[] = [
   {
-    description: "Ajust\u00e1 seg\u00fan tiempo y equipamiento.",
-    icon: RefreshCw,
-    title: "Adaptaci\u00f3n",
-  },
-  {
     description: "Orientaci\u00f3n ligada a tu entrenamiento.",
     icon: Apple,
     title: "Nutrici\u00f3n",
@@ -52,6 +47,12 @@ export function CoachHubContent() {
           href="/coach/routines"
           icon={ClipboardList}
           title="Rutinas"
+        />
+        <AvailableCapability
+          description="Eleg&iacute; un d&iacute;a y ajustalo a las condiciones de hoy."
+          href="/routines"
+          icon={RefreshCw}
+          title="Adaptaci&oacute;n"
         />
 
         {plannedCapabilities.map((capability) => (

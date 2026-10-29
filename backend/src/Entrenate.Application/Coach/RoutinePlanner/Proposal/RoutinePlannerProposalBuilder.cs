@@ -6,7 +6,7 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Proposal
 {
     public static class RoutinePlannerProposalBuilder
     {
-        public const string PolicyVersion = "2.4";
+        public const string PolicyVersion = "2.5";
 
         public static RoutinePlannerProposal Build(
             RoutinePlannerInput input)
@@ -114,6 +114,7 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Proposal
                                 exercise.MovementPattern,
                                 exercise.ExerciseType,
                                 exercise.SlotRole,
+                                exercise.IsRequired,
                                 exercise.Sets,
                                 exercise.MinReps,
                                 exercise.MaxReps,

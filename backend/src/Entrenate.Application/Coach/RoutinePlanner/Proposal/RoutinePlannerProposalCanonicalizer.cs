@@ -8,7 +8,7 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Proposal
     internal static class RoutinePlannerProposalCanonicalizer
     {
         private const string CanonicalFormatVersion =
-            "Entrenate.RoutinePlannerProposal.v1";
+            "Entrenate.RoutinePlannerProposal.v2";
 
         public static string Calculate(
             RoutinePlannerInput input,
@@ -132,6 +132,7 @@ namespace Entrenate.Application.Coach.RoutinePlanner.Proposal
                     writer.Write((int)exercise.MovementPattern);
                     writer.Write((int)exercise.ExerciseType);
                     writer.Write((int)exercise.Role);
+                    writer.Write(exercise.IsRequired);
                     writer.Write(exercise.Sets);
                     writer.Write(exercise.MinReps);
                     writer.Write(exercise.MaxReps);
