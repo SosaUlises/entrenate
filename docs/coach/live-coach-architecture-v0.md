@@ -303,7 +303,16 @@ Intent classification may use deterministic rules and/or a provider-generated
 structured classification, but Application validates the resulting enum and
 tool names. Free-form model output never becomes executable access.
 
-## 8. STT abstraction
+## 8. STT provider and abstraction
+
+### Selected provider
+
+Groq Speech-to-Text (`whisper-large-v3-turbo` as primary fast model, with
+`whisper-large-v3` as high-accuracy fallback) is the selected STT provider for
+V0. It offers sub-second inference latency on audio snippets under 15 seconds,
+matching the low-interruption requirements of active training.
+
+### Application abstraction
 
 ```text
 ILiveCoachSpeechToText
@@ -315,36 +324,53 @@ ILiveCoachSpeechToText
 LiveCoachAudioInput
   Content: Stream
   MediaType: string
-  DurationMilliseconds: int
-  Locale: string             // V0 requests es-AR
+  ByteLength: long
+  DurationMilliseconds: int?
+  Locale: string             // default "es" (Rioplatense dialect hinted via prompt)
   InteractionId: Guid        // correlation, not persistence
 
 LiveCoachTranscriptResult
   Transcript: string
-  Confidence: decimal?
+  Confidence: decimal?       // nullable, provider-dependent
   DetectedLocale: string?
   IsFinal: bool
+  Status: LiveCoachTranscriptStatus
 ```
 
-The adapter must support cancellation and a bounded timeout. Application
-validates media type, size, duration, empty input and final transcript before
-intent routing. Confidence is optional because not every provider exposes a
-comparable score; the eventual low-confidence policy cannot assume it exists.
-
-Typed failure categories:
-
-- `UnsupportedAudio`;
-- `EmptyAudio`;
+`LiveCoachTranscriptStatus`:
+- `Success`;
 - `EmptyTranscript`;
-- `LowConfidence` when the approved policy can establish it;
+- `LowConfidence`;
+- `UnsupportedAudio`;
+- `AudioTooLarge`;
+- `AudioTooLong`;
 - `Timeout`;
 - `ProviderUnavailable`;
 - `Canceled`.
 
-Browser permission denial and capture-device failure occur before this contract
-and are presentation failures, not STT provider errors.
+The adapter in Infrastructure (`GroqLiveCoachSpeechToTextAdapter`) wraps Groq's
+HTTP audio transcriptions endpoint (`/openai/v1/audio/transcriptions`), handles
+cancellation tokens, enforces a strict 5-second HTTP timeout, and maps
+transport errors to typed statuses.
 
-## 9. TTS abstraction
+Application validates media type, size, duration, empty stream and non-empty
+transcript before invoking intent routing.
+
+## 9. TTS provider and abstraction
+
+### Selected provider
+
+ElevenLabs HTTP API is the selected TTS provider for V0. It delivers natural
+conversational Spanish with low latency, suitable for short gym guidance. V0
+uses standard HTTP audio fetch (or streaming to client) without persistent
+WebSocket connections.
+
+Voice persona configuration:
+- Model: ElevenLabs Multilingual V2 (`eleven_multilingual_v2`);
+- Persona: neutral, articulate Argentine Spanish voice profile;
+- Output format: `audio/mpeg` (mp3, 44.1kHz / 64-128 kbps).
+
+### Application abstraction
 
 ```text
 ILiveCoachTextToSpeech
@@ -354,193 +380,498 @@ ILiveCoachTextToSpeech
     -> LiveCoachSpeechResult
 
 LiveCoachSpeechRequest
+  ResponseId: Guid
   Text: string
-  Locale: string
-  InteractionId: Guid
+  Locale: string             // "es-AR"
+  VoiceId: string?
 
 LiveCoachSpeechResult
   Content: Stream
-  MediaType: string
+  MediaType: string          // "audio/mpeg"
   DurationMilliseconds: int?
+  ByteLength: long
 ```
 
-The text answer is always the canonical response. TTS is an optional rendering
-of that text and cannot modify it. Cancellation must stop synthesis when
-possible and playback immediately in presentation.
-
 Typed failures are `UnsupportedText`, `Timeout`, `ProviderUnavailable` and
-`Canceled`. They preserve the valid text answer.
+`Canceled`. Any TTS failure preserves the successful text response in
+presentation.
 
-The user has an explicit `voiceOutputEnabled` preference. When false, the TTS
-contract is not called and the interaction transitions from `thinking` to
-`success` after rendering text. The storage location for this preference is an
-implementation decision; V0 does not require a profile-schema change.
+### Voice preference
 
-## 10. Transport decision
+The user has an explicit `voiceOutputEnabled` preference (persisted in client
+local storage for V0 to avoid profile-schema mutations). When false, the TTS
+endpoint is never called, and the interaction moves directly from `thinking` to
+`success` once text is rendered.
 
-### Options
+## 10. Transport decision and HTTP API contracts
 
-| Option | Advantages | Costs/risks | V0 fit |
-| --- | --- | --- | --- |
-| HTTP request/response | Simple auth, cancellation and observability; broad mobile-web compatibility; matches current API | Full answer waits for provider completion | **Recommended** |
-| HTTP streaming | Earlier text/audio chunks and better perceived latency | More state, proxy/runtime compatibility and partial-response handling | Defer |
-| Bidirectional WebSocket/realtime | Continuous low-latency audio and barge-in | Persistent connection, reconnect, ordering, privacy and mobile lifecycle complexity | Reject for V0 |
+### Transport decision
 
-### Recommended V0 transport
+V0 uses authenticated HTTP request/response with decoupled STT, Live Coach
+turn processing, and optional TTS:
 
-Use authenticated HTTP request/response with one interaction in flight:
+1. Audio mode records locally after explicit activation;
+2. Tap-to-stop finishes recording and uploads audio to the STT endpoint;
+3. Presentation sends the resulting transcript (or text fallback) along with the
+   active training session context to the Live Coach interaction endpoint;
+4. The server validates session ownership and context freshness, runs intent
+   routing and read-only tools, invokes the Coach provider, and returns the
+   grounded text answer with a unique `responseId`;
+5. Presentation renders the text response immediately;
+6. If `voiceOutputEnabled` is true, presentation requests audio synthesis by
+   passing `responseId` to the TTS endpoint and streams/plays the resulting audio.
 
-1. audio mode records locally after explicit activation;
-2. tap-to-stop closes capture and sends a bounded audio request;
-3. the server performs STT, context projection, routing/tools and Coach
-   generation under one cancellation token;
-4. the response returns the final grounded text;
-5. presentation renders text immediately;
-6. when voice output is enabled, presentation requests TTS through a separate
-   cancelable HTTP operation and plays the returned transient audio.
+Text fallback skips step 2 and starts directly at step 3 with `inputKind: "Text"`.
 
-Text fallback skips capture/STT and sends the same interaction request with
-text input. The server rejects requests that contain both audio and text.
+This decoupled design ensures:
+- Text is always visible immediately without waiting for speech synthesis;
+- STT errors are isolated from training context processing;
+- Unauthorized or arbitrary text cannot be submitted to the paid TTS provider.
 
-This choice minimizes V0 surface area, aligns with the existing API and works
-across mobile browsers without a persistent socket. It preserves a later path
-to streaming without changing the Application context, routing or provider
-contracts.
+### Endpoint 1: STT transcription
 
-## 11. Privacy and data lifecycle
+- **Route:** `POST /api/coach/live/transcriptions`
+- **Auth:** Authenticated user (`Bearer <token>`)
+- **Content-Type:** `multipart/form-data`
 
-### Audio
+**Form parameters:**
+- `audio`: File binary (1 KB to 2 MB, max 15s duration);
+- `interactionId`: Guid (correlation ID);
+- `clientTurnId`: string (client-generated idempotency key);
+- `mimeType`: string (e.g. `audio/webm;codecs=opus`, `audio/mp4`).
 
-- exists only in client memory while explicitly recording and while preparing
-  the request;
-- is transmitted only after tap-to-stop, over authenticated TLS;
-- is bounded by type, size and duration validation;
-- is streamed through server processing where possible and never written to
-  application persistence;
-- is discarded after STT, failure or cancellation;
-- is excluded from request logs, telemetry and error payloads.
+**Response `200 OK`:**
+```json
+{
+  "interactionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "clientTurnId": "c4d3a2b1-0000-0000-0000-000000000000",
+  "transcript": "¿Cuántas repeticiones me tocan en esta serie?",
+  "confidence": 0.94,
+  "detectedLocale": "es",
+  "isFinal": true,
+  "status": "Success"
+}
+```
 
-### Transcript and answer
+**Failure status codes:**
+- `400 Bad Request`: `UnsupportedAudio`, `EmptyAudio`, `AudioPayloadTooLarge`, `AudioDurationExceeded`;
+- `422 Unprocessable Content`: `EmptyTranscript`, `LowConfidence`;
+- `429 Too Many Requests`: Rate limit exceeded;
+- `504 Gateway Timeout`: Provider timed out (5s limit);
+- `502 / 503 Bad Gateway / Service Unavailable`: Provider unavailable.
 
-- exist transiently for the interaction;
-- are not stored as Live Coach conversation history in V0;
-- are excluded from default operational logs;
-- may be shown in the open panel but disappear when the interaction is closed;
-- require separately approved consent/retention policy before any analytics or
-  diagnostics can retain their content.
+### Endpoint 2: Live Coach interaction
 
-### Permission handling
+- **Route:** `POST /api/coach/live/respond`
+- **Auth:** Authenticated user (`Bearer <token>`)
+- **Content-Type:** `application/json`
 
-The browser owns the microphone permission prompt. Training requests permission
-only after explicit activation, shows `listening` only after capture begins and
-never treats permission state as proof that recording is active. Denial routes
-to a recoverable UI state and does not affect Training.
+**Request payload:**
+```json
+{
+  "sessionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "clientTurnId": "c4d3a2b1-0000-0000-0000-000000000000",
+  "inputKind": "AudioTranscript",
+  "text": "¿Cuántas repeticiones me tocan en esta serie?",
+  "clientSnapshot": {
+    "exerciseId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "setIndex": 1,
+    "restTimer": {
+      "isActive": true,
+      "remainingSeconds": 45,
+      "capturedAtUtc": "2026-10-29T22:00:00Z"
+    }
+  }
+}
+```
 
-### Provider privacy
+**Client snapshot semantics:**
+`clientSnapshot` (o hint de cursor del cliente) **NO es fuente de verdad**. El
+`sessionId` y el estado de la sesión persistido en el backend son siempre
+autoritativos. Los datos de `exerciseId`, `setIndex` y `restTimer` enviados por
+el cliente funcionan exclusivamente como una sugerencia temporal para detectar
+deriva (drift) entre el momento de la captura y la ejecución de las herramientas,
+mejorando la UX sin contradecir lo que el usuario ve en pantalla. El cliente
+nunca puede sobreescribir ni definir el estado del entrenamiento.
 
-Provider selection requires documented retention, training-use, residency and
-deletion terms. A provider that cannot satisfy the approved V0 policy is not a
-valid adapter even if it implements the interface.
+**Response `200 OK`:**
+```json
+{
+  "responseId": "8f2a1b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+  "clientTurnId": "c4d3a2b1-0000-0000-0000-000000000000",
+  "text": "Te tocan entre 8 y 10 repeticiones con 2 RIR.",
+  "intentKind": "DataQuery",
+  "isStaleContext": false,
+  "canSynthesizeVoice": true
+}
+```
 
-## 12. Required text fallback
+**Internal tools isolation:**
+La respuesta pública nunca expone la lista de `toolsUsed` ni nombres de
+herramientas internas (`GetCurrentExercise`, `GetCurrentPrescription`, etc.).
+Estos nombres residen exclusivamente en la lógica de Application y en la
+telemetría operativa estructurada (`LiveCoachTurnMetrics`), garantizando que la
+implementación interna permanezca opaca para el frontend.
 
-Text input is a required V0 fallback, not an optional later enhancement. It is
-available when:
+**Failure status codes:**
+- `400 Bad Request`: Validation failure (empty text, invalid ID format);
+- `404 Not Found`: Session not found;
+- `409 Conflict`: `SessionNotActive` (session completed or discarded), `InteractionAlreadyInProgress`;
+- `429 Too Many Requests`: Rate limit exceeded;
+- `503 Service Unavailable`: Coach conversation provider unavailable.
 
-- the device/browser has no compatible microphone;
-- permission is denied;
-- capture or STT fails;
-- the user chooses not to use audio;
-- voice output is disabled.
+### Endpoint 3: Speech synthesis (TTS)
 
-Text and audio use the same authorized context, intent routing, tools, Coach
-provider and response policy. Text fallback must not receive broader access or
-different mutation rights.
+- **Route:** `POST /api/coach/live/speech`
+- **Auth:** Authenticated user (`Bearer <token>`)
+- **Content-Type:** `application/json`
 
-## 13. Failure behavior
+**Request payload:**
+```json
+{
+  "responseId": "8f2a1b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c"
+}
+```
+
+**Security design rule:**
+Clients **never** submit arbitrary text to the TTS endpoint. The endpoint
+accepts only a valid `responseId` generated by the Live Coach interaction
+endpoint within an active turn window (TTL: 60 seconds, stored in an ephemeral
+in-memory cache). The backend looks up the exact approved text produced for that
+`responseId` and synthesizes only that content. This prevents arbitrary text
+synthesis, prompt abuse, and unauthorized credit consumption on ElevenLabs.
+
+**Single-instance assumption & horizontal scaling path:**
+The ephemeral cache (`IMemoryCache` with TTL: 60s) is strictly designed for V0
+under the explicit assumption of a single API instance. Prior to horizontal
+scaling (multiple backend instances behind a load balancer), this ephemeral
+storage must be migrated to an ephemeral distributed cache (e.g. Redis) or
+sticky routing. No Redis or additional infrastructure components are introduced
+for V0.
+
+**Response `200 OK`:**
+- `Content-Type: audio/mpeg`
+- Body: Binary audio stream.
+
+**Failure status codes:**
+- `404 Not Found`: `ResponseNotFoundOrExpired`;
+- `400 Bad Request`: Voice output not permitted for this response;
+- `503 Service Unavailable`: TTS provider unavailable (presentation keeps visible text).
+
+## 11. Audio capture, browser strategy and limits
+
+### Browser capture strategy
+
+The frontend uses standard Web APIs: `navigator.mediaDevices.getUserMedia` and
+`MediaRecorder`.
+
+Audio capture constraints:
+```javascript
+{
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+    channelCount: 1,
+    sampleRate: 44100
+  }
+}
+```
+
+### Browser and codec support matrix
+
+Mobile gym environments run predominantly on iOS Safari and Android Chrome:
+
+| Platform / Browser | Primary container & codec | Fallback container |
+| --- | --- | --- |
+| Android Chrome / Edge | `audio/webm;codecs=opus` | `audio/webm` |
+| iOS Safari (WebKit) | `audio/mp4` / `audio/aac` | `audio/mp4` |
+| Desktop Chrome / Firefox | `audio/webm;codecs=opus` | `audio/ogg;codecs=opus` |
+
+Client container selection checks `MediaRecorder.isTypeSupported()` in this
+exact order:
+1. `audio/webm;codecs=opus`;
+2. `audio/mp4`;
+3. `audio/ogg;codecs=opus`;
+4. `audio/webm`;
+5. Default browser container (empty option in `new MediaRecorder(stream)`).
+
+Server-side acceptance: The backend STT endpoint and Groq Whisper accept
+`audio/webm`, `audio/ogg`, `audio/mp4`, `audio/aac`, `audio/wav` and
+`audio/mpeg`. Unknown media types are rejected immediately with HTTP 400
+`UnsupportedAudio`.
+
+### Audio limits
+
+- **Maximum capture duration:** 15 seconds. The frontend starts a 15-second
+  timer on recording activation and automatically stops capture when it elapses.
+  The server strictly rejects audio with duration $> 18$ seconds with
+  `AudioDurationExceeded`.
+- **Maximum payload size:** 2 MB. Compressed speech (Opus/AAC at 32-64 kbps)
+  takes 60-120 KB for 15 seconds. A 2 MB cap provides safety margin while
+  preventing memory exhaustion attacks. Payloads $> 2$ MB are rejected with
+  HTTP 413 `PayloadTooLarge`.
+- **Minimum payload size:** 1 KB. Payloads $< 1$ KB are rejected as
+  `EmptyAudio` without calling the STT provider.
+- **Resource cleanup:**
+  - `MediaStreamTrack.stop()` is called immediately upon tap-to-stop, error or
+    cancellation to release the hardware microphone;
+  - Local recording blobs are dereferenced immediately after upload;
+  - Any created object URLs are synchronously revoked via
+    `URL.revokeObjectURL()`.
+
+## 12. Confidence policy and failure behavior
+
+### Provider confidence characteristics
+
+Groq Whisper API does not return a calibrated 0.0–1.0 word confidence in its
+standard response payload (it provides `avg_logprob` or plain text).
+Consequently, `Confidence` is defined as a nullable `decimal?`.
+
+### Evaluation policy
+
+1. **Null confidence:** If `Confidence` is null and the transcript contains
+   valid non-whitespace text, the transcript is treated as usable and moves to
+   intent routing.
+2. **Confidence threshold:** If `Confidence` is present:
+   - Score $\ge 0.45$: Proceed to intent routing;
+   - Score $< 0.45$: Halt processing before tool or Coach execution; return
+     typed failure `LowConfidence` alongside the preliminary text.
+3. **Empty transcript:** If the transcript is empty, whitespace-only, or
+   contains only noise punctuation, return `EmptyTranscript`. No LLM execution
+   occurs.
+4. **Presentation recovery:**
+   - On `EmptyTranscript`: Prompt the user with "No llegué a escucharte. Tocá
+     para reintentar o escribí tu pregunta."
+   - On `LowConfidence`: Present the interpreted transcript with options to
+     confirm ("¿Quisiste decir...?"), retry voice, or switch to text fallback.
+
+### Failure mapping table
 
 | Failure | Architectural result | UI recovery |
 | --- | --- | --- |
-| Microphone denied | No audio object or STT call is created | Offer text input and permission retry where supported |
-| STT timeout | Cancel provider call; discard audio; return typed `Timeout` | Retry recording or switch to text |
+| Microphone denied | No audio object or STT call is created | Offer text input and link to browser settings |
+| STT timeout | Cancel provider call; discard audio; return `Timeout` | Retry recording or switch to text |
 | Empty transcript | Stop before context/tools/Coach provider | Retry recording or enter text |
-| Low confidence | Stop before Coach generation when policy can establish it | Show transcript for correction or retry; threshold remains pending |
-| Coach unavailable | Return typed provider-unavailable failure; no fabricated answer | Retry same grounded text query or close |
-| TTS unavailable | Preserve successful text response | Continue with text; allow voice retry only if useful |
-| Network failure | Abort current stage; discard transient media | Explicit retry from the last safe input or close |
-| Cancellation | Propagate cancellation token; ignore late result | Return immediately to `idle` |
+| Low confidence | Stop before Coach generation | Show transcript for confirmation or retry |
+| Coach unavailable | Return typed `CoachUnavailable`; no fabricated answer | Retry same grounded query or close |
+| TTS unavailable | Preserve successful text response | Continue with text; do not fail turn |
+| Rate limit exceeded | Return HTTP 429 with retry delay | Show brief wait notice; keep text intact |
+| Cancellation | Abort cancellation token; discard transient resources | Return immediately to `idle` |
 
-Training actions, inputs and timers continue independently in every case.
+## 13. Privacy, telemetry and zero-retention rules
 
-## 14. Latency budget
+### Audio privacy
 
-V0 targets perceived responsiveness without claiming realtime behavior.
-Budgets are product targets to validate during provider evaluation, not current
-service guarantees.
+- Audio exists only in client volatile memory while explicitly recording and
+  during the upload request;
+- Transmitted only over authenticated TLS;
+- Processed entirely as an in-memory stream on the server;
+- **Zero audio persistence:** Raw audio is never written to disk, databases,
+  S3, or cloud storage;
+- Audio is discarded immediately after STT processing, failure or cancellation;
+- Audio payloads and binary streams are strictly excluded from HTTP request
+  logging, Serilog outputs, and OpenTelemetry traces.
 
-| Stage | Target |
-| --- | --- |
-| Visual state feedback after tap/cancel | under 100 ms |
-| Stop capture and release microphone | under 150 ms |
-| Upload + STT | typically 0.8-2.5 s |
-| Context projection and read tools | typically under 500 ms |
-| Coach final text response | typically 1-4 s |
-| Final text visible after tap-to-stop | target under 5 s; investigate above 8 s |
-| Optional TTS preparation after text | typically 0.5-1.5 s |
+### Transcript and response retention
 
-Progressive feedback allowed in V0:
+- Transcripts and generated responses live only in transient memory during the
+  interaction turn;
+- A short-lived in-memory cache (`IMemoryCache`, TTL: 60 seconds) retains the
+  response text solely to validate and serve the paired TTS request (`responseId`);
+- This in-memory cache assumes a single API instance for V0; prior to horizontal
+  scaling, it must be migrated to an ephemeral distributed cache, without introducing
+  Redis or new infrastructure now;
+- Live Coach V0 does not write to any conversation history or transcript table;
+- Transcripts and responses disappear from client state when the panel is closed;
+- Operational logs record only execution metadata: `TurnId`, `UserIdHash`,
+  `SessionId`, `DurationMs`, `ByteSize`, `MimeType`, `IntentKind`, `ToolsUsed`,
+  `StatusCode`, and `ErrorCategory`. Tool names are recorded exclusively in backend
+  telemetry and are never exposed in public API responses. Default logs contain zero
+  PII or transcript text.
 
-- immediate state labels and cancel action;
-- local capture duration/level feedback that does not imply transcription;
-- text rendered before optional TTS is ready.
+### Provider credentials
 
-V0 does not stream partial LLM text or audio. It does not display fake progress,
-invent partial answers or speak before a grounded final response exists.
+Groq and ElevenLabs API keys reside exclusively in secure backend environment
+configuration. Zero provider credentials or third-party client SDKs are
+exposed to the frontend.
 
-## 15. Security and safety boundaries
+## 14. Retries, rate limits and concurrency
 
-- session ownership is revalidated server-side for every interaction;
-- client cursor/rest data is untrusted input and validated against the active
+### Retries
+
+- **Client-to-API:** At most 1 automatic retry on transient network errors
+  (HTTP 502/503/504 or network dropouts) using the same `clientTurnId`.
+  Automatic retry is never attempted on 4xx client errors (400, 401, 403, 404,
+  409, 422).
+- **API-to-Providers:** At most 1 retry with exponential backoff (250 ms) for
+  transient provider timeouts or 5xx responses.
+
+### Rate limits and quotas
+
+To protect system stability and third-party provider quotas:
+- **Per-user limit:** Maximum 10 Live Coach turns per minute;
+- **Per-session limit:** Maximum 60 Live Coach turns per active training
+  session;
+- Exceeding limits returns HTTP 429 `TooManyRequests` with a `Retry-After` header.
+
+### Concurrency and idempotency
+
+- **In-flight limit:** Exactly one active interaction is permitted per user
+  session. A new request while a turn is processing returns HTTP 409
+  `InteractionAlreadyInProgress`;
+- **Idempotency:** `clientTurnId` allows the backend to recognize repeated
+  transmissions resulting from network retries and return the cached turn
+  result without duplicate provider execution.
+
+## 15. Stale context and session invariants
+
+### Session state invariant
+
+Live Coach is valid exclusively while a `SesionEntrenamiento` has status
+`EnProgreso`.
+- If the session was finished, cancelled or discarded while the user was
+  speaking or waiting, the interaction endpoint rejects the request with HTTP
+  409 Conflict (`SessionNotActive`);
+- The interaction verifies that `sessionId` belongs to the authenticated user.
+
+### Cursor drift and synchronization
+
+Between the moment the user starts speaking and the moment the server executes
+tools (typically 2–4 seconds), the user may have logged a set or navigated to
+another exercise on screen.
+
+1. The client sends a `clientSnapshot` (cursor hint): `exerciseId`, `setIndex`, and
+   `capturedAtUtc`.
+   - **Non-authoritative rule:** `clientSnapshot` is **NOT** a source of truth.
+     The `sessionId` and the backend-persisted state are always authoritative.
+   - `exerciseId`, `setIndex` and `restTimer` sent by the client serve exclusively
+     to detect temporal drift and improve UX (such as acknowledging a set just logged
+     on screen). They can never define or mutate training state.
+2. The server compares this snapshot against the latest persisted database state
+   for the active session:
+   - **No drift:** Tools execute directly against the current cursor;
+   - **Drift detected (e.g. user logged set 2 while speaking):** The persisted
+     database state is authoritative. Tools reflect the updated state, and a
+     safely formatted drift note is injected into the Coach prompt:
+     `"Nota de contexto: el usuario completó la serie anterior durante la consulta y ahora se encuentra en la serie X"`.
+3. This prevents the Coach from contradicting the screen or giving obsolete
+   repetition targets for a set already finished.
+
+### Rest timer calculation
+
+The rest timer snapshot contains `isActive`, `remainingSeconds`, and
+`capturedAtUtc`. The server calculates actual elapsed time:
+`currentRemaining = remainingSeconds - (UtcNow - capturedAtUtc).TotalSeconds`.
+If `currentRemaining <= 0`, the timer is treated as finished (`isActive: false`).
+This provides grounded timer awareness without polling the client.
+
+## 16. Required text fallback
+
+Text input is a required V0 capability, not a secondary feature. It is active
+when:
+- The device or browser lacks microphone support;
+- Operating system or browser microphone permission is denied;
+- Audio capture or STT fails;
+- The user is in a loud gym environment or prefers silent interaction;
+- `voiceOutputEnabled` is disabled.
+
+Text input sends the same `LiveCoachInteractionRequest` with
+`inputKind: "Text"`. It traverses the identical authorized context projection,
+intent routing, read-only tools, and Coach generation. It possesses no
+additional permissions or mutation rights.
+
+## 17. Latency budget and observability
+
+### Latency targets
+
+| Stage | Target budget | Hard alert threshold |
+| --- | --- | --- |
+| Visual state feedback after tap | $< 100$ ms | $> 250$ ms |
+| Stop capture and release hardware mic | $< 150$ ms | $> 300$ ms |
+| Upload + Groq STT | 600–1500 ms | $> 3000$ ms |
+| Context projection and tool execution | 50–150 ms | $> 400$ ms |
+| Groq Coach LLM text completion | 800–1800 ms | $> 3500$ ms |
+| **Visible text rendered on client** | **1.6–3.6 s** | **$> 6.0$ s** |
+| Optional ElevenLabs TTS synthesis | 400–1000 ms | $> 2500$ ms |
+| Audio playback start after text render | $< 1.0$ s | $> 2.0$ s |
+
+### Turn observability metric schema
+
+Every turn emits a structured `LiveCoachTurnMetrics` telemetry event:
+
+```text
+LiveCoachTurnMetrics
+  TurnId: Guid
+  UserIdHash: string
+  SessionId: Guid
+  ClientTurnId: string
+  InputKind: "AudioTranscript" | "Text"
+  MimeType: string?
+  AudioDurationMs: int?
+  AudioSizeBytes: long?
+  SttDurationMs: int?
+  ToolExecutionDurationMs: int?
+  LlmDurationMs: int?
+  TtsDurationMs: int?
+  TotalTurnDurationMs: int?
+  IntentKind: string
+  ToolsCalledCount: int
+  StatusCode: int
+  ErrorCategory: string?
+```
+
+## 18. Security and safety boundaries
+
+- Session ownership is revalidated server-side for every interaction;
+- Client cursor/rest data is untrusted input and validated against the active
   session and capture timestamp;
-- prompts treat transcript/question as user data, never system instructions;
-- the provider-safe projection removes internal identifiers and implementation
-  terminology;
-- tool execution is closed, typed, read-only and authorization-aware;
-- provider output cannot call repositories, endpoints or commands;
-- no provider may write to the database or control Training;
-- no V0 endpoint exposes a mutation command;
-- deterministic Coach decisions remain authoritative when included in context;
-- cancellation and timeout flow through all provider/tool operations.
+- Prompts treat transcript/question as untrusted user data, never system instructions;
+- The provider-safe projection strips internal database identifiers and
+  implementation terminology;
+- Tool execution is closed, typed, read-only and authorization-aware;
+- Provider output cannot call repositories, endpoints or commands;
+- No provider may write to the database or control Training;
+- No V0 endpoint exposes a mutation command;
+- Deterministic Coach decisions remain authoritative when included in context;
+- Cancellation and timeout flow through all provider/tool operations.
 
-## 16. Implementation sequence
+## 19. Implementation sequence
 
 When implementation is explicitly approved, the recommended sequence is:
 
-1. freeze public request/response and typed failure contracts;
-2. implement authorized context projection and ownership tests;
-3. implement the read-only tool registry with fake adapters;
-4. implement intent routing and provider-safe projection tests;
-5. add text-only interaction end to end;
-6. add browser capture behind capability detection;
-7. select and integrate STT after privacy approval;
-8. add optional TTS after the text path is stable;
-9. validate cancellation, mobile lifecycle and provider failures;
-10. evaluate streaming only from measured latency, not assumption.
+1. Freeze public request/response and typed failure contracts (DTOs in Application);
+2. Implement authorized context projection, drift detection, and ownership tests;
+3. Implement the read-only tool registry with fake adapters;
+4. Implement intent routing and provider-safe prompt builder;
+5. Integrate Groq conversation provider and validate text-only interaction end-to-end;
+6. Implement `GroqLiveCoachSpeechToTextAdapter` with unit/integration tests;
+7. Implement `ElevenLabsLiveCoachTextToSpeechAdapter` with `responseId` validation;
+8. Add frontend browser capture (`MediaRecorder`), codec detection, and audio limits;
+9. Validate cancellation, mobile Safari/Chrome lifecycle, and provider failures;
+10. Measure real latency against the budget under gym network conditions.
 
-## 17. Decisions still pending before implementation
+## 20. Decision status
 
-- supported browser/device matrix and audio codec/container;
-- maximum audio duration, byte limit and server timeout values;
-- low-confidence policy when a provider exposes confidence and correction UX;
-- exact API request/response shapes and versioning;
-- whether the text fallback appears persistently or only after audio failure;
-- persistence location for `voiceOutputEnabled` without expanding profile scope;
-- provider choices and approved retention/residency contracts;
-- exact safe prompt, intent-classification mechanism and tool-call limits;
-- cursor synchronization and rest-timer staleness tolerance;
-- retry budgets, rate limits, abuse controls and observability fields;
-- measured latency acceptance thresholds for provider selection.
+### Decisions closed in this specification
 
-These decisions do not reopen V0's fixed boundaries: read-only behavior,
-explicit activation, transient media, typed grounding, no arbitrary access and
-manual Training independence.
+- **STT provider:** Groq Speech-to-Text (`whisper-large-v3-turbo` primary, `whisper-large-v3` fallback);
+- **TTS provider:** ElevenLabs Multilingual V2 (`eleven_multilingual_v2`), Argentine Spanish persona;
+- **Conversational LLM:** Existing Groq provider with grounded, read-only gym prompt;
+- **Transport architecture:** Decoupled HTTP request/response (STT $\rightarrow$ Respond $\rightarrow$ TTS);
+- **TTS security model:** `responseId` verification via ephemeral in-memory cache (TTL 60s, single API instance assumption; no Redis in V0);
+- **Browser/codec matrix:** iOS Safari (`audio/mp4`), Android/Chrome (`audio/webm;codecs=opus`), Firefox (`audio/ogg;codecs=opus`);
+- **Audio limits:** 15s max duration, 2 MB max size, 1 KB min size, 5s provider timeout;
+- **Confidence policy:** Nullable score; $\ge 0.45$ accepted, $< 0.45$ low confidence, empty transcript rejected;
+- **Privacy & retention:** Zero audio storage, zero conversation database history in V0, 60s ephemeral cache for TTS, sanitized telemetry;
+- **Retries & rate limits:** 1 client retry, 1 provider retry, 10 turns/min per user, 60 turns/session, 1 concurrent interaction;
+- **Stale context:** `EnProgreso` required, database truth wins on drift with prompt synchronization note, rest timer calculated from elapsed time;
+- **Latency targets:** $< 3.6$ s text visible, $< 1$ s audio playback start after text.
+
+### Decisions pending before implementation
+
+- Exact ElevenLabs Voice ID for Argentine Spanish persona;
+- Quality smoke test of Groq Whisper on Argentine gym terminology (e.g. "RIR", "press de banca", "mancuernas", "remo con barra");
+- Exact UI placement for the audio/text input switch inside the Training sheet.
+
+These pending decisions do not alter the architectural boundaries, contracts or invariants established in this specification.
