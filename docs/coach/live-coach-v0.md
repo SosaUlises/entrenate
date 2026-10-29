@@ -292,22 +292,15 @@ under this contract. That capability is not present in the current prototype.
 - manual Training remains independent from Live Coach availability;
 - the face is a state indicator, never a mascot or character.
 
-## Decisions pending before architecture
+## Technical architecture
 
-The next block must resolve these technical/product choices before selecting an
-architecture:
+The provider-agnostic architecture, context contract, read-only tool allowlist,
+transport decision and privacy boundaries are defined in:
 
-- supported browsers/devices and microphone API compatibility;
-- maximum utterance duration and timeout behavior;
-- STT confidence threshold and whether low-confidence transcripts require
-  correction before sending;
-- whether text input is a required fallback for V0;
-- whether users may independently disable TTS while keeping Live Coach text;
-- approved STT/TTS providers, data residency, retention and privacy terms;
-- transport and cancellation semantics for request/response or streaming;
-- typed context snapshot, retrieval/tool allowlist and authorization boundary;
-- latency targets, observability and consented telemetry;
-- exact future mutation allowlist and confirmation UX.
+`docs/coach/live-coach-architecture-v0.md`
 
-STT, TTS, realtime transport, WebSocket, providers, tools, backend changes and
-audio persistence remain outside the current implementation.
+The architecture selects authenticated HTTP request/response for V0, requires
+text fallback, keeps TTS optional and preserves a later path to streaming.
+Provider selection, concrete endpoint contracts, audio limits and implementation
+remain pending. STT, TTS, WebSocket, Realtime API, providers, tools, backend
+changes, mutations and audio persistence remain outside the current codebase.

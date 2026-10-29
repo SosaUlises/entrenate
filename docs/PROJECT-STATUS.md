@@ -34,8 +34,11 @@
 - Live Coach V0 interaction is closed at product/UX level: explicit
   tap-to-start/tap-to-stop activation, immediate cancellation, transient
   microphone use, authorized grounding and failure recovery are normative.
-- Next for Live Coach: resolve device support, audio limits, text fallback,
-  provider/privacy, transport and typed context decisions before architecture.
+- Live Coach V0 technical architecture is defined as a provider-agnostic,
+  read-only HTTP request/response pipeline with typed context, a closed tool
+  allowlist, required text fallback and optional TTS.
+- Next for Live Coach: close browser/audio limits, provider/privacy, concrete
+  API contracts and confidence/retry policies before implementation.
 - Frontend Adaptive Training V3 is closed. It configures today's conditions,
   generates and reviews the adapted proposal, presents structured before/after
   changes, supports temporary conversation and explicitly confirms the proposal
