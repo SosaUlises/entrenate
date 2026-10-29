@@ -509,7 +509,7 @@ function DayPickerDialog({
                   href={`/coach/adaptive-training/${encodeURIComponent(routine.id)}/${encodeURIComponent(day.id)}`}
                 >
                   <SlidersHorizontal aria-hidden="true" className="text-steel" size={16} />
-                  Adaptar entrenamiento de hoy
+                  Adaptar hoy
                 </Link>
               ) : null}
             </li>
