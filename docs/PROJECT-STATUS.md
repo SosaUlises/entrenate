@@ -31,8 +31,11 @@
 - Live Coach V0 has a documented product/UX foundation and a frontend-only
   visual prototype inside active Training sessions. Its six states are local
   simulations; there is no realtime, audio, persistence or backend contract.
-- Next for Live Coach: define activation, permissions, privacy, interruption
-  and grounding contracts before STT/TTS or realtime integration.
+- Live Coach V0 interaction is closed at product/UX level: explicit
+  tap-to-start/tap-to-stop activation, immediate cancellation, transient
+  microphone use, authorized grounding and failure recovery are normative.
+- Next for Live Coach: resolve device support, audio limits, text fallback,
+  provider/privacy, transport and typed context decisions before architecture.
 - Frontend Adaptive Training V3 is closed. It configures today's conditions,
   generates and reviews the adapted proposal, presents structured before/after
   changes, supports temporary conversation and explicitly confirms the proposal
