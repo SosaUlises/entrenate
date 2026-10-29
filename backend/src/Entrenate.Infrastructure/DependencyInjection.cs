@@ -1,7 +1,8 @@
-﻿using Entrenate.Application.Common.Interfaces;
+using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.Common.Settings;
 using Entrenate.Infrastructure.Authentication;
 using Entrenate.Infrastructure.Coach.Conversation;
+using Entrenate.Infrastructure.Coach.LiveCoach;
 using Entrenate.Infrastructure.Email;
 using Entrenate.Infrastructure.Identity;
 using Entrenate.Infrastructure.Persistence;
@@ -226,6 +227,26 @@ namespace Entrenate.Infrastructure
                         settings.BaseUrl.TrimEnd('/') + "/");
                     client.Timeout = TimeSpan.FromSeconds(
                         settings.TimeoutSeconds);
+                    client.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue(
+                            "Bearer",
+                            settings.ApiKey);
+                });
+            services.AddHttpClient<
+                ILiveCoachSpeechToText,
+                GroqLiveCoachSpeechToTextAdapter>((serviceProvider, client) =>
+                {
+                    var settings = serviceProvider
+                        .GetRequiredService<
+                            Microsoft.Extensions.Options.IOptions<GroqSettings>>()
+                        .Value;
+
+                    client.BaseAddress = new Uri(
+                        settings.BaseUrl.TrimEnd('/') + "/");
+                    var timeoutSeconds = settings.SttTimeoutSeconds > 0
+                        ? settings.SttTimeoutSeconds
+                        : 10;
+                    client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
                     client.DefaultRequestHeaders.Authorization =
                         new AuthenticationHeaderValue(
                             "Bearer",

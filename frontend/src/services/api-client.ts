@@ -16,7 +16,9 @@ type ProblemDetails = {
   message?: string;
 };
 
-type ApiRequestOptions<TBody extends JsonBody | undefined = undefined> = Omit<
+type RequestBody = JsonBody | FormData;
+
+type ApiRequestOptions<TBody extends RequestBody | undefined = undefined> = Omit<
   RequestInit,
   "body" | "headers"
 > & {
@@ -56,12 +58,14 @@ export class ApiClientError extends Error {
 
 export async function apiRequest<
   TResponse,
-  TBody extends JsonBody | undefined = undefined,
+  TBody extends RequestBody | undefined = undefined,
 >(path: string, options: ApiRequestOptions<TBody> = {}): Promise<TResponse> {
   const { authToken, body, headers, ...requestOptions } = options;
   const requestHeaders = new Headers(headers);
 
-  if (body !== undefined && !requestHeaders.has("Content-Type")) {
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+
+  if (body !== undefined && !isFormData && !requestHeaders.has("Content-Type")) {
     requestHeaders.set("Content-Type", "application/json");
   }
 
@@ -79,7 +83,7 @@ export async function apiRequest<
   try {
     response = await fetch(requestUrl, {
       ...requestOptions,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
       headers: requestHeaders,
     });
   } catch {

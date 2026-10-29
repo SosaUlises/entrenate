@@ -28,19 +28,14 @@
 
 ## Current work
 
-- Live Coach V0 has a documented product/UX foundation and a frontend-only
-  visual prototype inside active Training sessions. Its six states are local
-  simulations; there is no realtime, audio, persistence or backend contract.
-- Live Coach V0 interaction is closed at product/UX level: explicit
-  tap-to-start/tap-to-stop activation, immediate cancellation, transient
-  microphone use, authorized grounding and failure recovery are normative.
-- Live Coach V0 technical architecture is closed: provider selections (Groq
-  Whisper STT, ElevenLabs TTS, Groq LLM), decoupled HTTP API contracts, audio
-  capture and browser codec matrix, 15s/2MB limits, privacy and zero audio
-  persistence, confidence and stale context policies, and latency budgets are
-  documented in docs/coach/live-coach-architecture-v0.md.
-- Next for Live Coach: pending provider voice ID selection and audio smoke tests
-  before starting backend/frontend implementation.
+- Live Coach V0 — STT vertical slice is closed: in-browser audio capture
+  (getUserMedia, MediaRecorder, codec selection hierarchy, 15s limit), authenticated
+  endpoint POST /api/coach/live/transcriptions, ILiveCoachSpeechToText abstraction,
+  GroqLiveCoachSpeechToTextAdapter (whisper-large-v3-turbo), in-memory transient audio
+  processing without persistence, typed error handling, and real transcript display in
+  the Training Live Coach sheet.
+- Next for Live Coach: Live Coach Turn / Respond endpoint (session context projection,
+  intent routing, read-only tools, and grounded LLM text generation).
 - Frontend Adaptive Training V3 is closed. It configures today's conditions,
   generates and reviews the adapted proposal, presents structured before/after
   changes, supports temporary conversation and explicitly confirms the proposal
