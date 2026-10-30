@@ -22,6 +22,7 @@ import type {
 import { cn } from "@/lib/class-names";
 import type { TrainingSession } from "../types/training.types";
 import { LiveCoachFace, type LiveCoachFaceState } from "./live-coach-face";
+import styles from "./live-coach-prototype.module.css";
 
 type LiveCoachState =
   | "idle"
@@ -44,34 +45,49 @@ const statePresentations: Record<LiveCoachState, StatePresentation> = {
     label: "En espera",
   },
   requestingPermission: {
-    description: "Preparando el micrófono.",
-    label: "Conectando",
+    description: "Un momento.",
+    label: "Preparando...",
   },
   listening: {
-    description: "Decime tu consulta.",
-    label: "Escuchando",
+    description: "Tocá para enviar.",
+    label: "Escuchando...",
   },
   transcribing: {
     description: "Procesando tu voz.",
-    label: "Pensando",
+    label: "Transcribiendo...",
   },
   answering: {
-    description: "Preparando una respuesta.",
-    label: "Pensando",
+    description: "Un momento.",
+    label: "Pensando...",
   },
   speaking: {
-    description: "Escuchá la respuesta.",
-    label: "Respondiendo",
+    description: "La respuesta está sonando.",
+    label: "Respondiendo...",
   },
   success: {
     description: "Respuesta lista.",
     label: "Listo",
   },
   error: {
-    description: "Podés intentarlo de nuevo.",
-    label: "No disponible",
+    description: "Intentá nuevamente.",
+    label: "No pude responder",
   },
 };
+
+function getVisibleErrorMessage(message: string | null): string {
+  if (!message) return "Intentá nuevamente.";
+
+  const normalized = message.toLocaleLowerCase("es");
+  if (normalized.includes("sesión activa")) return "No encontré una sesión activa.";
+  if (normalized.includes("permiso") || normalized.includes("micrófono")) {
+    return "Revisá el acceso al micrófono e intentá de nuevo.";
+  }
+  if (normalized.includes("audio") || normalized.includes("grabación")) {
+    return "No pude escuchar el audio. Intentá de nuevo.";
+  }
+
+  return "No pude completar la consulta. Intentá de nuevo.";
+}
 
 function mapToFaceState(state: LiveCoachState): LiveCoachFaceState {
   switch (state) {
@@ -154,16 +170,17 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
   function stopAudio(reason?: string) {
     void reason;
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.onplay = null;
-      audioRef.current.onplaying = null;
-      audioRef.current.onpause = null;
-      audioRef.current.onended = null;
-      audioRef.current.onerror = null;
-      audioRef.current.onabort = null;
-      audioRef.current.onemptied = null;
-      audioRef.current.src = "";
+      const audio = audioRef.current;
       audioRef.current = null;
+      audio.onplay = null;
+      audio.onplaying = null;
+      audio.onpause = null;
+      audio.onended = null;
+      audio.onerror = null;
+      audio.onabort = null;
+      audio.onemptied = null;
+      audio.pause();
+      audio.src = "";
     }
     if (currentAudioUrlRef.current) {
       URL.revokeObjectURL(currentAudioUrlRef.current);
@@ -199,15 +216,18 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
   }, []);
 
   function toggleVoice() {
-    setVoiceEnabled((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem("entrenate.live_coach.voice_enabled", String(next));
-      } catch {
-        // Ignore
-      }
-      return next;
-    });
+    const next = !voiceEnabled;
+    setVoiceEnabled(next);
+    try {
+      localStorage.setItem("entrenate.live_coach.voice_enabled", String(next));
+    } catch {
+      // Ignore
+    }
+
+    if (!next && audioRef.current) {
+      stopAudio("voice-disabled");
+      setState("success");
+    }
   }
 
   function getClientSnapshot(): LiveCoachClientSnapshot {
@@ -234,6 +254,9 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
     };
     audio.onplaying = () => {
       setState("speaking");
+    };
+    audio.onpause = () => {
+      if (!audio.ended) setState("success");
     };
     audio.onended = () => {
       audio.currentTime = 0;
@@ -527,6 +550,8 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
   return (
     <>
       <button
+        aria-controls="live-coach-dialog"
+        aria-haspopup="dialog"
         aria-label={`Abrir Live Coach. Estado: ${presentation.label}`}
         className="flex min-h-12 shrink-0 items-center gap-2 rounded-control-sm px-2 text-text-secondary transition-colors duration-150 hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
         onClick={openSheet}
@@ -545,6 +570,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
         onClick={handleBackdropClick}
         onClose={handleCancelOrClose}
         ref={dialogRef}
+        id="live-coach-dialog"
       >
         <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-border-strong sm:hidden" />
         <div className="px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4 sm:p-6">
@@ -558,6 +584,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
             <div className="flex items-center gap-1">
               <button
                 aria-label={voiceEnabled ? "Desactivar respuestas por voz" : "Activar respuestas por voz"}
+                aria-pressed={voiceEnabled}
                 className={cn(
                   "flex size-11 shrink-0 items-center justify-center rounded-control-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none",
                   voiceEnabled
@@ -582,6 +609,12 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
           </header>
 
           <section
+            aria-atomic="true"
+            aria-busy={
+              state === "requestingPermission" ||
+              state === "transcribing" ||
+              state === "answering"
+            }
             aria-labelledby="live-coach-current-state"
             aria-live="polite"
             className="mt-4 flex flex-col items-center pb-1 pt-2 text-center"
@@ -598,7 +631,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
             </p>
           </section>
 
-          <div className="mt-4 space-y-4">
+          <div className={cn(styles.stateBody, "mt-4 space-y-4")} key={state}>
             {state === "idle" && (
               <div className="space-y-2">
                 <Button fullWidth onClick={startRecording}>
@@ -655,120 +688,105 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
 
             {state === "speaking" && coachResponse && (
               <div className="space-y-4">
-                <div className="rounded-control-sm border border-thermal-accent/60 bg-surface-interactive p-4 shadow-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-thermal-accent">
-                      <Volume2 aria-hidden="true" className="motion-safe:animate-pulse" size={14} />
-                      Coach respondiendo
-                    </span>
-                    {coachResponse.isStaleContext && (
-                      <span className="inline-flex items-center rounded bg-warning/15 px-1.5 py-0.5 text-[0.6875rem] font-medium text-warning">
-                        Contexto actualizado
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-2 text-base font-semibold leading-relaxed text-text-primary">
+                <div className="max-h-[min(10rem,28dvh)] overflow-y-auto border-t border-border/60 pt-4 activity-scrollbar">
+                  {coachResponse.isStaleContext && (
+                    <p className="mb-2 text-xs font-semibold text-warning">Contexto actualizado</p>
+                  )}
+                  <p className="text-sm font-medium leading-6 text-text-secondary">
                     {coachResponse.text}
                   </p>
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control-sm border border-thermal-accent/50 bg-thermal-accent/15 px-4 py-3 text-sm font-semibold text-thermal-accent transition-colors duration-150 hover:bg-thermal-accent/25 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                <div>
+                  <Button
+                    fullWidth
                     onClick={() => {
                       stopAudio("manual-stop");
                       setState("success");
                     }}
-                    type="button"
+                    variant="secondary"
                   >
                     <Square aria-hidden="true" className="fill-current" size={15} />
                     <span>Detener voz</span>
-                  </button>
-                  <button
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-primary transition-colors duration-150 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-                    onClick={handleReset}
-                    type="button"
-                  >
-                    <RotateCcw aria-hidden="true" size={16} />
-                    <span>Otra consulta</span>
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
 
             {state === "success" && coachResponse && (
               <div className="space-y-4">
-                {transcript && (
-                  <div className="rounded-control-sm border border-border/80 bg-surface-interactive/60 p-3">
-                    <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted">
-                      Tu consulta
-                    </span>
-                    <p className="mt-1 text-sm font-medium text-text-secondary">
-                      &ldquo;{transcript}&rdquo;
-                    </p>
-                  </div>
-                )}
-
-                <div className="rounded-control-sm border border-thermal-accent/40 bg-surface-interactive p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-thermal-accent">
-                      Respuesta del Coach
-                    </span>
-                    {coachResponse.isStaleContext && (
-                      <span className="inline-flex items-center rounded bg-warning/15 px-1.5 py-0.5 text-[0.6875rem] font-medium text-warning">
-                        Contexto actualizado
+                <div className="max-h-[min(15rem,36dvh)] space-y-4 overflow-y-auto border-t border-border/60 pt-4 activity-scrollbar">
+                  {transcript && (
+                    <div>
+                      <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted">
+                        Tu consulta
                       </span>
+                      <p className="mt-1 text-sm leading-5 text-text-secondary">
+                        &ldquo;{transcript}&rdquo;
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-thermal-accent">
+                        Respuesta del Coach
+                      </span>
+                      {coachResponse.isStaleContext && (
+                        <span className="text-[0.6875rem] font-medium text-warning">
+                          Contexto actualizado
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1.5 text-sm font-medium leading-6 text-text-primary">
+                      {coachResponse.text}
+                    </p>
+                    {voiceError && (
+                      <p className="mt-2 text-[0.8125rem] leading-5 text-warning" role="status">
+                        {voiceError}
+                      </p>
                     )}
                   </div>
-                  <p className="mt-2 text-base font-semibold leading-relaxed text-text-primary">
-                    {coachResponse.text}
-                  </p>
-                  {voiceError && (
-                    <p className="mt-3 text-[0.8125rem] leading-5 text-warning" role="status">
-                      {voiceError}
-                    </p>
-                  )}
                 </div>
 
                 <div className="flex gap-2">
                   {coachResponse.canSynthesizeVoice && (
-                    <button
-                      className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-primary transition-colors duration-150 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                    <Button
+                      className="flex-1"
                       onClick={() => playSpokenAnswer(coachResponse.responseId, true)}
-                      type="button"
+                      variant="secondary"
                     >
                       <Volume2 aria-hidden="true" size={16} />
                       <span>Escuchar</span>
-                    </button>
+                    </Button>
                   )}
 
-                  <button
-                    className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-primary transition-colors duration-150 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                  <Button
+                    className="flex-1"
                     onClick={handleReset}
-                    type="button"
+                    variant={coachResponse.canSynthesizeVoice ? "outline" : "primary"}
                   >
                     <RotateCcw aria-hidden="true" size={16} />
-                    <span>Hacer otra consulta</span>
-                  </button>
+                    <span>Otra consulta</span>
+                  </Button>
                 </div>
               </div>
             )}
 
             {state === "error" && (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 rounded-control-sm border border-error/40 bg-error/10 p-3.5 text-[0.8125rem] text-text-primary">
-                  <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0 text-error" size={18} />
-                  <p className="leading-5">{errorMessage ?? "Ocurrió un error inesperado."}</p>
-                </div>
-
-                <button
-                  className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-border-strong bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-primary transition-colors duration-150 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-                  onClick={handleReset}
-                  type="button"
+                <p
+                  className="flex items-start justify-center gap-2 text-center text-sm leading-5 text-text-secondary"
+                  role="alert"
                 >
+                  <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0 text-error" size={17} />
+                  <span>{getVisibleErrorMessage(errorMessage)}</span>
+                </p>
+
+                <Button fullWidth onClick={handleReset} variant="secondary">
                   <RotateCcw aria-hidden="true" size={16} />
                   <span>Reintentar</span>
-                </button>
+                </Button>
               </div>
             )}
           </div>
