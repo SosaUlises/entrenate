@@ -14,7 +14,6 @@ import {
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { respondLiveCoachAction } from "@/features/coach/actions/respond-live-coach.action";
-import { synthesizeLiveSpeechAction } from "@/features/coach/actions/synthesize-live-speech.action";
 import { transcribeLiveAudioAction } from "@/features/coach/actions/transcribe-live-audio.action";
 import type {
   LiveCoachClientSnapshot,
@@ -130,16 +129,6 @@ function getAudioFileExtension(mimeType: string): string {
   return "audio.webm";
 }
 
-function base64ToBlob(base64: string, mimeType: string): Blob {
-  const byteCharacters = atob(base64);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
-}
-
 type LiveCoachPrototypeProps = {
   session?: TrainingSession | null;
 };
@@ -150,6 +139,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [coachResponse, setCoachResponse] = useState<LiveCoachRespondResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const [textInput, setTextInput] = useState("");
   const [showTextInput, setShowTextInput] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(() => {
@@ -171,11 +161,17 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentAudioUrlRef = useRef<string | null>(null);
 
-  function stopAudio() {
+  function stopAudio(reason?: string) {
+    void reason;
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.onplay = null;
+      audioRef.current.onplaying = null;
+      audioRef.current.onpause = null;
       audioRef.current.onended = null;
       audioRef.current.onerror = null;
+      audioRef.current.onabort = null;
+      audioRef.current.onemptied = null;
       audioRef.current.src = "";
       audioRef.current = null;
     }
@@ -208,7 +204,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
   useEffect(() => {
     return () => {
       cleanupMedia();
-      stopAudio();
+      stopAudio("component-unmount");
     };
   }, []);
 
@@ -242,40 +238,80 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
     };
   }
 
-  async function playSpokenAnswer(responseId: string) {
-    stopAudio();
-    setState("speaking");
+  function attachAudioEventListeners(audio: HTMLAudioElement) {
+    audio.onplay = () => {
+      setState("speaking");
+    };
+    audio.onplaying = () => {
+      setState("speaking");
+    };
+    audio.onended = () => {
+      audio.currentTime = 0;
+      setState("success");
+    };
+    audio.onerror = () => {
+      stopAudio("audio-error");
+      setState("success");
+    };
+  }
 
-    const ttsResult = await synthesizeLiveSpeechAction(responseId);
-
-    if (ttsResult.status === "success") {
+  async function playSpokenAnswer(responseId: string, isUserGesture = false) {
+    if (audioRef.current && isUserGesture) {
       try {
-        const blob = base64ToBlob(ttsResult.audioBase64, ttsResult.contentType);
-        const url = URL.createObjectURL(blob);
-        currentAudioUrlRef.current = url;
+        audioRef.current.currentTime = 0;
+        await audioRef.current.play();
+        return;
+      } catch {
+        stopAudio("play-rejected-reuse");
+        setState("success");
+        return;
+      }
+    }
 
-        const audio = new Audio(url);
-        audioRef.current = audio;
+    stopAudio("replace-audio");
+    setVoiceError(null);
 
-        audio.onended = () => {
-          stopAudio();
-          setState("success");
-        };
+    try {
+      const response = await fetch("/api/coach/live/speech", {
+        body: JSON.stringify({ responseId }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
 
-        audio.onerror = () => {
-          stopAudio();
-          setState("success");
-        };
+      if (!response.ok) {
+        setVoiceError(
+          response.status === 404
+            ? "La respuesta de voz expiró. Hacé una nueva consulta."
+            : "No se pudo generar la voz. Podés leer la respuesta en texto.",
+        );
+        setState("success");
+        return;
+      }
 
+      const blob = await response.blob();
+      if (blob.size === 0) {
+        setVoiceError("El servicio de voz devolvió un audio vacío.");
+        setState("success");
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      currentAudioUrlRef.current = url;
+
+      const audio = new Audio(url);
+      attachAudioEventListeners(audio);
+      audioRef.current = audio;
+
+      try {
         await audio.play();
       } catch {
-        // Autoplay policy blocked or interrupted: text remains visible
-        stopAudio();
+        // Autoplay bloqueado por políticas del navegador (pérdida de user activation tras llamadas asíncronas).
+        // Mantenemos audioRef y el URL cargados para que el usuario pueda reproducir al pulsar "Escuchar".
         setState("success");
       }
-    } else {
-      // TTS failure: text remains visible, Training continues normally
-      stopAudio();
+    } catch {
+      setVoiceError("No se pudo conectar con el servicio de voz.");
       setState("success");
     }
   }
@@ -287,7 +323,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
       return;
     }
 
-    stopAudio();
+    stopAudio("new-query-ask");
     setState("answering");
 
     const snapshot = getClientSnapshot();
@@ -327,7 +363,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
 
   async function startRecording() {
     cleanupMedia();
-    stopAudio();
+    stopAudio("new-query-audio");
     setErrorMessage(null);
     setTranscript(null);
     setCoachResponse(null);
@@ -453,7 +489,8 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
 
   function handleReset() {
     cleanupMedia();
-    stopAudio();
+    stopAudio("manual-reset");
+    setVoiceError(null);
     setState("idle");
     setTranscript(null);
     setCoachResponse(null);
@@ -463,7 +500,8 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
 
   function handleCancelOrClose() {
     cleanupMedia();
-    stopAudio();
+    stopAudio("sheet-close");
+    setVoiceError(null);
     setState("idle");
     setTranscript(null);
     setCoachResponse(null);
@@ -479,6 +517,10 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
   }
 
   function handleBackdropClick(event: MouseEvent<HTMLDialogElement>) {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
     const bounds = event.currentTarget.getBoundingClientRect();
     const outside =
       event.clientX < bounds.left ||
@@ -690,7 +732,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
                   <button
                     className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control-sm border border-thermal-accent/50 bg-thermal-accent/15 px-4 py-3 text-sm font-semibold text-thermal-accent transition-colors duration-150 hover:bg-thermal-accent/25 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
                     onClick={() => {
-                      stopAudio();
+                      stopAudio("manual-stop");
                       setState("success");
                     }}
                     type="button"
@@ -737,13 +779,18 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
                   <p className="mt-2 text-base font-semibold leading-relaxed text-text-primary">
                     {coachResponse.text}
                   </p>
+                  {voiceError && (
+                    <p className="mt-3 text-[0.8125rem] leading-5 text-warning" role="status">
+                      {voiceError}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
                   {coachResponse.canSynthesizeVoice && (
                     <button
                       className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-primary transition-colors duration-150 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-                      onClick={() => playSpokenAnswer(coachResponse.responseId)}
+                      onClick={() => playSpokenAnswer(coachResponse.responseId, true)}
                       type="button"
                     >
                       <Volume2 aria-hidden="true" size={16} />

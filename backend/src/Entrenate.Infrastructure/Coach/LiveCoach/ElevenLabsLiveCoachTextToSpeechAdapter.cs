@@ -44,6 +44,16 @@ namespace Entrenate.Infrastructure.Coach.LiveCoach
                 throw new ArgumentException("El texto para síntesis de voz no puede estar vacío.", nameof(text));
             }
 
+            if (string.IsNullOrWhiteSpace(_settings.ApiKey))
+            {
+                _logger.LogError(
+                    "ElevenLabs TTS: ApiKey no está configurada. Configure 'ElevenLabs:ApiKey' en user-secrets o 'ElevenLabs__ApiKey' en variables de entorno.");
+
+                throw new ExternalServiceException(
+                    "El servicio de síntesis de voz no está configurado (falta ElevenLabs:ApiKey). Configure la clave en user-secrets o variables de entorno.",
+                    new InvalidOperationException("ElevenLabs:ApiKey is missing from configuration."));
+            }
+
             var timeoutSeconds = _settings.TimeoutSeconds > 0 ? _settings.TimeoutSeconds : 15;
             using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
@@ -57,6 +67,19 @@ namespace Entrenate.Infrastructure.Coach.LiveCoach
                 : _settings.OutputFormat.Trim();
 
             var url = $"text-to-speech/{voiceId}?output_format={outputFormat}";
+
+            var maskedKey = _settings.ApiKey.Length > 8
+                ? $"{_settings.ApiKey[..4]}...{_settings.ApiKey[^4..]}"
+                : "***";
+
+            _logger.LogInformation(
+                "ElevenLabs TTS solicitando síntesis: VoiceId={VoiceId}, ModelId={ModelId}, OutputFormat={OutputFormat}, BaseUrl={BaseUrl}, KeyLength={KeyLength}, KeyMask={KeyMask}",
+                voiceId,
+                string.IsNullOrWhiteSpace(_settings.ModelId) ? "eleven_multilingual_v2" : _settings.ModelId.Trim(),
+                outputFormat,
+                _settings.BaseUrl,
+                _settings.ApiKey.Length,
+                maskedKey);
 
             // Privacy: Payload only contains authorized text and voice parameters.
             // Zero user IDs, zero session IDs, zero training context.

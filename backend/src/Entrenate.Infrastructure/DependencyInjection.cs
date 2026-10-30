@@ -254,7 +254,36 @@ namespace Entrenate.Infrastructure
                 });
 
             services.AddOptions<ElevenLabsSettings>()
-                .Bind(configuration.GetSection("ElevenLabs"));
+                .Bind(configuration.GetSection("ElevenLabs"))
+                .PostConfigure(settings =>
+                {
+                    if (string.IsNullOrWhiteSpace(settings.ApiKey))
+                    {
+                        settings.ApiKey = configuration["ElevenLabs:ApiKey"]
+                            ?? configuration["ElevenLabs__ApiKey"]
+                            ?? configuration["ELEVENLABS_API_KEY"]
+                            ?? configuration["ElevenLabsApiKey"]
+                            ?? string.Empty;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(settings.BaseUrl))
+                    {
+                        settings.BaseUrl = "https://api.elevenlabs.io/v1/";
+                    }
+
+                    if (string.IsNullOrWhiteSpace(settings.VoiceId))
+                    {
+                        settings.VoiceId = configuration["ElevenLabs:VoiceId"]
+                            ?? configuration["ElevenLabs__VoiceId"]
+                            ?? configuration["ELEVENLABS_VOICE_ID"]
+                            ?? "21m00Tcm4TlvDq8ikWAM";
+                    }
+
+                    if (string.IsNullOrWhiteSpace(settings.ModelId))
+                    {
+                        settings.ModelId = "eleven_multilingual_v2";
+                    }
+                });
 
             services.AddHttpClient<
                 ILiveCoachTextToSpeech,

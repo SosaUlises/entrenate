@@ -49,6 +49,10 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.SynthesizeLiveSpeech
             {
                 return await _textToSpeech.SynthesizeAsync(approvedText, cancellationToken);
             }
+            catch (ExternalServiceException)
+            {
+                throw;
+            }
             catch (OperationCanceledException)
             {
                 throw;
