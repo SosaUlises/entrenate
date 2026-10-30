@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
-import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
 import { respondLiveCoachAction } from "@/features/coach/actions/respond-live-coach.action";
 import { transcribeLiveAudioAction } from "@/features/coach/actions/transcribe-live-audio.action";
 import type {
@@ -21,6 +21,7 @@ import type {
 } from "@/features/coach/types/live-coach.types";
 import { cn } from "@/lib/class-names";
 import type { TrainingSession } from "../types/training.types";
+import { LiveCoachFace, type LiveCoachFaceState } from "./live-coach-face";
 
 type LiveCoachState =
   | "idle"
@@ -32,58 +33,47 @@ type LiveCoachState =
   | "success"
   | "error";
 
-type FaceState = "idle" | "listening" | "thinking" | "speaking" | "success" | "error";
-
 type StatePresentation = {
   description: string;
-  indicatorClassName: string;
   label: string;
 };
 
 const statePresentations: Record<LiveCoachState, StatePresentation> = {
   idle: {
-    description: "Tocá el micrófono o escribí para consultar sobre tu sesión en curso.",
-    indicatorClassName: "bg-text-muted",
+    description: "Tocá para hablar.",
     label: "En espera",
   },
   requestingPermission: {
-    description: "Solicitando acceso al micrófono...",
-    indicatorClassName: "bg-thermal-accent motion-safe:animate-pulse",
-    label: "Permiso",
+    description: "Preparando el micrófono.",
+    label: "Conectando",
   },
   listening: {
-    description: "Grabando audio... Tocá detener para enviar tu consulta (máximo 15 s).",
-    indicatorClassName: "bg-thermal-accent motion-safe:animate-pulse",
+    description: "Decime tu consulta.",
     label: "Escuchando",
   },
   transcribing: {
-    description: "Transcribiendo habla con Whisper...",
-    indicatorClassName: "bg-steel motion-safe:animate-pulse",
-    label: "Transcribiendo",
+    description: "Procesando tu voz.",
+    label: "Pensando",
   },
   answering: {
-    description: "Consultando al Coach con el estado de tu sesión...",
-    indicatorClassName: "bg-thermal-accent motion-safe:animate-pulse",
+    description: "Preparando una respuesta.",
     label: "Pensando",
   },
   speaking: {
-    description: "Reproduciendo respuesta hablada del Coach...",
-    indicatorClassName: "bg-thermal-accent motion-safe:animate-pulse",
-    label: "Hablando",
+    description: "Escuchá la respuesta.",
+    label: "Respondiendo",
   },
   success: {
-    description: "Respuesta del Coach lista.",
-    indicatorClassName: "bg-success",
-    label: "Respondido",
+    description: "Respuesta lista.",
+    label: "Listo",
   },
   error: {
-    description: "No se pudo procesar la consulta.",
-    indicatorClassName: "bg-error",
+    description: "Podés intentarlo de nuevo.",
     label: "No disponible",
   },
 };
 
-function mapToFaceState(state: LiveCoachState): FaceState {
+function mapToFaceState(state: LiveCoachState): LiveCoachFaceState {
   switch (state) {
     case "idle":
       return "idle";
@@ -549,7 +539,6 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
       </button>
 
       <dialog
-        aria-describedby="live-coach-prototype-description"
         aria-labelledby="live-coach-prototype-title"
         aria-modal="true"
         className="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[calc(100dvh-0.5rem)] w-full max-w-none overflow-y-auto rounded-t-container border border-border-strong bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:inset-0 sm:m-auto sm:w-[calc(100%-2rem)] sm:max-w-md sm:rounded-container"
@@ -560,20 +549,12 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
         <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-border-strong sm:hidden" />
         <div className="px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4 sm:p-6">
           <header className="flex items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <h2
-                className="font-brand text-2xl font-bold leading-8 text-text-primary"
-                id="live-coach-prototype-title"
-              >
-                Live Coach
-              </h2>
-              <p
-                className="mt-2 max-w-sm text-sm leading-6 text-text-secondary"
-                id="live-coach-prototype-description"
-              >
-                Consultas en tiempo real sobre tu sesión en el gimnasio.
-              </p>
-            </div>
+            <h2
+              className="min-w-0 flex-1 font-brand text-2xl font-bold leading-8 text-text-primary"
+              id="live-coach-prototype-title"
+            >
+              Live Coach
+            </h2>
             <div className="flex items-center gap-1">
               <button
                 aria-label={voiceEnabled ? "Desactivar respuestas por voz" : "Activar respuestas por voz"}
@@ -603,55 +584,39 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
           <section
             aria-labelledby="live-coach-current-state"
             aria-live="polite"
-            className="mt-6 border-y border-border/70 py-6"
+            className="mt-4 flex flex-col items-center pb-1 pt-2 text-center"
           >
-            <div className="flex items-center gap-5">
-              <LiveCoachFace state={faceState} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      "size-2 shrink-0 rounded-full motion-reduce:animate-none",
-                      presentation.indicatorClassName,
-                    )}
-                  />
-                  <h3
-                    className="font-brand text-lg font-bold leading-6 text-text-primary"
-                    id="live-coach-current-state"
-                  >
-                    {presentation.label}
-                  </h3>
-                </div>
-                <p className="mt-1.5 text-[0.8125rem] leading-5 text-text-secondary">
-                  {errorMessage ?? presentation.description}
-                </p>
-              </div>
-            </div>
+            <LiveCoachFace state={faceState} />
+            <h3
+              className="mt-1 font-brand text-xl font-bold leading-7 text-text-primary"
+              id="live-coach-current-state"
+            >
+              {presentation.label}
+            </h3>
+            <p className="mt-1 text-sm leading-5 text-text-secondary">
+              {presentation.description}
+            </p>
           </section>
 
-          {/* Interactive Control Area */}
-          <div className="mt-6 space-y-4">
+          <div className="mt-4 space-y-4">
             {state === "idle" && (
-              <div className="space-y-3">
-                <button
-                  className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm bg-thermal-accent px-4 py-3 text-sm font-semibold text-black transition-colors duration-150 hover:bg-thermal-accent/90 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-                  onClick={startRecording}
-                  type="button"
-                >
+              <div className="space-y-2">
+                <Button fullWidth onClick={startRecording}>
                   <Mic aria-hidden="true" size={18} />
                   <span>Hablar al Coach</span>
-                </button>
+                </Button>
 
                 {!showTextInput ? (
-                  <button
-                    className="flex min-h-10 w-full items-center justify-center gap-2 rounded-control-sm text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-surface-interactive hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                  <Button
+                    className="text-[0.8125rem]"
+                    fullWidth
                     onClick={() => setShowTextInput(true)}
-                    type="button"
+                    size="sm"
+                    variant="ghost"
                   >
                     <MessageSquare aria-hidden="true" size={15} />
-                    <span>Escribir por texto</span>
-                  </button>
+                    <span>Escribir</span>
+                  </Button>
                 ) : (
                   <form className="space-y-2 pt-1" onSubmit={handleTextSubmit}>
                     <div className="flex gap-2">
@@ -677,13 +642,6 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
               </div>
             )}
 
-            {state === "requestingPermission" && (
-              <div className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-secondary">
-                <Spinner className="size-4" />
-                <span>Esperando permiso de micrófono...</span>
-              </div>
-            )}
-
             {state === "listening" && (
               <button
                 className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-thermal-accent/60 bg-thermal-accent/15 px-4 py-3 text-sm font-semibold text-thermal-accent transition-colors duration-150 hover:bg-thermal-accent/25 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
@@ -693,20 +651,6 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
                 <Square aria-hidden="true" className="fill-current" size={16} />
                 <span>Detener y enviar</span>
               </button>
-            )}
-
-            {state === "transcribing" && (
-              <div className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-secondary">
-                <Spinner className="size-4" />
-                <span>Transcribiendo audio...</span>
-              </div>
-            )}
-
-            {state === "answering" && (
-              <div className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-border bg-surface-interactive px-4 py-3 text-sm font-semibold text-text-secondary">
-                <Spinner className="size-4" />
-                <span>Pensando respuesta...</span>
-              </div>
             )}
 
             {state === "speaking" && coachResponse && (
@@ -829,59 +773,8 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
             )}
           </div>
 
-          <p className="mt-6 border-t border-border/60 pt-4 text-[0.8125rem] leading-5 text-text-muted">
-            Live Coach V0 — Respuestas contextuales y voz en tiempo real basadas en tu sesión activa. Sin mutaciones.
-          </p>
         </div>
       </dialog>
     </>
-  );
-}
-
-function LiveCoachFace({
-  compact = false,
-  state,
-}: {
-  compact?: boolean;
-  state: FaceState;
-}) {
-  const active = state === "listening" || state === "thinking";
-  const speaking = state === "speaking";
-
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-control-sm border border-border-strong bg-surface-interactive",
-        compact ? "h-7 w-10" : "h-16 w-24",
-      )}
-    >
-      <span
-        className={cn(
-          "absolute rounded-full bg-technical-white transition-opacity duration-200 motion-reduce:transition-none",
-          compact ? "left-2.5 top-2 h-1.5 w-1.5" : "left-6 top-[1.35rem] h-2.5 w-2.5",
-          active && "motion-safe:animate-pulse",
-        )}
-      />
-      <span
-        className={cn(
-          "absolute rounded-full bg-technical-white transition-opacity duration-200 motion-reduce:transition-none",
-          compact ? "right-2.5 top-2 h-1.5 w-1.5" : "right-6 top-[1.35rem] h-2.5 w-2.5",
-          active && "motion-safe:animate-pulse",
-        )}
-      />
-      <span
-        className={cn(
-          "absolute left-1/2 -translate-x-1/2 rounded-full bg-thermal-accent transition-[height,width] duration-200 motion-reduce:transition-none",
-          compact
-            ? speaking
-              ? "bottom-1.5 h-1.5 w-2"
-              : "bottom-1.5 h-0.5 w-2"
-            : speaking
-              ? "bottom-3.5 h-2 w-4 motion-safe:animate-pulse"
-              : "bottom-4 h-1 w-4",
-        )}
-      />
-    </span>
   );
 }

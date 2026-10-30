@@ -1,0 +1,284 @@
+.gaze,
+.eyePosition,
+.eyeMotion,
+.eyeShape {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.gaze,
+.eyePosition,
+.eyeShape {
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* State posture lives on persistent SVG layers so changes interpolate cleanly. */
+[data-state="listening"] .eyeLeft {
+  transform: translateX(2px);
+}
+
+[data-state="listening"] .eyeRight {
+  transform: translateX(-2px);
+}
+
+[data-state="listening"] .eyeShape {
+  transform: scale(1.1, 1.14);
+}
+
+[data-state="thinking"] .eyeLeft {
+  transform: translate(-1px, -4px);
+}
+
+[data-state="thinking"] .eyeRight {
+  transform: translate(1px, 4px);
+}
+
+[data-state="thinking"] .eyeLeft .eyeShape {
+  transform: scale(1.06, 0.46);
+}
+
+[data-state="thinking"] .eyeRight .eyeShape {
+  transform: scale(1, 1.04);
+}
+
+[data-state="speaking"] .eyeShape {
+  transform: scale(1.04);
+}
+
+[data-state="success"] .eyeLeft {
+  transform: rotate(8deg);
+}
+
+[data-state="success"] .eyeRight {
+  transform: rotate(-8deg);
+}
+
+[data-state="success"] .eyeShape {
+  transform: scale(1.08, 0.28);
+}
+
+[data-state="error"] .eyeLeft {
+  transform: rotate(-8deg);
+}
+
+[data-state="error"] .eyeRight {
+  transform: rotate(8deg);
+}
+
+[data-state="error"] .eyeShape {
+  transform: scale(1.08, 0.46);
+}
+
+/* Idle uses independent, long cycles so blink and drift rarely align. */
+.animated[data-state="idle"] .gaze {
+  animation: idle-drift 9.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.animated[data-state="idle"] .eyeMotion {
+  animation: idle-blink 13.9s linear infinite;
+}
+
+.animated[data-state="idle"] .eyeRight .eyeMotion {
+  animation-delay: 24ms;
+}
+
+.animated[data-state="listening"] .eyeMotion {
+  animation: listening-attention 1.55s ease-in-out infinite;
+}
+
+.animated[data-state="thinking"] .eyeLeft .eyeMotion {
+  animation: thinking-left 2.3s ease-in-out infinite;
+}
+
+.animated[data-state="thinking"] .eyeRight .eyeMotion {
+  animation: thinking-right 2.7s ease-in-out infinite;
+}
+
+.animated[data-state="speaking"] .eyeLeft .eyeMotion {
+  animation: speaking-left 640ms ease-in-out infinite;
+}
+
+.animated[data-state="speaking"] .eyeRight .eyeMotion {
+  animation: speaking-right 680ms ease-in-out infinite;
+}
+
+.animated[data-state="success"] .gaze {
+  animation: success-arrive 720ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+}
+
+.animated[data-state="error"] .gaze {
+  animation: error-react 420ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+}
+
+@keyframes idle-drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  23% {
+    transform: translate(1.2px, -0.45px);
+  }
+
+  47% {
+    transform: translate(-0.7px, 0.65px);
+  }
+
+  71% {
+    transform: translate(-1.3px, -0.25px);
+  }
+
+  86% {
+    transform: translate(0.55px, 0.35px);
+  }
+}
+
+@keyframes idle-blink {
+  0%,
+  16%,
+  19%,
+  49%,
+  52%,
+  78%,
+  81%,
+  84%,
+  87%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  17.4%,
+  50.4%,
+  79.4%,
+  85.4% {
+    transform: scaleY(0.08);
+  }
+
+  35% {
+    transform: scaleY(0.97);
+  }
+
+  66% {
+    transform: scaleY(0.985);
+  }
+}
+
+@keyframes listening-attention {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  52% {
+    transform: scale(1.035);
+  }
+}
+
+@keyframes thinking-left {
+  0%,
+  100% {
+    transform: translate(0, 0) scaleY(1);
+  }
+
+  38% {
+    transform: translate(1.2px, 2px) scaleY(0.58);
+  }
+
+  69% {
+    transform: translate(-0.5px, 0.5px) scaleY(0.86);
+  }
+}
+
+@keyframes thinking-right {
+  0%,
+  100% {
+    transform: translate(0, 0) scaleY(1);
+  }
+
+  31% {
+    transform: translate(-1px, -2.2px) scaleY(0.92);
+  }
+
+  63% {
+    transform: translate(0.6px, 1.4px) scaleY(0.72);
+  }
+}
+
+@keyframes speaking-left {
+  0%,
+  100% {
+    transform: translateY(1px) scale(0.96, 0.86);
+  }
+
+  43% {
+    transform: translateY(-2.5px) scale(1.04, 1.07);
+  }
+
+  74% {
+    transform: translateY(0) scale(0.99, 0.94);
+  }
+}
+
+@keyframes speaking-right {
+  0%,
+  100% {
+    transform: translateY(-1.8px) scale(1.03, 1.04);
+  }
+
+  39% {
+    transform: translateY(1.2px) scale(0.95, 0.84);
+  }
+
+  72% {
+    transform: translateY(-0.6px) scale(1, 0.96);
+  }
+}
+
+@keyframes success-arrive {
+  0% {
+    opacity: 0.65;
+    transform: translateY(3px) scale(0.94);
+  }
+
+  38%,
+  68% {
+    opacity: 1;
+    transform: translateY(-1px) scale(1.025);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes error-react {
+  0% {
+    opacity: 0.72;
+    transform: translateX(0) scaleY(0.55);
+  }
+
+  32% {
+    opacity: 1;
+    transform: translateX(-1.5px) scaleY(1);
+  }
+
+  62% {
+    transform: translateX(1px) scaleY(1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0) scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gaze,
+  .eyePosition,
+  .eyeMotion,
+  .eyeShape {
+    animation: none !important;
+    transition: none;
+  }
+}
