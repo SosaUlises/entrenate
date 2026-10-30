@@ -1,3 +1,4 @@
+using Entrenate.Application.Coach.LiveCoach.Actions;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.Common.Settings;
 using Entrenate.Infrastructure.Authentication;
@@ -313,6 +314,7 @@ namespace Entrenate.Infrastructure
             services.AddScoped<IRoutineRepository, RoutineRepository>();
             services.AddScoped<ITrainingSessionRepository, TrainingSessionRepository>();
             services.AddSingleton<ILiveCoachResponseCache, MemoryLiveCoachResponseCache>();
+            services.AddSingleton<ILiveCoachPendingActionStore, MemoryLiveCoachPendingActionStore>();
 
 
 

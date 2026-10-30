@@ -831,7 +831,10 @@ LiveCoachTurnMetrics
 - Tool execution is closed, typed, read-only and authorization-aware;
 - Provider output cannot call repositories, endpoints or commands;
 - No provider may write to the database or control Training;
-- No V0 endpoint exposes a mutation command;
+- The only V0 mutation endpoint consumes an opaque, short-lived pending-action
+  identifier and reuses Training's set-registration command after ownership,
+  active-session and current-set revalidation;
+- No provider controls or directly invokes a mutation command;
 - Deterministic Coach decisions remain authoritative when included in context;
 - Cancellation and timeout flow through all provider/tool operations.
 

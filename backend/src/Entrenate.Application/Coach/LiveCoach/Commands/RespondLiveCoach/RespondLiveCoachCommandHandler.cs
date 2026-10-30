@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Entrenate.Application.Coach.LiveCoach.Context;
+using Entrenate.Application.Coach.LiveCoach.Actions;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Prompt;
 using Entrenate.Application.Coach.LiveCoach.Routing;
@@ -9,6 +10,8 @@ using Entrenate.Application.Coach.LiveCoach.Tools;
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Domain.Enums;
+using Entrenate.Application.TrainingSessions;
+using System.Globalization;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -25,6 +28,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
         private readonly ILiveCoachPromptBuilder _promptBuilder;
         private readonly ICoachConversationProvider _conversationProvider;
         private readonly ILiveCoachResponseCache _responseCache;
+        private readonly ILiveCoachSetActionExtractor _setActionExtractor;
+        private readonly ILiveCoachPendingActionStore _pendingActionStore;
         private readonly ILogger<RespondLiveCoachCommandHandler> _logger;
 
         public RespondLiveCoachCommandHandler(
@@ -36,6 +41,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             ILiveCoachPromptBuilder promptBuilder,
             ICoachConversationProvider conversationProvider,
             ILiveCoachResponseCache responseCache,
+            ILiveCoachSetActionExtractor setActionExtractor,
+            ILiveCoachPendingActionStore pendingActionStore,
             ILogger<RespondLiveCoachCommandHandler> logger)
         {
             _sessionRepository = sessionRepository;
@@ -46,6 +53,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             _promptBuilder = promptBuilder;
             _conversationProvider = conversationProvider;
             _responseCache = responseCache;
+            _setActionExtractor = setActionExtractor;
+            _pendingActionStore = pendingActionStore;
             _logger = logger;
         }
 
@@ -82,6 +91,15 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
 
             // 2. Intent routing
             var routing = _intentRouter.Route(request.Text);
+
+            if (routing.Kind == LiveCoachIntentKind.RegisterCurrentSet)
+            {
+                return CreateRegisterCurrentSetResponse(
+                    session,
+                    userId,
+                    request.ClientTurnId,
+                    request.Text);
+            }
 
             if (!string.IsNullOrWhiteSpace(routing.DirectAnswer))
             {
@@ -148,6 +166,82 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 request.ClientTurnId,
                 answerText,
                 context.IsStaleContext,
+                true);
+        }
+
+        private LiveCoachRespondResponseDto CreateRegisterCurrentSetResponse(
+            Entrenate.Domain.Entidades.SesionEntrenamiento session,
+            string userId,
+            string clientTurnId,
+            string text)
+        {
+            var extraction = _setActionExtractor.Extract(text);
+            if (!extraction.IsValid)
+            {
+                var missingText = extraction.MissingField switch
+                {
+                    "repetitions" => "Me faltaron las repeticiones. ¿Cuántas hiciste?",
+                    "weightKg" => "Me faltó el peso. ¿Con cuántos kilos hiciste la serie?",
+                    _ => "No pude interpretar la serie con seguridad. Indicame peso, repeticiones y RIR si corresponde."
+                };
+
+                return CreateDirectResponse(clientTurnId, missingText);
+            }
+
+            var current = CurrentPendingTrainingSetResolver.Resolve(session);
+            if (current is null)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    "No encontré una serie pendiente en esta sesión.");
+            }
+
+            var actionId = Guid.NewGuid();
+            var expiresAtUtc = DateTime.UtcNow.AddSeconds(45);
+            var action = new PendingLiveCoachAction(
+                actionId,
+                userId,
+                session.Id,
+                current.ExerciseSession.Id,
+                current.SetNumber,
+                extraction.WeightKg!.Value,
+                extraction.Repetitions!.Value,
+                extraction.Rir,
+                expiresAtUtc);
+
+            _pendingActionStore.Set(action);
+
+            var weight = extraction.WeightKg.Value.ToString("0.##", CultureInfo.InvariantCulture);
+            var rirText = extraction.Rir.HasValue ? $", RIR {extraction.Rir.Value}" : string.Empty;
+            var textResponse = $"Entendí: {weight} kg por {extraction.Repetitions.Value} repeticiones{rirText}. ¿Querés que registre esta serie?";
+            var summary = $"{weight} kg × {extraction.Repetitions.Value}" +
+                (extraction.Rir.HasValue ? $" · RIR {extraction.Rir.Value}" : string.Empty);
+
+            var responseId = Guid.NewGuid();
+            _responseCache.Set(responseId, textResponse, TimeSpan.FromSeconds(60));
+
+            return new LiveCoachRespondResponseDto(
+                responseId,
+                clientTurnId,
+                textResponse,
+                false,
+                true,
+                new PendingLiveCoachActionDto(
+                    actionId,
+                    LiveCoachActionTypes.RegisterCurrentSet,
+                    summary,
+                    expiresAtUtc));
+        }
+
+        private LiveCoachRespondResponseDto CreateDirectResponse(string clientTurnId, string text)
+        {
+            var responseId = Guid.NewGuid();
+            _responseCache.Set(responseId, text, TimeSpan.FromSeconds(60));
+            return new LiveCoachRespondResponseDto(
+                responseId,
+                clientTurnId,
+                text,
+                false,
                 true);
         }
     }

@@ -9,6 +9,7 @@ namespace Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet
         int SetNumber,
         decimal Peso,
         int Repeticiones,
-        int? Rir)
+        int? Rir,
+        bool RequireCurrentPendingSet = false)
         : IRequest<TrainingSetDto>;
 }

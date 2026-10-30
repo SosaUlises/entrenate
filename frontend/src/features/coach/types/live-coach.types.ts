@@ -30,4 +30,12 @@ export type LiveCoachRespondResponse = {
   text: string;
   isStaleContext: boolean;
   canSynthesizeVoice: boolean;
+  pendingAction?: LiveCoachPendingAction | null;
+};
+
+export type LiveCoachPendingAction = {
+  actionId: string;
+  type: "RegisterCurrentSet";
+  summary: string;
+  expiresAtUtc: string;
 };

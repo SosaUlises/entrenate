@@ -1,5 +1,6 @@
 using Entrenate.Application.Coach.AdaptiveTraining.Proposal;
 using Entrenate.Application.Coach.LiveCoach.Context;
+using Entrenate.Application.Coach.LiveCoach.Actions;
 using Entrenate.Application.Coach.LiveCoach.Prompt;
 using Entrenate.Application.Coach.LiveCoach.Routing;
 using Entrenate.Application.Coach.LiveCoach.Tools;
@@ -35,6 +36,7 @@ namespace Entrenate.Application
             services.AddScoped<ILiveCoachToolRegistry, LiveCoachToolRegistry>();
             services.AddScoped<ILiveCoachIntentRouter, LiveCoachIntentRouter>();
             services.AddScoped<ILiveCoachPromptBuilder, LiveCoachPromptBuilder>();
+            services.AddScoped<ILiveCoachSetActionExtractor, LiveCoachSetActionExtractor>();
 
             return services;
         }

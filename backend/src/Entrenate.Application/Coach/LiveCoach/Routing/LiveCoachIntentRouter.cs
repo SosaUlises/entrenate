@@ -7,6 +7,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
     {
         ConversationalQuestion,
         DataQuery,
+        RegisterCurrentSet,
         MutationRequest,
         OutOfScope
     }
@@ -74,6 +75,13 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
             var normalized = question.Trim().ToLowerInvariant();
 
+            if (IsRegisterCurrentSetRequest(normalized))
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.RegisterCurrentSet,
+                    false);
+            }
+
             // 1. Check mutation request
             foreach (var kw in MutationKeywords)
             {
@@ -82,7 +90,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                     return new LiveCoachRoutingResult(
                         LiveCoachIntentKind.MutationRequest,
                         false,
-                        "Por el momento solo puedo responder consultas sobre tu sesión. El registro de series y cambios se realiza desde los controles de la pantalla.");
+                        "Por ahora solo puedo registrar la serie actual.");
                 }
             }
 
@@ -142,6 +150,31 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             var afterOk = afterIndex >= text.Length || !char.IsLetterOrDigit(text[afterIndex]);
 
             return beforeOk && afterOk;
+        }
+
+        private static bool IsRegisterCurrentSetRequest(string text)
+        {
+            var hasRegisterVerb =
+                text.Contains("hice", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("fueron", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("terminé", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("termine", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("completé", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("complete", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("anotá", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("anota", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("registrá", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("registra", StringComparison.OrdinalIgnoreCase);
+
+            var hasSetData =
+                text.Contains("rep", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("kilo", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains(" kg", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains(" con ", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("rir", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("sin peso", StringComparison.OrdinalIgnoreCase);
+
+            return hasRegisterVerb && hasSetData;
         }
     }
 }

@@ -3,6 +3,7 @@
 import {
   AlertCircle,
   ArrowRight,
+  Check,
   MessageSquare,
   Mic,
   RotateCcw,
@@ -14,6 +15,10 @@ import {
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { respondLiveCoachAction } from "@/features/coach/actions/respond-live-coach.action";
+import {
+  cancelLiveCoachPendingActionRequest,
+  confirmLiveCoachPendingAction,
+} from "@/features/coach/actions/live-coach-pending-action.actions";
 import { transcribeLiveAudioAction } from "@/features/coach/actions/transcribe-live-audio.action";
 import type {
   LiveCoachClientSnapshot,
@@ -137,9 +142,10 @@ function getAudioFileExtension(mimeType: string): string {
 
 type LiveCoachPrototypeProps = {
   session?: TrainingSession | null;
+  onSessionUpdated?: (session: TrainingSession) => void;
 };
 
-export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
+export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachPrototypeProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<LiveCoachState>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
@@ -148,6 +154,8 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [textInput, setTextInput] = useState("");
   const [showTextInput, setShowTextInput] = useState(false);
+  const [actionPending, setActionPending] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(() => {
     if (typeof window === "undefined") return true;
     try {
@@ -337,6 +345,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
     }
 
     stopAudio("new-query-ask");
+    setActionError(null);
     setState("answering");
 
     const snapshot = getClientSnapshot();
@@ -509,9 +518,13 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
     setCoachResponse(null);
     setErrorMessage(null);
     setTextInput("");
+    setActionPending(false);
+    setActionError(null);
   }
 
   function handleCancelOrClose() {
+    const pendingActionId = coachResponse?.pendingAction?.actionId;
+    if (pendingActionId) void cancelLiveCoachPendingActionRequest(pendingActionId);
     cleanupMedia();
     stopAudio("sheet-close");
     setVoiceError(null);
@@ -520,7 +533,50 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
     setCoachResponse(null);
     setErrorMessage(null);
     setTextInput("");
+    setActionPending(false);
+    setActionError(null);
     dialogRef.current?.close();
+  }
+
+  async function confirmPendingAction() {
+    const pendingAction = coachResponse?.pendingAction;
+    if (!pendingAction || actionPending) return;
+
+    stopAudio("confirm-pending-action");
+    setActionPending(true);
+    setActionError(null);
+
+    const result = await confirmLiveCoachPendingAction(pendingAction.actionId);
+    setActionPending(false);
+
+    if (result.status === "success") {
+      onSessionUpdated?.(result.data);
+      setTranscript(null);
+      setCoachResponse((current) => current ? {
+        ...current,
+        canSynthesizeVoice: false,
+        pendingAction: null,
+        text: "Serie registrada.",
+      } : current);
+      setState("success");
+      return;
+    }
+
+    if (result.status === "conflict" || result.status === "not-found") {
+      setCoachResponse((current) => current ? { ...current, pendingAction: null } : current);
+      setErrorMessage("La sesión cambió. Volvé a indicarme la serie.");
+      setState("error");
+      return;
+    }
+
+    setActionError("No pudimos registrar la serie. Intentá nuevamente.");
+    setState("success");
+  }
+
+  function cancelPendingAction() {
+    const actionId = coachResponse?.pendingAction?.actionId;
+    if (actionId) void cancelLiveCoachPendingActionRequest(actionId);
+    handleReset();
   }
 
   function openSheet() {
@@ -546,6 +602,31 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
 
   const presentation = statePresentations[state];
   const faceState = mapToFaceState(state);
+  const pendingAction = coachResponse?.pendingAction;
+  const pendingActionPanel = pendingAction ? (
+    <div className="border-t border-border/60 pt-4">
+      <p className="font-brand text-lg font-bold leading-6 text-text-primary">
+        {pendingAction.summary.split(" · ")[0]}
+      </p>
+      {pendingAction.summary.includes(" · ") ? (
+        <p className="mt-1 text-sm font-medium text-text-secondary">
+          {pendingAction.summary.split(" · ").slice(1).join(" · ")}
+        </p>
+      ) : null}
+      {actionError ? (
+        <p className="mt-3 text-sm leading-5 text-error" role="alert">{actionError}</p>
+      ) : null}
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Button disabled={actionPending} onClick={cancelPendingAction} variant="ghost">
+          Cancelar
+        </Button>
+        <Button isLoading={actionPending} onClick={() => void confirmPendingAction()}>
+          <Check aria-hidden="true" size={16} />
+          Registrar serie
+        </Button>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <>
@@ -697,6 +778,8 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
                   </p>
                 </div>
 
+                {pendingActionPanel}
+
                 <div>
                   <Button
                     fullWidth
@@ -747,9 +830,11 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
                       </p>
                     )}
                   </div>
+
+                  {pendingActionPanel}
                 </div>
 
-                <div className="flex gap-2">
+                {!pendingAction ? <div className="flex gap-2">
                   {coachResponse.canSynthesizeVoice && (
                     <Button
                       className="flex-1"
@@ -769,7 +854,7 @@ export function LiveCoachPrototype({ session }: LiveCoachPrototypeProps) {
                     <RotateCcw aria-hidden="true" size={16} />
                     <span>Otra consulta</span>
                   </Button>
-                </div>
+                </div> : null}
               </div>
             )}
 

@@ -5,6 +5,7 @@ import type {
   LiveCoachRespondResponse,
   LiveCoachTranscriptionResponse,
 } from "../types/live-coach.types";
+import type { TrainingSession } from "@/features/training/types/training.types";
 
 export function transcribeLiveAudio(
   formData: FormData,
@@ -33,6 +34,26 @@ export function respondLiveCoach(
       cache: "no-store",
       method: "POST",
     },
+  );
+}
+
+export function confirmLiveCoachAction(
+  actionId: string,
+  authToken: string,
+): Promise<TrainingSession> {
+  return apiRequest<TrainingSession>(
+    `/api/coach/live/actions/${encodeURIComponent(actionId)}/confirm`,
+    { authToken, cache: "no-store", method: "POST" },
+  );
+}
+
+export function cancelLiveCoachAction(
+  actionId: string,
+  authToken: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/api/coach/live/actions/${encodeURIComponent(actionId)}/cancel`,
+    { authToken, cache: "no-store", method: "POST" },
   );
 }
 

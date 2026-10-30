@@ -203,8 +203,10 @@ Responses are optimized for brief listening in a gym:
 
 ## Mutation policy
 
-Live Coach V0 does not implement mutations. The following classification is a
-contract for later design, not authorization to add actions now.
+Live Coach V0 supports one explicitly allowlisted mutation: registering the
+current pending set. It creates a short-lived server-side pending action and
+requires confirmation through a visible button. No spoken confirmation or
+arbitrary mutation name is accepted.
 
 ### Queries
 
@@ -213,7 +215,7 @@ not modify Training and require no confirmation.
 
 ### Reversible or simple actions
 
-A future allowlisted action may proceed only when the user's intent is
+An allowlisted action may proceed only when the user's intent is
 unequivocal, the Application/Domain layer validates it and Live Coach gives
 clear visual feedback about the result. The LLM never writes state directly.
 
@@ -250,6 +252,8 @@ Training is never blocked by a Live Coach failure.
 - let the reviewer simulate the six visual states;
 - demonstrate responsive, keyboard and reduced-motion behavior;
 - preserve all existing Training state while the panel is open.
+- propose the current set from explicit weight/repetition input and register it
+  only after button confirmation and authoritative server revalidation.
 
 The future interaction implementation may answer grounded read-only questions
 under this contract. That capability is not present in the current prototype.
@@ -262,7 +266,8 @@ under this contract. That capability is not present in the current prototype.
 - inspect technique, camera data, biometrics or ambient audio;
 - analyze the session or produce real recommendations;
 - save conversation history or claim memory;
-- add, remove, complete or modify sets, exercises or the routine;
+- add, remove or modify exercises, future sets or the routine;
+- register multiple sets or confirm an action by spoken `sí`/`no`;
 - start, finish, pause or cancel a training session;
 - act without explicit user input.
 

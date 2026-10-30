@@ -7,6 +7,13 @@ namespace Entrenate.Application.Coach.LiveCoach.DTOs
         string ClientTurnId,
         string Text,
         bool IsStaleContext,
-        bool CanSynthesizeVoice);
+        bool CanSynthesizeVoice,
+        PendingLiveCoachActionDto? PendingAction = null);
+
+    public sealed record PendingLiveCoachActionDto(
+        Guid ActionId,
+        string Type,
+        string Summary,
+        DateTime ExpiresAtUtc);
 }
 

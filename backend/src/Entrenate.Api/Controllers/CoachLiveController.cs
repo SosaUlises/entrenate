@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Entrenate.Api.Requests.Coach;
 using Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach;
+using Entrenate.Application.Coach.LiveCoach.Commands.ConfirmLiveCoachAction;
+using Entrenate.Application.Coach.LiveCoach.Commands.CancelLiveCoachAction;
 using Entrenate.Application.Coach.LiveCoach.Commands.SynthesizeLiveSpeech;
 using Entrenate.Application.Coach.LiveCoach.Commands.TranscribeLiveAudio;
 using Entrenate.Application.Coach.LiveCoach.Context;
@@ -257,6 +259,30 @@ namespace Entrenate.Api.Controllers
             var speechAudio = await _sender.Send(command, cancellationToken);
 
             return File(speechAudio.AudioStream, speechAudio.ContentType, enableRangeProcessing: true);
+        }
+
+        [HttpPost("actions/{actionId:guid}/confirm")]
+        public async Task<IActionResult> ConfirmAction(
+            Guid actionId,
+            CancellationToken cancellationToken)
+        {
+            var session = await _sender.Send(
+                new ConfirmLiveCoachActionCommand(actionId),
+                cancellationToken);
+
+            return Ok(session);
+        }
+
+        [HttpPost("actions/{actionId:guid}/cancel")]
+        public async Task<IActionResult> CancelAction(
+            Guid actionId,
+            CancellationToken cancellationToken)
+        {
+            await _sender.Send(
+                new CancelLiveCoachActionCommand(actionId),
+                cancellationToken);
+
+            return NoContent();
         }
     }
 }
