@@ -143,6 +143,63 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 }
             }
 
+            if (routing.Kind == LiveCoachIntentKind.UpdatePendingCurrentSet && activePendingAction is not null)
+            {
+                var patchExtraction = _setActionExtractor.ExtractPatch(request.Text);
+                if (patchExtraction.Status == LiveCoachPendingSetPatchStatus.Invalid)
+                {
+                    var invalidText = patchExtraction.InvalidField switch
+                    {
+                        "rir" => "Ese valor de RIR no es válido.",
+                        "repetitions" => "Ese valor de repeticiones no es válido.",
+                        "weightKg" => "Ese valor de peso no es válido.",
+                        _ => "Ese valor no es válido."
+                    };
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        invalidText,
+                        ToDto(activePendingAction));
+                }
+
+                if (patchExtraction.Status == LiveCoachPendingSetPatchStatus.Ambiguous ||
+                    patchExtraction.Patch is null)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "¿Querés cambiar el peso, las repeticiones o el RIR?",
+                        ToDto(activePendingAction));
+                }
+
+                var currentSet = CurrentPendingTrainingSetResolver.Resolve(session);
+                if (currentSet is null ||
+                    currentSet.ExerciseSession.Id != activePendingAction.ExerciseSessionId ||
+                    currentSet.SetNumber != activePendingAction.SetNumber)
+                {
+                    _pendingActionStore.Cancel(activePendingAction.ActionId, userId, DateTime.UtcNow);
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "La propuesta ya no está vigente. Decime nuevamente cómo salió la serie.");
+                }
+
+                var update = _pendingActionStore.Update(
+                    activePendingAction.ActionId,
+                    userId,
+                    patchExtraction.Patch,
+                    DateTime.UtcNow);
+                if (update.Status != PendingLiveCoachActionUpdateStatus.Success || update.Action is null)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "La propuesta ya no está vigente. Decime nuevamente cómo salió la serie.");
+                }
+
+                var updatedDto = ToDto(update.Action);
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    $"Perfecto: {updatedDto.Summary}. ¿La registro?",
+                    updatedDto);
+            }
+
             if (routing.Kind == LiveCoachIntentKind.PendingActionUnavailable &&
                 pendingLookup.Status == PendingLiveCoachActionLookupStatus.Expired)
             {
@@ -369,15 +426,18 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
 
         private static PendingLiveCoachActionDto ToDto(PendingLiveCoachAction action)
         {
-            var weight = action.WeightKg.ToString("0.##", CultureInfo.InvariantCulture);
-            var summary = $"{weight} kg × {action.Repetitions}" +
-                (action.Rir.HasValue ? $" · RIR {action.Rir.Value}" : string.Empty);
-
             return new PendingLiveCoachActionDto(
                 action.ActionId,
                 LiveCoachActionTypes.RegisterCurrentSet,
-                summary,
+                BuildSummary(action),
                 action.ExpiresAtUtc);
+        }
+
+        private static string BuildSummary(PendingLiveCoachAction action)
+        {
+            var weight = action.WeightKg.ToString("0.##", CultureInfo.InvariantCulture);
+            return $"{weight} kg × {action.Repetitions}" +
+                (action.Rir.HasValue ? $" · RIR {action.Rir.Value}" : string.Empty);
         }
 
         private static string CreateRestTimerQueryAnswer(

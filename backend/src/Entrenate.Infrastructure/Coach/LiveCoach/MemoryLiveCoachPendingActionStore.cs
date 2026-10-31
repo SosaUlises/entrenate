@@ -50,6 +50,41 @@ namespace Entrenate.Infrastructure.Coach.LiveCoach
         public PendingLiveCoachActionTakeResult Cancel(Guid actionId, string userId, DateTime nowUtc)
             => Remove(actionId, userId, nowUtc);
 
+        public PendingLiveCoachActionUpdateResult Update(
+            Guid actionId,
+            string userId,
+            PendingLiveCoachSetPatch patch,
+            DateTime nowUtc)
+        {
+            while (true)
+            {
+                if (!_actions.TryGetValue(actionId, out var current))
+                    return new(PendingLiveCoachActionUpdateStatus.NotFound);
+
+                if (!string.Equals(current.UserId, userId, StringComparison.Ordinal))
+                    return new(PendingLiveCoachActionUpdateStatus.NotOwned);
+
+                if (nowUtc > current.ExpiresAtUtc)
+                {
+                    _actions.TryRemove(new KeyValuePair<Guid, PendingLiveCoachAction>(actionId, current));
+                    return new(PendingLiveCoachActionUpdateStatus.Expired);
+                }
+
+                if (current.Type != LiveCoachActionTypes.RegisterCurrentSet)
+                    return new(PendingLiveCoachActionUpdateStatus.UnsupportedType);
+
+                var updated = current with
+                {
+                    WeightKg = patch.WeightKg ?? current.WeightKg,
+                    Repetitions = patch.Repetitions ?? current.Repetitions,
+                    Rir = patch.Rir ?? current.Rir
+                };
+
+                if (_actions.TryUpdate(actionId, updated, current))
+                    return new(PendingLiveCoachActionUpdateStatus.Success, updated);
+            }
+        }
+
         private PendingLiveCoachActionTakeResult Remove(Guid actionId, string userId, DateTime nowUtc)
         {
             if (!_actions.TryGetValue(actionId, out var action))

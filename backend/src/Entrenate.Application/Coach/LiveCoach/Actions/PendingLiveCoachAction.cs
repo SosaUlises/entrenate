@@ -14,7 +14,18 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
         decimal WeightKg,
         int Repetitions,
         int? Rir,
-        DateTime ExpiresAtUtc);
+        DateTime ExpiresAtUtc)
+    {
+        public string Type => LiveCoachActionTypes.RegisterCurrentSet;
+    }
+
+    public sealed record PendingLiveCoachSetPatch(
+        decimal? WeightKg = null,
+        int? Repetitions = null,
+        int? Rir = null)
+    {
+        public bool HasChanges => WeightKg.HasValue || Repetitions.HasValue || Rir.HasValue;
+    }
 
     public enum PendingLiveCoachActionTakeStatus
     {
@@ -39,6 +50,19 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
         PendingLiveCoachActionLookupStatus Status,
         PendingLiveCoachAction? Action = null);
 
+    public enum PendingLiveCoachActionUpdateStatus
+    {
+        Success,
+        NotFound,
+        NotOwned,
+        Expired,
+        UnsupportedType
+    }
+
+    public sealed record PendingLiveCoachActionUpdateResult(
+        PendingLiveCoachActionUpdateStatus Status,
+        PendingLiveCoachAction? Action = null);
+
     public interface ILiveCoachPendingActionStore
     {
         void Set(PendingLiveCoachAction action);
@@ -48,5 +72,10 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
             DateTime nowUtc);
         PendingLiveCoachActionTakeResult Take(Guid actionId, string userId, DateTime nowUtc);
         PendingLiveCoachActionTakeResult Cancel(Guid actionId, string userId, DateTime nowUtc);
+        PendingLiveCoachActionUpdateResult Update(
+            Guid actionId,
+            string userId,
+            PendingLiveCoachSetPatch patch,
+            DateTime nowUtc);
     }
 }

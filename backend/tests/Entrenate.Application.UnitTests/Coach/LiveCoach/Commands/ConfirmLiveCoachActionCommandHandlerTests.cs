@@ -86,6 +86,12 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 => new(PendingLiveCoachActionLookupStatus.NotFound);
             public PendingLiveCoachActionTakeResult Take(Guid actionId, string userId, DateTime nowUtc) => result;
             public PendingLiveCoachActionTakeResult Cancel(Guid actionId, string userId, DateTime nowUtc) => result;
+            public PendingLiveCoachActionUpdateResult Update(
+                Guid actionId,
+                string userId,
+                PendingLiveCoachSetPatch patch,
+                DateTime nowUtc)
+                => new(PendingLiveCoachActionUpdateStatus.NotFound);
         }
 
         private sealed class RecordingSender(Guid sessionId) : ISender

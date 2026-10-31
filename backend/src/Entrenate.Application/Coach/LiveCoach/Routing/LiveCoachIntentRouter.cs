@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 
 namespace Entrenate.Application.Coach.LiveCoach.Routing
@@ -12,6 +13,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         RegisterCurrentSet,
         ConfirmPendingAction,
         CancelPendingAction,
+        UpdatePendingCurrentSet,
         PendingActionClarification,
         PendingActionUnavailable,
         UnsupportedRestDurationMutation,
@@ -45,6 +47,24 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             {
                 "no", "cancela", "dejalo", "no la registres", "olvidalo"
             };
+
+        private static readonly HashSet<string> PendingSetCorrectionWords = new(StringComparer.Ordinal)
+        {
+            "fueron", "eran", "hice", "pone", "cambia", "cambiame", "corrige", "corregi"
+        };
+
+        private static readonly HashSet<string> PendingSetFieldWords = new(StringComparer.Ordinal)
+        {
+            "rep", "reps", "repeticion", "repeticiones", "kg", "kilo", "kilos", "peso", "rir"
+        };
+
+        private static readonly HashSet<string> NumberWords = new(StringComparer.Ordinal)
+        {
+            "cero", "un", "uno", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve",
+            "diez", "once", "doce", "trece", "catorce", "quince", "dieciseis", "diecisiete", "dieciocho",
+            "diecinueve", "veinte", "treinta", "cuarenta", "cincuenta", "sesenta", "setenta", "ochenta",
+            "noventa", "cien", "ciento", "doscientos"
+        };
 
         private static readonly HashSet<string> RestTargetWords = new(StringComparer.Ordinal)
         {
@@ -161,6 +181,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                 if (cancelsPending)
                     return new LiveCoachRoutingResult(LiveCoachIntentKind.CancelPendingAction, false);
 
+                if (IsPendingSetUpdateRequest(pendingDecision))
+                    return new LiveCoachRoutingResult(LiveCoachIntentKind.UpdatePendingCurrentSet, false);
+
                 return new LiveCoachRoutingResult(
                     LiveCoachIntentKind.PendingActionClarification,
                     false,
@@ -192,11 +215,37 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             if (IsRestQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.RestTimerQuery, false);
 
-            if (IsRegisterCurrentSetRequest(normalized))
+            if (IsPendingSetUpdateRequest(pendingDecision) &&
+                !LooksLikeCompleteSetStatement(pendingDecision) &&
+                !pendingDecision.StartsWith("hice ", StringComparison.Ordinal))
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.PendingActionUnavailable,
+                    false,
+                    "No hay una propuesta de serie pendiente para editar.");
+            }
+
+            if (IsRegisterCurrentSetRequest(pendingDecision))
             {
                 return new LiveCoachRoutingResult(
                     LiveCoachIntentKind.RegisterCurrentSet,
                     false);
+            }
+
+            if (IsPendingSetUpdateRequest(pendingDecision))
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.PendingActionUnavailable,
+                    false,
+                    "No hay una propuesta de serie pendiente para editar.");
+            }
+
+            if (IsBareNumericSequence(pendingDecision))
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.OtherMutation,
+                    false,
+                    "Indicame cuál valor corresponde al peso, las repeticiones y el RIR.");
             }
 
             // 1. Check mutation request
@@ -274,14 +323,16 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             var hasRegisterVerb =
                 text.Contains("hice", StringComparison.OrdinalIgnoreCase) ||
                 text.Contains("fueron", StringComparison.OrdinalIgnoreCase) ||
-                text.Contains("terminé", StringComparison.OrdinalIgnoreCase) ||
                 text.Contains("termine", StringComparison.OrdinalIgnoreCase) ||
-                text.Contains("completé", StringComparison.OrdinalIgnoreCase) ||
                 text.Contains("complete", StringComparison.OrdinalIgnoreCase) ||
-                text.Contains("anotá", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("completa", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("completame", StringComparison.OrdinalIgnoreCase) ||
                 text.Contains("anota", StringComparison.OrdinalIgnoreCase) ||
-                text.Contains("registrá", StringComparison.OrdinalIgnoreCase) ||
-                text.Contains("registra", StringComparison.OrdinalIgnoreCase);
+                text.Contains("anotame", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("registra", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("registrame", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("carga", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("cargame", StringComparison.OrdinalIgnoreCase);
 
             var hasSetData =
                 text.Contains("rep", StringComparison.OrdinalIgnoreCase) ||
@@ -291,7 +342,44 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                 text.Contains("rir", StringComparison.OrdinalIgnoreCase) ||
                 text.Contains("sin peso", StringComparison.OrdinalIgnoreCase);
 
-            return hasRegisterVerb && hasSetData;
+            var targetsCurrentSet = text.Contains("serie", StringComparison.OrdinalIgnoreCase);
+
+            return hasRegisterVerb && (hasSetData || targetsCurrentSet);
+        }
+
+        private static bool IsBareNumericSequence(string normalizedText)
+        {
+            var tokens = Tokenize(normalizedText);
+            return tokens.Count >= 2 && tokens.All(token =>
+                decimal.TryParse(token, NumberStyles.Number, CultureInfo.InvariantCulture, out _));
+        }
+
+        private static bool LooksLikeCompleteSetStatement(string normalizedText)
+        {
+            var tokens = Tokenize(normalizedText);
+            var hasWeight = normalizedText.Contains(" con ", StringComparison.Ordinal) ||
+                            tokens.Exists(token => token is "kg" or "kilo" or "kilos" or "peso");
+            var hasRepetitions = tokens.Exists(token =>
+                token is "rep" or "reps" or "repeticion" or "repeticiones") ||
+                tokens.Exists(token => token is "hice" or "fueron");
+
+            return hasWeight && hasRepetitions;
+        }
+
+        private static bool IsPendingSetUpdateRequest(string normalizedText)
+        {
+            var tokens = Tokenize(normalizedText);
+            var hasNumber = tokens.Exists(token =>
+                decimal.TryParse(token.Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out _) ||
+                NumberWords.Contains(token));
+            if (!hasNumber)
+                return false;
+
+            var hasField = tokens.Exists(PendingSetFieldWords.Contains);
+            var hasCorrectionCue = normalizedText.Contains("en realidad", StringComparison.Ordinal) ||
+                                   tokens.Exists(PendingSetCorrectionWords.Contains);
+
+            return hasField || hasCorrectionCue;
         }
 
         private static bool IsCustomRestDurationRequest(string normalizedText)

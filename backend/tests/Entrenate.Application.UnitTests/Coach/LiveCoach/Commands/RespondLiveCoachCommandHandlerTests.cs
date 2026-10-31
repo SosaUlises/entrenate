@@ -286,6 +286,236 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
+        [Theory]
+        [InlineData("En realidad fueron 9 reps.")]
+        [InlineData("Eran 9 repeticiones")]
+        [InlineData("En realidad hice 9")]
+        [InlineData("Cambiá las reps a 9")]
+        [InlineData("Poné 9 repeticiones")]
+        public async Task Handle_WhenPendingActionExists_UpdatesOnlyRepetitions(string phrase)
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var original = await CreatePendingActionAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-update-reps", "audio", phrase, null),
+                CancellationToken.None);
+
+            var updated = _pendingActionStore.Actions[original.ActionId];
+            Assert.Equal(original.ActionId, result.PendingAction?.ActionId);
+            Assert.Equal(original.ExpiresAtUtc, updated.ExpiresAtUtc);
+            Assert.Equal(9, updated.Repetitions);
+            Assert.Equal(100m, updated.WeightKg);
+            Assert.Equal(1, updated.Rir);
+            Assert.Equal("100 kg × 9 · RIR 1", result.PendingAction?.Summary);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("Eran 95 kilos")]
+        [InlineData("Poné 95 kilos")]
+        [InlineData("Cambiá el peso a 95")]
+        [InlineData("En realidad fueron 95 kg")]
+        public async Task Handle_WhenPendingActionExists_UpdatesOnlyWeight(string phrase)
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var original = await CreatePendingActionAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-update-weight", "audio", phrase, null),
+                CancellationToken.None);
+
+            var updated = _pendingActionStore.Actions[original.ActionId];
+            Assert.Equal(95m, updated.WeightKg);
+            Assert.Equal(8, updated.Repetitions);
+            Assert.Equal(1, updated.Rir);
+            Assert.Equal("95 kg × 8 · RIR 1", result.PendingAction?.Summary);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("RIR dos")]
+        [InlineData("Poné RIR 2")]
+        [InlineData("Cambiá el RIR a dos")]
+        [InlineData("En realidad RIR dos")]
+        public async Task Handle_WhenPendingActionExists_UpdatesOnlyRir(string phrase)
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var original = await CreatePendingActionAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-update-rir", "audio", phrase, null),
+                CancellationToken.None);
+
+            var updated = _pendingActionStore.Actions[original.ActionId];
+            Assert.Equal(100m, updated.WeightKg);
+            Assert.Equal(8, updated.Repetitions);
+            Assert.Equal(2, updated.Rir);
+            Assert.Equal("100 kg × 8 · RIR 2", result.PendingAction?.Summary);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("En realidad fueron 9 con 95 kilos, RIR dos")]
+        [InlineData("Cambiá a 95 kilos, 9 reps y RIR dos")]
+        public async Task Handle_WhenPendingActionExists_UpdatesMultipleExplicitFields(string phrase)
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var original = await CreatePendingActionAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-update-all", "audio", phrase, null),
+                CancellationToken.None);
+
+            var updated = _pendingActionStore.Actions[original.ActionId];
+            Assert.Equal(95m, updated.WeightKg);
+            Assert.Equal(9, updated.Repetitions);
+            Assert.Equal(2, updated.Rir);
+            Assert.Equal("95 kg × 9 · RIR 2", result.PendingAction?.Summary);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("Poné 9")]
+        [InlineData("Fueron 95")]
+        public async Task Handle_WhenPendingUpdateIsAmbiguous_DoesNotChangeProposal(string phrase)
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var original = await CreatePendingActionAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-update-ambiguous", "audio", phrase, null),
+                CancellationToken.None);
+
+            Assert.Equal("¿Querés cambiar el peso, las repeticiones o el RIR?", result.Text);
+            Assert.Equal(original, _pendingActionStore.Actions[original.ActionId]);
+            Assert.Equal(original.ActionId, result.PendingAction?.ActionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("Poné -1 repeticiones", "repeticiones")]
+        [InlineData("Poné 1001 kilos", "peso")]
+        [InlineData("RIR 6", "RIR")]
+        public async Task Handle_WhenPendingUpdateValueIsInvalid_DoesNotChangeProposal(
+            string phrase,
+            string expectedField)
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var original = await CreatePendingActionAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-update-invalid", "audio", phrase, null),
+                CancellationToken.None);
+
+            Assert.Contains(expectedField, result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(original, _pendingActionStore.Actions[original.ActionId]);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("Fueron 9 reps")]
+        [InlineData("Poné 95 kilos")]
+        [InlineData("RIR dos")]
+        public async Task Handle_WhenNoPendingActionExists_EditPhraseDoesNotCreateMutation(string phrase)
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-update-missing", "audio", phrase, null),
+                CancellationToken.None);
+
+            Assert.Contains("no hay una propuesta", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Null(result.PendingAction);
+            Assert.Empty(_pendingActionStore.Actions);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPendingActionExpired_UpdateReturnsStaleWithoutMutation()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var action = new PendingLiveCoachAction(
+                Guid.NewGuid(), TestUserId, session.Id, session.Ejercicios.Single().Id,
+                1, 100m, 8, 1, DateTime.UtcNow.AddSeconds(-1));
+            _pendingActionStore.Set(action);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-update-expired", "audio", "Poné 95 kilos", null),
+                CancellationToken.None);
+
+            Assert.Contains("ya no está vigente", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Null(result.PendingAction);
+            Assert.Empty(_pendingActionStore.Actions);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPendingTargetChanged_UpdateInvalidatesProposal()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            await CreatePendingActionAsync(session);
+            CompleteSets(session.Ejercicios.Single(), 1);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-update-stale", "audio", "Poné 95 kilos", null),
+                CancellationToken.None);
+
+            Assert.Contains("ya no está vigente", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Null(result.PendingAction);
+            Assert.Empty(_pendingActionStore.Actions);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPendingActionIsUpdated_ConfirmationUsesUpdatedPayload()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            await CreatePendingActionAsync(session);
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-update-before-confirm", "audio", "En realidad fueron 9 con 95 kilos, RIR dos", null),
+                CancellationToken.None);
+
+            var confirmed = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-confirm-updated", "audio", "sí", null),
+                CancellationToken.None);
+
+            Assert.Equal("Serie registrada.", confirmed.Text);
+            Assert.Equal(95m, _pendingActionExecutor.ConfirmedAction?.WeightKg);
+            Assert.Equal(9, _pendingActionExecutor.ConfirmedAction?.Repetitions);
+            Assert.Equal(2, _pendingActionExecutor.ConfirmedAction?.Rir);
+            Assert.Empty(_pendingActionStore.Actions);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPendingActionIsUpdated_CancellationStillRemovesItWithoutTrainingMutation()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            await CreatePendingActionAsync(session);
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-update-before-cancel", "audio", "RIR dos", null),
+                CancellationToken.None);
+
+            var canceled = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-cancel-updated", "audio", "no", null),
+                CancellationToken.None);
+
+            Assert.Equal("Listo, no la registro.", canceled.Text);
+            Assert.Empty(_pendingActionStore.Actions);
+            Assert.Empty(session.Ejercicios.Single().Series);
+        }
+
         [Fact]
         public async Task Handle_WhenPendingActionExpired_YesReturnsStaleWithoutMutation()
         {
@@ -346,6 +576,12 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         [InlineData("Hice 8 con 100 kilos, RIR uno.", 8, 100, 1)]
         [InlineData("Registrá 10 reps con 80 kg y RIR 2.", 10, 80, 2)]
         [InlineData("Terminé, fueron 12 con 20 kilos.", 12, 20, null)]
+        [InlineData("Completame la serie actual, ciento veinte en peso ocho repeticiones, RIR uno", 8, 120, 1)]
+        [InlineData("Completá la serie actual con 120 kilos, 8 reps y RIR 1", 8, 120, 1)]
+        [InlineData("Registrame esta serie: 120 kilos, 8 repeticiones, RIR uno", 8, 120, 1)]
+        [InlineData("Anotame 8 con 120 kilos, RIR uno", 8, 120, 1)]
+        [InlineData("Cargá esta serie con peso 120, reps 8, RIR 1", 8, 120, 1)]
+        [InlineData("Hice ocho con ciento veinte y RIR uno", 8, 120, 1)]
         public void SetActionExtractor_ParsesSupportedNaturalPhrases(
             string text,
             int repetitions,
@@ -358,6 +594,81 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.Equal(repetitions, result.Repetitions);
             Assert.Equal(weight, result.WeightKg);
             Assert.Equal(rir, result.Rir);
+        }
+
+        [Fact]
+        public async Task Handle_RegressionLiteral_CompletameCurrentSetCreatesCorrectPendingActionWithoutProvider()
+        {
+            const string literal = "Completame la serie actual, ciento veinte en peso ocho repeticiones, RIR uno";
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var routing = _intentRouter.Route(literal);
+            var extraction = _setActionExtractor.Extract(literal);
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-register-literal", "audio", literal, null),
+                CancellationToken.None);
+
+            Assert.Equal(LiveCoachIntentKind.RegisterCurrentSet, routing.Kind);
+            Assert.True(extraction.IsValid);
+            Assert.Equal(120m, extraction.WeightKg);
+            Assert.Equal(8, extraction.Repetitions);
+            Assert.Equal(1, extraction.Rir);
+            Assert.Equal("120 kg × 8 · RIR 1", result.PendingAction?.Summary);
+            Assert.Equal(
+                "Entendí: 120 kg por 8 repeticiones, RIR 1. ¿Querés que registre esta serie?",
+                result.Text);
+            Assert.Empty(session.Ejercicios.Single().Series);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCompleteCurrentSetHasNoPerformanceData_AsksForMissingDataWithoutProvider()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-register-missing", "audio", "Completame la serie", null),
+                CancellationToken.None);
+
+            Assert.Contains("repeticiones", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Null(result.PendingAction);
+            Assert.Empty(session.Ejercicios.Single().Series);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenOnlyBareNumbersAreProvided_DoesNotRegisterOrInvokeProvider()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-register-ambiguous", "audio", "120, 8, 1", null),
+                CancellationToken.None);
+
+            Assert.Contains("peso", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Null(result.PendingAction);
+            Assert.Empty(session.Ejercicios.Single().Series);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCompletingRoutineIsRequested_DoesNotRouteToRegisterCurrentSet()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var routing = _intentRouter.Route("Completame la rutina");
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-complete-routine", "audio", "Completame la rutina", null),
+                CancellationToken.None);
+
+            Assert.Equal(LiveCoachIntentKind.OtherMutation, routing.Kind);
+            Assert.Null(result.PendingAction);
+            Assert.Empty(session.Ejercicios.Single().Series);
+            Assert.Equal(0, _conversationProvider.CallCount);
         }
 
         [Fact]
@@ -1211,6 +1522,32 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             public PendingLiveCoachActionTakeResult Cancel(Guid actionId, string userId, DateTime nowUtc)
                 => Remove(actionId, userId, nowUtc);
 
+            public PendingLiveCoachActionUpdateResult Update(
+                Guid actionId,
+                string userId,
+                PendingLiveCoachSetPatch patch,
+                DateTime nowUtc)
+            {
+                if (!Actions.TryGetValue(actionId, out var action))
+                    return new(PendingLiveCoachActionUpdateStatus.NotFound);
+                if (action.UserId != userId)
+                    return new(PendingLiveCoachActionUpdateStatus.NotOwned);
+                if (nowUtc > action.ExpiresAtUtc)
+                {
+                    Actions.Remove(actionId);
+                    return new(PendingLiveCoachActionUpdateStatus.Expired);
+                }
+
+                var updated = action with
+                {
+                    WeightKg = patch.WeightKg ?? action.WeightKg,
+                    Repetitions = patch.Repetitions ?? action.Repetitions,
+                    Rir = patch.Rir ?? action.Rir
+                };
+                Actions[actionId] = updated;
+                return new(PendingLiveCoachActionUpdateStatus.Success, updated);
+            }
+
             private PendingLiveCoachActionTakeResult Remove(Guid actionId, string userId, DateTime nowUtc)
             {
                 if (!Actions.TryGetValue(actionId, out var action))
@@ -1230,6 +1567,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             public int ConfirmCount { get; private set; }
             public int CancelCount { get; private set; }
             public bool ThrowConflict { get; set; }
+            public PendingLiveCoachAction? ConfirmedAction { get; private set; }
 
             public Task<TrainingSessionDto> ConfirmAsync(Guid actionId, CancellationToken cancellationToken)
             {
@@ -1241,6 +1579,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 }
 
                 var action = store.Actions[actionId];
+                ConfirmedAction = action;
                 store.Actions.Remove(actionId);
                 return Task.FromResult(new TrainingSessionDto(
                     action.SessionId,

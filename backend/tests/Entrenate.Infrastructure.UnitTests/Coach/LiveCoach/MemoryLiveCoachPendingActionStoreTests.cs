@@ -97,6 +97,50 @@ namespace Entrenate.Infrastructure.UnitTests.Coach.LiveCoach
             Assert.Equal(PendingLiveCoachActionTakeStatus.NotFound, oldAction.Status);
         }
 
+        [Fact]
+        public void Update_ReplacesOnlyPatchedPayloadAndPreservesIdentityAndTtl()
+        {
+            var store = new MemoryLiveCoachPendingActionStore();
+            var action = CreateAction("owner", DateTime.UtcNow.AddSeconds(45));
+            store.Set(action);
+
+            var result = store.Update(
+                action.ActionId,
+                "owner",
+                new PendingLiveCoachSetPatch(WeightKg: 95m, Repetitions: 9, Rir: 2),
+                DateTime.UtcNow);
+
+            Assert.Equal(PendingLiveCoachActionUpdateStatus.Success, result.Status);
+            Assert.Equal(action.ActionId, result.Action?.ActionId);
+            Assert.Equal(action.ExpiresAtUtc, result.Action?.ExpiresAtUtc);
+            Assert.Equal(95m, result.Action?.WeightKg);
+            Assert.Equal(9, result.Action?.Repetitions);
+            Assert.Equal(2, result.Action?.Rir);
+        }
+
+        [Fact]
+        public void Update_RejectsWrongOwnerAndExpiredOrConsumedActions()
+        {
+            var store = new MemoryLiveCoachPendingActionStore();
+            var active = CreateAction("owner", DateTime.UtcNow.AddSeconds(45));
+            store.Set(active);
+
+            var foreign = store.Update(
+                active.ActionId, "other", new PendingLiveCoachSetPatch(Repetitions: 9), DateTime.UtcNow);
+            store.Take(active.ActionId, "owner", DateTime.UtcNow);
+            var consumed = store.Update(
+                active.ActionId, "owner", new PendingLiveCoachSetPatch(Repetitions: 9), DateTime.UtcNow);
+
+            var expired = CreateAction("owner", DateTime.UtcNow.AddSeconds(-1));
+            store.Set(expired);
+            var stale = store.Update(
+                expired.ActionId, "owner", new PendingLiveCoachSetPatch(Repetitions: 9), DateTime.UtcNow);
+
+            Assert.Equal(PendingLiveCoachActionUpdateStatus.NotOwned, foreign.Status);
+            Assert.Equal(PendingLiveCoachActionUpdateStatus.NotFound, consumed.Status);
+            Assert.Equal(PendingLiveCoachActionUpdateStatus.Expired, stale.Status);
+        }
+
         private static PendingLiveCoachAction CreateAction(string userId, DateTime expiresAtUtc)
             => CreateAction(userId, Guid.NewGuid(), expiresAtUtc);
 
