@@ -22,6 +22,7 @@ import {
 import { transcribeLiveAudioAction } from "@/features/coach/actions/transcribe-live-audio.action";
 import type {
   LiveCoachClientSnapshot,
+  LiveCoachPendingAction,
   LiveCoachRespondResponse,
 } from "@/features/coach/types/live-coach.types";
 import { cn } from "@/lib/class-names";
@@ -154,6 +155,7 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
   const [state, setState] = useState<LiveCoachState>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
   const [coachResponse, setCoachResponse] = useState<LiveCoachRespondResponse | null>(null);
+  const [pendingAction, setPendingAction] = useState<LiveCoachPendingAction | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [textInput, setTextInput] = useState("");
@@ -206,14 +208,20 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    if (recorderRef.current && recorderRef.current.state !== "inactive") {
+    const recorder = recorderRef.current;
+    recorderRef.current = null;
+    if (recorder) {
+      recorder.ondataavailable = null;
+      recorder.onerror = null;
+      recorder.onstop = null;
+    }
+    if (recorder && recorder.state !== "inactive") {
       try {
-        recorderRef.current.stop();
+        recorder.stop();
       } catch {
         // ignore if already stopped
       }
     }
-    recorderRef.current = null;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -382,7 +390,9 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
     });
 
     if (result.status === "success") {
-      setCoachResponse(result.data);
+      const nextPendingAction = result.data.pendingAction ?? null;
+      setCoachResponse({ ...result.data, pendingAction: null });
+      setPendingAction(nextPendingAction);
       if (result.data.updatedSession) {
         onSessionUpdated?.(result.data.updatedSession);
       }
@@ -391,11 +401,11 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
         await playSpokenAnswer(
           result.data.responseId,
           false,
-          inputKind === "audio" && Boolean(result.data.pendingAction),
+          inputKind === "audio" && Boolean(nextPendingAction),
         );
       } else {
         setState("success");
-        if (inputKind === "audio" && result.data.pendingAction) {
+        if (inputKind === "audio" && nextPendingAction) {
           await startRecording(true);
         }
       }
@@ -552,6 +562,7 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
     setState("idle");
     setTranscript(null);
     setCoachResponse(null);
+    setPendingAction(null);
     setErrorMessage(null);
     setTextInput("");
     setActionPending(false);
@@ -559,7 +570,7 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
   }
 
   function handleCancelOrClose() {
-    const pendingActionId = coachResponse?.pendingAction?.actionId;
+    const pendingActionId = pendingAction?.actionId;
     if (pendingActionId) void cancelLiveCoachPendingActionRequest(pendingActionId);
     cleanupMedia();
     stopAudio("sheet-close");
@@ -567,6 +578,7 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
     setState("idle");
     setTranscript(null);
     setCoachResponse(null);
+    setPendingAction(null);
     setErrorMessage(null);
     setTextInput("");
     setActionPending(false);
@@ -575,9 +587,9 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
   }
 
   async function confirmPendingAction() {
-    const pendingAction = coachResponse?.pendingAction;
     if (!pendingAction || actionPending) return;
 
+    cleanupMedia();
     stopAudio("confirm-pending-action");
     setActionPending(true);
     setActionError(null);
@@ -594,12 +606,14 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
         pendingAction: null,
         text: "Serie registrada.",
       } : current);
+      setPendingAction(null);
       setState("success");
       return;
     }
 
     if (result.status === "conflict" || result.status === "not-found") {
       setCoachResponse((current) => current ? { ...current, pendingAction: null } : current);
+      setPendingAction(null);
       setErrorMessage("La sesión cambió. Volvé a indicarme la serie.");
       setState("error");
       return;
@@ -610,7 +624,7 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
   }
 
   function cancelPendingAction() {
-    const actionId = coachResponse?.pendingAction?.actionId;
+    const actionId = pendingAction?.actionId;
     if (actionId) void cancelLiveCoachPendingActionRequest(actionId);
     handleReset();
   }
@@ -638,7 +652,16 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
 
   const presentation = statePresentations[state];
   const faceState = mapToFaceState(state);
-  const pendingAction = coachResponse?.pendingAction;
+  const confirmationControlsDisabled =
+    actionPending ||
+    state === "requestingPermission" ||
+    state === "transcribing" ||
+    state === "answering";
+  const showVoiceConfirmationAction =
+    state !== "requestingPermission" &&
+    state !== "listening" &&
+    state !== "transcribing" &&
+    state !== "answering";
   const pendingActionPanel = pendingAction ? (
     <div className="border-t border-border/60 pt-4">
       <p className="font-brand text-lg font-bold leading-6 text-text-primary">
@@ -653,15 +676,15 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
         <p className="mt-3 text-sm leading-5 text-error" role="alert">{actionError}</p>
       ) : null}
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <Button disabled={actionPending} onClick={cancelPendingAction} variant="ghost">
+        <Button disabled={confirmationControlsDisabled} onClick={cancelPendingAction} variant="ghost">
           Cancelar
         </Button>
-        <Button isLoading={actionPending} onClick={() => void confirmPendingAction()}>
+        <Button disabled={confirmationControlsDisabled} isLoading={actionPending} onClick={() => void confirmPendingAction()}>
           <Check aria-hidden="true" size={16} />
           Registrar serie
         </Button>
       </div>
-      <Button
+      {showVoiceConfirmationAction ? <Button
         className="mt-2"
         disabled={actionPending}
         fullWidth
@@ -671,7 +694,7 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
       >
         <Mic aria-hidden="true" size={15} />
         Responder por voz
-      </Button>
+      </Button> : null}
     </div>
   ) : null;
 
@@ -804,15 +827,20 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
             )}
 
             {state === "listening" && (
-              <button
-                className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-thermal-accent/60 bg-thermal-accent/15 px-4 py-3 text-sm font-semibold text-thermal-accent transition-colors duration-150 hover:bg-thermal-accent/25 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-                onClick={stopRecording}
-                type="button"
-              >
-                <Square aria-hidden="true" className="fill-current" size={16} />
-                <span>Detener y enviar</span>
-              </button>
+              <div className="space-y-4">
+                <button
+                  className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-thermal-accent/60 bg-thermal-accent/15 px-4 py-3 text-sm font-semibold text-thermal-accent transition-colors duration-150 hover:bg-thermal-accent/25 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                  onClick={stopRecording}
+                  type="button"
+                >
+                  <Square aria-hidden="true" className="fill-current" size={16} />
+                  <span>Detener y enviar</span>
+                </button>
+                {pendingActionPanel}
+              </div>
             )}
+
+            {(state === "requestingPermission" || state === "transcribing" || state === "answering") && pendingActionPanel}
 
             {state === "speaking" && coachResponse && (
               <div className="space-y-4">
