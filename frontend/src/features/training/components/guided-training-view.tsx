@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Check, ChevronDown, CircleHelp, ScanEye, X } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
 import { hasEntrenateExerciseDemoV2 } from "@/features/exercises/components/exercise-demo-v2-registry";
 import { upsertTrainingSetAction } from "../actions/training.actions";
@@ -15,14 +15,16 @@ const ExerciseMovementDemo = dynamic(
   { ssr: false },
 );
 
-type RestState = { remaining: number; next: TrainingTarget };
+export type GuidedRestState = { remaining: number; next: TrainingTarget };
 type RestAdjustmentFeedback = { amount: number; id: number };
 
 function formatTime(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-export function GuidedTrainingView({ session, onDirtyChange, onFinish, onMissing, onSaved, onUnauthenticated, workoutGuideIds }: {
+export function GuidedTrainingView({ rest, setRest, session, onDirtyChange, onFinish, onMissing, onSaved, onUnauthenticated, workoutGuideIds }: {
+  rest: GuidedRestState | null;
+  setRest: Dispatch<SetStateAction<GuidedRestState | null>>;
   session: TrainingSession;
   onDirtyChange: (isDirty: boolean) => void;
   onFinish: () => void;
@@ -31,17 +33,8 @@ export function GuidedTrainingView({ session, onDirtyChange, onFinish, onMissing
   onUnauthenticated: () => void;
   workoutGuideIds: Record<string, string>;
 }) {
-  const [rest, setRest] = useState<RestState | null>(null);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
   const target = getFirstMissingTarget(session);
-
-  useEffect(() => {
-    if (!rest || rest.remaining === 0) return;
-    const interval = window.setInterval(() => {
-      setRest((current) => current ? { ...current, remaining: Math.max(0, current.remaining - 1) } : null);
-    }, 1000);
-    return () => window.clearInterval(interval);
-  }, [rest]);
 
   useEffect(() => {
     if (!showSavedNotice) return;

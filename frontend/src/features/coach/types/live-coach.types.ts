@@ -11,9 +11,11 @@ export type LiveCoachTranscriptionResponse = {
 export type LiveCoachClientSnapshot = {
   exerciseId?: string | null;
   setIndex?: number | null;
-  restIsActive?: boolean | null;
-  restRemainingSeconds?: number | null;
-  restCapturedAtUtc?: string | null;
+  restTimer?: {
+    isActive: boolean;
+    remainingSeconds: number;
+    capturedAtUtc: string;
+  } | null;
 };
 
 export type LiveCoachRespondRequest = {

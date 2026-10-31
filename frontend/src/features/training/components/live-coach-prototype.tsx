@@ -143,9 +143,13 @@ function getAudioFileExtension(mimeType: string): string {
 type LiveCoachPrototypeProps = {
   session?: TrainingSession | null;
   onSessionUpdated?: (session: TrainingSession) => void;
+  restTimer?: {
+    isActive: boolean;
+    remainingSeconds: number | null;
+  };
 };
 
-export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachPrototypeProps) {
+export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: LiveCoachPrototypeProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<LiveCoachState>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
@@ -171,6 +175,7 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
+  const interactionSnapshotRef = useRef<LiveCoachClientSnapshot | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentAudioUrlRef = useRef<string | null>(null);
@@ -247,11 +252,15 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
       ? Math.min(currentExercise.series.length + 1, currentExercise.seriesObjetivo)
       : null;
 
+    const capturedAtUtc = new Date().toISOString();
+
     return {
       exerciseId: currentExercise?.ejercicioId ?? null,
-      restCapturedAtUtc: new Date().toISOString(),
-      restIsActive: false,
-      restRemainingSeconds: null,
+      restTimer: {
+        capturedAtUtc,
+        isActive: restTimer?.isActive ?? false,
+        remainingSeconds: restTimer?.remainingSeconds ?? 0,
+      },
       setIndex: currentSetIndex,
     };
   }
@@ -359,7 +368,10 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
     setActionError(null);
     setState("answering");
 
-    const snapshot = getClientSnapshot();
+    const snapshot = inputKind === "audio"
+      ? interactionSnapshotRef.current ?? getClientSnapshot()
+      : getClientSnapshot();
+    interactionSnapshotRef.current = null;
 
     const result = await respondLiveCoachAction({
       clientSnapshot: snapshot,
@@ -406,6 +418,7 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
 
   async function startRecording(preservePendingAction = false) {
     if (actionPending) return;
+    interactionSnapshotRef.current = getClientSnapshot();
     cleanupMedia();
     stopAudio("new-query-audio");
     setErrorMessage(null);

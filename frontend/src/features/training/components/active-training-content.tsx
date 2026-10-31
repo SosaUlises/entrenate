@@ -15,7 +15,7 @@ import {
 import { areTargetSetsComplete } from "../training-position";
 import type { TrainingSession, TrainingSet } from "../types/training.types";
 import { FreeTrainingView } from "./free-training-view";
-import { GuidedTrainingView } from "./guided-training-view";
+import { GuidedTrainingView, type GuidedRestState } from "./guided-training-view";
 import { LiveCoachPrototype } from "./live-coach-prototype";
 
 type ViewState = { status: "loading" | "empty" | "error" } | { status: "ready"; session: TrainingSession };
@@ -35,6 +35,7 @@ export function ActiveTrainingContent() {
   const [isDirty, setIsDirty] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
   const [sessionNotice, setSessionNotice] = useState<string | null>(null);
+  const [guidedRest, setGuidedRest] = useState<GuidedRestState | null>(null);
   const [workoutGuideIds, setWorkoutGuideIds] = useState<Record<string, string>>({});
   const catalogRequestedRef = useRef(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -107,8 +108,19 @@ export function ActiveTrainingContent() {
     });
   }, [invalidateSession, mode, router, view.status]);
 
+  useEffect(() => {
+    if (!guidedRest || guidedRest.remaining === 0) return;
+    const interval = window.setInterval(() => {
+      setGuidedRest((current) => current
+        ? { ...current, remaining: Math.max(0, current.remaining - 1) }
+        : null);
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [guidedRest]);
+
   function reload() {
     setIsDirty(false);
+    setGuidedRest(null);
     setView({ status: "loading" });
     setRequestKey((key) => key + 1);
   }
@@ -127,6 +139,7 @@ export function ActiveTrainingContent() {
     if (action === "home") {
       router.push("/home");
     } else {
+      setGuidedRest(null);
       setMode(null);
     }
   }
@@ -155,6 +168,7 @@ export function ActiveTrainingContent() {
         : await cancelTrainingSessionAction(sessionId);
       if (result.status === "success") {
         dialogRef.current?.close();
+        setGuidedRest(null);
         setView({ status: "empty" });
         setSessionNotice(null);
         router.replace(requestedFinishMode === "complete" ? `/history/${sessionId}` : "/home");
@@ -220,6 +234,9 @@ export function ActiveTrainingContent() {
               setView({ status: "ready", session: updatedSession });
               setIsDirty(false);
             }}
+            restTimer={guidedRest
+              ? { isActive: guidedRest.remaining > 0, remainingSeconds: guidedRest.remaining }
+              : { isActive: false, remainingSeconds: null }}
             session={session}
           />
         ) : null}
@@ -265,7 +282,9 @@ export function ActiveTrainingContent() {
               onMissing={reload}
               onSaved={recordSet}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
+              rest={guidedRest}
               session={session}
+              setRest={setGuidedRest}
               workoutGuideIds={workoutGuideIds}
             />
           ) : mode === null ? (
@@ -306,7 +325,9 @@ export function ActiveTrainingContent() {
               onMissing={reload}
               onSaved={recordSet}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
+              rest={guidedRest}
               session={session}
+              setRest={setGuidedRest}
               workoutGuideIds={workoutGuideIds}
             />
           ) : null}
