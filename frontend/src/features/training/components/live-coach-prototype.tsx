@@ -144,7 +144,10 @@ function getAudioFileExtension(mimeType: string): string {
 
 type LiveCoachPrototypeProps = {
   session?: TrainingSession | null;
-  onSessionUpdated?: (session: TrainingSession) => void;
+  onSessionUpdated?: (
+    session: TrainingSession,
+    clientAction?: LiveCoachClientAction | null,
+  ) => boolean;
   onClientAction?: (
     action: LiveCoachClientAction,
     updatedSession?: TrainingSession | null,
@@ -397,11 +400,21 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
 
     if (result.status === "success") {
       const nextPendingAction = result.data.pendingAction ?? null;
+      const shouldApplyClientAction = Boolean(
+        result.data.clientAction &&
+        !appliedClientActionsRef.current.has(result.data.responseId),
+      );
+      let clientActionApplied = true;
       if (result.data.updatedSession) {
-        onSessionUpdated?.(result.data.updatedSession);
+        clientActionApplied = onSessionUpdated?.(
+          result.data.updatedSession,
+          shouldApplyClientAction ? result.data.clientAction : null,
+        ) ?? false;
+      } else if (result.data.clientAction && shouldApplyClientAction) {
+        clientActionApplied = onClientAction?.(result.data.clientAction) ?? false;
       }
-      if (result.data.clientAction && !appliedClientActionsRef.current.has(result.data.responseId)) {
-        if (!onClientAction?.(result.data.clientAction, result.data.updatedSession)) {
+      if (result.data.clientAction && shouldApplyClientAction) {
+        if (!clientActionApplied) {
           setErrorMessage("No pude aplicar la acción en Training.");
           setState("error");
           return;
@@ -615,10 +628,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     setActionPending(false);
 
     if (result.status === "success") {
-      onSessionUpdated?.(result.data.updatedSession);
-      if (result.data.clientAction) {
-        onClientAction?.(result.data.clientAction, result.data.updatedSession);
-      }
+      onSessionUpdated?.(result.data.updatedSession, result.data.clientAction);
       setTranscript(null);
       setCoachResponse((current) => current ? {
         ...current,

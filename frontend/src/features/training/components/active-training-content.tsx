@@ -218,17 +218,29 @@ export function ActiveTrainingContent() {
     }
 
     if (action.type === "StartRestTimer") {
-      if (guidedRest && guidedRest.remaining > 0) return true;
-
       const currentSession = updatedSession ?? (view.status === "ready" ? view.session : null);
       const next = currentSession ? getFirstMissingTarget(currentSession) : null;
       if (!next || action.durationSeconds <= 0) return false;
 
-      setGuidedRest({ next, remaining: action.durationSeconds });
+      setGuidedRest((current) => current && current.remaining > 0
+        ? current
+        : { next, remaining: action.durationSeconds });
       return true;
     }
 
     return false;
+  }
+
+  function synchronizeLiveCoachSession(
+    updatedSession: TrainingSession,
+    clientAction?: LiveCoachClientAction | null,
+  ): boolean {
+    setView({ status: "ready", session: updatedSession });
+    setIsDirty(false);
+
+    return clientAction
+      ? applyLiveCoachClientAction(clientAction, updatedSession)
+      : true;
   }
 
   const session = view.status === "ready" ? view.session : null;
@@ -255,10 +267,7 @@ export function ActiveTrainingContent() {
         {session ? (
           <LiveCoachPrototype
             onClientAction={applyLiveCoachClientAction}
-            onSessionUpdated={(updatedSession) => {
-              setView({ status: "ready", session: updatedSession });
-              setIsDirty(false);
-            }}
+            onSessionUpdated={synchronizeLiveCoachSession}
             restTimer={guidedRest
               ? { isActive: guidedRest.remaining > 0, remainingSeconds: guidedRest.remaining }
               : { isActive: false, remainingSeconds: null }}
