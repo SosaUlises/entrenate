@@ -3,9 +3,9 @@ import { env } from "@/lib/env";
 import type {
   LiveCoachRespondRequest,
   LiveCoachRespondResponse,
+  LiveCoachActionConfirmation,
   LiveCoachTranscriptionResponse,
 } from "../types/live-coach.types";
-import type { TrainingSession } from "@/features/training/types/training.types";
 
 export function transcribeLiveAudio(
   formData: FormData,
@@ -39,11 +39,17 @@ export function respondLiveCoach(
 
 export function confirmLiveCoachAction(
   actionId: string,
+  restTimerIsActive: boolean,
   authToken: string,
-): Promise<TrainingSession> {
-  return apiRequest<TrainingSession>(
+): Promise<LiveCoachActionConfirmation> {
+  return apiRequest<LiveCoachActionConfirmation, { restTimerIsActive: boolean }>(
     `/api/coach/live/actions/${encodeURIComponent(actionId)}/confirm`,
-    { authToken, cache: "no-store", method: "POST" },
+    {
+      authToken,
+      body: { restTimerIsActive },
+      cache: "no-store",
+      method: "POST",
+    },
   );
 }
 

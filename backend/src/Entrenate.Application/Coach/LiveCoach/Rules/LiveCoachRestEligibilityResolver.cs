@@ -1,5 +1,6 @@
 using System.Linq;
 using Entrenate.Application.TrainingSessions;
+using Entrenate.Application.TrainingSessions.DTOs;
 using Entrenate.Domain.Entidades;
 
 namespace Entrenate.Application.Coach.LiveCoach.Rules
@@ -28,6 +29,39 @@ namespace Entrenate.Application.Coach.LiveCoach.Rules
     /// </summary>
     public static class LiveCoachRestEligibilityResolver
     {
+        /// <summary>
+        /// Resuelve el descanso inmediatamente posterior a una confirmación ya persistida.
+        /// La duración pertenece al ejercicio confirmado, no al siguiente target proyectado.
+        /// </summary>
+        public static LiveCoachRestEligibility ResolveAfterConfirmedSet(
+            TrainingSessionDto session,
+            Guid completedExerciseSessionId)
+        {
+            var hasPendingSet = session.Ejercicios
+                .OrderBy(exercise => exercise.Orden)
+                .Any(exercise => Enumerable.Range(1, exercise.SeriesObjetivo)
+                    .Any(setNumber => !exercise.Series.Any(set =>
+                        set.NumeroSerie == setNumber && set.Completada)));
+
+            if (!hasPendingSet)
+            {
+                return new LiveCoachRestEligibility(LiveCoachRestEligibilityStatus.NoPendingSet);
+            }
+
+            var completedExercise = session.Ejercicios
+                .FirstOrDefault(exercise => exercise.Id == completedExerciseSessionId);
+
+            if (completedExercise is null)
+            {
+                return new LiveCoachRestEligibility(
+                    LiveCoachRestEligibilityStatus.NoRecentlyCompletedSet);
+            }
+
+            return new LiveCoachRestEligibility(
+                LiveCoachRestEligibilityStatus.Eligible,
+                completedExercise.DescansoObjetivoSegundos);
+        }
+
         public static LiveCoachRestEligibility Resolve(SesionEntrenamiento session)
         {
             var current = CurrentPendingTrainingSetResolver.Resolve(session);

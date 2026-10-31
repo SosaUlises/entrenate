@@ -264,13 +264,14 @@ namespace Entrenate.Api.Controllers
         [HttpPost("actions/{actionId:guid}/confirm")]
         public async Task<IActionResult> ConfirmAction(
             Guid actionId,
+            [FromBody] ConfirmLiveCoachActionRequest request,
             CancellationToken cancellationToken)
         {
-            var session = await _sender.Send(
-                new ConfirmLiveCoachActionCommand(actionId),
+            var result = await _sender.Send(
+                new ConfirmLiveCoachActionCommand(actionId, request.RestTimerIsActive),
                 cancellationToken);
 
-            return Ok(session);
+            return Ok(result);
         }
 
         [HttpPost("actions/{actionId:guid}/cancel")]

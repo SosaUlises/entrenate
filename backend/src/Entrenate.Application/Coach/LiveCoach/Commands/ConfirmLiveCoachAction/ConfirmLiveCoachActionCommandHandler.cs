@@ -1,11 +1,11 @@
 using Entrenate.Application.Coach.LiveCoach.Actions;
-using Entrenate.Application.TrainingSessions.DTOs;
+using Entrenate.Application.Coach.LiveCoach.DTOs;
 using MediatR;
 
 namespace Entrenate.Application.Coach.LiveCoach.Commands.ConfirmLiveCoachAction
 {
     public sealed class ConfirmLiveCoachActionCommandHandler
-        : IRequestHandler<ConfirmLiveCoachActionCommand, TrainingSessionDto>
+        : IRequestHandler<ConfirmLiveCoachActionCommand, LiveCoachActionConfirmationDto>
     {
         private readonly ILiveCoachPendingActionExecutor _executor;
 
@@ -14,9 +14,12 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.ConfirmLiveCoachAction
             _executor = executor;
         }
 
-        public Task<TrainingSessionDto> Handle(
+        public Task<LiveCoachActionConfirmationDto> Handle(
             ConfirmLiveCoachActionCommand request,
             CancellationToken cancellationToken)
-            => _executor.ConfirmAsync(request.ActionId, cancellationToken);
+            => _executor.ConfirmAsync(
+                request.ActionId,
+                request.RestTimerIsActive,
+                cancellationToken);
     }
 }

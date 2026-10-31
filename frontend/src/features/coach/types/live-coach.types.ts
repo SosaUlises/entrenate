@@ -47,3 +47,9 @@ export type LiveCoachPendingAction = {
   summary: string;
   expiresAtUtc: string;
 };
+
+export type LiveCoachActionConfirmation = {
+  updatedSession: import("@/features/training/types/training.types").TrainingSession;
+  text: string;
+  clientAction?: LiveCoachClientAction | null;
+};

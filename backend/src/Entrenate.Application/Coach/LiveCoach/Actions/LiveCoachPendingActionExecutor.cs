@@ -1,7 +1,8 @@
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
+using Entrenate.Application.Coach.LiveCoach.DTOs;
+using Entrenate.Application.Coach.LiveCoach.Rules;
 using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
-using Entrenate.Application.TrainingSessions.DTOs;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById;
 using MediatR;
 
@@ -9,7 +10,10 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
 {
     public interface ILiveCoachPendingActionExecutor
     {
-        Task<TrainingSessionDto> ConfirmAsync(Guid actionId, CancellationToken cancellationToken);
+        Task<LiveCoachActionConfirmationDto> ConfirmAsync(
+            Guid actionId,
+            bool restTimerIsActive,
+            CancellationToken cancellationToken);
         Task CancelAsync(Guid actionId, CancellationToken cancellationToken);
     }
 
@@ -29,8 +33,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
             _sender = sender;
         }
 
-        public async Task<TrainingSessionDto> ConfirmAsync(
+        public async Task<LiveCoachActionConfirmationDto> ConfirmAsync(
             Guid actionId,
+            bool restTimerIsActive,
             CancellationToken cancellationToken)
         {
             var userId = GetAuthenticatedUserId();
@@ -55,9 +60,33 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
                     RequireCurrentPendingSet: true),
                 cancellationToken);
 
-            return await _sender.Send(
+            var updatedSession = await _sender.Send(
                 new GetTrainingSessionByIdQuery(action.SessionId),
                 cancellationToken);
+
+            var restEligibility = LiveCoachRestEligibilityResolver.ResolveAfterConfirmedSet(
+                updatedSession,
+                action.ExerciseSessionId);
+
+            if (restEligibility.Status == LiveCoachRestEligibilityStatus.NoPendingSet)
+            {
+                return new LiveCoachActionConfirmationDto(
+                    updatedSession,
+                    "Serie registrada. Completaste todas las series.");
+            }
+
+            if (!restTimerIsActive &&
+                restEligibility.Status == LiveCoachRestEligibilityStatus.Eligible &&
+                restEligibility.RestSeconds is > 0)
+            {
+                var durationSeconds = restEligibility.RestSeconds.Value;
+                return new LiveCoachActionConfirmationDto(
+                    updatedSession,
+                    $"Serie registrada. Descanso: {durationSeconds} segundos.",
+                    new LiveCoachClientActionDto("StartRestTimer", durationSeconds));
+            }
+
+            return new LiveCoachActionConfirmationDto(updatedSession, "Serie registrada.");
         }
 
         public Task CancelAsync(Guid actionId, CancellationToken cancellationToken)

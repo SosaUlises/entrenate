@@ -208,14 +208,19 @@ export function ActiveTrainingContent() {
     } : current);
   }
 
-  function applyLiveCoachClientAction(action: LiveCoachClientAction): boolean {
+  function applyLiveCoachClientAction(
+    action: LiveCoachClientAction,
+    updatedSession?: TrainingSession | null,
+  ): boolean {
     if (action.type === "StopRestTimer") {
       setGuidedRest(null);
       return true;
     }
 
     if (action.type === "StartRestTimer") {
-      const currentSession = view.status === "ready" ? view.session : null;
+      if (guidedRest && guidedRest.remaining > 0) return true;
+
+      const currentSession = updatedSession ?? (view.status === "ready" ? view.session : null);
       const next = currentSession ? getFirstMissingTarget(currentSession) : null;
       if (!next || action.durationSeconds <= 0) return false;
 

@@ -1,22 +1,26 @@
 "use server";
 
 import { clearAuthSession, getAuthToken } from "@/features/auth/services/session.service";
-import type { TrainingSession } from "@/features/training/types/training.types";
+import type { LiveCoachActionConfirmation } from "../types/live-coach.types";
 import { ApiClientError } from "@/services/api-client";
 import { cancelLiveCoachAction, confirmLiveCoachAction } from "../services/live-coach.service";
 
 export type ConfirmLiveCoachPendingActionResult =
-  | { data: TrainingSession; status: "success" }
+  | { data: LiveCoachActionConfirmation; status: "success" }
   | { status: "conflict" | "error" | "not-found" | "unauthenticated" };
 
 export async function confirmLiveCoachPendingAction(
   actionId: string,
+  restTimerIsActive: boolean,
 ): Promise<ConfirmLiveCoachPendingActionResult> {
   const authToken = await getAuthToken();
   if (!authToken) return { status: "unauthenticated" };
 
   try {
-    return { data: await confirmLiveCoachAction(actionId, authToken), status: "success" };
+    return {
+      data: await confirmLiveCoachAction(actionId, restTimerIsActive, authToken),
+      status: "success",
+    };
   } catch (error) {
     if (error instanceof ApiClientError) {
       if (error.status === 401) {

@@ -230,6 +230,37 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         [Fact]
+        public async Task Handle_WhenVoiceConfirmationStartsRest_ReturnsSharedClientActionAndText()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            await CreatePendingActionAsync(session);
+            _pendingActionExecutor.ClientActionToReturn =
+                new LiveCoachClientActionDto("StartRestTimer", 150);
+            _pendingActionExecutor.TextToReturn =
+                "Serie registrada. Descanso: 150 segundos.";
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-confirm-rest",
+                    "audio",
+                    "sí",
+                    new ClientSnapshotInput(
+                        session.Ejercicios.Single().EjercicioId,
+                        1,
+                        RestIsActive: false,
+                        RestRemainingSeconds: 0,
+                        RestCapturedAtUtc: DateTime.UtcNow)),
+                CancellationToken.None);
+
+            Assert.Equal("Serie registrada. Descanso: 150 segundos.", result.Text);
+            Assert.Equal("StartRestTimer", result.ClientAction?.Type);
+            Assert.Equal(150, result.ClientAction?.DurationSeconds);
+            Assert.False(_pendingActionExecutor.LastRestTimerIsActive);
+        }
+
+        [Fact]
         public async Task Handle_WhenPendingActionExists_ExplicitVoiceCancellationCancelsWithoutTrainingMutation()
         {
             var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
@@ -1568,10 +1599,17 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             public int CancelCount { get; private set; }
             public bool ThrowConflict { get; set; }
             public PendingLiveCoachAction? ConfirmedAction { get; private set; }
+            public bool LastRestTimerIsActive { get; private set; }
+            public LiveCoachClientActionDto? ClientActionToReturn { get; set; }
+            public string TextToReturn { get; set; } = "Serie registrada.";
 
-            public Task<TrainingSessionDto> ConfirmAsync(Guid actionId, CancellationToken cancellationToken)
+            public Task<LiveCoachActionConfirmationDto> ConfirmAsync(
+                Guid actionId,
+                bool restTimerIsActive,
+                CancellationToken cancellationToken)
             {
                 ConfirmCount++;
+                LastRestTimerIsActive = restTimerIsActive;
                 if (ThrowConflict)
                 {
                     store.Actions.Remove(actionId);
@@ -1581,14 +1619,18 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 var action = store.Actions[actionId];
                 ConfirmedAction = action;
                 store.Actions.Remove(actionId);
-                return Task.FromResult(new TrainingSessionDto(
+                var session = new TrainingSessionDto(
                     action.SessionId,
                     null,
                     DateTime.UtcNow.Date,
                     DateTime.UtcNow,
                     null,
                     EstadoSesionEntrenamiento.EnCurso,
-                    []));
+                    []);
+                return Task.FromResult(new LiveCoachActionConfirmationDto(
+                    session,
+                    TextToReturn,
+                    ClientActionToReturn));
             }
 
             public Task CancelAsync(Guid actionId, CancellationToken cancellationToken)

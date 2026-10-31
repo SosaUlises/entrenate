@@ -145,7 +145,10 @@ function getAudioFileExtension(mimeType: string): string {
 type LiveCoachPrototypeProps = {
   session?: TrainingSession | null;
   onSessionUpdated?: (session: TrainingSession) => void;
-  onClientAction?: (action: LiveCoachClientAction) => boolean;
+  onClientAction?: (
+    action: LiveCoachClientAction,
+    updatedSession?: TrainingSession | null,
+  ) => boolean;
   restTimer?: {
     isActive: boolean;
     remainingSeconds: number | null;
@@ -394,8 +397,11 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
 
     if (result.status === "success") {
       const nextPendingAction = result.data.pendingAction ?? null;
+      if (result.data.updatedSession) {
+        onSessionUpdated?.(result.data.updatedSession);
+      }
       if (result.data.clientAction && !appliedClientActionsRef.current.has(result.data.responseId)) {
-        if (!onClientAction?.(result.data.clientAction)) {
+        if (!onClientAction?.(result.data.clientAction, result.data.updatedSession)) {
           setErrorMessage("No pude aplicar la acción en Training.");
           setState("error");
           return;
@@ -404,9 +410,6 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       }
       setCoachResponse({ ...result.data, pendingAction: null });
       setPendingAction(nextPendingAction);
-      if (result.data.updatedSession) {
-        onSessionUpdated?.(result.data.updatedSession);
-      }
 
       if (result.data.canSynthesizeVoice && voiceEnabled) {
         await playSpokenAnswer(
@@ -605,17 +608,23 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     setActionPending(true);
     setActionError(null);
 
-    const result = await confirmLiveCoachPendingAction(pendingAction.actionId);
+    const result = await confirmLiveCoachPendingAction(
+      pendingAction.actionId,
+      restTimer?.isActive === true,
+    );
     setActionPending(false);
 
     if (result.status === "success") {
-      onSessionUpdated?.(result.data);
+      onSessionUpdated?.(result.data.updatedSession);
+      if (result.data.clientAction) {
+        onClientAction?.(result.data.clientAction, result.data.updatedSession);
+      }
       setTranscript(null);
       setCoachResponse((current) => current ? {
         ...current,
         canSynthesizeVoice: false,
         pendingAction: null,
-        text: "Serie registrada.",
+        text: result.data.text,
       } : current);
       setPendingAction(null);
       setState("success");

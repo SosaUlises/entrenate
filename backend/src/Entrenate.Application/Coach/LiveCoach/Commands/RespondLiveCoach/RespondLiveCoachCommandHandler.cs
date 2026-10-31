@@ -108,13 +108,15 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             {
                 try
                 {
-                    var updatedSession = await _pendingActionExecutor.ConfirmAsync(
+                    var confirmation = await _pendingActionExecutor.ConfirmAsync(
                         activePendingAction.ActionId,
+                        request.ClientSnapshot?.RestIsActive == true,
                         cancellationToken);
                     return CreateDirectResponse(
                         request.ClientTurnId,
-                        "Serie registrada.",
-                        updatedSession: updatedSession);
+                        confirmation.Text,
+                        updatedSession: confirmation.UpdatedSession,
+                        clientAction: confirmation.ClientAction);
                 }
                 catch (Exception exception) when (exception is ConflictException or NotFoundException)
                 {

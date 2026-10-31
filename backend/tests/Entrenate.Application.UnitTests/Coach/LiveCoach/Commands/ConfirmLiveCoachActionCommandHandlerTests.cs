@@ -18,16 +18,23 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         {
             var action = CreateAction();
             var store = new StubStore(new(PendingLiveCoachActionTakeStatus.Success, action));
-            var sender = new RecordingSender(action.SessionId);
+            var sender = new RecordingSender(
+                action.SessionId,
+                CreateSession(
+                    action,
+                    CreateExercise(action.ExerciseSessionId, 1, 3, 150, completedSets: 1)));
             var handler = new ConfirmLiveCoachActionCommandHandler(
                 new LiveCoachPendingActionExecutor(
                     new StubCurrentUser("owner"), store, sender));
 
             var result = await handler.Handle(
-                new ConfirmLiveCoachActionCommand(action.ActionId),
+                new ConfirmLiveCoachActionCommand(action.ActionId, RestTimerIsActive: false),
                 CancellationToken.None);
 
-            Assert.Equal(action.SessionId, result.Id);
+            Assert.Equal(action.SessionId, result.UpdatedSession.Id);
+            Assert.Equal("StartRestTimer", result.ClientAction?.Type);
+            Assert.Equal(150, result.ClientAction?.DurationSeconds);
+            Assert.Equal("Serie registrada. Descanso: 150 segundos.", result.Text);
             var upsert = Assert.IsType<UpsertTrainingSetCommand>(sender.Requests[0]);
             Assert.Equal(action.ExerciseSessionId, upsert.ExerciseSessionId);
             Assert.Equal(action.SetNumber, upsert.SetNumber);
@@ -36,6 +43,76 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.Equal(action.Rir, upsert.Rir);
             Assert.True(upsert.RequireCurrentPendingSet);
             Assert.IsType<GetTrainingSessionByIdQuery>(sender.Requests[1]);
+        }
+
+        [Fact]
+        public async Task Handle_WhenLastSetOfExerciseIsConfirmed_UsesCompletedExerciseRest()
+        {
+            var action = CreateAction();
+            var session = CreateSession(
+                action,
+                CreateExercise(action.ExerciseSessionId, 1, 1, 150, completedSets: 1),
+                CreateExercise(Guid.NewGuid(), 2, 3, 60, completedSets: 0));
+            var handler = CreateHandler(action, session);
+
+            var result = await handler.Handle(
+                new ConfirmLiveCoachActionCommand(action.ActionId, RestTimerIsActive: false),
+                CancellationToken.None);
+
+            Assert.Equal(150, result.ClientAction?.DurationSeconds);
+        }
+
+        [Fact]
+        public async Task Handle_WhenLastSetOfSessionIsConfirmed_DoesNotStartRest()
+        {
+            var action = CreateAction();
+            var session = CreateSession(
+                action,
+                CreateExercise(action.ExerciseSessionId, 1, 1, 150, completedSets: 1));
+            var handler = CreateHandler(action, session);
+
+            var result = await handler.Handle(
+                new ConfirmLiveCoachActionCommand(action.ActionId, RestTimerIsActive: false),
+                CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Serie registrada. Completaste todas las series.", result.Text);
+        }
+
+        [Fact]
+        public async Task Handle_WhenRestIsMissing_DoesNotStartTimer()
+        {
+            var action = CreateAction();
+            var session = CreateSession(
+                action,
+                CreateExercise(action.ExerciseSessionId, 1, 3, 0, completedSets: 1));
+            var handler = CreateHandler(action, session);
+
+            var result = await handler.Handle(
+                new ConfirmLiveCoachActionCommand(action.ActionId, RestTimerIsActive: false),
+                CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Serie registrada.", result.Text);
+        }
+
+        [Fact]
+        public async Task Handle_WhenTimerIsAlreadyActive_RegistersWithoutRestartingIt()
+        {
+            var action = CreateAction();
+            var session = CreateSession(
+                action,
+                CreateExercise(action.ExerciseSessionId, 1, 3, 150, completedSets: 1));
+            var sender = new RecordingSender(action.SessionId, session);
+            var handler = CreateHandler(action, session, sender);
+
+            var result = await handler.Handle(
+                new ConfirmLiveCoachActionCommand(action.ActionId, RestTimerIsActive: true),
+                CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Serie registrada.", result.Text);
+            Assert.IsType<UpsertTrainingSetCommand>(sender.Requests[0]);
         }
 
         [Theory]
@@ -51,7 +128,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                     new RecordingSender(Guid.NewGuid())));
 
             await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(
-                new ConfirmLiveCoachActionCommand(Guid.NewGuid()),
+                new ConfirmLiveCoachActionCommand(Guid.NewGuid(), RestTimerIsActive: false),
                 CancellationToken.None));
         }
 
@@ -65,13 +142,57 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                     new RecordingSender(Guid.NewGuid())));
 
             await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(
-                new ConfirmLiveCoachActionCommand(Guid.NewGuid()),
+                new ConfirmLiveCoachActionCommand(Guid.NewGuid(), RestTimerIsActive: false),
                 CancellationToken.None));
         }
 
         private static PendingLiveCoachAction CreateAction() => new(
             Guid.NewGuid(), "owner", Guid.NewGuid(), Guid.NewGuid(), 1,
             100m, 8, 1, DateTime.UtcNow.AddSeconds(45));
+
+        private static ConfirmLiveCoachActionCommandHandler CreateHandler(
+            PendingLiveCoachAction action,
+            TrainingSessionDto session,
+            RecordingSender? sender = null)
+            => new(new LiveCoachPendingActionExecutor(
+                new StubCurrentUser("owner"),
+                new StubStore(new(PendingLiveCoachActionTakeStatus.Success, action)),
+                sender ?? new RecordingSender(action.SessionId, session)));
+
+        private static TrainingSessionDto CreateSession(
+            PendingLiveCoachAction action,
+            params TrainingSessionExerciseDto[] exercises)
+            => new(
+                action.SessionId,
+                null,
+                DateTime.UtcNow.Date,
+                DateTime.UtcNow,
+                null,
+                EstadoSesionEntrenamiento.EnCurso,
+                exercises);
+
+        private static TrainingSessionExerciseDto CreateExercise(
+            Guid id,
+            int order,
+            int targetSets,
+            int restSeconds,
+            int completedSets)
+            => new(
+                id,
+                Guid.NewGuid(),
+                $"Ejercicio {order}",
+                order,
+                targetSets,
+                8,
+                10,
+                1,
+                2,
+                restSeconds,
+                null,
+                Enumerable.Range(1, completedSets)
+                    .Select(number => new TrainingSetDto(
+                        Guid.NewGuid(), number, 100m, 8, 1, true, DateTime.UtcNow))
+                    .ToArray());
 
         private sealed class StubCurrentUser(string userId) : ICurrentUserService
         {
@@ -94,7 +215,9 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 => new(PendingLiveCoachActionUpdateStatus.NotFound);
         }
 
-        private sealed class RecordingSender(Guid sessionId) : ISender
+        private sealed class RecordingSender(
+            Guid sessionId,
+            TrainingSessionDto? updatedSession = null) : ISender
         {
             public List<object> Requests { get; } = [];
 
@@ -106,7 +229,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                     UpsertTrainingSetCommand command => new TrainingSetDto(
                         Guid.NewGuid(), command.SetNumber, command.Peso, command.Repeticiones,
                         command.Rir, true, DateTime.UtcNow),
-                    GetTrainingSessionByIdQuery => new TrainingSessionDto(
+                    GetTrainingSessionByIdQuery => updatedSession ?? new TrainingSessionDto(
                         sessionId, null, DateTime.UtcNow.Date, DateTime.UtcNow,
                         null, EstadoSesionEntrenamiento.EnCurso, []),
                     _ => throw new NotSupportedException(request.GetType().Name)
