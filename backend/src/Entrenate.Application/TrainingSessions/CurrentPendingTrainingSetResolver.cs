@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Entrenate.Domain.Entidades;
 
 namespace Entrenate.Application.TrainingSessions
@@ -10,13 +12,23 @@ namespace Entrenate.Application.TrainingSessions
     {
         public static CurrentPendingTrainingSet? Resolve(SesionEntrenamiento session)
         {
-            var exercise = session.Ejercicios
-                .OrderBy(item => item.Orden)
-                .FirstOrDefault(item => item.Series.Count < item.SeriesObjetivo);
+            foreach (var exercise in session.Ejercicios.OrderBy(item => item.Orden))
+            {
+                var completedSetNumbers = new HashSet<int>(
+                    exercise.Series
+                        .Where(s => s.EstaRealmenteCompletada())
+                        .Select(s => s.NumeroSerie));
 
-            return exercise is null
-                ? null
-                : new CurrentPendingTrainingSet(exercise, exercise.Series.Count + 1);
+                for (var setNumber = 1; setNumber <= exercise.SeriesObjetivo; setNumber++)
+                {
+                    if (!completedSetNumbers.Contains(setNumber))
+                    {
+                        return new CurrentPendingTrainingSet(exercise, setNumber);
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

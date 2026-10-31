@@ -34,7 +34,12 @@ export type LiveCoachRespondResponse = {
   canSynthesizeVoice: boolean;
   pendingAction?: LiveCoachPendingAction | null;
   updatedSession?: import("@/features/training/types/training.types").TrainingSession | null;
+  clientAction?: LiveCoachClientAction | null;
 };
+
+export type LiveCoachClientAction =
+  | { type: "StartRestTimer"; durationSeconds: number }
+  | { type: "StopRestTimer"; durationSeconds?: null };
 
 export type LiveCoachPendingAction = {
   actionId: string;

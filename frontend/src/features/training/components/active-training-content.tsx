@@ -12,7 +12,8 @@ import {
   cancelTrainingSessionAction, completeTrainingSessionAction,
   getActiveTrainingSessionAction,
 } from "../actions/training.actions";
-import { areTargetSetsComplete } from "../training-position";
+import { areTargetSetsComplete, getFirstMissingTarget } from "../training-position";
+import type { LiveCoachClientAction } from "@/features/coach/types/live-coach.types";
 import type { TrainingSession, TrainingSet } from "../types/training.types";
 import { FreeTrainingView } from "./free-training-view";
 import { GuidedTrainingView, type GuidedRestState } from "./guided-training-view";
@@ -207,6 +208,24 @@ export function ActiveTrainingContent() {
     } : current);
   }
 
+  function applyLiveCoachClientAction(action: LiveCoachClientAction): boolean {
+    if (action.type === "StopRestTimer") {
+      setGuidedRest(null);
+      return true;
+    }
+
+    if (action.type === "StartRestTimer") {
+      const currentSession = view.status === "ready" ? view.session : null;
+      const next = currentSession ? getFirstMissingTarget(currentSession) : null;
+      if (!next || action.durationSeconds <= 0) return false;
+
+      setGuidedRest({ next, remaining: action.durationSeconds });
+      return true;
+    }
+
+    return false;
+  }
+
   const session = view.status === "ready" ? view.session : null;
   const hasIncompleteTargets = session ? !areTargetSetsComplete(session) : false;
   const targetsComplete = Boolean(session && !hasIncompleteTargets);
@@ -230,6 +249,7 @@ export function ActiveTrainingContent() {
         </div>
         {session ? (
           <LiveCoachPrototype
+            onClientAction={applyLiveCoachClientAction}
             onSessionUpdated={(updatedSession) => {
               setView({ status: "ready", session: updatedSession });
               setIsDirty(false);

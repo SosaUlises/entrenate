@@ -14,7 +14,11 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         CancelPendingAction,
         PendingActionClarification,
         PendingActionUnavailable,
-        MutationRequest,
+        UnsupportedRestDurationMutation,
+        StartRestTimer,
+        StopRestTimer,
+        RestTimerQuery,
+        OtherMutation,
         OutOfScope
     }
 
@@ -41,6 +45,59 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             {
                 "no", "cancela", "dejalo", "no la registres", "olvidalo"
             };
+
+        private static readonly HashSet<string> RestTargetWords = new(StringComparer.Ordinal)
+        {
+            "descanso", "timer", "temporizador", "reloj", "cronometro"
+        };
+
+        private static readonly HashSet<string> StartRestTimerVerbs = new(StringComparer.Ordinal)
+        {
+            "inicia", "inicias", "inicie", "inicies", "iniciar", "iniciame", "iniciate", "iniciemos", "iniciarlo", "iniciarla",
+            "pone", "pones", "ponga", "pongas", "poner", "poneme", "pongamos", "ponerlo", "ponerle",
+            "arranca", "arrancas", "arranque", "arranques", "arrancar", "arrancame", "arranquemos", "arrancarlo",
+            "empeza", "empezas", "empieza", "empiezas", "empiece", "empieces", "empezar", "empezame", "empecemos", "empezarlo",
+            "comenza", "comenzas", "comienza", "comienzas", "comience", "comiences", "comenzar", "comenzame", "comencemos", "comenzarlo",
+            "activa", "activas", "active", "actives", "activar", "activame", "activemos", "activarlo",
+            "larga", "largas", "largue", "largues", "largar", "largame", "larguemos", "largarlo",
+            "corre", "corres", "corra", "corras", "correr", "correme", "corramos", "correrlo",
+            "conta", "contas", "cuenta", "cuentas", "cuente", "cuentes", "contar", "contame", "contemos", "contarlo",
+            "temporiza", "temporizas", "temporice", "temporices", "temporizar", "temporicemos", "temporizalo",
+            "dale", "mandale", "metele"
+        };
+
+        private static readonly HashSet<string> StopRestTimerVerbs = new(StringComparer.Ordinal)
+        {
+            "para", "paras", "pare", "pares", "parar", "parame", "paremos", "paralo",
+            "detene", "detenes", "detenga", "detengas", "detener", "deteneme", "detengamos", "detenelo",
+            "cancela", "cancelas", "cancele", "canceles", "cancelar", "cancelame", "cancelemos", "cancelalo",
+            "saca", "sacas", "saque", "saques", "sacar", "sacame", "saquemos", "sacalo",
+            "frena", "frenas", "frene", "frenes", "frenar", "frename", "frenemos", "frenalo",
+            "corta", "cortas", "corte", "cortes", "cortar", "cortame", "cortemos", "cortalo",
+            "termina", "terminas", "termine", "termines", "terminar", "terminame", "terminemos", "terminalo",
+            "finaliza", "finalizas", "finalice", "finalices", "finalizar", "finalizame", "finalicemos", "finalizalo",
+            "apaga", "apagas", "apague", "apagues", "apagar", "apagame", "apaguemos", "apagalo"
+        };
+
+        private static readonly HashSet<string> StandaloneRestQueryPhrases = new(StringComparer.Ordinal)
+        {
+            "ya termino", "ya termino el descanso", "termino el descanso",
+            "cuanto falta", "cuanto falta para que termine"
+        };
+
+        private static readonly string[] RestQueryIndicators =
+        {
+            "cuanto", "cuantos", "cuanta", "cuantas",
+            "cual", "cuales",
+            "que descanso", "que timer", "que tiempo",
+            "como vengo", "como voy",
+            "falta", "queda", "quedan", "restante", "restantes",
+            "dura", "duracion",
+            "toca",
+            "debo descansar", "tengo que descansar", "hay que descansar",
+            "esta activo", "esta corriendo",
+            "necesito", "quiero"
+        };
 
         private static readonly string[] MutationKeywords =
         {
@@ -118,6 +175,23 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                     "No hay una serie pendiente para confirmar.");
             }
 
+            if (IsCustomRestDurationRequest(pendingDecision))
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.UnsupportedRestDurationMutation,
+                    false,
+                    "Por ahora uso el tiempo de descanso indicado por la rutina.");
+            }
+
+            if (IsStopRestTimerRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.StopRestTimer, false);
+
+            if (IsStartRestTimerRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.StartRestTimer, false);
+
+            if (IsRestQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.RestTimerQuery, false);
+
             if (IsRegisterCurrentSetRequest(normalized))
             {
                 return new LiveCoachRoutingResult(
@@ -131,7 +205,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                 if (ContainsWord(normalized, kw))
                 {
                     return new LiveCoachRoutingResult(
-                        LiveCoachIntentKind.MutationRequest,
+                        LiveCoachIntentKind.OtherMutation,
                         false,
                         "Por ahora solo puedo registrar la serie actual.");
                 }
@@ -219,6 +293,56 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
             return hasRegisterVerb && hasSetData;
         }
+
+        private static bool IsCustomRestDurationRequest(string normalizedText)
+        {
+            var tokens = Tokenize(normalizedText);
+            var hasTarget = tokens.Exists(RestTargetWords.Contains);
+            var adjustsDuration = tokens.Exists(token =>
+                token is "sumale" or "restale" or "agrega" or "agregale");
+            var hasTimeUnit = tokens.Exists(token =>
+                token is "minuto" or "minutos" or "segundo" or "segundos");
+            var hasNumber = tokens.Exists(token => int.TryParse(token, out _));
+            var hasTimerStartVerb = tokens.Exists(StartRestTimerVerbs.Contains);
+
+            return (adjustsDuration && hasNumber) ||
+                   (hasTimeUnit && hasNumber && (hasTarget || hasTimerStartVerb));
+        }
+
+        private static bool IsRestQuery(string normalizedText)
+        {
+            if (StandaloneRestQueryPhrases.Contains(normalizedText))
+                return true;
+
+            var tokens = Tokenize(normalizedText);
+            if (!tokens.Exists(RestTargetWords.Contains))
+                return false;
+
+            foreach (var indicator in RestQueryIndicators)
+            {
+                if (normalizedText.Contains(indicator, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsStartRestTimerRequest(string normalizedText)
+        {
+            var tokens = Tokenize(normalizedText);
+            return tokens.Exists(RestTargetWords.Contains) &&
+                   tokens.Exists(StartRestTimerVerbs.Contains);
+        }
+
+        private static bool IsStopRestTimerRequest(string normalizedText)
+        {
+            var tokens = Tokenize(normalizedText);
+            return tokens.Exists(RestTargetWords.Contains) &&
+                   tokens.Exists(StopRestTimerVerbs.Contains);
+        }
+
+        private static List<string> Tokenize(string normalizedText)
+            => new(normalizedText.Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
         private static string NormalizePendingDecision(string text)
         {

@@ -6,12 +6,14 @@ using Entrenate.Application.Coach.LiveCoach.Actions;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Prompt;
 using Entrenate.Application.Coach.LiveCoach.Routing;
+using Entrenate.Application.Coach.LiveCoach.Rules;
 using Entrenate.Application.Coach.LiveCoach.Tools;
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Domain.Enums;
 using Entrenate.Application.TrainingSessions;
 using System.Globalization;
+using System.Text;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -170,6 +172,66 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             var nowUtc = DateTime.UtcNow;
             var context = _contextBuilder.Build(session, request.ClientSnapshot, nowUtc);
 
+            if (routing.Kind == LiveCoachIntentKind.StartRestTimer)
+            {
+                if (context.Rest.IsActive)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        $"El descanso ya está activo. Te quedan {context.Rest.RemainingSecondsAtCapture ?? 0} segundos.");
+                }
+
+                var eligibility = LiveCoachRestEligibilityResolver.Resolve(session);
+                if (eligibility.Status == LiveCoachRestEligibilityStatus.NoRecentlyCompletedSet)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "Primero completá la serie actual.");
+                }
+
+                if (eligibility.Status == LiveCoachRestEligibilityStatus.NoPendingSet)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "Ya completaste todas las series de la sesión.");
+                }
+
+                var durationSeconds = eligibility.RestSeconds;
+                if (!durationSeconds.HasValue || durationSeconds.Value <= 0)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "No tengo un tiempo de descanso definido para esta serie.");
+                }
+
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    $"Descanso iniciado: {durationSeconds.Value} segundos.",
+                    clientAction: new LiveCoachClientActionDto("StartRestTimer", durationSeconds.Value));
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.StopRestTimer)
+            {
+                if (!context.Rest.IsActive)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "No tenés un descanso activo.");
+                }
+
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    "Descanso detenido.",
+                    clientAction: new LiveCoachClientActionDto("StopRestTimer"));
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.RestTimerQuery)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    CreateRestTimerQueryAnswer(context, request.Text));
+            }
+
             // 4. Execute tool if requested by router
             PreviousPerformanceData? previousPerformance = null;
             if (routing.RequiresPreviousPerformance)
@@ -289,7 +351,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             string clientTurnId,
             string text,
             PendingLiveCoachActionDto? pendingAction = null,
-            Entrenate.Application.TrainingSessions.DTOs.TrainingSessionDto? updatedSession = null)
+            Entrenate.Application.TrainingSessions.DTOs.TrainingSessionDto? updatedSession = null,
+            LiveCoachClientActionDto? clientAction = null)
         {
             var responseId = Guid.NewGuid();
             _responseCache.Set(responseId, text, TimeSpan.FromSeconds(60));
@@ -300,7 +363,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 false,
                 true,
                 pendingAction,
-                updatedSession);
+                updatedSession,
+                clientAction);
         }
 
         private static PendingLiveCoachActionDto ToDto(PendingLiveCoachAction action)
@@ -314,6 +378,52 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 LiveCoachActionTypes.RegisterCurrentSet,
                 summary,
                 action.ExpiresAtUtc);
+        }
+
+        private static string CreateRestTimerQueryAnswer(
+            Entrenate.Application.Coach.LiveCoach.Models.LiveCoachSessionContext context,
+            string question)
+        {
+            var normalizedQuestion = RemoveDiacritics(question).ToLowerInvariant();
+            var asksForPrescription = normalizedQuestion.Contains("toca", StringComparison.Ordinal) ||
+                                      normalizedQuestion.Contains("debo descansar", StringComparison.Ordinal) ||
+                                      normalizedQuestion.Contains("tengo que descansar", StringComparison.Ordinal) ||
+                                      normalizedQuestion.Contains("que descanso", StringComparison.Ordinal);
+
+            if (asksForPrescription)
+            {
+                var prescribedSeconds = context.CurrentPrescription?.RestSeconds;
+                return prescribedSeconds.HasValue && prescribedSeconds.Value > 0
+                    ? $"Te tocan {prescribedSeconds.Value} segundos de descanso."
+                    : "No tenés un tiempo de descanso indicado para esta serie.";
+            }
+
+            if (context.Rest.IsActive)
+            {
+                var remainingSeconds = context.Rest.RemainingSecondsAtCapture ?? 0;
+                return normalizedQuestion.Contains("activo", StringComparison.Ordinal) ||
+                       normalizedQuestion.Contains("corriendo", StringComparison.Ordinal)
+                    ? $"Sí. Te quedan {remainingSeconds} segundos de descanso."
+                    : $"Te quedan {remainingSeconds} segundos de descanso.";
+            }
+
+            if (context.Rest.RemainingSecondsAtCapture == 0)
+                return "El descanso ya terminó.";
+
+            return "No tenés un descanso activo.";
+        }
+
+        private static string RemoveDiacritics(string text)
+        {
+            var decomposed = text.Normalize(NormalizationForm.FormD);
+            var characters = new System.Text.StringBuilder(decomposed.Length);
+            foreach (var character in decomposed)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+                    characters.Append(character);
+            }
+
+            return characters.ToString().Normalize(NormalizationForm.FormC);
         }
     }
 }

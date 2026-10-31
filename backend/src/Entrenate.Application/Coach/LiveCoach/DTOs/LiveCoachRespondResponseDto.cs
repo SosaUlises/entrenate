@@ -10,7 +10,12 @@ namespace Entrenate.Application.Coach.LiveCoach.DTOs
         bool IsStaleContext,
         bool CanSynthesizeVoice,
         PendingLiveCoachActionDto? PendingAction = null,
-        TrainingSessionDto? UpdatedSession = null);
+        TrainingSessionDto? UpdatedSession = null,
+        LiveCoachClientActionDto? ClientAction = null);
+
+    public sealed record LiveCoachClientActionDto(
+        string Type,
+        int? DurationSeconds = null);
 
     public sealed record PendingLiveCoachActionDto(
         Guid ActionId,

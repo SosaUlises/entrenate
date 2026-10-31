@@ -1,4 +1,4 @@
-﻿namespace Entrenate.Domain.Entidades
+namespace Entrenate.Domain.Entidades
 {
     public class SerieEntrenamiento
     {
@@ -69,6 +69,17 @@
                     "No se puede completar una serie sin registrar repeticiones.");
 
             Completada = true;
+        }
+
+        public bool EstaRealmenteCompletada()
+        {
+            return Completada &&
+                   Repeticiones >= 1 &&
+                   Repeticiones <= 200 &&
+                   Peso >= 0 &&
+                   Peso <= 1000 &&
+                   (!Rir.HasValue || (Rir.Value >= 0 && Rir.Value <= 5)) &&
+                   FechaHoraRegistro != default;
         }
     }
 }

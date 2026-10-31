@@ -22,6 +22,7 @@ import {
 import { transcribeLiveAudioAction } from "@/features/coach/actions/transcribe-live-audio.action";
 import type {
   LiveCoachClientSnapshot,
+  LiveCoachClientAction,
   LiveCoachPendingAction,
   LiveCoachRespondResponse,
 } from "@/features/coach/types/live-coach.types";
@@ -144,13 +145,14 @@ function getAudioFileExtension(mimeType: string): string {
 type LiveCoachPrototypeProps = {
   session?: TrainingSession | null;
   onSessionUpdated?: (session: TrainingSession) => void;
+  onClientAction?: (action: LiveCoachClientAction) => boolean;
   restTimer?: {
     isActive: boolean;
     remainingSeconds: number | null;
   };
 };
 
-export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: LiveCoachPrototypeProps) {
+export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer, session }: LiveCoachPrototypeProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<LiveCoachState>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
@@ -178,6 +180,7 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
   const interactionSnapshotRef = useRef<LiveCoachClientSnapshot | null>(null);
+  const appliedClientActionsRef = useRef<Set<string>>(new Set());
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentAudioUrlRef = useRef<string | null>(null);
@@ -391,6 +394,14 @@ export function LiveCoachPrototype({ onSessionUpdated, restTimer, session }: Liv
 
     if (result.status === "success") {
       const nextPendingAction = result.data.pendingAction ?? null;
+      if (result.data.clientAction && !appliedClientActionsRef.current.has(result.data.responseId)) {
+        if (!onClientAction?.(result.data.clientAction)) {
+          setErrorMessage("No pude aplicar la acción en Training.");
+          setState("error");
+          return;
+        }
+        appliedClientActionsRef.current.add(result.data.responseId);
+      }
       setCoachResponse({ ...result.data, pendingAction: null });
       setPendingAction(nextPendingAction);
       if (result.data.updatedSession) {

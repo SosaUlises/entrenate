@@ -165,6 +165,7 @@ namespace Entrenate.Domain.Entidades
                 repeticiones,
                 rir,
                 fechaHoraRegistro);
+            serie.MarcarComoCompletada();
 
             return serie;
         }

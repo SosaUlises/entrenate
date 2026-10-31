@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -364,7 +365,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         {
             var result = _intentRouter.Route("Cambiame el próximo ejercicio");
 
-            Assert.Equal(LiveCoachIntentKind.MutationRequest, result.Kind);
+            Assert.Equal(LiveCoachIntentKind.OtherMutation, result.Kind);
             Assert.Contains("solo puedo registrar", result.DirectAnswer!, StringComparison.OrdinalIgnoreCase);
         }
 
@@ -433,6 +434,520 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.NotNull(_conversationProvider.LastPrompt);
             Assert.Contains("Press de banca", _conversationProvider.LastPrompt.Input);
             Assert.Contains("¿Cuántas series me tocan?", _conversationProvider.LastPrompt.Input);
+        }
+
+        [Fact]
+        public async Task Handle_WhenStartRestIsExplicit_ReturnsPrescribedClientActionWithoutProvider()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            CompleteSets(session.Ejercicios.First(), 1);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-start", "audio", "Arrancá el descanso", null), CancellationToken.None);
+
+            Assert.Equal("StartRestTimer", result.ClientAction?.Type);
+            Assert.Equal(150, result.ClientAction?.DurationSeconds);
+            Assert.Equal("Descanso iniciado: 150 segundos.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("inicie el descanso")]
+        [InlineData("Iniciá el descanso")]
+        [InlineData("inicia el descanso")]
+        [InlineData("iniciar el descanso")]
+        [InlineData("iniciar descanso")]
+        [InlineData("Arrancá el descanso")]
+        [InlineData("arranca el descanso")]
+        [InlineData("Empezá el descanso")]
+        [InlineData("empeza el descanso")]
+        [InlineData("Poné el descanso")]
+        [InlineData("Arrancá el timer")]
+        [InlineData("Iniciá el timer")]
+        [InlineData("¡Inicie el descanso!")]
+        [InlineData("  INICIE   el  descanso. ")]
+        [InlineData("iniciame el descanso")]
+        [InlineData("por favor iniciá el descanso")]
+        [InlineData("iniciá el descanso porfa")]
+        [InlineData("iniciá el descanso ya")]
+        [InlineData("iniciá el descanso ahora")]
+        [InlineData("che poné el descanso")]
+        [InlineData("dale arrancá el timer")]
+        [InlineData("activá el descanso")]
+        [InlineData("activar descanso")]
+        [InlineData("iniciá el temporizador")]
+        [InlineData("poné el temporizador")]
+        [InlineData("largá el descanso")]
+        [InlineData("iniciá el cronómetro")]
+        [InlineData("iniciá un descanso")]
+        [InlineData("iniciá el tiempo de descanso")]
+        [InlineData("poneme el descanso")]
+        [InlineData("poneme el timer")]
+        public void IntentRouter_WhenStartRestPhrase_RoutesDeterministicallyToStartRestTimer(string phrase)
+        {
+            var routing = _intentRouter.Route(phrase);
+
+            Assert.Equal(LiveCoachIntentKind.StartRestTimer, routing.Kind);
+        }
+
+        [Theory]
+        [InlineData("pará el descanso")]
+        [InlineData("para el descanso")]
+        [InlineData("parame el descanso")]
+        [InlineData("parar descanso")]
+        [InlineData("parar el descanso")]
+        [InlineData("detené el descanso")]
+        [InlineData("deteneme el descanso")]
+        [InlineData("detener descanso")]
+        [InlineData("detener el descanso")]
+        [InlineData("detené el timer")]
+        [InlineData("terminar descanso")]
+        [InlineData("terminar el descanso")]
+        [InlineData("terminá el descanso")]
+        [InlineData("termina el descanso")]
+        [InlineData("termine el descanso")]
+        [InlineData("finalizar descanso")]
+        [InlineData("finalizá el descanso")]
+        [InlineData("finalizar el descanso")]
+        [InlineData("frená el descanso")]
+        [InlineData("frenar timer")]
+        [InlineData("cancelar descanso")]
+        [InlineData("cancelar el descanso")]
+        [InlineData("cancelá el descanso")]
+        [InlineData("apagar timer")]
+        [InlineData("sacá el timer")]
+        [InlineData("sacar timer")]
+        [InlineData("apagá el timer")]
+        [InlineData("cortá el cronómetro")]
+        [InlineData("por favor frená el descanso")]
+        [InlineData("che, terminá el descanso por favor")]
+        public void IntentRouter_WhenStopRestPhrase_RoutesDeterministicallyToStopRestTimer(string phrase)
+        {
+            var routing = _intentRouter.Route(phrase);
+
+            Assert.Equal(LiveCoachIntentKind.StopRestTimer, routing.Kind);
+        }
+
+        [Theory]
+        [InlineData("¿Cuánto descanso me queda?")]
+        [InlineData("cuánto descanso tengo")]
+        [InlineData("necesito un descanso largo")]
+        [InlineData("poné el descanso en 2 minutos")]
+        [InlineData("inicie el descanso de 90 segundos")]
+        public void IntentRouter_WhenPhraseIsNotExactStartRest_DoesNotRouteToStartRestTimer(string phrase)
+        {
+            var routing = _intentRouter.Route(phrase);
+
+            Assert.NotEqual(LiveCoachIntentKind.StartRestTimer, routing.Kind);
+        }
+
+        [Theory]
+        [InlineData("¿cuánto descanso me queda?")]
+        [InlineData("¿está activo el descanso?")]
+        [InlineData("¿terminó el descanso?")]
+        [InlineData("¿ya terminó el descanso?")]
+        [InlineData("¿ya terminó?")]
+        [InlineData("¿cuánto falta?")]
+        [InlineData("¿qué descanso me toca?")]
+        public void IntentRouter_WhenRestIsQueried_RoutesToReadOnlyRestTimerQuery(string phrase)
+        {
+            var routing = _intentRouter.Route(phrase);
+
+            Assert.Equal(LiveCoachIntentKind.RestTimerQuery, routing.Kind);
+        }
+
+        [Theory]
+        [InlineData("poné el descanso en 2 minutos")]
+        [InlineData("arrancá 90 segundos")]
+        [InlineData("sumale 30 segundos")]
+        [InlineData("restale 20")]
+        public void IntentRouter_WhenCustomRestDurationIsRequested_RoutesToUnsupportedRestMutation(string phrase)
+        {
+            var routing = _intentRouter.Route(phrase);
+
+            Assert.Equal(LiveCoachIntentKind.UnsupportedRestDurationMutation, routing.Kind);
+            Assert.Equal("Por ahora uso el tiempo de descanso indicado por la rutina.", routing.DirectAnswer);
+        }
+
+        [Fact]
+        public async Task Handle_WhenInicieElDescanso_StartsRestWithoutInvokingProvider()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            CompleteSets(session.Ejercicios.First(), 1);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-inicie", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Equal("StartRestTimer", result.ClientAction?.Type);
+            Assert.Equal(150, result.ClientAction?.DurationSeconds);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_CaseA_WhenFirstSetHasNoData_DoesNotStartRest()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-case-a", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Primero completá la serie actual.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_CaseB_WhenSetPartiallyLoaded_DoesNotStartRest()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            AddIncompleteSet(session.Ejercicios.First(), setNumber: 1, completada: false, reps: 0, peso: 80);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-case-b", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Primero completá la serie actual.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_CaseC_WhenSetExistsButNotCompleted_DoesNotStartRest()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            AddIncompleteSet(session.Ejercicios.First(), setNumber: 1, completada: false, reps: 10, peso: 80);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-case-c", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Primero completá la serie actual.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_CaseD_WhenSetCompletedAccordingToTraining_StartsRest()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            CompleteSets(session.Ejercicios.First(), 1);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-case-d", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Equal("StartRestTimer", result.ClientAction?.Type);
+            Assert.Equal(150, result.ClientAction?.DurationSeconds);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_CaseE_WhenSetOneCompletedAndSetTwoPending_StartsRest()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            CompleteSets(session.Ejercicios.First(), 1);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-case-e", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Equal("StartRestTimer", result.ClientAction?.Type);
+            Assert.Equal(150, result.ClientAction?.DurationSeconds);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_CaseF_WhenSetOneIncompleteAndSetTwoStructurePresent_DoesNotStartRest()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            AddIncompleteSet(session.Ejercicios.First(), setNumber: 1, completada: false, reps: 0, peso: 0);
+            AddIncompleteSet(session.Ejercicios.First(), setNumber: 2, completada: false, reps: 0, peso: 0);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-case-f", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Primero completá la serie actual.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_CaseG_WhenExerciseBoundary_LastSetOfPreviousExerciseMustBeReallyCompleted()
+        {
+            // G1: Serie del ejercicio anterior incompleta -> no inicia
+            var sessionIncomplete = CreateTwoExerciseSession(firstRest: 90, secondRest: 180);
+            AddIncompleteSet(sessionIncomplete.Ejercicios.OrderBy(e => e.Orden).First(), setNumber: 1, completada: false, reps: 0);
+            _sessionRepository.Sessions[sessionIncomplete.Id] = sessionIncomplete;
+
+            var resultIncomplete = await _handler.Handle(new RespondLiveCoachCommand(
+                sessionIncomplete.Id, "turn-case-g1", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Null(resultIncomplete.ClientAction);
+            Assert.Equal("Primero completá la serie actual.", resultIncomplete.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+
+            // G2: Serie del ejercicio anterior realmente completada -> inicia descanso con duración del ejercicio anterior
+            var sessionComplete = CreateTwoExerciseSession(firstRest: 90, secondRest: 180);
+            CompleteSets(sessionComplete.Ejercicios.OrderBy(e => e.Orden).First(), 1);
+            _sessionRepository.Sessions[sessionComplete.Id] = sessionComplete;
+
+            var resultComplete = await _handler.Handle(new RespondLiveCoachCommand(
+                sessionComplete.Id, "turn-case-g2", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Equal("StartRestTimer", resultComplete.ClientAction?.Type);
+            Assert.Equal(90, resultComplete.ClientAction?.DurationSeconds);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("inicie el descanso")]
+        [InlineData("iniciame el descanso")]
+        [InlineData("por favor iniciá el descanso")]
+        [InlineData("poné el timer")]
+        [InlineData("poneme el descanso")]
+        [InlineData("activá el descanso")]
+        [InlineData("iniciá el temporizador")]
+        [InlineData("largá el descanso")]
+        public async Task Handle_WhenCurrentSetIsIncompleteOrUnsaved_AndNaturalVoicePhrasesUsed_NeverCallsProviderAndReturnsPrimeroCompletaLaSerieActual(string phrase)
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            // Inputs completados o incompletos en UI pero sin persistir mediante "Completar serie":
+            AddIncompleteSet(session.Ejercicios.First(), setNumber: 1, completada: false, reps: 0, peso: 0);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, $"turn-voice-{Guid.NewGuid():N}", "audio", phrase, null), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Primero completá la serie actual.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_RegressionBugReal_WhenActiveSessionAndCurrentSetHasEmptyOrIncompleteData_DoesNotStartRest()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            // Serie actual visible en pantalla pero sin datos válidos completados (vacíos / repeticiones 0)
+            AddIncompleteSet(session.Ejercicios.First(), setNumber: 1, completada: false, reps: 0, peso: 0);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-regression-bug", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Primero completá la serie actual.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenSetOneCompletedAndSetTwoPending_StartsPrescribedRest()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var before = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-before", "audio", "inicie el descanso", null), CancellationToken.None);
+            CompleteSets(session.Ejercicios.First(), 1);
+            var after = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-after", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Null(before.ClientAction);
+            Assert.Equal("StartRestTimer", after.ClientAction?.Type);
+            Assert.Equal(150, after.ClientAction?.DurationSeconds);
+        }
+
+        [Fact]
+        public async Task Handle_WhenImmediatelyPreviousSetIsNotCompleted_DoesNotStartRest()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            // Solo existe la serie 2: Series.Count = 1 => la serie actual es la 2, pero la 1 no está completada.
+            session.Ejercicios.First().RegistrarOActualizarSerie(2, 80, 8, 1, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-gap", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Primero completá la serie actual.", result.Text);
+        }
+
+        [Fact]
+        public async Task Handle_WhenLastSetOfExerciseCompletedAndNextExerciseExists_UsesCompletedExerciseRest()
+        {
+            var session = CreateTwoExerciseSession(firstRest: 90, secondRest: 180);
+            CompleteSets(session.Ejercicios.OrderBy(e => e.Orden).First(), 1);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-boundary", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Equal("StartRestTimer", result.ClientAction?.Type);
+            Assert.Equal(90, result.ClientAction?.DurationSeconds);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenLastSetOfWholeSessionIsCompleted_DoesNotStartRest()
+        {
+            var session = CreateTwoExerciseSession(firstRest: 90, secondRest: 180);
+            var ordered = session.Ejercicios.OrderBy(e => e.Orden).ToList();
+            CompleteSets(ordered[0], 1);
+            CompleteSets(ordered[1], 2);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-end", "audio", "inicie el descanso", null), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Ya completaste todas las series de la sesión.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenRestIsAlreadyActive_DoesNotRestartIt()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            CompleteSets(session.Ejercicios.First(), 1);
+            _sessionRepository.Sessions[session.Id] = session;
+            var snapshot = new ClientSnapshotInput(null, null, true, 82, DateTime.UtcNow);
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-active", "audio", "Iniciá el descanso", snapshot), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Contains("ya está activo", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenStopRestIsExplicit_ReturnsStopOnlyWhenActive()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var active = new ClientSnapshotInput(null, null, true, 60, DateTime.UtcNow);
+
+            var stopped = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-stop", "audio", "Pará el descanso", active), CancellationToken.None);
+            var inactive = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-stop-2", "audio", "Detené el descanso", null), CancellationToken.None);
+
+            Assert.Equal("StopRestTimer", stopped.ClientAction?.Type);
+            Assert.Null(inactive.ClientAction);
+            Assert.Contains("No tenés", inactive.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenTerminaElDescansoAndTimerIsActive_StopsWithoutFallingIntoOtherMutation()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var active = new ClientSnapshotInput(null, null, true, 60, DateTime.UtcNow);
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-termina", "audio", "terminá el descanso", active), CancellationToken.None);
+
+            Assert.Equal("StopRestTimer", result.ClientAction?.Type);
+            Assert.Equal("Descanso detenido.", result.Text);
+            Assert.DoesNotContain("solo puedo registrar", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_RegressionExact_WhenTerminarDescansoAndTimerIsActive_StopsWithoutProvider()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var active = new ClientSnapshotInput(null, null, true, 60, DateTime.UtcNow);
+
+            var routing = _intentRouter.Route("Terminar descanso.");
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-terminar-exact", "audio", "Terminar descanso.", active), CancellationToken.None);
+
+            Assert.Equal(LiveCoachIntentKind.StopRestTimer, routing.Kind);
+            Assert.Equal("Descanso detenido.", result.Text);
+            Assert.Equal("StopRestTimer", result.ClientAction?.Type);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNoRestIsPrescribed_DoesNotReturnClientAction()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 0);
+            CompleteSets(session.Ejercicios.First(), 1);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-missing", "audio", "Empezá el descanso", null), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Contains("No tengo un tiempo", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenRestDurationIsCustom_DoesNotMutateOrInvokeProvider()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-custom", "audio", "Poné el descanso en 2 minutos", null), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Por ahora uso el tiempo de descanso indicado por la rutina.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("¿Cuánto descanso me queda?")]
+        [InlineData("¿Está activo el descanso?")]
+        [InlineData("¿Cuánto falta?")]
+        public async Task Handle_WhenActiveRestIsQueried_AnswersDeterministicallyAndRemainsReadOnly(string question)
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var snapshot = new ClientSnapshotInput(null, null, true, 60, DateTime.UtcNow);
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, $"turn-rest-query-{Guid.NewGuid():N}", "audio", question, snapshot), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Contains("segundos de descanso", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCapturedRestExpiredDuringProcessing_ReportsFinishedWithoutProvider()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var snapshot = new ClientSnapshotInput(null, null, true, 2, DateTime.UtcNow.AddSeconds(-5));
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-expired", "audio", "¿Ya terminó?", snapshot), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("El descanso ya terminó.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPrescribedRestIsQueried_ReturnsPrescriptionWithoutProvider()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso, 150);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(new RespondLiveCoachCommand(
+                session.Id, "turn-rest-prescribed", "audio", "¿Qué descanso me toca?", null), CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Equal("Te tocan 150 segundos de descanso.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
         }
 
         [Fact]
@@ -516,14 +1031,80 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 session.Id,
                 "turn-fail",
                 "audio",
-                "¿Qué descanso me toca?",
+                "¿Cómo debería encarar esta serie?",
                 null);
 
             await Assert.ThrowsAsync<ExternalServiceException>(() =>
                 _handler.Handle(command, CancellationToken.None));
         }
 
-        private static SesionEntrenamiento CreateSession(string userId, EstadoSesionEntrenamiento estado)
+        private static void CompleteSets(EjercicioSesion exercise, int count)
+        {
+            for (var number = 1; number <= count; number++)
+            {
+                exercise.RegistrarOActualizarSerie(number, 80, 8, 1, DateTime.UtcNow);
+            }
+        }
+
+        private static void AddIncompleteSet(
+            EjercicioSesion exercise,
+            int setNumber,
+            bool completada = false,
+            int reps = 0,
+            decimal peso = 0)
+        {
+            var serie = new SerieEntrenamiento();
+            serie.ConfigurarNumeroSerie(setNumber);
+            if (reps > 0)
+            {
+                serie.RegistrarRendimiento(peso, reps, null, DateTime.UtcNow);
+            }
+
+            if (completada)
+            {
+                typeof(SerieEntrenamiento)
+                    .GetProperty("Completada", BindingFlags.Public | BindingFlags.Instance)?
+                    .SetValue(serie, true);
+            }
+
+            if (typeof(EjercicioSesion)
+                .GetField("_series", BindingFlags.NonPublic | BindingFlags.Instance)?
+                .GetValue(exercise) is List<SerieEntrenamiento> list)
+            {
+                list.Add(serie);
+            }
+        }
+
+        private static SesionEntrenamiento CreateTwoExerciseSession(int firstRest, int secondRest)
+        {
+            EjercicioSesion Build(string name, int orden, int series, int rest)
+            {
+                var exercise = new Ejercicio
+                {
+                    Id = Guid.NewGuid(),
+                    Nombre = name,
+                    GrupoMuscularPrincipal = "Pecho",
+                    Activo = true
+                };
+                var exerciseSession = new EjercicioSesion(
+                    exercise.Id, orden, series, 8, 10, 1, 2, rest);
+                typeof(EjercicioSesion)
+                    .GetProperty("Ejercicio", BindingFlags.Public | BindingFlags.Instance)?
+                    .SetValue(exerciseSession, exercise);
+                return exerciseSession;
+            }
+
+            return new SesionEntrenamiento(
+                TestUserId,
+                Guid.NewGuid(),
+                DateTime.UtcNow.AddMinutes(-20),
+                [Build("Press de banca", 1, 1, firstRest), Build("Remo", 2, 2, secondRest)]);
+        }
+
+        private static SesionEntrenamiento CreateSession(
+            string userId,
+            EstadoSesionEntrenamiento estado,
+            int restSeconds = 120)
         {
             var exercise1 = new Ejercicio
             {
@@ -541,7 +1122,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 repeticionesMaximasObjetivo: 10,
                 rirObjetivoMinimo: 1,
                 rirObjetivoMaximo: 2,
-                descansoObjetivoSegundos: 120,
+                descansoObjetivoSegundos: restSeconds,
                 notas: "Cuidar técnica");
 
             typeof(EjercicioSesion)
