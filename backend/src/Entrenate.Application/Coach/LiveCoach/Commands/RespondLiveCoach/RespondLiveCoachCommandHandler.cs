@@ -30,6 +30,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
         private readonly ILiveCoachResponseCache _responseCache;
         private readonly ILiveCoachSetActionExtractor _setActionExtractor;
         private readonly ILiveCoachPendingActionStore _pendingActionStore;
+        private readonly ILiveCoachPendingActionExecutor _pendingActionExecutor;
         private readonly ILogger<RespondLiveCoachCommandHandler> _logger;
 
         public RespondLiveCoachCommandHandler(
@@ -43,6 +44,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             ILiveCoachResponseCache responseCache,
             ILiveCoachSetActionExtractor setActionExtractor,
             ILiveCoachPendingActionStore pendingActionStore,
+            ILiveCoachPendingActionExecutor pendingActionExecutor,
             ILogger<RespondLiveCoachCommandHandler> logger)
         {
             _sessionRepository = sessionRepository;
@@ -55,6 +57,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             _responseCache = responseCache;
             _setActionExtractor = setActionExtractor;
             _pendingActionStore = pendingActionStore;
+            _pendingActionExecutor = pendingActionExecutor;
             _logger = logger;
         }
 
@@ -89,8 +92,62 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 throw new ConflictException("La sesión de entrenamiento no está activa.");
             }
 
-            // 2. Intent routing
-            var routing = _intentRouter.Route(request.Text);
+            // 2. Pending-action state and deterministic intent routing
+            var pendingLookup = _pendingActionStore.FindActive(
+                userId,
+                session.Id,
+                DateTime.UtcNow);
+            var activePendingAction = pendingLookup.Status == PendingLiveCoachActionLookupStatus.Active
+                ? pendingLookup.Action
+                : null;
+            var routing = _intentRouter.Route(request.Text, activePendingAction is not null);
+
+            if (routing.Kind == LiveCoachIntentKind.ConfirmPendingAction && activePendingAction is not null)
+            {
+                try
+                {
+                    var updatedSession = await _pendingActionExecutor.ConfirmAsync(
+                        activePendingAction.ActionId,
+                        cancellationToken);
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "Serie registrada.",
+                        updatedSession: updatedSession);
+                }
+                catch (Exception exception) when (exception is ConflictException or NotFoundException)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "La propuesta ya no está vigente. Decime nuevamente cómo salió la serie.");
+                }
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.CancelPendingAction && activePendingAction is not null)
+            {
+                try
+                {
+                    await _pendingActionExecutor.CancelAsync(
+                        activePendingAction.ActionId,
+                        cancellationToken);
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "Listo, no la registro.");
+                }
+                catch (Exception exception) when (exception is ConflictException or NotFoundException)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "La propuesta ya no está vigente. Decime nuevamente cómo salió la serie.");
+                }
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.PendingActionUnavailable &&
+                pendingLookup.Status == PendingLiveCoachActionLookupStatus.Expired)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    "La propuesta ya no está vigente. Decime nuevamente cómo salió la serie.");
+            }
 
             if (routing.Kind == LiveCoachIntentKind.RegisterCurrentSet)
             {
@@ -103,15 +160,10 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
 
             if (!string.IsNullOrWhiteSpace(routing.DirectAnswer))
             {
-                var directId = Guid.NewGuid();
-                _responseCache.Set(directId, routing.DirectAnswer, TimeSpan.FromSeconds(60));
-
-                return new LiveCoachRespondResponseDto(
-                    directId,
+                return CreateDirectResponse(
                     request.ClientTurnId,
                     routing.DirectAnswer,
-                    false,
-                    true);
+                    activePendingAction is null ? null : ToDto(activePendingAction));
             }
 
             // 3. Authorized context projection
@@ -233,7 +285,11 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     expiresAtUtc));
         }
 
-        private LiveCoachRespondResponseDto CreateDirectResponse(string clientTurnId, string text)
+        private LiveCoachRespondResponseDto CreateDirectResponse(
+            string clientTurnId,
+            string text,
+            PendingLiveCoachActionDto? pendingAction = null,
+            Entrenate.Application.TrainingSessions.DTOs.TrainingSessionDto? updatedSession = null)
         {
             var responseId = Guid.NewGuid();
             _responseCache.Set(responseId, text, TimeSpan.FromSeconds(60));
@@ -242,7 +298,22 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 clientTurnId,
                 text,
                 false,
-                true);
+                true,
+                pendingAction,
+                updatedSession);
+        }
+
+        private static PendingLiveCoachActionDto ToDto(PendingLiveCoachAction action)
+        {
+            var weight = action.WeightKg.ToString("0.##", CultureInfo.InvariantCulture);
+            var summary = $"{weight} kg × {action.Repetitions}" +
+                (action.Rir.HasValue ? $" · RIR {action.Rir.Value}" : string.Empty);
+
+            return new PendingLiveCoachActionDto(
+                action.ActionId,
+                LiveCoachActionTypes.RegisterCurrentSet,
+                summary,
+                action.ExpiresAtUtc);
         }
     }
 }

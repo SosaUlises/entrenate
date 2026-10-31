@@ -1,4 +1,5 @@
 using System;
+using Entrenate.Application.TrainingSessions.DTOs;
 
 namespace Entrenate.Application.Coach.LiveCoach.DTOs
 {
@@ -8,7 +9,8 @@ namespace Entrenate.Application.Coach.LiveCoach.DTOs
         string Text,
         bool IsStaleContext,
         bool CanSynthesizeVoice,
-        PendingLiveCoachActionDto? PendingAction = null);
+        PendingLiveCoachActionDto? PendingAction = null,
+        TrainingSessionDto? UpdatedSession = null);
 
     public sealed record PendingLiveCoachActionDto(
         Guid ActionId,

@@ -205,8 +205,10 @@ Responses are optimized for brief listening in a gym:
 
 Live Coach V0 supports one explicitly allowlisted mutation: registering the
 current pending set. It creates a short-lived server-side pending action and
-requires confirmation through a visible button. No spoken confirmation or
-arbitrary mutation name is accepted.
+requires explicit confirmation through a visible button or a conservative
+spoken `sí`/`no` flow. Spoken confirmation is accepted only while the server
+has an active pending action for the authenticated user and current session;
+an action identifier dictated by the user is never accepted.
 
 ### Queries
 
@@ -267,7 +269,8 @@ under this contract. That capability is not present in the current prototype.
 - analyze the session or produce real recommendations;
 - save conversation history or claim memory;
 - add, remove or modify exercises, future sets or the routine;
-- register multiple sets or confirm an action by spoken `sí`/`no`;
+- register multiple sets or confirm an action without a valid server-side
+  pending action;
 - start, finish, pause or cancel a training session;
 - act without explicit user input.
 
@@ -293,7 +296,8 @@ under this contract. That capability is not present in the current prototype.
 - microphone active only during `listening` and transient audio only;
 - authorized snapshot grounding with no invented session state;
 - concise, direct, text-visible responses;
-- no mutations in V0 and explicit confirmation boundaries for future actions;
+- one allowlisted current-set mutation with explicit tactile or conservative
+  spoken confirmation; no other mutations;
 - manual Training remains independent from Live Coach availability;
 - the face is a state indicator, never a mascot or character.
 

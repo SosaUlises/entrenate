@@ -60,11 +60,54 @@ namespace Entrenate.Infrastructure.UnitTests.Coach.LiveCoach
             Assert.Equal(PendingLiveCoachActionTakeStatus.NotFound, laterConfirm.Status);
         }
 
+        [Fact]
+        public void FindActive_UsesUserAndSessionAndRejectsExpiredActions()
+        {
+            var store = new MemoryLiveCoachPendingActionStore();
+            var sessionId = Guid.NewGuid();
+            var active = CreateAction("owner", sessionId, DateTime.UtcNow.AddSeconds(45));
+            var expired = CreateAction("owner", Guid.NewGuid(), DateTime.UtcNow.AddSeconds(-1));
+            store.Set(active);
+            store.Set(expired);
+
+            var found = store.FindActive("owner", sessionId, DateTime.UtcNow);
+            var foreign = store.FindActive("other", sessionId, DateTime.UtcNow);
+            var stale = store.FindActive("owner", expired.SessionId, DateTime.UtcNow);
+
+            Assert.Equal(PendingLiveCoachActionLookupStatus.Active, found.Status);
+            Assert.Equal(active.ActionId, found.Action?.ActionId);
+            Assert.Equal(PendingLiveCoachActionLookupStatus.NotFound, foreign.Status);
+            Assert.Equal(PendingLiveCoachActionLookupStatus.Expired, stale.Status);
+        }
+
+        [Fact]
+        public void Set_ReplacesThePreviousPendingActionForTheSameUserAndSession()
+        {
+            var store = new MemoryLiveCoachPendingActionStore();
+            var sessionId = Guid.NewGuid();
+            var first = CreateAction("owner", sessionId, DateTime.UtcNow.AddSeconds(45));
+            var replacement = CreateAction("owner", sessionId, DateTime.UtcNow.AddSeconds(45));
+            store.Set(first);
+            store.Set(replacement);
+
+            var lookup = store.FindActive("owner", sessionId, DateTime.UtcNow);
+            var oldAction = store.Take(first.ActionId, "owner", DateTime.UtcNow);
+
+            Assert.Equal(replacement.ActionId, lookup.Action?.ActionId);
+            Assert.Equal(PendingLiveCoachActionTakeStatus.NotFound, oldAction.Status);
+        }
+
         private static PendingLiveCoachAction CreateAction(string userId, DateTime expiresAtUtc)
+            => CreateAction(userId, Guid.NewGuid(), expiresAtUtc);
+
+        private static PendingLiveCoachAction CreateAction(
+            string userId,
+            Guid sessionId,
+            DateTime expiresAtUtc)
             => new(
                 Guid.NewGuid(),
                 userId,
-                Guid.NewGuid(),
+                sessionId,
                 Guid.NewGuid(),
                 1,
                 100m,

@@ -40,6 +40,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         private readonly LiveCoachPromptBuilder _promptBuilder;
         private readonly LiveCoachSetActionExtractor _setActionExtractor;
         private readonly FakePendingActionStore _pendingActionStore;
+        private readonly FakePendingActionExecutor _pendingActionExecutor;
 
         private readonly RespondLiveCoachCommandHandler _handler;
 
@@ -55,6 +56,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             _promptBuilder = new LiveCoachPromptBuilder();
             _setActionExtractor = new LiveCoachSetActionExtractor();
             _pendingActionStore = new FakePendingActionStore();
+            _pendingActionExecutor = new FakePendingActionExecutor(_pendingActionStore);
 
             _handler = new RespondLiveCoachCommandHandler(
                 _sessionRepository,
@@ -67,6 +69,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 _responseCache,
                 _setActionExtractor,
                 _pendingActionStore,
+                _pendingActionExecutor,
                 NullLogger<RespondLiveCoachCommandHandler>.Instance);
         }
 
@@ -200,6 +203,142 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.Null(result.PendingAction);
             Assert.Contains("serie pendiente", result.Text, StringComparison.OrdinalIgnoreCase);
             Assert.Empty(_pendingActionStore.Actions);
+        }
+
+        [Theory]
+        [InlineData("sí")]
+        [InlineData("dale")]
+        public async Task Handle_WhenPendingActionExists_ExplicitVoiceConfirmationConfirmsIt(
+            string confirmation)
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            await CreatePendingActionAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-confirm", "audio", confirmation, null),
+                CancellationToken.None);
+
+            Assert.Equal("Serie registrada.", result.Text);
+            Assert.Null(result.PendingAction);
+            Assert.NotNull(result.UpdatedSession);
+            Assert.Equal(session.Id, result.UpdatedSession.Id);
+            Assert.Equal(1, _pendingActionExecutor.ConfirmCount);
+            Assert.Equal(0, _conversationProvider.CallCount);
+            Assert.Empty(_pendingActionStore.Actions);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPendingActionExists_ExplicitVoiceCancellationCancelsWithoutTrainingMutation()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            await CreatePendingActionAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-cancel", "audio", "no", null),
+                CancellationToken.None);
+
+            Assert.Equal("Listo, no la registro.", result.Text);
+            Assert.Null(result.PendingAction);
+            Assert.Null(result.UpdatedSession);
+            Assert.Equal(1, _pendingActionExecutor.CancelCount);
+            Assert.Equal(0, _pendingActionExecutor.ConfirmCount);
+            Assert.Empty(session.Ejercicios.Single().Series);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("sí")]
+        [InlineData("no")]
+        public async Task Handle_WhenNoPendingActionExists_YesOrNoDoesNotMutateOrInvokeProvider(string answer)
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-no-pending", "audio", answer, null),
+                CancellationToken.None);
+
+            Assert.Contains("no hay una serie pendiente", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Null(result.PendingAction);
+            Assert.Equal(0, _pendingActionExecutor.ConfirmCount);
+            Assert.Equal(0, _pendingActionExecutor.CancelCount);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPendingActionExists_AmbiguousInputKeepsPendingAndAsksForClarification()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var pending = await CreatePendingActionAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-ambiguous", "audio", "puede ser", null),
+                CancellationToken.None);
+
+            Assert.Contains("Decime sí o no", result.Text);
+            Assert.Equal(pending.ActionId, result.PendingAction?.ActionId);
+            Assert.Equal(0, _pendingActionExecutor.ConfirmCount);
+            Assert.Equal(0, _pendingActionExecutor.CancelCount);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPendingActionExpired_YesReturnsStaleWithoutMutation()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var action = new PendingLiveCoachAction(
+                Guid.NewGuid(), TestUserId, session.Id, session.Ejercicios.Single().Id,
+                1, 100m, 8, 1, DateTime.UtcNow.AddSeconds(-1));
+            _pendingActionStore.Set(action);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-expired", "audio", "sí", null),
+                CancellationToken.None);
+
+            Assert.Contains("ya no está vigente", result.Text);
+            Assert.Null(result.PendingAction);
+            Assert.Equal(0, _pendingActionExecutor.ConfirmCount);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPendingActionBecameStale_YesReturnsStaleWithoutRetrying()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            await CreatePendingActionAsync(session);
+            _pendingActionExecutor.ThrowConflict = true;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-stale", "audio", "confirmo", null),
+                CancellationToken.None);
+
+            Assert.Contains("ya no está vigente", result.Text);
+            Assert.Null(result.PendingAction);
+            Assert.Equal(1, _pendingActionExecutor.ConfirmCount);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenConfirmationWasAlreadyConsumed_SecondConfirmationCannotDuplicateMutation()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            await CreatePendingActionAsync(session);
+
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-first", "audio", "sí", null),
+                CancellationToken.None);
+            var second = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-second", "audio", "dale", null),
+                CancellationToken.None);
+
+            Assert.Equal(1, _pendingActionExecutor.ConfirmCount);
+            Assert.Contains("no hay una serie pendiente", second.Text, StringComparison.OrdinalIgnoreCase);
         }
 
         [Theory]
@@ -426,6 +565,21 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             return session;
         }
 
+        private async Task<PendingLiveCoachAction> CreatePendingActionAsync(SesionEntrenamiento session)
+        {
+            var response = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    $"turn-pending-{Guid.NewGuid():N}",
+                    "audio",
+                    "Hice 8 con 100 kilos, RIR uno",
+                    null),
+                CancellationToken.None);
+
+            Assert.NotNull(response.PendingAction);
+            return _pendingActionStore.Actions[response.PendingAction.ActionId];
+        }
+
         private sealed class FakeCurrentUserService : ICurrentUserService
         {
             public string? UserId { get; set; }
@@ -453,6 +607,23 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             public void Set(PendingLiveCoachAction action) => Actions[action.ActionId] = action;
 
+            public PendingLiveCoachActionLookupResult FindActive(
+                string userId,
+                Guid sessionId,
+                DateTime nowUtc)
+            {
+                var action = Actions.Values.FirstOrDefault(item =>
+                    item.UserId == userId && item.SessionId == sessionId);
+                if (action is null)
+                    return new(PendingLiveCoachActionLookupStatus.NotFound);
+                if (nowUtc > action.ExpiresAtUtc)
+                {
+                    Actions.Remove(action.ActionId);
+                    return new(PendingLiveCoachActionLookupStatus.Expired);
+                }
+                return new(PendingLiveCoachActionLookupStatus.Active, action);
+            }
+
             public PendingLiveCoachActionTakeResult Take(Guid actionId, string userId, DateTime nowUtc)
                 => Remove(actionId, userId, nowUtc);
 
@@ -469,6 +640,42 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                     return new(PendingLiveCoachActionTakeStatus.Expired);
                 Actions.Remove(actionId);
                 return new(PendingLiveCoachActionTakeStatus.Success, action);
+            }
+        }
+
+        private sealed class FakePendingActionExecutor(FakePendingActionStore store)
+            : ILiveCoachPendingActionExecutor
+        {
+            public int ConfirmCount { get; private set; }
+            public int CancelCount { get; private set; }
+            public bool ThrowConflict { get; set; }
+
+            public Task<TrainingSessionDto> ConfirmAsync(Guid actionId, CancellationToken cancellationToken)
+            {
+                ConfirmCount++;
+                if (ThrowConflict)
+                {
+                    store.Actions.Remove(actionId);
+                    throw new ConflictException("stale");
+                }
+
+                var action = store.Actions[actionId];
+                store.Actions.Remove(actionId);
+                return Task.FromResult(new TrainingSessionDto(
+                    action.SessionId,
+                    null,
+                    DateTime.UtcNow.Date,
+                    DateTime.UtcNow,
+                    null,
+                    EstadoSesionEntrenamiento.EnCurso,
+                    []));
+            }
+
+            public Task CancelAsync(Guid actionId, CancellationToken cancellationToken)
+            {
+                CancelCount++;
+                store.Actions.Remove(actionId);
+                return Task.CompletedTask;
             }
         }
 

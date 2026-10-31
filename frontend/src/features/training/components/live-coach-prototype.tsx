@@ -256,7 +256,10 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
     };
   }
 
-  function attachAudioEventListeners(audio: HTMLAudioElement) {
+  function attachAudioEventListeners(
+    audio: HTMLAudioElement,
+    listenForPendingConfirmation: boolean,
+  ) {
     audio.onplay = () => {
       setState("speaking");
     };
@@ -268,7 +271,11 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
     };
     audio.onended = () => {
       audio.currentTime = 0;
-      setState("success");
+      if (listenForPendingConfirmation && dialogRef.current?.open) {
+        void startRecording(true);
+      } else {
+        setState("success");
+      }
     };
     audio.onerror = () => {
       stopAudio("audio-error");
@@ -276,7 +283,11 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
     };
   }
 
-  async function playSpokenAnswer(responseId: string, isUserGesture = false) {
+  async function playSpokenAnswer(
+    responseId: string,
+    isUserGesture = false,
+    listenForPendingConfirmation = false,
+  ) {
     if (audioRef.current && isUserGesture) {
       try {
         audioRef.current.currentTime = 0;
@@ -321,7 +332,7 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
       currentAudioUrlRef.current = url;
 
       const audio = new Audio(url);
-      attachAudioEventListeners(audio);
+      attachAudioEventListeners(audio, listenForPendingConfirmation);
       audioRef.current = audio;
 
       try {
@@ -360,11 +371,21 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
 
     if (result.status === "success") {
       setCoachResponse(result.data);
+      if (result.data.updatedSession) {
+        onSessionUpdated?.(result.data.updatedSession);
+      }
 
       if (result.data.canSynthesizeVoice && voiceEnabled) {
-        await playSpokenAnswer(result.data.responseId);
+        await playSpokenAnswer(
+          result.data.responseId,
+          false,
+          inputKind === "audio" && Boolean(result.data.pendingAction),
+        );
       } else {
         setState("success");
+        if (inputKind === "audio" && result.data.pendingAction) {
+          await startRecording(true);
+        }
       }
     } else {
       setErrorMessage(result.message ?? "No se pudo obtener la respuesta del Coach.");
@@ -383,12 +404,14 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
     await askCoach(query, "text");
   }
 
-  async function startRecording() {
+  async function startRecording(preservePendingAction = false) {
+    if (actionPending) return;
     cleanupMedia();
     stopAudio("new-query-audio");
     setErrorMessage(null);
     setTranscript(null);
-    setCoachResponse(null);
+    if (!preservePendingAction) setCoachResponse(null);
+    setActionError(null);
 
     if (
       typeof window === "undefined" ||
@@ -625,6 +648,17 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
           Registrar serie
         </Button>
       </div>
+      <Button
+        className="mt-2"
+        disabled={actionPending}
+        fullWidth
+        onClick={() => void startRecording(true)}
+        size="sm"
+        variant="outline"
+      >
+        <Mic aria-hidden="true" size={15} />
+        Responder por voz
+      </Button>
     </div>
   ) : null;
 
@@ -715,7 +749,7 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
           <div className={cn(styles.stateBody, "mt-4 space-y-4")} key={state}>
             {state === "idle" && (
               <div className="space-y-2">
-                <Button fullWidth onClick={startRecording}>
+                <Button fullWidth onClick={() => void startRecording()}>
                   <Mic aria-hidden="true" size={18} />
                   <span>Hablar al Coach</span>
                 </Button>
@@ -868,10 +902,12 @@ export function LiveCoachPrototype({ onSessionUpdated, session }: LiveCoachProto
                   <span>{getVisibleErrorMessage(errorMessage)}</span>
                 </p>
 
-                <Button fullWidth onClick={handleReset} variant="secondary">
-                  <RotateCcw aria-hidden="true" size={16} />
-                  <span>Reintentar</span>
-                </Button>
+                {pendingAction ? pendingActionPanel : (
+                  <Button fullWidth onClick={handleReset} variant="secondary">
+                    <RotateCcw aria-hidden="true" size={16} />
+                    <span>Reintentar</span>
+                  </Button>
+                )}
               </div>
             )}
           </div>

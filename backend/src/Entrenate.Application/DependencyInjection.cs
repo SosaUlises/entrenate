@@ -37,6 +37,7 @@ namespace Entrenate.Application
             services.AddScoped<ILiveCoachIntentRouter, LiveCoachIntentRouter>();
             services.AddScoped<ILiveCoachPromptBuilder, LiveCoachPromptBuilder>();
             services.AddScoped<ILiveCoachSetActionExtractor, LiveCoachSetActionExtractor>();
+            services.AddScoped<ILiveCoachPendingActionExecutor, LiveCoachPendingActionExecutor>();
 
             return services;
         }

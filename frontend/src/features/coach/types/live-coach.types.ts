@@ -31,6 +31,7 @@ export type LiveCoachRespondResponse = {
   isStaleContext: boolean;
   canSynthesizeVoice: boolean;
   pendingAction?: LiveCoachPendingAction | null;
+  updatedSession?: import("@/features/training/types/training.types").TrainingSession | null;
 };
 
 export type LiveCoachPendingAction = {

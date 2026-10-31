@@ -9,8 +9,39 @@ namespace Entrenate.Infrastructure.Coach.LiveCoach
 
         public void Set(PendingLiveCoachAction action)
         {
+            foreach (var existing in _actions)
+            {
+                if (existing.Value.UserId == action.UserId &&
+                    existing.Value.SessionId == action.SessionId)
+                {
+                    _actions.TryRemove(existing.Key, out _);
+                }
+            }
+
             _actions[action.ActionId] = action;
             CleanupExpired(DateTime.UtcNow, action.ActionId);
+        }
+
+        public PendingLiveCoachActionLookupResult FindActive(
+            string userId,
+            Guid sessionId,
+            DateTime nowUtc)
+        {
+            var action = _actions.Values
+                .Where(item => item.UserId == userId && item.SessionId == sessionId)
+                .OrderByDescending(item => item.ExpiresAtUtc)
+                .FirstOrDefault();
+
+            if (action is null)
+                return new(PendingLiveCoachActionLookupStatus.NotFound);
+
+            if (nowUtc > action.ExpiresAtUtc)
+            {
+                _actions.TryRemove(action.ActionId, out _);
+                return new(PendingLiveCoachActionLookupStatus.Expired);
+            }
+
+            return new(PendingLiveCoachActionLookupStatus.Active, action);
         }
 
         public PendingLiveCoachActionTakeResult Take(Guid actionId, string userId, DateTime nowUtc)

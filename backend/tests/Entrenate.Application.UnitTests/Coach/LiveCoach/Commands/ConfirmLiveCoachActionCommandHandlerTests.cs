@@ -20,7 +20,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             var store = new StubStore(new(PendingLiveCoachActionTakeStatus.Success, action));
             var sender = new RecordingSender(action.SessionId);
             var handler = new ConfirmLiveCoachActionCommandHandler(
-                new StubCurrentUser("owner"), store, sender);
+                new LiveCoachPendingActionExecutor(
+                    new StubCurrentUser("owner"), store, sender));
 
             var result = await handler.Handle(
                 new ConfirmLiveCoachActionCommand(action.ActionId),
@@ -44,9 +45,10 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             PendingLiveCoachActionTakeStatus status)
         {
             var handler = new ConfirmLiveCoachActionCommandHandler(
-                new StubCurrentUser("owner"),
-                new StubStore(new(status)),
-                new RecordingSender(Guid.NewGuid()));
+                new LiveCoachPendingActionExecutor(
+                    new StubCurrentUser("owner"),
+                    new StubStore(new(status)),
+                    new RecordingSender(Guid.NewGuid())));
 
             await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(
                 new ConfirmLiveCoachActionCommand(Guid.NewGuid()),
@@ -57,9 +59,10 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         public async Task Handle_WhenActionBelongsToAnotherUser_DoesNotExposeIt()
         {
             var handler = new ConfirmLiveCoachActionCommandHandler(
-                new StubCurrentUser("other"),
-                new StubStore(new(PendingLiveCoachActionTakeStatus.NotOwned)),
-                new RecordingSender(Guid.NewGuid()));
+                new LiveCoachPendingActionExecutor(
+                    new StubCurrentUser("other"),
+                    new StubStore(new(PendingLiveCoachActionTakeStatus.NotOwned)),
+                    new RecordingSender(Guid.NewGuid())));
 
             await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(
                 new ConfirmLiveCoachActionCommand(Guid.NewGuid()),
@@ -79,6 +82,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             : ILiveCoachPendingActionStore
         {
             public void Set(PendingLiveCoachAction action) { }
+            public PendingLiveCoachActionLookupResult FindActive(string userId, Guid sessionId, DateTime nowUtc)
+                => new(PendingLiveCoachActionLookupStatus.NotFound);
             public PendingLiveCoachActionTakeResult Take(Guid actionId, string userId, DateTime nowUtc) => result;
             public PendingLiveCoachActionTakeResult Cancel(Guid actionId, string userId, DateTime nowUtc) => result;
         }

@@ -834,6 +834,15 @@ LiveCoachTurnMetrics
 - The only V0 mutation endpoint consumes an opaque, short-lived pending-action
   identifier and reuses Training's set-registration command after ownership,
   active-session and current-set revalidation;
+- Voice confirmation resolves the active pending action only from the
+  authenticated user and authoritative session identifier. The transcript can
+  never supply or select an action identifier;
+- A small deterministic allowlist routes explicit confirmation and cancellation
+  phrases before the conversational provider. Ambiguous phrases only request a
+  `sí`/`no` clarification and never mutate Training;
+- Button and voice paths share the same Application executor, TTL, ownership,
+  single-use and stale checks. Successful voice confirmation returns the
+  authoritative updated Training session for immediate client synchronization;
 - No provider controls or directly invokes a mutation command;
 - Deterministic Coach decisions remain authoritative when included in context;
 - Cancellation and timeout flow through all provider/tool operations.

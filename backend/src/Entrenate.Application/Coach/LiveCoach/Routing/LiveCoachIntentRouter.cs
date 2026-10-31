@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 
 namespace Entrenate.Application.Coach.LiveCoach.Routing
 {
@@ -8,6 +10,10 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         ConversationalQuestion,
         DataQuery,
         RegisterCurrentSet,
+        ConfirmPendingAction,
+        CancelPendingAction,
+        PendingActionClarification,
+        PendingActionUnavailable,
         MutationRequest,
         OutOfScope
     }
@@ -19,11 +25,23 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
     public interface ILiveCoachIntentRouter
     {
-        LiveCoachRoutingResult Route(string question);
+        LiveCoachRoutingResult Route(string question, bool hasPendingAction = false);
     }
 
     public sealed class LiveCoachIntentRouter : ILiveCoachIntentRouter
     {
+        private static readonly HashSet<string> ConfirmPendingActionPhrases =
+            new(StringComparer.Ordinal)
+            {
+                "si", "dale", "registrala", "registralo", "confirma", "confirmo", "hacelo"
+            };
+
+        private static readonly HashSet<string> CancelPendingActionPhrases =
+            new(StringComparer.Ordinal)
+            {
+                "no", "cancela", "dejalo", "no la registres", "olvidalo"
+            };
+
         private static readonly string[] MutationKeywords =
         {
             "anotá", "anota", "anotame", "anotale",
@@ -64,7 +82,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             "peso", "resumen", "cómo vengo", "como vengo", "orden", "falta"
         };
 
-        public LiveCoachRoutingResult Route(string question)
+        public LiveCoachRoutingResult Route(string question, bool hasPendingAction = false)
         {
             if (string.IsNullOrWhiteSpace(question))
             {
@@ -74,6 +92,31 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             }
 
             var normalized = question.Trim().ToLowerInvariant();
+            var pendingDecision = NormalizePendingDecision(question);
+            var confirmsPending = ConfirmPendingActionPhrases.Contains(pendingDecision);
+            var cancelsPending = CancelPendingActionPhrases.Contains(pendingDecision);
+
+            if (hasPendingAction)
+            {
+                if (confirmsPending)
+                    return new LiveCoachRoutingResult(LiveCoachIntentKind.ConfirmPendingAction, false);
+
+                if (cancelsPending)
+                    return new LiveCoachRoutingResult(LiveCoachIntentKind.CancelPendingAction, false);
+
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.PendingActionClarification,
+                    false,
+                    "¿Querés que registre la serie? Decime sí o no.");
+            }
+
+            if (confirmsPending || cancelsPending)
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.PendingActionUnavailable,
+                    false,
+                    "No hay una serie pendiente para confirmar.");
+            }
 
             if (IsRegisterCurrentSetRequest(normalized))
             {
@@ -175,6 +218,26 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                 text.Contains("sin peso", StringComparison.OrdinalIgnoreCase);
 
             return hasRegisterVerb && hasSetData;
+        }
+
+        private static string NormalizePendingDecision(string text)
+        {
+            var decomposed = text.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD);
+            var builder = new StringBuilder(decomposed.Length);
+            foreach (var character in decomposed)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(character) == UnicodeCategory.NonSpacingMark)
+                    continue;
+
+                if (char.IsLetterOrDigit(character) || char.IsWhiteSpace(character))
+                    builder.Append(character);
+            }
+
+            return string.Join(
+                ' ',
+                builder.ToString()
+                    .Normalize(NormalizationForm.FormC)
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries));
         }
     }
 }
