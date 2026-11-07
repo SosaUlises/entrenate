@@ -371,6 +371,10 @@ export function ActiveTrainingContent() {
               onFinish={() => openFinish("complete")}
               onMissing={reload}
               onSaved={recordSet}
+              onSessionUpdated={(updatedSession) => {
+                setView({ status: "ready", session: updatedSession });
+                setIsDirty(false);
+              }}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
               session={session}
             />

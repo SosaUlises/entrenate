@@ -3,6 +3,7 @@ using Entrenate.Application.Coach.LiveCoach.Commands.ConfirmLiveCoachAction;
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
+using Entrenate.Application.TrainingSessions.Commands.SkipCurrentExercise;
 using Entrenate.Application.TrainingSessions.DTOs;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById;
 using Entrenate.Domain.Enums;
@@ -43,6 +44,33 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.Equal(action.Rir, upsert.Rir);
             Assert.True(upsert.RequireCurrentPendingSet);
             Assert.IsType<GetTrainingSessionByIdQuery>(sender.Requests[1]);
+        }
+
+        [Fact]
+        public async Task Handle_WhenSkipActionIsValid_UsesAuthoritativeSkipCommand()
+        {
+            var action = CreateAction() with
+            {
+                Type = LiveCoachActionTypes.SkipCurrentExercise,
+                ExerciseName = "Hip Thrust",
+                PendingSetCount = 2
+            };
+            var updated = CreateSession(
+                action,
+                CreateExercise(action.ExerciseSessionId, 1, 3, 120, completedSets: 1));
+            var sender = new RecordingSender(action.SessionId, updated);
+            var handler = CreateHandler(action, updated, sender);
+
+            var result = await handler.Handle(
+                new ConfirmLiveCoachActionCommand(action.ActionId, RestTimerIsActive: false),
+                CancellationToken.None);
+
+            var skip = Assert.IsType<SkipCurrentExerciseCommand>(sender.Requests.Single());
+            Assert.Equal(action.SessionId, skip.SessionId);
+            Assert.Equal(action.ExerciseSessionId, skip.ExpectedExerciseSessionId);
+            Assert.Equal(action.SetNumber, skip.ExpectedSetNumber);
+            Assert.Equal("Ejercicio omitido. Seguimos con el siguiente.", result.Text);
+            Assert.Null(result.ClientAction);
         }
 
         [Fact]
@@ -229,6 +257,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                     UpsertTrainingSetCommand command => new TrainingSetDto(
                         Guid.NewGuid(), command.SetNumber, command.Peso, command.Repeticiones,
                         command.Rir, true, DateTime.UtcNow),
+                    SkipCurrentExerciseCommand => updatedSession ?? throw new InvalidOperationException(),
                     GetTrainingSessionByIdQuery => updatedSession ?? new TrainingSessionDto(
                         sessionId, null, DateTime.UtcNow.Date, DateTime.UtcNow,
                         null, EstadoSesionEntrenamiento.EnCurso, []),

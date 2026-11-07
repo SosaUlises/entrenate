@@ -173,6 +173,50 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         [Fact]
+        public async Task Handle_WhenSkipCurrentExerciseIsExplicit_CreatesPendingActionWithoutMutation()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Prensa", 3));
+            var current = session.Ejercicios.OrderBy(x => x.Orden).First();
+            current.RegistrarOActualizarSerie(1, 80, 8, 2, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-skip",
+                    "audio",
+                    "saltá este ejercicio",
+                    null),
+                CancellationToken.None);
+
+            Assert.NotNull(result.PendingAction);
+            Assert.Equal(LiveCoachActionTypes.SkipCurrentExercise, result.PendingAction.Type);
+            Assert.Equal("Te quedan 2 series de Hip Thrust. ¿Querés saltarlo igual?", result.Text);
+            Assert.Contains("Hip Thrust", result.PendingAction.Summary);
+            Assert.False(current.Omitido);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenSkipPendingActionIsCancelled_DoesNotMutateExercise()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Prensa", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var pending = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-skip", "audio", "saltá este ejercicio", null),
+                CancellationToken.None);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-no", "audio", "no", null),
+                CancellationToken.None);
+
+            Assert.Null(result.PendingAction);
+            Assert.False(session.Ejercicios.First().Omitido);
+            Assert.Equal(1, _pendingActionExecutor.CancelCount);
+            Assert.DoesNotContain(pending.PendingAction!.ActionId, _pendingActionStore.Actions.Keys);
+        }
+
+        [Fact]
         public async Task Handle_WhenRegisterCurrentSetIsMissingWeight_AsksForWeightWithoutPendingAction()
         {
             var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);

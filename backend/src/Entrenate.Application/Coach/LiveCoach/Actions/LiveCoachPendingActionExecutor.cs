@@ -3,6 +3,7 @@ using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Rules;
 using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
+using Entrenate.Application.TrainingSessions.Commands.SkipCurrentExercise;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById;
 using MediatR;
 
@@ -49,6 +50,19 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
                 throw new ConflictException("La acción ya no está disponible.");
 
             var action = take.Action;
+            if (action.Type == LiveCoachActionTypes.SkipCurrentExercise)
+            {
+                var skippedSession = await _sender.Send(
+                    new SkipCurrentExerciseCommand(
+                        action.SessionId,
+                        action.ExerciseSessionId,
+                        action.SetNumber),
+                    cancellationToken);
+                return new LiveCoachActionConfirmationDto(
+                    skippedSession,
+                    "Ejercicio omitido. Seguimos con el siguiente.");
+            }
+
             await _sender.Send(
                 new UpsertTrainingSetCommand(
                     action.SessionId,

@@ -178,5 +178,46 @@ namespace Entrenate.Domain.Entidades
         {
             return Estado == EstadoSesionEntrenamiento.EnCurso;
         }
+
+        public void OmitirEjercicio(Guid ejercicioSesionId)
+        {
+            ValidarEnCursoParaCambiarOmision();
+            var ejercicio = BuscarEjercicio(ejercicioSesionId);
+
+            if (ejercicio.Omitido)
+                throw new InvalidOperationException("El ejercicio ya está omitido.");
+
+            var seriesObjetivoCompletadas = ejercicio.Series
+                .Where(x => x.EstaRealmenteCompletada())
+                .Select(x => x.NumeroSerie)
+                .Distinct()
+                .Count(x => x >= 1 && x <= ejercicio.SeriesObjetivo);
+            if (seriesObjetivoCompletadas >= ejercicio.SeriesObjetivo)
+                throw new InvalidOperationException("El ejercicio ya está completo.");
+
+            ejercicio.Omitir();
+        }
+
+        public void ReactivarEjercicio(Guid ejercicioSesionId)
+        {
+            ValidarEnCursoParaCambiarOmision();
+            var ejercicio = BuscarEjercicio(ejercicioSesionId);
+
+            if (!ejercicio.Omitido)
+                throw new InvalidOperationException("El ejercicio no está omitido.");
+
+            ejercicio.Reactivar();
+        }
+
+        private EjercicioSesion BuscarEjercicio(Guid ejercicioSesionId)
+            => _ejercicios.FirstOrDefault(x => x.Id == ejercicioSesionId)
+                ?? throw new InvalidOperationException("El ejercicio no pertenece a la sesión.");
+
+        private void ValidarEnCursoParaCambiarOmision()
+        {
+            if (Estado != EstadoSesionEntrenamiento.EnCurso)
+                throw new InvalidOperationException(
+                    "Solo se puede cambiar la omisión durante una sesión en curso.");
+        }
     }
 }

@@ -11,6 +11,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         ConversationalQuestion,
         DataQuery,
         RegisterCurrentSet,
+        SkipCurrentExercise,
         ConfirmPendingAction,
         CancelPendingAction,
         UpdatePendingCurrentSet,
@@ -224,6 +225,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             if (IsRestQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.RestTimerQuery, false);
 
+            if (IsSkipCurrentExerciseRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.SkipCurrentExercise, false);
+
             if (IsPendingSetUpdateRequest(pendingDecision) &&
                 !LooksLikeCompleteSetStatement(pendingDecision) &&
                 !pendingDecision.StartsWith("hice ", StringComparison.Ordinal))
@@ -395,6 +399,15 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             var targetsCurrentSet = text.Contains("serie", StringComparison.OrdinalIgnoreCase);
 
             return hasRegisterVerb && (hasSetData || targetsCurrentSet);
+        }
+
+        private static bool IsSkipCurrentExerciseRequest(string text)
+        {
+            return text.Contains("salta este ejercicio", StringComparison.Ordinal) ||
+                   text.Contains("saltemos este ejercicio", StringComparison.Ordinal) ||
+                   text.Contains("omiti este ejercicio", StringComparison.Ordinal) ||
+                   text.Contains("pasa al siguiente ejercicio", StringComparison.Ordinal) ||
+                   text.Contains("no quiero hacer este ejercicio", StringComparison.Ordinal);
         }
 
         private static bool IsBestSetQuery(string text)

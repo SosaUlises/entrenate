@@ -3,6 +3,8 @@ using Entrenate.Application.TrainingSessions.Commands.CancelTrainingSession;
 using Entrenate.Application.TrainingSessions.Commands.CompleteTrainingSession;
 using Entrenate.Application.TrainingSessions.Commands.StartTrainingSession;
 using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
+using Entrenate.Application.TrainingSessions.Commands.SkipCurrentExercise;
+using Entrenate.Application.TrainingSessions.Commands.ReactivateExercise;
 using Entrenate.Application.TrainingSessions.Queries.GetActiveTrainingSession;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingActivity;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById;
@@ -109,6 +111,28 @@ namespace Entrenate.Api.Controllers
                 cancellationToken);
 
             return NoContent();
+        }
+
+        [HttpPost("{id:guid}/exercises/current/skip")]
+        public async Task<IActionResult> SkipCurrentExercise(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var session = await _sender.Send(
+                new SkipCurrentExerciseCommand(id), cancellationToken);
+            return Ok(session);
+        }
+
+        [HttpPost("{sessionId:guid}/exercises/{exerciseSessionId:guid}/reactivate")]
+        public async Task<IActionResult> ReactivateExercise(
+            Guid sessionId,
+            Guid exerciseSessionId,
+            CancellationToken cancellationToken)
+        {
+            var session = await _sender.Send(
+                new ReactivateExerciseCommand(sessionId, exerciseSessionId),
+                cancellationToken);
+            return Ok(session);
         }
 
         [HttpPut(

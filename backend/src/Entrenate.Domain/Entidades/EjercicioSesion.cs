@@ -26,6 +26,8 @@ namespace Entrenate.Domain.Entidades
 
         public string? Notas { get; private set; }
 
+        public bool Omitido { get; private set; }
+
         public SesionEntrenamiento SesionEntrenamiento { get; private set; }
             = null!;
 
@@ -168,6 +170,16 @@ namespace Entrenate.Domain.Entidades
             serie.MarcarComoCompletada();
 
             return serie;
+        }
+
+        internal void Omitir()
+        {
+            Omitido = true;
+        }
+
+        internal void Reactivar()
+        {
+            Omitido = false;
         }
     }
 }

@@ -43,7 +43,7 @@ export type LiveCoachClientAction =
 
 export type LiveCoachPendingAction = {
   actionId: string;
-  type: "RegisterCurrentSet";
+  type: "RegisterCurrentSet" | "SkipCurrentExercise";
   summary: string;
   expiresAtUtc: string;
 };

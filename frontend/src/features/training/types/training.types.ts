@@ -20,6 +20,7 @@ export type TrainingSessionExercise = {
   rirObjetivoMaximo: number;
   descansoObjetivoSegundos: number;
   notas: string | null;
+  omitido: boolean;
   series: TrainingSet[];
 };
 

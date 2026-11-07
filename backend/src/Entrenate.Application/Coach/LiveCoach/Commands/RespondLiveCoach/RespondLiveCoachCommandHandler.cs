@@ -122,7 +122,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 {
                     return CreateDirectResponse(
                         request.ClientTurnId,
-                        "La propuesta ya no está vigente. Decime nuevamente cómo salió la serie.");
+                        activePendingAction.Type == LiveCoachActionTypes.SkipCurrentExercise
+                            ? "La sesión cambió. Volvé a pedirme que salte el ejercicio."
+                            : "La propuesta ya no está vigente. Decime nuevamente cómo salió la serie.");
                 }
             }
 
@@ -135,7 +137,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                         cancellationToken);
                     return CreateDirectResponse(
                         request.ClientTurnId,
-                        "Listo, no la registro.");
+                        activePendingAction.Type == LiveCoachActionTypes.SkipCurrentExercise
+                            ? "Listo, seguimos con este ejercicio."
+                            : "Listo, no la registro.");
                 }
                 catch (Exception exception) when (exception is ConflictException or NotFoundException)
                 {
@@ -147,6 +151,14 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
 
             if (routing.Kind == LiveCoachIntentKind.UpdatePendingCurrentSet && activePendingAction is not null)
             {
+                if (activePendingAction.Type != LiveCoachActionTypes.RegisterCurrentSet)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "¿Querés saltarlo? Decime sí o no.",
+                        ToDto(activePendingAction));
+                }
+
                 var patchExtraction = _setActionExtractor.ExtractPatch(request.Text);
                 if (patchExtraction.Status == LiveCoachPendingSetPatchStatus.Invalid)
                 {
@@ -217,6 +229,23 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     userId,
                     request.ClientTurnId,
                     request.Text);
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.SkipCurrentExercise)
+            {
+                return CreateSkipCurrentExerciseResponse(
+                    session,
+                    userId,
+                    request.ClientTurnId);
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.PendingActionClarification &&
+                activePendingAction?.Type == LiveCoachActionTypes.SkipCurrentExercise)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    "¿Querés saltarlo? Decime sí o no.",
+                    ToDto(activePendingAction));
             }
 
             if (!string.IsNullOrWhiteSpace(routing.DirectAnswer))
@@ -475,6 +504,49 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     expiresAtUtc));
         }
 
+        private LiveCoachRespondResponseDto CreateSkipCurrentExerciseResponse(
+            Entrenate.Domain.Entidades.SesionEntrenamiento session,
+            string userId,
+            string clientTurnId)
+        {
+            var current = CurrentPendingTrainingSetResolver.Resolve(session);
+            if (current is null)
+                return CreateDirectResponse(clientTurnId, "Ese ejercicio ya está completo.");
+
+            var exercise = current.ExerciseSession;
+            var completedTargetSets = exercise.Series
+                .Where(x => x.EstaRealmenteCompletada())
+                .Select(x => x.NumeroSerie)
+                .Distinct()
+                .Count(x => x >= 1 && x <= exercise.SeriesObjetivo);
+            var pendingSetCount = Math.Max(0, exercise.SeriesObjetivo - completedTargetSets);
+            if (pendingSetCount == 0)
+                return CreateDirectResponse(clientTurnId, "Ese ejercicio ya está completo.");
+
+            var exerciseName = exercise.Ejercicio.Nombre;
+            var expiresAtUtc = DateTime.UtcNow.AddSeconds(45);
+            var action = new PendingLiveCoachAction(
+                Guid.NewGuid(),
+                userId,
+                session.Id,
+                exercise.Id,
+                current.SetNumber,
+                0,
+                0,
+                null,
+                expiresAtUtc,
+                LiveCoachActionTypes.SkipCurrentExercise,
+                exerciseName,
+                pendingSetCount);
+            _pendingActionStore.Set(action);
+
+            var seriesLabel = pendingSetCount == 1 ? "serie" : "series";
+            return CreateDirectResponse(
+                clientTurnId,
+                $"Te quedan {pendingSetCount} {seriesLabel} de {exerciseName}. ¿Querés saltarlo igual?",
+                ToDto(action));
+        }
+
         private LiveCoachRespondResponseDto CreateDirectResponse(
             string clientTurnId,
             string text,
@@ -499,13 +571,21 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
         {
             return new PendingLiveCoachActionDto(
                 action.ActionId,
-                LiveCoachActionTypes.RegisterCurrentSet,
+                action.Type,
                 BuildSummary(action),
                 action.ExpiresAtUtc);
         }
 
         private static string BuildSummary(PendingLiveCoachAction action)
         {
+            if (action.Type == LiveCoachActionTypes.SkipCurrentExercise)
+            {
+                var seriesLabel = action.PendingSetCount == 1
+                    ? "serie pendiente"
+                    : "series pendientes";
+                return $"Saltarse {action.ExerciseName} con {action.PendingSetCount} {seriesLabel}";
+            }
+
             var weight = action.WeightKg.ToString("0.##", CultureInfo.InvariantCulture);
             return $"{weight} kg × {action.Repetitions}" +
                 (action.Rir.HasValue ? $" · RIR {action.Rir.Value}" : string.Empty);

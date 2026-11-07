@@ -80,7 +80,8 @@ namespace Entrenate.Application.TrainingSessions.Queries.GetActiveTrainingSessio
                                 y.Rir,
                                 y.Completada,
                                 y.FechaHoraRegistro))
-                            .ToList()))
+                            .ToList(),
+                        x.Omitido))
                     .ToList());
         }
     }

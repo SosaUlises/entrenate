@@ -81,7 +81,8 @@ namespace Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById
                                 y.Rir,
                                 y.Completada,
                                 y.FechaHoraRegistro))
-                            .ToList()))
+                            .ToList(),
+                        x.Omitido))
                     .ToList());
         }
     }

@@ -3,6 +3,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
     public static class LiveCoachActionTypes
     {
         public const string RegisterCurrentSet = "RegisterCurrentSet";
+        public const string SkipCurrentExercise = "SkipCurrentExercise";
     }
 
     public sealed record PendingLiveCoachAction(
@@ -14,10 +15,10 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
         decimal WeightKg,
         int Repetitions,
         int? Rir,
-        DateTime ExpiresAtUtc)
-    {
-        public string Type => LiveCoachActionTypes.RegisterCurrentSet;
-    }
+        DateTime ExpiresAtUtc,
+        string Type = LiveCoachActionTypes.RegisterCurrentSet,
+        string? ExerciseName = null,
+        int PendingSetCount = 0);
 
     public sealed record PendingLiveCoachSetPatch(
         decimal? WeightKg = null,

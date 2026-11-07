@@ -14,6 +14,9 @@ namespace Entrenate.Application.TrainingSessions
         {
             foreach (var exercise in session.Ejercicios.OrderBy(item => item.Orden))
             {
+                if (exercise.Omitido)
+                    continue;
+
                 var completedSetNumbers = new HashSet<int>(
                     exercise.Series
                         .Where(s => s.EstaRealmenteCompletada())

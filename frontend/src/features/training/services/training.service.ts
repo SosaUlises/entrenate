@@ -30,3 +30,9 @@ export async function cancelTrainingSession(id: string, authToken: string): Prom
     authToken, cache: "no-store", method: "POST",
   });
 }
+
+export function reactivateTrainingExercise(sessionId: string, exerciseSessionId: string, authToken: string): Promise<TrainingSession> {
+  return apiRequest<TrainingSession>(`/api/training-sessions/${encodeURIComponent(sessionId)}/exercises/${encodeURIComponent(exerciseSessionId)}/reactivate`, {
+    authToken, cache: "no-store", method: "POST",
+  });
+}

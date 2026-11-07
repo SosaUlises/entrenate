@@ -651,12 +651,16 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     if (result.status === "conflict" || result.status === "not-found") {
       setCoachResponse((current) => current ? { ...current, pendingAction: null } : current);
       setPendingAction(null);
-      setErrorMessage("La sesión cambió. Volvé a indicarme la serie.");
+      setErrorMessage(pendingAction.type === "SkipCurrentExercise"
+        ? "La sesión cambió. Volvé a pedirme que salte el ejercicio."
+        : "La sesión cambió. Volvé a indicarme la serie.");
       setState("error");
       return;
     }
 
-    setActionError("No pudimos registrar la serie. Intentá nuevamente.");
+    setActionError(pendingAction.type === "SkipCurrentExercise"
+      ? "No pudimos omitir el ejercicio. Intentá nuevamente."
+      : "No pudimos registrar la serie. Intentá nuevamente.");
     setState("success");
   }
 
@@ -718,7 +722,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
         </Button>
         <Button disabled={confirmationControlsDisabled} isLoading={actionPending} onClick={() => void confirmPendingAction()}>
           <Check aria-hidden="true" size={16} />
-          Registrar serie
+          {pendingAction.type === "SkipCurrentExercise" ? "Saltar ejercicio" : "Registrar serie"}
         </Button>
       </div>
       {showVoiceConfirmationAction ? <Button

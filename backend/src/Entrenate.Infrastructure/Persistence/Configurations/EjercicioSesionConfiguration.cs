@@ -37,6 +37,10 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Notas)
                 .HasMaxLength(500);
 
+            builder.Property(x => x.Omitido)
+                .HasDefaultValue(false)
+                .IsRequired();
+
             builder.HasOne(x => x.Ejercicio)
                 .WithMany()
                 .HasForeignKey(x => x.EjercicioId)
