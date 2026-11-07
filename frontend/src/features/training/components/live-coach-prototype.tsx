@@ -96,7 +96,14 @@ function getVisibleErrorMessage(message: string | null): string {
   return "No pude completar la consulta. Intentá de nuevo.";
 }
 
-function mapToFaceState(state: LiveCoachState): LiveCoachFaceState {
+function mapToFaceState(
+  state: LiveCoachState,
+  hasPendingAction: boolean = false,
+): LiveCoachFaceState {
+  if (hasPendingAction && (state === "idle" || state === "success")) {
+    return "waitingConfirmation";
+  }
+
   switch (state) {
     case "idle":
       return "idle";
@@ -681,7 +688,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
   }
 
   const presentation = statePresentations[state];
-  const faceState = mapToFaceState(state);
+  const faceState = mapToFaceState(state, pendingAction !== null);
   const confirmationControlsDisabled =
     actionPending ||
     state === "requestingPermission" ||
