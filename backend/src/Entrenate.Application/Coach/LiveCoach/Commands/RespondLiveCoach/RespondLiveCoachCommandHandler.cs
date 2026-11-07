@@ -291,6 +291,75 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     CreateRestTimerQueryAnswer(context, request.Text));
             }
 
+            if (routing.Kind == LiveCoachIntentKind.PreviousSetPerformance)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachPerformanceQueryResolver.ResolvePreviousSetPerformance(session));
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.PreviousSetRir)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachPerformanceQueryResolver.ResolvePreviousSetRir(session));
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.RemainingSets)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachPerformanceQueryResolver.ResolveRemainingSets(session));
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.BestSetToday)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachPerformanceQueryResolver.ResolveBestSetToday());
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.PreviousExercisePerformance)
+            {
+                var answer = await LiveCoachPerformanceQueryResolver.ResolvePreviousExercisePerformanceAsync(
+                    session,
+                    userId,
+                    _sessionRepository,
+                    cancellationToken);
+
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    answer);
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.CompareWithPreviousSession)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachPerformanceQueryResolver.ResolveCompareWithPreviousSession());
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.NextExercise)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachPerformanceQueryResolver.ResolveNextExercise(session));
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.RemainingExercises)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachPerformanceQueryResolver.ResolveRemainingExercises(session));
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.SessionProgress)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachPerformanceQueryResolver.ResolveSessionProgress(session));
+            }
+
             // 4. Execute tool if requested by router
             PreviousPerformanceData? previousPerformance = null;
             if (routing.RequiresPreviousPerformance)

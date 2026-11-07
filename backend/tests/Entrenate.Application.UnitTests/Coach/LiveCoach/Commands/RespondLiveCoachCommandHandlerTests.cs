@@ -1351,7 +1351,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 session.Id,
                 "turn-prev",
                 "audio",
-                "¿Cuánto levanté la última vez en este ejercicio?",
+                "Contame sobre mi historial en este ejercicio",
                 null);
 
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -1379,6 +1379,458 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             await Assert.ThrowsAsync<ExternalServiceException>(() =>
                 _handler.Handle(command, CancellationToken.None));
         }
+
+        #region Performance Queries V1 Tests
+
+        [Fact]
+        public async Task Handle_WhenPreviousSetHasData_ReturnsFormattedSetAndDoesNotInvokeProvider()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var exercise = session.Ejercicios.First();
+            exercise.RegistrarOActualizarSerie(1, 120m, 8, 1, DateTime.UtcNow);
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-prev-1",
+                "audio",
+                "¿Cuánto hice en la serie anterior?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("En la serie anterior hiciste 120 kg por 8 repeticiones, RIR 1.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+            Assert.True(_responseCache.TryGet(result.ResponseId, out var cached));
+            Assert.Equal(result.Text, cached);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPreviousSetHasNoData_ReturnsNoSetsMessage()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-prev-0",
+                "audio",
+                "¿Qué hice en la serie anterior?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Todavía no completaste ninguna serie de este ejercicio.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPreviousSetRirQueried_WithRir_ReturnsRir()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var exercise = session.Ejercicios.First();
+            exercise.RegistrarOActualizarSerie(1, 100m, 10, 2, DateTime.UtcNow);
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-rir-1",
+                "audio",
+                "¿Qué RIR hice en la última serie?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("En la serie anterior registraste RIR 2.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPreviousSetRirQueried_WithoutRir_ReturnsNoRirRegistered()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var exercise = session.Ejercicios.First();
+            exercise.RegistrarOActualizarSerie(1, 100m, 10, null, DateTime.UtcNow);
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-rir-null",
+                "audio",
+                "¿Qué RIR hice en la última serie?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("En la serie anterior no registraste RIR.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPreviousSetRirQueried_WithoutSets_ReturnsNoSetsMessage()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-rir-empty",
+                "audio",
+                "¿Qué RIR hice en la última?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Todavía no completaste ninguna serie de este ejercicio.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenRemainingSetsQueried_MultipleRemaining_ReturnsPluralCount()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var exercise = session.Ejercicios.First(); // SeriesObjetivo = 4
+            exercise.RegistrarOActualizarSerie(1, 80m, 8, 1, DateTime.UtcNow);
+            exercise.RegistrarOActualizarSerie(2, 80m, 8, 1, DateTime.UtcNow);
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-rem-sets-2",
+                "audio",
+                "¿Cuántas series me faltan?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Te faltan 2 series de este ejercicio.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenRemainingSetsQueried_OneRemaining_ReturnsSingularCount()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var exercise = session.Ejercicios.First(); // SeriesObjetivo = 4
+            exercise.RegistrarOActualizarSerie(1, 80m, 8, 1, DateTime.UtcNow);
+            exercise.RegistrarOActualizarSerie(2, 80m, 8, 1, DateTime.UtcNow);
+            exercise.RegistrarOActualizarSerie(3, 80m, 8, 1, DateTime.UtcNow);
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-rem-sets-1",
+                "audio",
+                "¿Cuántas series me faltan?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Te falta 1 serie de este ejercicio.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenRemainingSetsQueried_AllCompleted_ReturnsAllCompletedMessage()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var exercise = session.Ejercicios.First(); // SeriesObjetivo = 4
+            CompleteSets(exercise, 4);
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-rem-sets-0",
+                "audio",
+                "¿Cuántas series me faltan?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Ya completaste todas las series de este ejercicio.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPreviousExercisePerformance_WithHistory_ReturnsFormattedHistory()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+            var targetExerciseId = session.Ejercicios.First().EjercicioId;
+
+            _sessionRepository.Exposures[targetExerciseId] =
+            [
+                new ProgressExposure(
+                    Guid.NewGuid(),
+                    session.Id,
+                    targetExerciseId,
+                    DateTime.UtcNow.AddDays(-5),
+                    new ProgressPrescriptionSnapshot(3, 8, 10, 1, 2, 120),
+                    [
+                        new ProgressCompletedSet(1, 100m, 8, 2),
+                        new ProgressCompletedSet(2, 100m, 7, 2),
+                        new ProgressCompletedSet(3, 95m, 8, 1)
+                    ])
+            ];
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-prev-hist",
+                "audio",
+                "¿Qué hice este ejercicio la última vez?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("La última vez hiciste 100 kg × 8, 100 kg × 7 y 95 kg × 8.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPreviousExercisePerformance_WithoutHistory_ReturnsNoHistoryMessage()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-no-hist",
+                "audio",
+                "¿Con cuánto hice este ejercicio la última vez?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("No tengo una sesión anterior registrada para este ejercicio.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNextExerciseQueried_HasNextExercise_ReturnsNextExerciseName()
+        {
+            var session = CreateTwoExerciseSession(90, 90);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-next",
+                "audio",
+                "¿Qué ejercicio sigue?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Después de Press de banca sigue Remo.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNextExerciseQueried_OnLastExercise_ReturnsLastExerciseMessage()
+        {
+            var session = CreateTwoExerciseSession(90, 90);
+            _sessionRepository.Sessions[session.Id] = session;
+            CompleteSets(session.Ejercicios.First(), 1); // Exercise 1 done, now on exercise 2 (Remo, last)
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-next-last",
+                "audio",
+                "¿Qué ejercicio sigue?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Este es el último ejercicio de la sesión.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenRemainingExercisesQueried_MultipleRemaining_ReturnsPluralCount()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press de banca", 3),
+                ("Remo con barra", 3),
+                ("Press militar", 3),
+                ("Elevaciones laterales", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-rem-ex-3",
+                "audio",
+                "¿Cuántos ejercicios me faltan?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Te faltan 3 ejercicios después de este.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenRemainingExercisesQueried_OneRemaining_ReturnsSingularCount()
+        {
+            var session = CreateTwoExerciseSession(90, 90);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-rem-ex-1",
+                "audio",
+                "¿Cuántos ejercicios me faltan?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Te falta 1 ejercicio después de este.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenRemainingExercisesQueried_OnLastExercise_ReturnsLastExerciseMessage()
+        {
+            var session = CreateTwoExerciseSession(90, 90);
+            _sessionRepository.Sessions[session.Id] = session;
+            CompleteSets(session.Ejercicios.First(), 1);
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-rem-ex-0",
+                "audio",
+                "¿Cuántos ejercicios faltan?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Este es el último ejercicio de la sesión.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenSessionProgressQueried_SetsAndExercisesRemaining_ReturnsStructuralProgress()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press de banca", 3),
+                ("Remo con barra", 3),
+                ("Press militar", 3),
+                ("Elevaciones laterales", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            // Complete 1 set of press de banca: 2 sets remaining of this exercise, 3 exercises after this
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100m, 8, 1, DateTime.UtcNow);
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-prog-struct",
+                "audio",
+                "¿Cuánto me falta para terminar?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Te faltan 2 series de este ejercicio y 3 ejercicios más.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenSessionProgressQueried_OnlySetsRemainingOnLastExercise_ReturnsSetsOnly()
+        {
+            var session = CreateTwoExerciseSession(90, 90); // 1 set of press, 2 sets of remo
+            _sessionRepository.Sessions[session.Id] = session;
+            CompleteSets(session.Ejercicios.First(), 1); // Exercise 1 done, now on Remo (2 sets remaining)
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-prog-last-ex",
+                "audio",
+                "¿Cuánto me falta para terminar?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Te faltan 2 series de este ejercicio para terminar la sesión.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenSessionProgressQueried_AllCompleted_ReturnsAllCompleted()
+        {
+            var session = CreateTwoExerciseSession(90, 90);
+            _sessionRepository.Sessions[session.Id] = session;
+            CompleteSets(session.Ejercicios.First(), 1);
+            CompleteSets(session.Ejercicios.Last(), 2);
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-prog-all-done",
+                "audio",
+                "¿Cuánto me falta para terminar?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Ya completaste todas las series de la sesión.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenBestSetTodayQueried_AsksForCriterion()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-best-set",
+                "audio",
+                "¿Cuál fue mi mejor serie hoy?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("¿Querés comparar por peso, repeticiones o volumen?", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCompareWithPreviousSessionQueried_AsksForCriterion()
+        {
+            var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var command = new RespondLiveCoachCommand(
+                session.Id,
+                "turn-perf-compare-prev",
+                "audio",
+                "¿Estoy levantando más que la sesión anterior?",
+                null);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("¿Querés comparar peso, repeticiones o volumen?", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        #endregion
 
         private static void CompleteSets(EjercicioSesion exercise, int count)
         {
@@ -1441,6 +1893,34 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 Guid.NewGuid(),
                 DateTime.UtcNow.AddMinutes(-20),
                 [Build("Press de banca", 1, 1, firstRest), Build("Remo", 2, 2, secondRest)]);
+        }
+
+        private static SesionEntrenamiento CreateMultiExerciseSession(params (string Name, int Series)[] exercises)
+        {
+            var list = new List<EjercicioSesion>();
+            for (var i = 0; i < exercises.Length; i++)
+            {
+                var (name, series) = exercises[i];
+                var exercise = new Ejercicio
+                {
+                    Id = Guid.NewGuid(),
+                    Nombre = name,
+                    GrupoMuscularPrincipal = "General",
+                    Activo = true
+                };
+                var exerciseSession = new EjercicioSesion(
+                    exercise.Id, i + 1, series, 8, 10, 1, 2, 90);
+                typeof(EjercicioSesion)
+                    .GetProperty("Ejercicio", BindingFlags.Public | BindingFlags.Instance)?
+                    .SetValue(exerciseSession, exercise);
+                list.Add(exerciseSession);
+            }
+
+            return new SesionEntrenamiento(
+                TestUserId,
+                Guid.NewGuid(),
+                DateTime.UtcNow.AddMinutes(-20),
+                list);
         }
 
         private static SesionEntrenamiento CreateSession(

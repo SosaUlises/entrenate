@@ -20,6 +20,15 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         StartRestTimer,
         StopRestTimer,
         RestTimerQuery,
+        PreviousSetPerformance,
+        PreviousSetRir,
+        RemainingSets,
+        BestSetToday,
+        PreviousExercisePerformance,
+        CompareWithPreviousSession,
+        NextExercise,
+        RemainingExercises,
+        SessionProgress,
         OtherMutation,
         OutOfScope
     }
@@ -248,7 +257,35 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                     "Indicame cuál valor corresponde al peso, las repeticiones y el RIR.");
             }
 
-            // 1. Check mutation request
+            // 1. Check performance queries (deterministic read-only)
+            if (IsBestSetQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.BestSetToday, false);
+
+            if (IsCompareWithPreviousSessionQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.CompareWithPreviousSession, false);
+
+            if (IsPreviousSetRirQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.PreviousSetRir, false);
+
+            if (IsPreviousExercisePerformanceQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.PreviousExercisePerformance, false);
+
+            if (IsPreviousSetPerformanceQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.PreviousSetPerformance, false);
+
+            if (IsNextExerciseQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.NextExercise, false);
+
+            if (IsRemainingExercisesQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.RemainingExercises, false);
+
+            if (IsRemainingSetsQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.RemainingSets, false);
+
+            if (IsSessionProgressQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.SessionProgress, false);
+
+            // 2. Check mutation request
             foreach (var kw in MutationKeywords)
             {
                 if (ContainsWord(normalized, kw))
@@ -260,7 +297,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                 }
             }
 
-            // 2. Check out of scope
+            // 3. Check out of scope
             foreach (var kw in OutOfScopeKeywords)
             {
                 if (ContainsWord(normalized, kw))
@@ -272,7 +309,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                 }
             }
 
-            // 3. Check data query
+            // 4. Check data query
             var requiresPreviousPerformance = false;
             foreach (var kw in HistoryKeywords)
             {
@@ -320,6 +357,19 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
         private static bool IsRegisterCurrentSetRequest(string text)
         {
+            if (text.StartsWith("cuanto ", StringComparison.Ordinal) ||
+                text.StartsWith("cuantos ", StringComparison.Ordinal) ||
+                text.StartsWith("cuantas ", StringComparison.Ordinal) ||
+                text.StartsWith("que ", StringComparison.Ordinal) ||
+                text.StartsWith("cual ", StringComparison.Ordinal) ||
+                text.StartsWith("como ", StringComparison.Ordinal) ||
+                text.Contains("anterior", StringComparison.Ordinal) ||
+                text.Contains("ultima vez", StringComparison.Ordinal) ||
+                text.Contains("vez pasada", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
             var hasRegisterVerb =
                 text.Contains("hice", StringComparison.OrdinalIgnoreCase) ||
                 text.Contains("fueron", StringComparison.OrdinalIgnoreCase) ||
@@ -345,6 +395,179 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             var targetsCurrentSet = text.Contains("serie", StringComparison.OrdinalIgnoreCase);
 
             return hasRegisterVerb && (hasSetData || targetsCurrentSet);
+        }
+
+        private static bool IsBestSetQuery(string text)
+        {
+            return text.Contains("mejor serie", StringComparison.Ordinal);
+        }
+
+        private static bool IsCompareWithPreviousSessionQuery(string text)
+        {
+            var hasComparisonTarget = text.Contains("sesion anterior", StringComparison.Ordinal) ||
+                                      text.Contains("vez pasada", StringComparison.Ordinal) ||
+                                      text.Contains("sesion previa", StringComparison.Ordinal) ||
+                                      text.Contains("ultima vez", StringComparison.Ordinal);
+
+            var hasComparisonCue = text.Contains("mas que", StringComparison.Ordinal) ||
+                                   text.Contains("mejor que", StringComparison.Ordinal) ||
+                                   text.Contains("comparado", StringComparison.Ordinal) ||
+                                   text.Contains("respecto a", StringComparison.Ordinal) ||
+                                   text.Contains("levantando mas", StringComparison.Ordinal);
+
+            return hasComparisonTarget && hasComparisonCue;
+        }
+
+        private static bool IsPreviousSetRirQuery(string text)
+        {
+            if (!text.Contains("rir", StringComparison.Ordinal))
+                return false;
+
+            if (LooksLikeCompleteSetStatement(text))
+                return false;
+
+            var hasRirQuestion = text.Contains("que rir", StringComparison.Ordinal) ||
+                                 text.Contains("cuanto rir", StringComparison.Ordinal) ||
+                                 text.Contains("con que rir", StringComparison.Ordinal);
+
+            if (hasRirQuestion)
+                return true;
+
+            var targetsPrevious = text.Contains("anterior", StringComparison.Ordinal) ||
+                                  text.Contains("ultima", StringComparison.Ordinal) ||
+                                  text.Contains("recien", StringComparison.Ordinal);
+
+            var asksForRir = text.Contains("cuanto", StringComparison.Ordinal) ||
+                             text.Contains("que", StringComparison.Ordinal) ||
+                             text.Contains("cual", StringComparison.Ordinal) ||
+                             text.Contains("como", StringComparison.Ordinal);
+
+            return targetsPrevious && asksForRir;
+        }
+
+        private static bool IsPreviousExercisePerformanceQuery(string text)
+        {
+            if (LooksLikeCompleteSetStatement(text))
+                return false;
+
+            if (IsCompareWithPreviousSessionQuery(text))
+                return false;
+
+            var hasPreviousSessionCue = text.Contains("ultima vez", StringComparison.Ordinal) ||
+                                        text.Contains("vez pasada", StringComparison.Ordinal) ||
+                                        text.Contains("sesion anterior", StringComparison.Ordinal) ||
+                                        text.Contains("sesion previa", StringComparison.Ordinal);
+
+            if (!hasPreviousSessionCue)
+                return false;
+
+            return text.Contains("ejercicio", StringComparison.Ordinal) ||
+                   text.Contains("con cuanto", StringComparison.Ordinal) ||
+                   text.Contains("que hice", StringComparison.Ordinal) ||
+                   text.Contains("cuanto levante", StringComparison.Ordinal) ||
+                   text.Contains("que peso", StringComparison.Ordinal) ||
+                   text.Contains("como me fue", StringComparison.Ordinal) ||
+                   text.Contains("cuanto use", StringComparison.Ordinal);
+        }
+
+        private static bool IsPreviousSetPerformanceQuery(string text)
+        {
+            if (text.Contains("rir", StringComparison.Ordinal))
+                return false;
+
+            if (LooksLikeCompleteSetStatement(text))
+                return false;
+
+            if (IsPreviousExercisePerformanceQuery(text))
+                return false;
+
+            var targetsPrevious = text.Contains("serie anterior", StringComparison.Ordinal) ||
+                                  text.Contains("ultima serie", StringComparison.Ordinal) ||
+                                  text.Contains("la anterior", StringComparison.Ordinal) ||
+                                  text.Contains("en la anterior", StringComparison.Ordinal) ||
+                                  text.Contains("la ultima", StringComparison.Ordinal) ||
+                                  text.Contains("recien", StringComparison.Ordinal);
+
+            if (!targetsPrevious)
+                return false;
+
+            return text.Contains("cuanto", StringComparison.Ordinal) ||
+                   text.Contains("que hice", StringComparison.Ordinal) ||
+                   text.Contains("como salio", StringComparison.Ordinal) ||
+                   text.Contains("como fue", StringComparison.Ordinal) ||
+                   text.Contains("que peso", StringComparison.Ordinal) ||
+                   text.Contains("cuanto levante", StringComparison.Ordinal) ||
+                   text.Contains("que registre", StringComparison.Ordinal);
+        }
+
+        private static bool IsNextExerciseQuery(string text)
+        {
+            if (!text.Contains("ejercicio", StringComparison.Ordinal))
+                return false;
+
+            if (text.Contains("cambia", StringComparison.Ordinal) ||
+                text.Contains("modifica", StringComparison.Ordinal) ||
+                text.Contains("borra", StringComparison.Ordinal) ||
+                text.Contains("saca", StringComparison.Ordinal) ||
+                text.Contains("elimina", StringComparison.Ordinal) ||
+                text.Contains("pone", StringComparison.Ordinal) ||
+                text.Contains("anota", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return text.Contains("sigue", StringComparison.Ordinal) ||
+                   text.Contains("viene", StringComparison.Ordinal) ||
+                   text.Contains("siguiente", StringComparison.Ordinal) ||
+                   text.Contains("proximo", StringComparison.Ordinal) ||
+                   text.Contains("despues de este", StringComparison.Ordinal) ||
+                   (text.Contains("toca", StringComparison.Ordinal) && !text.Contains("descanso", StringComparison.Ordinal));
+        }
+
+        private static bool IsRemainingExercisesQuery(string text)
+        {
+            if (!text.Contains("ejercicio", StringComparison.Ordinal))
+                return false;
+
+            if (IsNextExerciseQuery(text))
+                return false;
+
+            var hasRemainingCue = text.Contains("falta", StringComparison.Ordinal) ||
+                                  text.Contains("faltan", StringComparison.Ordinal) ||
+                                  text.Contains("queda", StringComparison.Ordinal) ||
+                                  text.Contains("quedan", StringComparison.Ordinal) ||
+                                  text.Contains("restan", StringComparison.Ordinal);
+
+            return hasRemainingCue;
+        }
+
+        private static bool IsRemainingSetsQuery(string text)
+        {
+            if (!text.Contains("serie", StringComparison.Ordinal))
+                return false;
+
+            var hasRemainingCue = text.Contains("falta", StringComparison.Ordinal) ||
+                                  text.Contains("faltan", StringComparison.Ordinal) ||
+                                  text.Contains("queda", StringComparison.Ordinal) ||
+                                  text.Contains("quedan", StringComparison.Ordinal) ||
+                                  text.Contains("restan", StringComparison.Ordinal);
+
+            return hasRemainingCue;
+        }
+
+        private static bool IsSessionProgressQuery(string text)
+        {
+            var hasProgressTarget = text.Contains("para terminar", StringComparison.Ordinal) ||
+                                    text.Contains("para finalizar", StringComparison.Ordinal) ||
+                                    text.Contains("terminar la sesion", StringComparison.Ordinal) ||
+                                    text.Contains("terminar el entrenamiento", StringComparison.Ordinal);
+
+            if (!hasProgressTarget)
+                return false;
+
+            return text.Contains("cuanto", StringComparison.Ordinal) ||
+                   text.Contains("falta", StringComparison.Ordinal) ||
+                   text.Contains("queda", StringComparison.Ordinal);
         }
 
         private static bool IsBareNumericSequence(string normalizedText)
