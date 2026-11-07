@@ -25,5 +25,19 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Routing
 
             Assert.Equal(LiveCoachIntentKind.NextExercise, result.Kind);
         }
+
+        [Theory]
+        [InlineData("reactivá hip thrust")]
+        [InlineData("volvé a activar hip thrust")]
+        [InlineData("quiero volver a hacer hip thrust")]
+        [InlineData("recuperá hip thrust")]
+        [InlineData("sacá hip thrust de omitidos")]
+        [InlineData("volvamos a hip thrust")]
+        public void Route_ExplicitReactivationPhrase_ReturnsReactivateIntent(string phrase)
+        {
+            var result = new LiveCoachIntentRouter().Route(phrase);
+
+            Assert.Equal(LiveCoachIntentKind.ReactivateExercise, result.Kind);
+        }
     }
 }

@@ -4,6 +4,7 @@ using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
 using Entrenate.Application.TrainingSessions.Commands.SkipCurrentExercise;
+using Entrenate.Application.TrainingSessions.Commands.ReactivateExercise;
 using Entrenate.Application.TrainingSessions.DTOs;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById;
 using Entrenate.Domain.Enums;
@@ -70,6 +71,31 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.Equal(action.ExerciseSessionId, skip.ExpectedExerciseSessionId);
             Assert.Equal(action.SetNumber, skip.ExpectedSetNumber);
             Assert.Equal("Ejercicio omitido. Seguimos con el siguiente.", result.Text);
+            Assert.Null(result.ClientAction);
+        }
+
+        [Fact]
+        public async Task Handle_WhenReactivateActionIsValid_ReusesReactivateCommand()
+        {
+            var action = CreateAction() with
+            {
+                Type = LiveCoachActionTypes.ReactivateExercise,
+                ExerciseName = "Hip Thrust"
+            };
+            var updated = CreateSession(
+                action,
+                CreateExercise(action.ExerciseSessionId, 1, 3, 120, completedSets: 1));
+            var sender = new RecordingSender(action.SessionId, updated);
+            var handler = CreateHandler(action, updated, sender);
+
+            var result = await handler.Handle(
+                new ConfirmLiveCoachActionCommand(action.ActionId, RestTimerIsActive: false),
+                CancellationToken.None);
+
+            var reactivate = Assert.IsType<ReactivateExerciseCommand>(sender.Requests.Single());
+            Assert.Equal(action.SessionId, reactivate.SessionId);
+            Assert.Equal(action.ExerciseSessionId, reactivate.ExerciseSessionId);
+            Assert.Equal("Hip Thrust reactivado.", result.Text);
             Assert.Null(result.ClientAction);
         }
 
@@ -258,6 +284,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                         Guid.NewGuid(), command.SetNumber, command.Peso, command.Repeticiones,
                         command.Rir, true, DateTime.UtcNow),
                     SkipCurrentExerciseCommand => updatedSession ?? throw new InvalidOperationException(),
+                    ReactivateExerciseCommand => updatedSession ?? throw new InvalidOperationException(),
                     GetTrainingSessionByIdQuery => updatedSession ?? new TrainingSessionDto(
                         sessionId, null, DateTime.UtcNow.Date, DateTime.UtcNow,
                         null, EstadoSesionEntrenamiento.EnCurso, []),

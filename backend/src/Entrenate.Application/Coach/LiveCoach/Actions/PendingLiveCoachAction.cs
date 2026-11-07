@@ -4,6 +4,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
     {
         public const string RegisterCurrentSet = "RegisterCurrentSet";
         public const string SkipCurrentExercise = "SkipCurrentExercise";
+        public const string ReactivateExercise = "ReactivateExercise";
     }
 
     public sealed record PendingLiveCoachAction(

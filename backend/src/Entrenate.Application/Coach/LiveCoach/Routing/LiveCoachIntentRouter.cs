@@ -12,6 +12,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         DataQuery,
         RegisterCurrentSet,
         SkipCurrentExercise,
+        ReactivateExercise,
         ConfirmPendingAction,
         CancelPendingAction,
         UpdatePendingCurrentSet,
@@ -225,6 +226,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             if (IsRestQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.RestTimerQuery, false);
 
+            if (IsReactivateExerciseRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.ReactivateExercise, false);
+
             if (IsSkipCurrentExerciseRequest(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.SkipCurrentExercise, false);
 
@@ -408,6 +412,17 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                    text.Contains("omiti este ejercicio", StringComparison.Ordinal) ||
                    text.Contains("pasa al siguiente ejercicio", StringComparison.Ordinal) ||
                    text.Contains("no quiero hacer este ejercicio", StringComparison.Ordinal);
+        }
+
+        private static bool IsReactivateExerciseRequest(string text)
+        {
+            return text.StartsWith("reactiva ", StringComparison.Ordinal) ||
+                   text.StartsWith("volve a activar ", StringComparison.Ordinal) ||
+                   text.StartsWith("quiero volver a hacer ", StringComparison.Ordinal) ||
+                   text.StartsWith("recupera ", StringComparison.Ordinal) ||
+                   (text.StartsWith("saca ", StringComparison.Ordinal) &&
+                    text.Contains(" de omitidos", StringComparison.Ordinal)) ||
+                   text.StartsWith("volvamos a ", StringComparison.Ordinal);
         }
 
         private static bool IsBestSetQuery(string text)

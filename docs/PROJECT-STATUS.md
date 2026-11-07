@@ -29,30 +29,101 @@
 ## Current work
 
 - Live Coach V0 — STT vertical slice is closed: in-browser audio capture
-  (getUserMedia, MediaRecorder, codec selection hierarchy, 15s limit), authenticated
-  endpoint POST /api/coach/live/transcriptions, ILiveCoachSpeechToText abstraction,
-  GroqLiveCoachSpeechToTextAdapter (whisper-large-v3-turbo), in-memory transient audio
+  (`getUserMedia`, `MediaRecorder`, codec selection hierarchy, 15s limit), authenticated
+  endpoint `POST /api/coach/live/transcriptions`, `ILiveCoachSpeechToText` abstraction,
+  `GroqLiveCoachSpeechToTextAdapter` (`whisper-large-v3-turbo`), in-memory transient audio
   processing without persistence, typed error handling, and real transcript display in
   the Training Live Coach sheet.
-- Live Coach V0 — TTS vertical slice is closed: authenticated endpoint POST /api/coach/live/speech, ILiveCoachTextToSpeech abstraction, ElevenLabsLiveCoachTextToSpeechAdapter, strict responseId validation against ephemeral cache (TTL 60s), zero arbitrary text acceptance from client, audio/mpeg stream response, voice preference toggle, speaking state animation in Acero Térmico V5, audio playback lifecycle management with URL cleanup, and robust error recovery where text remains visible if TTS fails.
-- Live Coach V0 — contextual text response vertical slice is closed: authenticated endpoint POST /api/coach/live/respond, authoritative active session projection, ILiveCoachContextBuilder, 7 read-only deterministic tools in LiveCoachToolRegistry, intent routing for queries/mutations/out-of-scope, grounded LLM response via shared ICoachConversationProvider (Groq), ephemeral response cache (ILiveCoachResponseCache), non-authoritative clientSnapshot for drift detection, and full frontend integration in Training with live voice-to-text-to-coach response and text fallback.
-- Live Coach V0 visual/UX polish is closed in Training: the shared animated face, concise state hierarchy, compact text fallback, real playback-synchronized speaking state, long-response scrolling, reduced motion and accessible sheet controls are aligned with Acero Térmico V5.
-- Live Coach V0 — Register Current Set mutation vertical slice is closed: deterministic intent/extraction, 45-second server-side pending actions, tactile confirmation, authoritative current-set revalidation, reuse of Training's real set command, single-use protection, cancellation and immediate Training session synchronization.
-- Live Coach V0 — voice confirmation of pending actions is closed: explicit conservative `sí`/`no` routing resolves only the active server-side action for the authenticated user and session, shares the tactile confirm/cancel executor, rejects ambiguous/stale/expired input without mutation, preserves single-use concurrency and synchronizes the authoritative Training session after success.
+
+- Live Coach V0 — TTS vertical slice is closed: authenticated endpoint
+  `POST /api/coach/live/speech`, `ILiveCoachTextToSpeech` abstraction,
+  `ElevenLabsLiveCoachTextToSpeechAdapter`, strict `responseId` validation against
+  ephemeral cache (TTL 60s), zero arbitrary text acceptance from client,
+  `audio/mpeg` stream response, voice preference toggle, speaking state animation
+  in Acero Térmico V5, audio playback lifecycle management with URL cleanup,
+  and robust error recovery where text remains visible if TTS fails.
+
+- Live Coach V0 — contextual text response vertical slice is closed:
+  authenticated endpoint `POST /api/coach/live/respond`, authoritative active-session
+  projection, `ILiveCoachContextBuilder`, deterministic read-only tools in
+  `LiveCoachToolRegistry`, intent routing for queries/mutations/out-of-scope,
+  grounded LLM response via shared `ICoachConversationProvider` (Groq),
+  ephemeral response cache (`ILiveCoachResponseCache`), non-authoritative
+  `clientSnapshot` for drift detection, and full frontend integration in Training
+  with live voice-to-text-to-coach response and text fallback.
+
+- Live Coach V0 — visual/UX polish is closed in Training: the shared animated face,
+  concise state hierarchy, compact text fallback, playback-synchronized speaking state,
+  long-response scrolling, reduced motion and accessible sheet controls are aligned
+  with Acero Térmico V5.
+
+- Live Coach V0 — Register Current Set mutation vertical slice is closed:
+  deterministic intent/extraction, server-side ephemeral pending actions,
+  authoritative current-set revalidation, reuse of Training's real set command,
+  single-use protection, cancellation and immediate Training session synchronization.
+
+- Live Coach V0 — voice confirmation of pending actions is closed:
+  explicit conservative `sí` / `no` routing resolves only the active server-side
+  pending action for the authenticated user and session, shares the tactile
+  confirm/cancel executor, rejects ambiguous/stale/expired input without mutation,
+  preserves single-use concurrency and synchronizes the authoritative Training
+  session after success.
+
+- Live Coach V0 — pending set proposal editing is closed:
+  active `RegisterCurrentSet` pending actions can be corrected by voice before
+  confirmation, updating only weight, repetitions and RIR in the server-side
+  ephemeral payload while preserving `actionId`, TTL, ownership, stale checks
+  and single-use semantics.
+
+- Live Coach V0 — rest timer control is closed:
+  deterministic `StartRestTimer`, `StopRestTimer` and read-only rest queries operate
+  over the existing shared `guidedRest` state, use the prescribed rest duration,
+  bypass the conversation provider and never create a second timer.
+
+- Live Coach V0 — auto-rest after set confirmation is closed:
+  after a successful `RegisterCurrentSet` confirmation, Training synchronizes the
+  authoritative updated session and starts the prescribed rest on the same shared
+  timer when applicable, without restarting an already active timer or blocking
+  the set mutation.
+
+- Live Coach V0 — Performance Queries V1 is closed:
+  deterministic read-only queries expose previous-set performance, previous RIR,
+  remaining sets, previous exercise performance, next exercise, remaining exercises
+  and structural session progress without provider calls or invented metrics.
+  Ambiguous requests such as “best set” or comparisons ask for an explicit criterion
+  instead of inventing one.
+
+- Training / Live Coach — Exercise Skip V0 is closed:
+  `EjercicioSesion` supports an explicit persisted `Omitido` state, omitted exercises
+  are ignored by `CurrentPendingTrainingSetResolver`, completed series are preserved,
+  Progress continues to consume only real completed sets, History exposes omitted
+  exercises, and Live Coach can propose skipping the current exercise through a
+  confirmed server-side pending action.
+
+- Training — omitted exercises can be reactivated while the session remains
+  `EnCurso`; reactivation restores the exercise to the authoritative pending resolver
+  without altering previously completed sets.
+
 - Frontend Adaptive Training V3 is closed. It configures today's conditions,
   generates and reviews the adapted proposal, presents structured before/after
   changes, supports temporary conversation and explicitly confirms the proposal
   to create the backend-owned active training session.
+
 - Adaptive Training confirmation handles idempotent success, stale proposals,
   existing active-session recovery and direct navigation into Training.
-- Coach Hub exposes Adaptive Training through the existing routine/day
-  selection flow; Home and routine detail retain their contextual entries.
+
+- Coach Hub exposes Adaptive Training through the existing routine/day selection flow;
+  Home and routine detail retain their contextual entries.
+
 - Frontend Routine Planner V2 is closed with proposal generation, review,
   temporary conversation and explicit confirmation/persistence.
-- Next: continue Entrenate Coach backend or the next requested capability.
-- The shared Groq conversation provider retries once with a larger output
-  budget when the provider reports `incomplete` due to `max_output_tokens`;
+
+- The shared Groq conversation provider retries once with a larger output budget
+  when the provider reports `incomplete` due to `max_output_tokens`;
   partial answers are never returned as completed responses.
+
+- Next: add Live Coach voice reactivation for omitted exercises and continue with
+  the next controlled in-session capabilities.
 
 ## Entrenate Coach
 
@@ -75,6 +146,7 @@ Available:
 - Routine Planner proposal generation
 - Routine Planner confirmation
 - Adaptive Training
+- Live Coach V0
 
 Planned:
 
@@ -131,6 +203,27 @@ Routine Planner V2.6:
 - shared provider output-limit handling applies equally to Routine Planner and
   Progress Coach without changing their API contracts.
 
+### Live Coach backend / Training integration
+
+Live Coach V0 currently includes:
+
+- authenticated STT through Groq Speech-to-Text;
+- authenticated TTS through ElevenLabs;
+- deterministic and grounded contextual session queries;
+- server-side ephemeral pending actions;
+- voice and tactile confirmation/cancellation;
+- voice correction of pending `RegisterCurrentSet` proposals;
+- authoritative set registration through Training commands;
+- deterministic rest timer start/stop/query flows;
+- automatic prescribed rest after successful set confirmation;
+- deterministic performance/session queries;
+- explicit exercise omission through Training domain state;
+- Training synchronization after Coach mutations;
+- stale, expiry, ownership, concurrency and single-use protections.
+
+Current Live Coach mutations must always operate through controlled backend-owned
+contracts and authoritative Training state.
+
 ### Coach principles
 
 - Deterministic engines and product rules are the source of truth.
@@ -139,6 +232,13 @@ Routine Planner V2.6:
 - Coach must not invent training data.
 - Provider-specific infrastructure must remain replaceable.
 - Mutations must respect Domain/Application rules.
+- Live Coach mutations must use explicit deterministic routing and authoritative
+  Training state.
+- Pending mutations remain server-side, ephemeral and single-use.
+- Mutations that can discard or materially alter training state require explicit
+  confirmation.
+- Client snapshots are advisory for transient state and must not override
+  authoritative Training data.
 - Future Coach capabilities must not be implemented prematurely.
 
 ### Frontend Progress Coach V1
@@ -154,7 +254,7 @@ Closed:
 
 Next:
 
-- Return to Entrenate Coach backend work.
+- Continue Live Coach V0 and the next controlled Coach capabilities.
 
 Coming-soon entries:
 

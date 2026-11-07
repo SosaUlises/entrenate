@@ -4,6 +4,7 @@ using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Rules;
 using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
 using Entrenate.Application.TrainingSessions.Commands.SkipCurrentExercise;
+using Entrenate.Application.TrainingSessions.Commands.ReactivateExercise;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById;
 using MediatR;
 
@@ -61,6 +62,18 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
                 return new LiveCoachActionConfirmationDto(
                     skippedSession,
                     "Ejercicio omitido. Seguimos con el siguiente.");
+            }
+
+            if (action.Type == LiveCoachActionTypes.ReactivateExercise)
+            {
+                var reactivatedSession = await _sender.Send(
+                    new ReactivateExerciseCommand(
+                        action.SessionId,
+                        action.ExerciseSessionId),
+                    cancellationToken);
+                return new LiveCoachActionConfirmationDto(
+                    reactivatedSession,
+                    $"{action.ExerciseName} reactivado.");
             }
 
             await _sender.Send(

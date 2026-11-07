@@ -217,6 +217,151 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         [Fact]
+        public async Task Handle_WhenReactivateExerciseIsExplicit_CreatesPendingActionWithoutMutation()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Prensa", 3));
+            var hipThrust = session.Ejercicios.OrderBy(x => x.Orden).First();
+            hipThrust.RegistrarOActualizarSerie(1, 80, 8, 2, DateTime.UtcNow);
+            session.OmitirEjercicio(hipThrust.Id);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-reactivate", "audio", "reactivá hip thrust", null),
+                CancellationToken.None);
+
+            Assert.NotNull(result.PendingAction);
+            Assert.Equal(LiveCoachActionTypes.ReactivateExercise, result.PendingAction.Type);
+            Assert.Equal("Reactivar Hip Thrust", result.PendingAction.Summary);
+            Assert.Equal("Hip Thrust está omitido. ¿Querés reactivarlo?", result.Text);
+            Assert.True(hipThrust.Omitido);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenReactivatePendingActionIsCancelled_KeepsExerciseOmitted()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3));
+            var exercise = session.Ejercicios.Single();
+            session.OmitirEjercicio(exercise.Id);
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-reactivate", "audio", "reactivá hip thrust", null),
+                CancellationToken.None);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-no-reactivate", "audio", "no", null),
+                CancellationToken.None);
+
+            Assert.Equal("Listo, lo dejo omitido.", result.Text);
+            Assert.True(exercise.Omitido);
+            Assert.Equal(1, _pendingActionExecutor.CancelCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNoExercisesAreOmitted_ReturnsDeterministicResponse()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-active", "audio", "reactivá hip thrust", null),
+                CancellationToken.None);
+
+            Assert.Equal("Hip Thrust ya está activo.", result.Text);
+            Assert.Null(result.PendingAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNoExercisesAreOmittedAndNameDoesNotMatch_ReportsNoneAvailable()
+        {
+            var session = CreateMultiExerciseSession(("Prensa", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-none", "audio", "reactivá hip thrust", null),
+                CancellationToken.None);
+
+            Assert.Equal("No tenés ejercicios omitidos para reactivar.", result.Text);
+            Assert.Null(result.PendingAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenReactivationNameIsNotFound_DoesNotCreatePendingAction()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Prensa", 3));
+            session.OmitirEjercicio(session.Ejercicios.First().Id);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-unknown", "audio", "reactivá sentadilla", null),
+                CancellationToken.None);
+
+            Assert.Contains("No encontré", result.Text);
+            Assert.Null(result.PendingAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenReactivationNameIsAmbiguous_AsksForClarification()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press banca barra", 3),
+                ("Press banca mancuernas", 3));
+            foreach (var exercise in session.Ejercicios)
+                session.OmitirEjercicio(exercise.Id);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-ambiguous", "audio", "reactivá press banca", null),
+                CancellationToken.None);
+
+            Assert.Contains("más de un ejercicio omitido parecido", result.Text);
+            Assert.Null(result.PendingAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenReactivationConfirmationIsStale_DoesNotConfirm()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3));
+            session.OmitirEjercicio(session.Ejercicios.Single().Id);
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-reactivate", "audio", "reactivá hip thrust", null),
+                CancellationToken.None);
+            _pendingActionExecutor.ThrowConflict = true;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-confirm-stale", "audio", "sí", null),
+                CancellationToken.None);
+
+            Assert.Contains("La sesión cambió", result.Text);
+            Assert.True(session.Ejercicios.Single().Omitido);
+        }
+
+        [Fact]
+        public async Task Handle_WhenExerciseWasAlreadyReactivated_ReturnsSpecificResponse()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3));
+            session.OmitirEjercicio(session.Ejercicios.Single().Id);
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-reactivate", "audio", "reactivá hip thrust", null),
+                CancellationToken.None);
+            _pendingActionExecutor.ThrowConflict = true;
+            _pendingActionExecutor.ConflictMessage = "El ejercicio no está omitido.";
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-confirm-active", "audio", "sí", null),
+                CancellationToken.None);
+
+            Assert.Equal("Ese ejercicio ya fue reactivado.", result.Text);
+        }
+
+        [Fact]
         public async Task Handle_WhenRegisterCurrentSetIsMissingWeight_AsksForWeightWithoutPendingAction()
         {
             var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.EnCurso);
@@ -2122,6 +2267,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             public int ConfirmCount { get; private set; }
             public int CancelCount { get; private set; }
             public bool ThrowConflict { get; set; }
+            public string ConflictMessage { get; set; } = "stale";
             public PendingLiveCoachAction? ConfirmedAction { get; private set; }
             public bool LastRestTimerIsActive { get; private set; }
             public LiveCoachClientActionDto? ClientActionToReturn { get; set; }
@@ -2137,7 +2283,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 if (ThrowConflict)
                 {
                     store.Actions.Remove(actionId);
-                    throw new ConflictException("stale");
+                    throw new ConflictException(ConflictMessage);
                 }
 
                 var action = store.Actions[actionId];

@@ -118,12 +118,22 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                         updatedSession: confirmation.UpdatedSession,
                         clientAction: confirmation.ClientAction);
                 }
+                catch (ConflictException exception) when (
+                    activePendingAction.Type == LiveCoachActionTypes.ReactivateExercise &&
+                    exception.Message.Contains("no está omitido", StringComparison.OrdinalIgnoreCase))
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "Ese ejercicio ya fue reactivado.");
+                }
                 catch (Exception exception) when (exception is ConflictException or NotFoundException)
                 {
                     return CreateDirectResponse(
                         request.ClientTurnId,
                         activePendingAction.Type == LiveCoachActionTypes.SkipCurrentExercise
                             ? "La sesión cambió. Volvé a pedirme que salte el ejercicio."
+                            : activePendingAction.Type == LiveCoachActionTypes.ReactivateExercise
+                                ? "La sesión cambió. Volvé a pedirme que reactive el ejercicio."
                             : "La propuesta ya no está vigente. Decime nuevamente cómo salió la serie.");
                 }
             }
@@ -139,6 +149,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                         request.ClientTurnId,
                         activePendingAction.Type == LiveCoachActionTypes.SkipCurrentExercise
                             ? "Listo, seguimos con este ejercicio."
+                            : activePendingAction.Type == LiveCoachActionTypes.ReactivateExercise
+                                ? "Listo, lo dejo omitido."
                             : "Listo, no la registro.");
                 }
                 catch (Exception exception) when (exception is ConflictException or NotFoundException)
@@ -155,7 +167,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 {
                     return CreateDirectResponse(
                         request.ClientTurnId,
-                        "¿Querés saltarlo? Decime sí o no.",
+                        activePendingAction.Type == LiveCoachActionTypes.ReactivateExercise
+                            ? "¿Querés reactivarlo? Decime sí o no."
+                            : "¿Querés saltarlo? Decime sí o no.",
                         ToDto(activePendingAction));
                 }
 
@@ -239,12 +253,30 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     request.ClientTurnId);
             }
 
+            if (routing.Kind == LiveCoachIntentKind.ReactivateExercise)
+            {
+                return CreateReactivateExerciseResponse(
+                    session,
+                    userId,
+                    request.ClientTurnId,
+                    request.Text);
+            }
+
             if (routing.Kind == LiveCoachIntentKind.PendingActionClarification &&
                 activePendingAction?.Type == LiveCoachActionTypes.SkipCurrentExercise)
             {
                 return CreateDirectResponse(
                     request.ClientTurnId,
                     "¿Querés saltarlo? Decime sí o no.",
+                    ToDto(activePendingAction));
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.PendingActionClarification &&
+                activePendingAction?.Type == LiveCoachActionTypes.ReactivateExercise)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    "¿Querés reactivarlo? Decime sí o no.",
                     ToDto(activePendingAction));
             }
 
@@ -547,6 +579,65 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 ToDto(action));
         }
 
+        private LiveCoachRespondResponseDto CreateReactivateExerciseResponse(
+            Entrenate.Domain.Entidades.SesionEntrenamiento session,
+            string userId,
+            string clientTurnId,
+            string requestText)
+        {
+            var resolution = LiveCoachExerciseReactivationResolver.Resolve(session, requestText);
+            if (resolution.Status == LiveCoachExerciseReactivationStatus.NoOmittedExercises)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    "No tenés ejercicios omitidos para reactivar.");
+            }
+
+            if (resolution.Status == LiveCoachExerciseReactivationStatus.AlreadyActive)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    $"{resolution.Exercise!.Ejercicio.Nombre} ya está activo.");
+            }
+
+            if (resolution.Status == LiveCoachExerciseReactivationStatus.Ambiguous)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    "Tenés más de un ejercicio omitido parecido. ¿Cuál querés reactivar?");
+            }
+
+            if (resolution.Status == LiveCoachExerciseReactivationStatus.NotFound ||
+                resolution.Exercise is null)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    "No encontré ese ejercicio entre los omitidos de esta sesión.");
+            }
+
+            var exercise = resolution.Exercise;
+            var exerciseName = exercise.Ejercicio.Nombre;
+            var expiresAtUtc = DateTime.UtcNow.AddSeconds(45);
+            var action = new PendingLiveCoachAction(
+                Guid.NewGuid(),
+                userId,
+                session.Id,
+                exercise.Id,
+                0,
+                0,
+                0,
+                null,
+                expiresAtUtc,
+                LiveCoachActionTypes.ReactivateExercise,
+                exerciseName);
+            _pendingActionStore.Set(action);
+
+            return CreateDirectResponse(
+                clientTurnId,
+                $"{exerciseName} está omitido. ¿Querés reactivarlo?",
+                ToDto(action));
+        }
+
         private LiveCoachRespondResponseDto CreateDirectResponse(
             string clientTurnId,
             string text,
@@ -585,6 +676,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     : "series pendientes";
                 return $"Saltarse {action.ExerciseName} con {action.PendingSetCount} {seriesLabel}";
             }
+
+            if (action.Type == LiveCoachActionTypes.ReactivateExercise)
+                return $"Reactivar {action.ExerciseName}";
 
             var weight = action.WeightKg.ToString("0.##", CultureInfo.InvariantCulture);
             return $"{weight} kg × {action.Repetitions}" +
