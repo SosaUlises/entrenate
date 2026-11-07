@@ -99,6 +99,8 @@
   Progress continues to consume only real completed sets, History exposes omitted
   exercises, and Live Coach can propose skipping the current exercise through a
   confirmed server-side pending action.
+  
+  - Live Coach V0 — voice exercise reactivation is closed: omitted exercises can be resolved by name and reactivated through the existing server-side pending-action flow, with tactile/voice confirmation, ownership, stale, TTL and single-use protections. Reactivation reuses Training's authoritative command and lets `CurrentPendingTrainingSetResolver` naturally return to the earliest real pending set.
 
 - Training — omitted exercises can be reactivated while the session remains
   `EnCurso`; reactivation restores the exercise to the authoritative pending resolver

@@ -198,6 +198,115 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         [Fact]
+        public async Task Handle_WhenNavigateNextRequested_UsesVisibleExerciseAndDoesNotInvokeProvider()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Prensa", 3), ("Curl Femoral", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var visible = session.Ejercicios.OrderBy(x => x.Orden).First();
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-nav-next",
+                    "audio",
+                    "mostrame el siguiente ejercicio",
+                    new ClientSnapshotInput(null, null, null, null, null, visible.Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Mostrando Prensa.", result.Text);
+            Assert.Equal("NavigateNextExercise", result.ClientAction?.Type);
+            Assert.Equal(session.Ejercicios.OrderBy(x => x.Orden).ElementAt(1).Id, result.ClientAction?.ExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNavigatePreviousRequested_UsesVisibleExercise()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Prensa", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var visible = session.Ejercicios.OrderBy(x => x.Orden).Last();
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-nav-previous",
+                    "audio",
+                    "volvé al ejercicio anterior",
+                    new ClientSnapshotInput(null, null, null, null, null, visible.Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Volviendo a Hip Thrust.", result.Text);
+            Assert.Equal("NavigatePreviousExercise", result.ClientAction?.Type);
+            Assert.Equal(session.Ejercicios.OrderBy(x => x.Orden).First().Id, result.ClientAction?.ExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNavigateByNameRequested_CanOpenOmittedExerciseWithoutReactivatingIt()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Prensa", 3));
+            var omitted = session.Ejercicios.OrderBy(x => x.Orden).First();
+            session.OmitirEjercicio(omitted.Id);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-nav-name", "audio", "abrí hip thrust", null),
+                CancellationToken.None);
+
+            Assert.Equal("Mostrando Hip Thrust.", result.Text);
+            Assert.Equal("NavigateToExercise", result.ClientAction?.Type);
+            Assert.Equal(omitted.Id, result.ClientAction?.ExerciseSessionId);
+            Assert.True(omitted.Omitido);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("mostrame remo", "No encuentro ese ejercicio en esta sesión.")]
+        [InlineData("mostrame press", "Encontré más de un ejercicio parecido. ¿Cuál querés ver?")]
+        public async Task Handle_WhenNavigateByNameCannotResolve_DoesNotNavigate(
+            string requestText,
+            string expectedText)
+        {
+            var session = CreateMultiExerciseSession(("Press Plano", 3), ("Press Inclinado", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-nav-unresolved", "audio", requestText, null),
+                CancellationToken.None);
+
+            Assert.Equal(expectedText, result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("volvé al ejercicio anterior", true, "Este es el primer ejercicio.")]
+        [InlineData("mostrame el siguiente ejercicio", false, "Este es el último ejercicio.")]
+        public async Task Handle_WhenNavigateRelativeHitsBoundary_ReturnsDeterministicMessage(
+            string requestText,
+            bool useFirst,
+            string expectedText)
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Prensa", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var ordered = session.Ejercicios.OrderBy(x => x.Orden).ToList();
+            var visible = useFirst ? ordered.First() : ordered.Last();
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-nav-boundary",
+                    "audio",
+                    requestText,
+                    new ClientSnapshotInput(null, null, null, null, null, visible.Id)),
+                CancellationToken.None);
+
+            Assert.Equal(expectedText, result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
         public async Task Handle_WhenSkipPendingActionIsCancelled_DoesNotMutateExercise()
         {
             var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Prensa", 3));

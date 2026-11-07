@@ -37,6 +37,7 @@ export function ActiveTrainingContent() {
   const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
   const [sessionNotice, setSessionNotice] = useState<string | null>(null);
   const [guidedRest, setGuidedRest] = useState<GuidedRestState | null>(null);
+  const [visibleExerciseSessionId, setVisibleExerciseSessionId] = useState<string | null>(null);
   const [workoutGuideIds, setWorkoutGuideIds] = useState<Record<string, string>>({});
   const catalogRequestedRef = useRef(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -82,6 +83,9 @@ export function ActiveTrainingContent() {
         router.replace("/login");
       } else if (result.status === "success") {
         setView({ status: "ready", session: result.data });
+        setVisibleExerciseSessionId(
+          getFirstMissingTarget(result.data)?.exercise.id ?? result.data.ejercicios[0]?.id ?? null,
+        );
       } else {
         setView({ status: result.status === "not-found" ? "empty" : "error" });
       }
@@ -228,6 +232,15 @@ export function ActiveTrainingContent() {
       return true;
     }
 
+    if (action.type === "NavigateNextExercise" ||
+        action.type === "NavigatePreviousExercise" ||
+        action.type === "NavigateToExercise") {
+      const currentSession = updatedSession ?? (view.status === "ready" ? view.session : null);
+      if (!currentSession?.ejercicios.some((exercise) => exercise.id === action.exerciseSessionId)) return false;
+      setVisibleExerciseSessionId(action.exerciseSessionId);
+      return true;
+    }
+
     return false;
   }
 
@@ -238,12 +251,17 @@ export function ActiveTrainingContent() {
     setView({ status: "ready", session: updatedSession });
     setIsDirty(false);
 
+    if (!clientAction || !clientAction.type.startsWith("Navigate")) {
+      setVisibleExerciseSessionId(getFirstMissingTarget(updatedSession)?.exercise.id ?? null);
+    }
+
     return clientAction
       ? applyLiveCoachClientAction(clientAction, updatedSession)
       : true;
   }
 
   const session = view.status === "ready" ? view.session : null;
+
   const hasIncompleteTargets = session ? !areTargetSetsComplete(session) : false;
   const targetsComplete = Boolean(session && !hasIncompleteTargets);
   const shouldShowRecoveredFinalState = targetsComplete && mode === null;
@@ -272,6 +290,7 @@ export function ActiveTrainingContent() {
               ? { isActive: guidedRest.remaining > 0, remainingSeconds: guidedRest.remaining }
               : { isActive: false, remainingSeconds: null }}
             session={session}
+            visibleExerciseSessionId={visibleExerciseSessionId}
           />
         ) : null}
         {showTrainingActions || showModeSelectionActions ? (
@@ -316,10 +335,12 @@ export function ActiveTrainingContent() {
               onMissing={reload}
               onSaved={recordSet}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
+              onVisibleExerciseChange={setVisibleExerciseSessionId}
               rest={guidedRest}
               session={session}
               setRest={setGuidedRest}
               workoutGuideIds={workoutGuideIds}
+              visibleExerciseSessionId={visibleExerciseSessionId}
             />
           ) : mode === null ? (
             <div className="mt-6 min-w-0 max-w-full">
@@ -359,10 +380,12 @@ export function ActiveTrainingContent() {
               onMissing={reload}
               onSaved={recordSet}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
+              onVisibleExerciseChange={setVisibleExerciseSessionId}
               rest={guidedRest}
               session={session}
               setRest={setGuidedRest}
               workoutGuideIds={workoutGuideIds}
+              visibleExerciseSessionId={visibleExerciseSessionId}
             />
           ) : null}
           {mode === "free" ? (
@@ -376,7 +399,9 @@ export function ActiveTrainingContent() {
                 setIsDirty(false);
               }}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
+              onVisibleExerciseChange={setVisibleExerciseSessionId}
               session={session}
+              visibleExerciseSessionId={visibleExerciseSessionId}
             />
           ) : null}
         </>

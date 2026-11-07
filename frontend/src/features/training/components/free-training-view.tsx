@@ -20,11 +20,7 @@ function getFirstPendingTargetNumber(exercise: TrainingSessionExercise): number 
   return null;
 }
 
-function getInitialExpandedExerciseId(exercises: TrainingSessionExercise[]): string | null {
-  return exercises.find((exercise) => !exercise.omitido && getCompletedTargetSetCount(exercise) < exercise.seriesObjetivo)?.id ?? null;
-}
-
-export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, onSaved, onSessionUpdated, onUnauthenticated }: {
+export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, onSaved, onSessionUpdated, onUnauthenticated, onVisibleExerciseChange, visibleExerciseSessionId }: {
   session: TrainingSession;
   onDirtyChange: (isDirty: boolean) => void;
   onFinish: () => void;
@@ -32,11 +28,10 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
   onSaved: (exerciseId: string, set: TrainingSet) => void;
   onSessionUpdated: (session: TrainingSession) => void;
   onUnauthenticated: () => void;
+  onVisibleExerciseChange: (exerciseSessionId: string | null) => void;
+  visibleExerciseSessionId: string | null;
 }) {
   const orderedExercises = useMemo(() => getOrderedExercises(session), [session]);
-  const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(() =>
-    getInitialExpandedExerciseId(getOrderedExercises(session)),
-  );
   const [extraCounts, setExtraCounts] = useState<Record<string, number>>({});
   const [dirtyRows, setDirtyRows] = useState<Set<string>>(() => new Set());
   const [reactivatingExerciseId, setReactivatingExerciseId] = useState<string | null>(null);
@@ -66,7 +61,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
     setReactivatingExerciseId(null);
     if (result.status === "success") {
       onSessionUpdated(result.data);
-      setExpandedExerciseId(exerciseId);
+      onVisibleExerciseChange(exerciseId);
       return;
     }
     if (result.status === "unauthenticated") return onUnauthenticated();
@@ -88,7 +83,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
         {orderedExercises.map((exercise) => {
           const completedTargetCount = getCompletedTargetSetCount(exercise);
           const isComplete = completedTargetCount === exercise.seriesObjetivo;
-          const isExpanded = expandedExerciseId === exercise.id;
+          const isExpanded = visibleExerciseSessionId === exercise.id;
           const firstPendingTargetNumber = getFirstPendingTargetNumber(exercise);
           const highestSaved = Math.max(0, ...exercise.series.map((set) => set.numeroSerie));
           const count = Math.max(exercise.seriesObjetivo + (extraCounts[exercise.id] ?? 0), highestSaved);
@@ -100,7 +95,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                 aria-controls={contentId}
                 aria-expanded={isExpanded}
                 className="group flex min-h-[5rem] w-full min-w-0 items-center gap-3 py-3 text-left transition-colors duration-150 hover:bg-surface/25 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-                onClick={() => setExpandedExerciseId((current) => current === exercise.id ? null : exercise.id)}
+                onClick={() => onVisibleExerciseChange(isExpanded ? null : exercise.id)}
                 type="button"
               >
                 <span className="min-w-0 flex-1">

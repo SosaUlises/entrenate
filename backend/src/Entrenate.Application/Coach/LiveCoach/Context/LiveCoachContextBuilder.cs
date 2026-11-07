@@ -11,7 +11,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Context
         int? SetIndex,
         bool? RestIsActive,
         int? RestRemainingSeconds,
-        DateTime? RestCapturedAtUtc);
+        DateTime? RestCapturedAtUtc,
+        Guid? VisibleExerciseSessionId = null);
 
     public interface ILiveCoachContextBuilder
     {

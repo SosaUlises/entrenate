@@ -27,6 +27,7 @@ import type {
   LiveCoachRespondResponse,
 } from "@/features/coach/types/live-coach.types";
 import { cn } from "@/lib/class-names";
+import { getFirstMissingTarget } from "../training-position";
 import type { TrainingSession } from "../types/training.types";
 import { LiveCoachFace, type LiveCoachFaceState } from "./live-coach-face";
 import styles from "./live-coach-prototype.module.css";
@@ -151,6 +152,7 @@ function getAudioFileExtension(mimeType: string): string {
 
 type LiveCoachPrototypeProps = {
   session?: TrainingSession | null;
+  visibleExerciseSessionId?: string | null;
   onSessionUpdated?: (
     session: TrainingSession,
     clientAction?: LiveCoachClientAction | null,
@@ -165,7 +167,7 @@ type LiveCoachPrototypeProps = {
   };
 };
 
-export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer, session }: LiveCoachPrototypeProps) {
+export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer, session, visibleExerciseSessionId }: LiveCoachPrototypeProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<LiveCoachState>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
@@ -268,13 +270,9 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
   }
 
   function getClientSnapshot(): LiveCoachClientSnapshot {
-    const currentExercise =
-      session?.ejercicios.find((e) => e.series.length < e.seriesObjetivo) ??
-      session?.ejercicios[session.ejercicios.length - 1];
-
-    const currentSetIndex = currentExercise
-      ? Math.min(currentExercise.series.length + 1, currentExercise.seriesObjetivo)
-      : null;
+    const authoritativeTarget = session ? getFirstMissingTarget(session) : null;
+    const currentExercise = authoritativeTarget?.exercise ?? null;
+    const currentSetIndex = authoritativeTarget?.setNumber ?? null;
 
     const capturedAtUtc = new Date().toISOString();
 
@@ -286,6 +284,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
         remainingSeconds: restTimer?.remainingSeconds ?? 0,
       },
       setIndex: currentSetIndex,
+      visibleExerciseSessionId: visibleExerciseSessionId ?? currentExercise?.id ?? null,
     };
   }
 

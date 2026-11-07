@@ -21,6 +21,8 @@ namespace Entrenate.Api.Requests.Coach
 
         public int? SetIndex { get; set; }
 
+        public Guid? VisibleExerciseSessionId { get; set; }
+
         public LiveCoachRestTimerSnapshotRequest? RestTimer { get; set; }
     }
 

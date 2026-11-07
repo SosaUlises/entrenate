@@ -9,13 +9,30 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Routing
         [InlineData("saltá este ejercicio")]
         [InlineData("saltemos este ejercicio")]
         [InlineData("omití este ejercicio")]
-        [InlineData("pasá al siguiente ejercicio")]
         [InlineData("no quiero hacer este ejercicio")]
+        [InlineData("no quiero hacer este, pasá al siguiente")]
         public void Route_ExplicitSkipPhrase_ReturnsSkipIntent(string phrase)
         {
             var result = new LiveCoachIntentRouter().Route(phrase);
 
             Assert.Equal(LiveCoachIntentKind.SkipCurrentExercise, result.Kind);
+        }
+
+        [Theory]
+        [InlineData("mostrame el siguiente ejercicio", LiveCoachIntentKind.NavigateNextExercise)]
+        [InlineData("pasá al siguiente", LiveCoachIntentKind.NavigateNextExercise)]
+        [InlineData("siguiente ejercicio", LiveCoachIntentKind.NavigateNextExercise)]
+        [InlineData("volvé al ejercicio anterior", LiveCoachIntentKind.NavigatePreviousExercise)]
+        [InlineData("mostrame el anterior", LiveCoachIntentKind.NavigatePreviousExercise)]
+        [InlineData("abrí hip thrust", LiveCoachIntentKind.NavigateToExercise)]
+        [InlineData("llevame a curl femoral", LiveCoachIntentKind.NavigateToExercise)]
+        public void Route_VisualNavigationPhrase_ReturnsNavigationIntent(
+            string phrase,
+            LiveCoachIntentKind expected)
+        {
+            var result = new LiveCoachIntentRouter().Route(phrase);
+
+            Assert.Equal(expected, result.Kind);
         }
 
         [Fact]

@@ -15,7 +15,8 @@ namespace Entrenate.Application.Coach.LiveCoach.DTOs
 
     public sealed record LiveCoachClientActionDto(
         string Type,
-        int? DurationSeconds = null);
+        int? DurationSeconds = null,
+        Guid? ExerciseSessionId = null);
 
     public sealed record LiveCoachActionConfirmationDto(
         TrainingSessionDto UpdatedSession,

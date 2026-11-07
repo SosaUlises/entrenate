@@ -262,6 +262,18 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     request.Text);
             }
 
+            if (routing.Kind is LiveCoachIntentKind.NavigateNextExercise or
+                LiveCoachIntentKind.NavigatePreviousExercise or
+                LiveCoachIntentKind.NavigateToExercise)
+            {
+                return CreateExerciseNavigationResponse(
+                    session,
+                    request.ClientTurnId,
+                    request.Text,
+                    request.ClientSnapshot?.VisibleExerciseSessionId,
+                    routing.Kind);
+            }
+
             if (routing.Kind == LiveCoachIntentKind.PendingActionClarification &&
                 activePendingAction?.Type == LiveCoachActionTypes.SkipCurrentExercise)
             {
@@ -636,6 +648,41 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 clientTurnId,
                 $"{exerciseName} está omitido. ¿Querés reactivarlo?",
                 ToDto(action));
+        }
+
+        private LiveCoachRespondResponseDto CreateExerciseNavigationResponse(
+            Entrenate.Domain.Entidades.SesionEntrenamiento session,
+            string clientTurnId,
+            string requestText,
+            Guid? visibleExerciseSessionId,
+            LiveCoachIntentKind intent)
+        {
+            var resolution = intent switch
+            {
+                LiveCoachIntentKind.NavigateNextExercise =>
+                    LiveCoachExerciseNavigationResolver.ResolveRelative(session, visibleExerciseSessionId, 1),
+                LiveCoachIntentKind.NavigatePreviousExercise =>
+                    LiveCoachExerciseNavigationResolver.ResolveRelative(session, visibleExerciseSessionId, -1),
+                _ => LiveCoachExerciseNavigationResolver.ResolveByName(session, requestText)
+            };
+
+            if (resolution.Status == LiveCoachExerciseNavigationStatus.FirstExercise)
+                return CreateDirectResponse(clientTurnId, "Este es el primer ejercicio.");
+            if (resolution.Status == LiveCoachExerciseNavigationStatus.LastExercise)
+                return CreateDirectResponse(clientTurnId, "Este es el último ejercicio.");
+            if (resolution.Status == LiveCoachExerciseNavigationStatus.Ambiguous)
+                return CreateDirectResponse(clientTurnId, "Encontré más de un ejercicio parecido. ¿Cuál querés ver?");
+            if (resolution.Status == LiveCoachExerciseNavigationStatus.NotFound || resolution.Exercise is null)
+                return CreateDirectResponse(clientTurnId, "No encuentro ese ejercicio en esta sesión.");
+
+            var actionType = intent.ToString();
+            var prefix = intent == LiveCoachIntentKind.NavigatePreviousExercise ? "Volviendo a" : "Mostrando";
+            return CreateDirectResponse(
+                clientTurnId,
+                $"{prefix} {resolution.Exercise.Ejercicio.Nombre}.",
+                clientAction: new LiveCoachClientActionDto(
+                    actionType,
+                    ExerciseSessionId: resolution.Exercise.Id));
         }
 
         private LiveCoachRespondResponseDto CreateDirectResponse(

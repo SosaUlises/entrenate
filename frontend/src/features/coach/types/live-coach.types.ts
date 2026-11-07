@@ -11,6 +11,7 @@ export type LiveCoachTranscriptionResponse = {
 export type LiveCoachClientSnapshot = {
   exerciseId?: string | null;
   setIndex?: number | null;
+  visibleExerciseSessionId?: string | null;
   restTimer?: {
     isActive: boolean;
     remainingSeconds: number;
@@ -39,7 +40,12 @@ export type LiveCoachRespondResponse = {
 
 export type LiveCoachClientAction =
   | { type: "StartRestTimer"; durationSeconds: number }
-  | { type: "StopRestTimer"; durationSeconds?: null };
+  | { type: "StopRestTimer"; durationSeconds?: null }
+  | {
+    type: "NavigateNextExercise" | "NavigatePreviousExercise" | "NavigateToExercise";
+    exerciseSessionId: string;
+    durationSeconds?: null;
+  };
 
 export type LiveCoachPendingAction = {
   actionId: string;

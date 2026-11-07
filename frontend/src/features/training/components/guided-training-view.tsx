@@ -22,7 +22,7 @@ function formatTime(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-export function GuidedTrainingView({ rest, setRest, session, onDirtyChange, onFinish, onMissing, onSaved, onUnauthenticated, workoutGuideIds }: {
+export function GuidedTrainingView({ rest, setRest, session, onDirtyChange, onFinish, onMissing, onSaved, onUnauthenticated, onVisibleExerciseChange, visibleExerciseSessionId, workoutGuideIds }: {
   rest: GuidedRestState | null;
   setRest: Dispatch<SetStateAction<GuidedRestState | null>>;
   session: TrainingSession;
@@ -31,10 +31,15 @@ export function GuidedTrainingView({ rest, setRest, session, onDirtyChange, onFi
   onMissing: () => void;
   onSaved: (exerciseId: string, set: TrainingSet) => void;
   onUnauthenticated: () => void;
+  onVisibleExerciseChange: (exerciseSessionId: string | null) => void;
+  visibleExerciseSessionId: string | null;
   workoutGuideIds: Record<string, string>;
 }) {
   const [showSavedNotice, setShowSavedNotice] = useState(false);
   const target = getFirstMissingTarget(session);
+  const previewExercise = visibleExerciseSessionId && visibleExerciseSessionId !== target?.exercise.id
+    ? session.ejercicios.find((exercise) => exercise.id === visibleExerciseSessionId) ?? null
+    : null;
 
   useEffect(() => {
     if (!showSavedNotice) return;
@@ -68,6 +73,36 @@ export function GuidedTrainingView({ rest, setRest, session, onDirtyChange, onFi
     );
   }
 
+  if (previewExercise) {
+    const position = [...session.ejercicios]
+      .sort((first, second) => first.orden - second.orden)
+      .findIndex((exercise) => exercise.id === previewExercise.id) + 1;
+    return (
+      <div className="mt-3 flex min-h-[calc(100dvh-7.5rem)] min-w-0 w-full flex-col">
+        <TrainingProgressRail session={session} />
+        <div className="mt-5 border-b border-border/50 pb-5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.08em] text-thermal-accent">Vista previa</p>
+            {previewExercise.omitido ? <span className="text-[0.8125rem] font-semibold text-thermal-accent">Omitido</span> : null}
+          </div>
+          <p className="mt-2 text-[0.8125rem] font-semibold tracking-[0.08em] text-text-secondary">
+            EJERCICIO {String(position).padStart(2, "0")} / {String(session.ejercicios.length).padStart(2, "0")}
+          </p>
+          <h2 className="mt-1 break-words font-brand text-2xl font-bold leading-tight text-text-primary">{previewExercise.nombre}</h2>
+          <p className="mt-3 text-sm leading-6 text-text-secondary">
+            {previewExercise.seriesObjetivo} series · {previewExercise.repeticionesMinimasObjetivo}–{previewExercise.repeticionesMaximasObjetivo} reps · RIR {previewExercise.rirObjetivoMinimo}–{previewExercise.rirObjetivoMaximo} · {previewExercise.descansoObjetivoSegundos} s
+          </p>
+        </div>
+        <p className="mt-5 text-sm leading-6 text-text-secondary">
+          La próxima serie sigue siendo {target.exercise.nombre}, serie {target.setNumber}.
+        </p>
+        <Button className="mt-5" onClick={() => onVisibleExerciseChange(target.exercise.id)} variant="secondary">
+          Volver al ejercicio actual
+        </Button>
+      </div>
+    );
+  }
+
   const { exercise, exercisePosition, setNumber } = target;
   const previousSet = exercise.series
     .filter((set) => set.completada && set.numeroSerie < setNumber)
@@ -77,8 +112,11 @@ export function GuidedTrainingView({ rest, setRest, session, onDirtyChange, onFi
     const next = getFirstMissingTarget(session, { exerciseId: exercise.id, set });
     onSaved(exercise.id, set);
     if (next) {
+      onVisibleExerciseChange(next.exercise.id);
       setShowSavedNotice(true);
       setRest({ next, remaining: exercise.descansoObjetivoSegundos });
+    } else {
+      onVisibleExerciseChange(null);
     }
   }
 

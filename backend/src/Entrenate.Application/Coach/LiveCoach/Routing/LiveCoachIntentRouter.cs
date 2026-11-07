@@ -13,6 +13,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         RegisterCurrentSet,
         SkipCurrentExercise,
         ReactivateExercise,
+        NavigateNextExercise,
+        NavigatePreviousExercise,
+        NavigateToExercise,
         ConfirmPendingAction,
         CancelPendingAction,
         UpdatePendingCurrentSet,
@@ -232,6 +235,15 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             if (IsSkipCurrentExerciseRequest(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.SkipCurrentExercise, false);
 
+            if (IsNavigatePreviousExerciseRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.NavigatePreviousExercise, false);
+
+            if (IsNavigateNextExerciseRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.NavigateNextExercise, false);
+
+            if (IsNavigateToExerciseRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.NavigateToExercise, false);
+
             if (IsPendingSetUpdateRequest(pendingDecision) &&
                 !LooksLikeCompleteSetStatement(pendingDecision) &&
                 !pendingDecision.StartsWith("hice ", StringComparison.Ordinal))
@@ -410,8 +422,39 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             return text.Contains("salta este ejercicio", StringComparison.Ordinal) ||
                    text.Contains("saltemos este ejercicio", StringComparison.Ordinal) ||
                    text.Contains("omiti este ejercicio", StringComparison.Ordinal) ||
-                   text.Contains("pasa al siguiente ejercicio", StringComparison.Ordinal) ||
-                   text.Contains("no quiero hacer este ejercicio", StringComparison.Ordinal);
+                   (text.Contains("no quiero hacer", StringComparison.Ordinal) &&
+                    (text.Contains("este", StringComparison.Ordinal) ||
+                     text.Contains("ejercicio", StringComparison.Ordinal)));
+        }
+
+        private static bool IsNavigateNextExerciseRequest(string text)
+        {
+            return text is "pasa al siguiente" or "pasa al siguiente ejercicio" or "siguiente ejercicio" ||
+                   ((text.Contains("mostrame", StringComparison.Ordinal) ||
+                     text.Contains("quiero ver", StringComparison.Ordinal) ||
+                     text.Contains("abri", StringComparison.Ordinal) ||
+                     text.Contains("llevame", StringComparison.Ordinal)) &&
+                    (text.Contains("siguiente", StringComparison.Ordinal) ||
+                     text.Contains("proximo", StringComparison.Ordinal)));
+        }
+
+        private static bool IsNavigatePreviousExerciseRequest(string text)
+        {
+            var previous = text.Contains("anterior", StringComparison.Ordinal);
+            if (!previous) return false;
+
+            return text is "ejercicio anterior" or "mostrame el anterior" or "anda al anterior" ||
+                   text.Contains("volve al", StringComparison.Ordinal) ||
+                   text.Contains("mostrame", StringComparison.Ordinal) ||
+                   text.Contains("quiero ver", StringComparison.Ordinal);
+        }
+
+        private static bool IsNavigateToExerciseRequest(string text)
+        {
+            return text.StartsWith("abri ", StringComparison.Ordinal) ||
+                   text.StartsWith("mostrame ", StringComparison.Ordinal) ||
+                   text.StartsWith("llevame a ", StringComparison.Ordinal) ||
+                   text.StartsWith("quiero ver ", StringComparison.Ordinal);
         }
 
         private static bool IsReactivateExerciseRequest(string text)

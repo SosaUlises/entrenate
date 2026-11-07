@@ -222,7 +222,8 @@ namespace Entrenate.Api.Controllers
                     request.ClientSnapshot.SetIndex,
                     request.ClientSnapshot.RestTimer?.IsActive,
                     request.ClientSnapshot.RestTimer?.RemainingSeconds,
-                    request.ClientSnapshot.RestTimer?.CapturedAtUtc);
+                    request.ClientSnapshot.RestTimer?.CapturedAtUtc,
+                    request.ClientSnapshot.VisibleExerciseSessionId);
             }
 
             var command = new RespondLiveCoachCommand(
