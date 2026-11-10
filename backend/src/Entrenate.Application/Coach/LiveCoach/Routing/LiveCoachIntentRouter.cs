@@ -37,6 +37,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         CurrentPrescriptionQuery,
         PreviousSetPerformance,
         PreviousSetRir,
+        CurrentExerciseCompletedSets,
+        CurrentExerciseProgress,
+        CurrentExerciseCompletion,
         RemainingSets,
         BestSetToday,
         PreviousExercisePerformance,
@@ -341,6 +344,15 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
             if (IsPreviousSetPerformanceQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.PreviousSetPerformance, false);
+
+            if (IsCurrentExerciseCompletionQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentExerciseCompletion, false);
+
+            if (IsCurrentExerciseProgressQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentExerciseProgress, false);
+
+            if (IsCurrentExerciseCompletedSetsQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentExerciseCompletedSets, false);
 
             if (IsCurrentExerciseQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentExercise, false);
@@ -674,6 +686,14 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             if (IsPreviousExercisePerformanceQuery(text))
                 return false;
 
+            var asksCompletedRepetitions =
+                (text.Contains("repeticion", StringComparison.Ordinal) ||
+                 text.Contains(" reps", StringComparison.Ordinal)) &&
+                text.Contains("cuantas", StringComparison.Ordinal) &&
+                text.Contains("hice", StringComparison.Ordinal);
+            if (asksCompletedRepetitions)
+                return true;
+
             var targetsPrevious = text.Contains("serie anterior", StringComparison.Ordinal) ||
                                   text.Contains("ultima serie", StringComparison.Ordinal) ||
                                   text.Contains("la anterior", StringComparison.Ordinal) ||
@@ -728,7 +748,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
         private static bool IsRemainingExercisesQuery(string text)
         {
-            if (!text.Contains("ejercicio", StringComparison.Ordinal))
+            if (!text.Contains("ejercicio", StringComparison.Ordinal) ||
+                text.Contains("serie", StringComparison.Ordinal))
                 return false;
 
             if (IsNextExerciseQuery(text))
@@ -745,7 +766,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
         private static bool IsRemainingSetsQuery(string text)
         {
-            if (!text.Contains("serie", StringComparison.Ordinal))
+            if (IsSessionProgressQuery(text) || IsRemainingExercisesQuery(text))
                 return false;
 
             var hasRemainingCue = text.Contains("falta", StringComparison.Ordinal) ||
@@ -754,7 +775,45 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                                   text.Contains("quedan", StringComparison.Ordinal) ||
                                   text.Contains("restan", StringComparison.Ordinal);
 
-            return hasRemainingCue;
+            if (!hasRemainingCue)
+                return false;
+
+            return text.Contains("serie", StringComparison.Ordinal) ||
+                   text.Contains("de este ejercicio", StringComparison.Ordinal) ||
+                   text.StartsWith("cuanto me falta de ", StringComparison.Ordinal);
+        }
+
+        private static bool IsCurrentExerciseCompletedSetsQuery(string text)
+        {
+            if (text.Contains("repeticion", StringComparison.Ordinal) ||
+                text.Contains(" reps", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return text.Contains("cuantas series llevo", StringComparison.Ordinal) ||
+                   text.Contains("cuantas series hice", StringComparison.Ordinal) ||
+                   text.Contains("cuantas series complete", StringComparison.Ordinal) ||
+                   text.Contains("cuantas complete", StringComparison.Ordinal) ||
+                   text == "cuantas llevo";
+        }
+
+        private static bool IsCurrentExerciseProgressQuery(string text)
+        {
+            return text.Contains("como voy con este ejercicio", StringComparison.Ordinal) ||
+                   text.Contains("que progreso llevo aca", StringComparison.Ordinal) ||
+                   text.Contains("que progreso llevo aqui", StringComparison.Ordinal) ||
+                   text.Contains("que progreso llevo de este ejercicio", StringComparison.Ordinal) ||
+                   text.Contains("cuanto llevo de este ejercicio", StringComparison.Ordinal);
+        }
+
+        private static bool IsCurrentExerciseCompletionQuery(string text)
+        {
+            return text.Contains("ya termine este ejercicio", StringComparison.Ordinal) ||
+                   text.Contains("ya esta completo", StringComparison.Ordinal) ||
+                   text.Contains("me queda algo aca", StringComparison.Ordinal) ||
+                   text.Contains("me queda algo aqui", StringComparison.Ordinal) ||
+                   text.Contains("me queda algo de este ejercicio", StringComparison.Ordinal);
         }
 
         private static bool IsSessionProgressQuery(string text)

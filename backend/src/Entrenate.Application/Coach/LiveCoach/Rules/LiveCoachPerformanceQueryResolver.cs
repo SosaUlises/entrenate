@@ -66,26 +66,38 @@ namespace Entrenate.Application.Coach.LiveCoach.Rules
 
         public static string ResolveRemainingSets(SesionEntrenamiento session)
         {
-            var activeExercise = ResolveActiveExercise(session);
-            if (activeExercise == null)
-            {
-                return "No hay un ejercicio activo en la sesión.";
-            }
+            var progress = ResolveCurrentExerciseProgress(session);
+            if (progress is null)
+                return "Ya completaste todas las series de la sesión.";
 
-            var completedCount = activeExercise.Series.Count(s => s.EstaRealmenteCompletada());
-            var remaining = Math.Max(0, activeExercise.SeriesObjetivo - completedCount);
+            return FormatRemainingSets(progress);
+        }
 
-            if (remaining == 0)
-            {
-                return "Ya completaste todas las series de este ejercicio.";
-            }
+        public static string ResolveCompletedSets(SesionEntrenamiento session)
+        {
+            var progress = ResolveCurrentExerciseProgress(session);
+            if (progress is null)
+                return "Ya completaste todas las series de la sesión.";
 
-            if (remaining == 1)
-            {
-                return "Te falta 1 serie de este ejercicio.";
-            }
+            return $"Llevás {progress.CompletedSets} de {progress.TargetSets} series en {progress.ExerciseName}.";
+        }
 
-            return $"Te faltan {remaining} series de este ejercicio.";
+        public static string ResolveCurrentExerciseProgressSummary(SesionEntrenamiento session)
+        {
+            var progress = ResolveCurrentExerciseProgress(session);
+            if (progress is null)
+                return "Ya completaste todas las series de la sesión.";
+
+            return $"Llevás {progress.CompletedSets} de {progress.TargetSets} series completadas en {progress.ExerciseName}.";
+        }
+
+        public static string ResolveCurrentExerciseCompletion(SesionEntrenamiento session)
+        {
+            var progress = ResolveCurrentExerciseProgress(session);
+            if (progress is null)
+                return "Ya completaste todas las series de la sesión.";
+
+            return $"Todavía no. {FormatRemainingSets(progress)}";
         }
 
         public static string ResolveBestSetToday()
@@ -269,6 +281,38 @@ namespace Entrenate.Application.Coach.LiveCoach.Rules
 
             return session.Ejercicios.OrderBy(e => e.Orden).LastOrDefault();
         }
+
+        private static CurrentExerciseProgress? ResolveCurrentExerciseProgress(SesionEntrenamiento session)
+        {
+            var current = CurrentPendingTrainingSetResolver.Resolve(session);
+            if (current is null)
+                return null;
+
+            var exercise = current.ExerciseSession;
+            var completedSets = exercise.Series
+                .Where(set => set.EstaRealmenteCompletada())
+                .Select(set => set.NumeroSerie)
+                .Distinct()
+                .Count(setNumber => setNumber >= 1 && setNumber <= exercise.SeriesObjetivo);
+
+            return new CurrentExerciseProgress(
+                exercise.Ejercicio.Nombre,
+                exercise.SeriesObjetivo,
+                completedSets);
+        }
+
+        private static string FormatRemainingSets(CurrentExerciseProgress progress)
+        {
+            var remainingSets = progress.TargetSets - progress.CompletedSets;
+            return remainingSets == 1
+                ? $"Te queda 1 serie de {progress.ExerciseName}."
+                : $"Te quedan {remainingSets} series de {progress.ExerciseName}.";
+        }
+
+        private sealed record CurrentExerciseProgress(
+            string ExerciseName,
+            int TargetSets,
+            int CompletedSets);
     }
 }
 

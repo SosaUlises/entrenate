@@ -93,6 +93,8 @@
   Ambiguous requests such as “best set” or comparisons ask for an explicit criterion
   instead of inventing one.
 
+  - Live Coach V0 — Current Prescription Queries V1 is closed: deterministic voice queries expose the authoritative current set prescription through `CurrentPendingTrainingSetResolver` and `GetCurrentPrescription`, including repetitions, RIR, prescribed rest and a compact full-series summary. The current model does not define a target weight, so Coach reports that explicitly instead of inventing one. Prescription queries remain read-only, bypass the provider and stay isolated from rest-timer state and visual exercise navigation.
+
 - Training / Live Coach — Exercise Skip V0 is closed:
   `EjercicioSesion` supports an explicit persisted `Omitido` state, omitted exercises
   are ignored by `CurrentPendingTrainingSetResolver`, completed series are preserved,

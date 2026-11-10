@@ -414,6 +414,27 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     LiveCoachPerformanceQueryResolver.ResolvePreviousSetRir(session));
             }
 
+            if (routing.Kind == LiveCoachIntentKind.CurrentExerciseCompletedSets)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachPerformanceQueryResolver.ResolveCompletedSets(session));
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.CurrentExerciseProgress)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachPerformanceQueryResolver.ResolveCurrentExerciseProgressSummary(session));
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.CurrentExerciseCompletion)
+            {
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachPerformanceQueryResolver.ResolveCurrentExerciseCompletion(session));
+            }
+
             if (routing.Kind == LiveCoachIntentKind.RemainingSets)
             {
                 return CreateDirectResponse(
