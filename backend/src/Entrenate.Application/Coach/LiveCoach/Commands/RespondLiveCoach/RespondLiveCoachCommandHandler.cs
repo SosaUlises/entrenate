@@ -270,6 +270,19 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     request.ClientSnapshot?.VisibleExerciseSessionId);
             }
 
+            if (routing.Kind is LiveCoachIntentKind.NavigateFirstExercise or
+                LiveCoachIntentKind.NavigateLastExercise or
+                LiveCoachIntentKind.NavigateNextByMuscleGroup or
+                LiveCoachIntentKind.NavigateToMuscleGroup)
+            {
+                return CreateSemanticExerciseNavigationResponse(
+                    session,
+                    request.ClientTurnId,
+                    request.Text,
+                    request.ClientSnapshot?.VisibleExerciseSessionId,
+                    routing.Kind);
+            }
+
             if (routing.Kind is LiveCoachIntentKind.NavigateNextExercise or
                 LiveCoachIntentKind.NavigatePreviousExercise or
                 LiveCoachIntentKind.NavigateToExercise)
@@ -726,6 +739,79 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 clientAction: new LiveCoachClientActionDto(
                     "NavigateToExercise",
                     ExerciseSessionId: exercise.Id));
+        }
+
+        private LiveCoachRespondResponseDto CreateSemanticExerciseNavigationResponse(
+            Entrenate.Domain.Entidades.SesionEntrenamiento session,
+            string clientTurnId,
+            string requestText,
+            Guid? visibleExerciseSessionId,
+            LiveCoachIntentKind intent)
+        {
+            var resolution = intent switch
+            {
+                LiveCoachIntentKind.NavigateFirstExercise =>
+                    LiveCoachExerciseNavigationResolver.ResolveBoundary(
+                        session,
+                        visibleExerciseSessionId,
+                        first: true),
+                LiveCoachIntentKind.NavigateLastExercise =>
+                    LiveCoachExerciseNavigationResolver.ResolveBoundary(
+                        session,
+                        visibleExerciseSessionId,
+                        first: false),
+                LiveCoachIntentKind.NavigateNextByMuscleGroup =>
+                    LiveCoachExerciseNavigationResolver.ResolveByMuscleGroup(
+                        session,
+                        requestText,
+                        visibleExerciseSessionId,
+                        nextOnly: true),
+                _ => LiveCoachExerciseNavigationResolver.ResolveByMuscleGroup(
+                    session,
+                    requestText,
+                    visibleExerciseSessionId,
+                    nextOnly: false)
+            };
+
+            if (resolution.Status == LiveCoachExerciseNavigationStatus.FirstExercise)
+                return CreateDirectResponse(clientTurnId, "Este es el primer ejercicio de la sesión.");
+            if (resolution.Status == LiveCoachExerciseNavigationStatus.LastExercise)
+                return CreateDirectResponse(clientTurnId, "Este es el último ejercicio de la sesión.");
+            if (resolution.Status == LiveCoachExerciseNavigationStatus.UnknownMuscleGroup)
+                return CreateDirectResponse(clientTurnId, "¿Querés ver pecho, espalda, hombros o brazos?");
+            if (resolution.Status == LiveCoachExerciseNavigationStatus.NoNextMatch)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    $"No hay otro ejercicio de {resolution.MuscleGroupLabel} después de este.");
+            }
+            if (resolution.Status == LiveCoachExerciseNavigationStatus.AlreadyVisible &&
+                resolution.Exercise is not null)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    $"Ya estás viendo {resolution.Exercise.Ejercicio.Nombre}, un ejercicio de {resolution.MuscleGroupLabel}.");
+            }
+            if (resolution.Status == LiveCoachExerciseNavigationStatus.NotFound)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    resolution.MuscleGroupLabel is null
+                        ? "No encuentro ejercicios en esta sesión."
+                        : $"No tenés ejercicios de {resolution.MuscleGroupLabel} en esta sesión.");
+            }
+            if (resolution.Exercise is null)
+                return CreateDirectResponse(clientTurnId, "No encuentro ese ejercicio en esta sesión.");
+
+            var text = intent == LiveCoachIntentKind.NavigateNextByMuscleGroup
+                ? $"Mostrando el siguiente ejercicio de {resolution.MuscleGroupLabel}: {resolution.Exercise.Ejercicio.Nombre}."
+                : $"Mostrando {resolution.Exercise.Ejercicio.Nombre}.";
+            return CreateDirectResponse(
+                clientTurnId,
+                text,
+                clientAction: new LiveCoachClientActionDto(
+                    "NavigateToExercise",
+                    ExerciseSessionId: resolution.Exercise.Id));
         }
 
         private LiveCoachRespondResponseDto CreateDirectResponse(

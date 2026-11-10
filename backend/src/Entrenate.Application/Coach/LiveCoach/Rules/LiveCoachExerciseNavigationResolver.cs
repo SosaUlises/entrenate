@@ -10,13 +10,17 @@ namespace Entrenate.Application.Coach.LiveCoach.Rules
         Found,
         FirstExercise,
         LastExercise,
+        AlreadyVisible,
+        NoNextMatch,
+        UnknownMuscleGroup,
         Ambiguous,
         NotFound
     }
 
     public sealed record LiveCoachExerciseNavigationResult(
         LiveCoachExerciseNavigationStatus Status,
-        EjercicioSesion? Exercise = null);
+        EjercicioSesion? Exercise = null,
+        string? MuscleGroupLabel = null);
 
     public static class LiveCoachExerciseNavigationResolver
     {
@@ -30,6 +34,102 @@ namespace Entrenate.Application.Coach.LiveCoach.Rules
         {
             "de", "del", "con", "en", "para"
         };
+
+        private static readonly IReadOnlyDictionary<string, MuscleGroupMapping> MuscleGroups =
+            new Dictionary<string, MuscleGroupMapping>(StringComparer.Ordinal)
+            {
+                ["pecho"] = new("pecho", ["pecho"]),
+                ["espalda"] = new("espalda", ["espalda"]),
+                ["pierna"] = new("piernas", ["cuadriceps", "isquiotibiales", "gluteos", "gemelos"]),
+                ["piernas"] = new("piernas", ["cuadriceps", "isquiotibiales", "gluteos", "gemelos"]),
+                ["hombro"] = new("hombros", ["hombros"]),
+                ["hombros"] = new("hombros", ["hombros"]),
+                ["brazo"] = new("brazos", ["biceps", "triceps"]),
+                ["brazos"] = new("brazos", ["biceps", "triceps"]),
+                ["biceps"] = new("bíceps", ["biceps"]),
+                ["triceps"] = new("tríceps", ["triceps"]),
+                ["gluteo"] = new("glúteos", ["gluteos"]),
+                ["gluteos"] = new("glúteos", ["gluteos"]),
+                ["femoral"] = new("femorales", ["isquiotibiales"]),
+                ["femorales"] = new("femorales", ["isquiotibiales"]),
+                ["isquiotibial"] = new("femorales", ["isquiotibiales"]),
+                ["isquiotibiales"] = new("femorales", ["isquiotibiales"]),
+                ["cuadriceps"] = new("cuádriceps", ["cuadriceps"]),
+                ["pantorrilla"] = new("pantorrillas", ["gemelos"]),
+                ["pantorrillas"] = new("pantorrillas", ["gemelos"]),
+                ["gemelo"] = new("pantorrillas", ["gemelos"]),
+                ["gemelos"] = new("pantorrillas", ["gemelos"]),
+                ["abdomen"] = new("core", ["core"]),
+                ["abdominales"] = new("core", ["core"]),
+                ["core"] = new("core", ["core"])
+            };
+
+        private sealed record MuscleGroupMapping(string Label, HashSet<string> Categories);
+
+        public static LiveCoachExerciseNavigationResult ResolveBoundary(
+            SesionEntrenamiento session,
+            Guid? visibleExerciseSessionId,
+            bool first)
+        {
+            var ordered = session.Ejercicios.OrderBy(exercise => exercise.Orden).ToList();
+            if (ordered.Count == 0)
+                return new(LiveCoachExerciseNavigationStatus.NotFound);
+
+            var target = first ? ordered[0] : ordered[^1];
+            if (visibleExerciseSessionId == target.Id)
+            {
+                return new(
+                    first
+                        ? LiveCoachExerciseNavigationStatus.FirstExercise
+                        : LiveCoachExerciseNavigationStatus.LastExercise,
+                    target);
+            }
+
+            return new(LiveCoachExerciseNavigationStatus.Found, target);
+        }
+
+        public static LiveCoachExerciseNavigationResult ResolveByMuscleGroup(
+            SesionEntrenamiento session,
+            string requestText,
+            Guid? visibleExerciseSessionId,
+            bool nextOnly)
+        {
+            var mapping = ResolveMuscleGroup(requestText);
+            if (mapping is null)
+                return new(LiveCoachExerciseNavigationStatus.UnknownMuscleGroup);
+
+            var ordered = session.Ejercicios.OrderBy(exercise => exercise.Orden).ToList();
+            var visibleIndex = visibleExerciseSessionId.HasValue
+                ? ordered.FindIndex(exercise => exercise.Id == visibleExerciseSessionId.Value)
+                : -1;
+
+            if (nextOnly && visibleIndex < 0)
+            {
+                var authoritative = CurrentPendingTrainingSetResolver.Resolve(session)?.ExerciseSession;
+                visibleIndex = authoritative is null
+                    ? -1
+                    : ordered.FindIndex(exercise => exercise.Id == authoritative.Id);
+            }
+
+            if (!nextOnly && visibleIndex >= 0 && MatchesMuscleGroup(ordered[visibleIndex], mapping))
+            {
+                return new(
+                    LiveCoachExerciseNavigationStatus.AlreadyVisible,
+                    ordered[visibleIndex],
+                    mapping.Label);
+            }
+
+            var searchStart = nextOnly ? Math.Max(0, visibleIndex + 1) : 0;
+            var match = ordered.Skip(searchStart).FirstOrDefault(exercise => MatchesMuscleGroup(exercise, mapping));
+            if (match is not null)
+                return new(LiveCoachExerciseNavigationStatus.Found, match, mapping.Label);
+
+            return new(
+                nextOnly
+                    ? LiveCoachExerciseNavigationStatus.NoNextMatch
+                    : LiveCoachExerciseNavigationStatus.NotFound,
+                MuscleGroupLabel: mapping.Label);
+        }
 
         public static LiveCoachExerciseNavigationResult ResolveRelative(
             SesionEntrenamiento session,
@@ -92,6 +192,23 @@ namespace Entrenate.Application.Coach.LiveCoach.Rules
             return requestedTokens.SetEquals(nameTokens) ||
                    requestedTokens.IsSubsetOf(nameTokens) ||
                    nameTokens.IsSubsetOf(requestedTokens);
+        }
+
+        private static MuscleGroupMapping? ResolveMuscleGroup(string requestText)
+        {
+            foreach (var token in Tokenize(requestText))
+            {
+                if (MuscleGroups.TryGetValue(token, out var mapping))
+                    return mapping;
+            }
+
+            return null;
+        }
+
+        private static bool MatchesMuscleGroup(EjercicioSesion exercise, MuscleGroupMapping mapping)
+        {
+            var category = Tokenize(exercise.Ejercicio.GrupoMuscularPrincipal).FirstOrDefault();
+            return category is not null && mapping.Categories.Contains(category);
         }
 
         private static IEnumerable<string> Tokenize(string value)

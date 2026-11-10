@@ -343,6 +343,242 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         [Fact]
+        public async Task Handle_WhenNavigateFirstRequested_NavigatesBySessionOrder()
+        {
+            var session = CreateMultiExerciseSessionWithMuscles(
+                ("Press banca", 3, "Pecho"),
+                ("Remo", 3, "Espalda"));
+            var ordered = session.Ejercicios.OrderBy(x => x.Orden).ToList();
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-first",
+                    "audio",
+                    "mostrame el primer ejercicio",
+                    new ClientSnapshotInput(null, null, null, null, null, ordered[1].Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Mostrando Press banca.", result.Text);
+            Assert.Equal(ordered[0].Id, result.ClientAction?.ExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNavigateLastRequested_CanNavigateToOmittedExercise()
+        {
+            var session = CreateMultiExerciseSessionWithMuscles(
+                ("Press banca", 3, "Pecho"),
+                ("Remo", 3, "Espalda"));
+            var ordered = session.Ejercicios.OrderBy(x => x.Orden).ToList();
+            session.OmitirEjercicio(ordered[1].Id);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-last",
+                    "audio",
+                    "mostrame el último ejercicio",
+                    new ClientSnapshotInput(null, null, null, null, null, ordered[0].Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Mostrando Remo.", result.Text);
+            Assert.Equal(ordered[1].Id, result.ClientAction?.ExerciseSessionId);
+            Assert.True(ordered[1].Omitido);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNavigateToMuscleGroupRequested_UsesPrimaryMuscleMetadata()
+        {
+            var session = CreateMultiExerciseSessionWithMuscles(
+                ("Press banca", 3, "Pecho"),
+                ("Remo con barra", 3, "Espalda"),
+                ("Jalón al pecho", 3, "Espalda"));
+            var ordered = session.Ejercicios.OrderBy(x => x.Orden).ToList();
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-muscle",
+                    "audio",
+                    "mostrame un ejercicio de espalda",
+                    new ClientSnapshotInput(null, null, null, null, null, ordered[0].Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Mostrando Remo con barra.", result.Text);
+            Assert.Equal(ordered[1].Id, result.ClientAction?.ExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData(true, "mostrame el primer ejercicio", "Este es el primer ejercicio de la sesión.")]
+        [InlineData(false, "mostrame el último ejercicio", "Este es el último ejercicio de la sesión.")]
+        public async Task Handle_WhenBoundaryExerciseAlreadyVisible_DoesNotNavigate(
+            bool first,
+            string requestText,
+            string expectedText)
+        {
+            var session = CreateMultiExerciseSessionWithMuscles(
+                ("Press banca", 3, "Pecho"),
+                ("Remo", 3, "Espalda"));
+            var ordered = session.Ejercicios.OrderBy(x => x.Orden).ToList();
+            var visible = first ? ordered[0] : ordered[1];
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    $"turn-boundary-{first}",
+                    "audio",
+                    requestText,
+                    new ClientSnapshotInput(null, null, null, null, null, visible.Id)),
+                CancellationToken.None);
+
+            Assert.Equal(expectedText, result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenVisibleExerciseAlreadyMatchesMuscleGroup_DoesNotNavigate()
+        {
+            var session = CreateMultiExerciseSessionWithMuscles(("Remo con barra", 3, "Espalda"));
+            var visible = session.Ejercicios.Single();
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-muscle-current",
+                    "audio",
+                    "mostrame un ejercicio de espalda",
+                    new ClientSnapshotInput(null, null, null, null, null, visible.Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Ya estás viendo Remo con barra, un ejercicio de espalda.", result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenMuscleMatchIsOmitted_NavigatesWithoutReactivatingIt()
+        {
+            var session = CreateMultiExerciseSessionWithMuscles(
+                ("Press banca", 3, "Pecho"),
+                ("Remo con barra", 3, "Espalda"));
+            var ordered = session.Ejercicios.OrderBy(x => x.Orden).ToList();
+            var omitted = ordered[1];
+            session.OmitirEjercicio(omitted.Id);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-muscle-omitted",
+                    "audio",
+                    "mostrame un ejercicio de espalda",
+                    new ClientSnapshotInput(null, null, null, null, null, ordered[0].Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Mostrando Remo con barra.", result.Text);
+            Assert.Equal(omitted.Id, result.ClientAction?.ExerciseSessionId);
+            Assert.True(omitted.Omitido);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("mostrame uno de femorales", "Curl femoral", "Isquiotibiales")]
+        [InlineData("andá a uno de pantorrillas", "Elevación de gemelos", "Gemelos")]
+        [InlineData("mostrame uno de piernas", "Sentadilla", "Cuádriceps")]
+        public async Task Handle_WhenMuscleAliasRequested_UsesControlledMapping(
+            string requestText,
+            string exerciseName,
+            string primaryMuscle)
+        {
+            var session = CreateMultiExerciseSessionWithMuscles(
+                ("Press banca", 3, "Pecho"),
+                (exerciseName, 3, primaryMuscle));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, $"turn-alias-{primaryMuscle}", "audio", requestText, null),
+                CancellationToken.None);
+
+            Assert.Equal(session.Ejercicios.OrderBy(x => x.Orden).Last().Id, result.ClientAction?.ExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNavigateNextByMuscleRequested_UsesVisibleExerciseAsCursor()
+        {
+            var session = CreateMultiExerciseSessionWithMuscles(
+                ("Remo con barra", 3, "Espalda"),
+                ("Press banca", 3, "Pecho"),
+                ("Jalón al pecho", 3, "Espalda"));
+            var ordered = session.Ejercicios.OrderBy(x => x.Orden).ToList();
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-next-muscle",
+                    "audio",
+                    "mostrame el siguiente ejercicio de espalda",
+                    new ClientSnapshotInput(null, null, null, null, null, ordered[0].Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Mostrando el siguiente ejercicio de espalda: Jalón al pecho.", result.Text);
+            Assert.Equal(ordered[2].Id, result.ClientAction?.ExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNoLaterMuscleMatchExists_DoesNotNavigate()
+        {
+            var session = CreateMultiExerciseSessionWithMuscles(
+                ("Remo con barra", 3, "Espalda"),
+                ("Press banca", 3, "Pecho"));
+            var visible = session.Ejercicios.OrderBy(x => x.Orden).First();
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-next-muscle-limit",
+                    "audio",
+                    "mostrame el siguiente de espalda",
+                    new ClientSnapshotInput(null, null, null, null, null, visible.Id)),
+                CancellationToken.None);
+
+            Assert.Equal("No hay otro ejercicio de espalda después de este.", result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("mostrame un ejercicio de hombros", "No tenés ejercicios de hombros en esta sesión.")]
+        [InlineData("mostrame uno de arriba", "¿Querés ver pecho, espalda, hombros o brazos?")]
+        public async Task Handle_WhenMuscleGroupCannotResolve_DoesNotNavigate(
+            string requestText,
+            string expectedText)
+        {
+            var session = CreateMultiExerciseSessionWithMuscles(("Press banca", 3, "Pecho"));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-muscle-missing", "audio", requestText, null),
+                CancellationToken.None);
+
+            Assert.Equal(expectedText, result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
         public async Task Handle_WhenNavigateByNameRequested_CanOpenOmittedExerciseWithoutReactivatingIt()
         {
             var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Prensa", 3));
@@ -2305,6 +2541,35 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                     Id = Guid.NewGuid(),
                     Nombre = name,
                     GrupoMuscularPrincipal = "General",
+                    Activo = true
+                };
+                var exerciseSession = new EjercicioSesion(
+                    exercise.Id, i + 1, series, 8, 10, 1, 2, 90);
+                typeof(EjercicioSesion)
+                    .GetProperty("Ejercicio", BindingFlags.Public | BindingFlags.Instance)?
+                    .SetValue(exerciseSession, exercise);
+                list.Add(exerciseSession);
+            }
+
+            return new SesionEntrenamiento(
+                TestUserId,
+                Guid.NewGuid(),
+                DateTime.UtcNow.AddMinutes(-20),
+                list);
+        }
+
+        private static SesionEntrenamiento CreateMultiExerciseSessionWithMuscles(
+            params (string Name, int Series, string PrimaryMuscle)[] exercises)
+        {
+            var list = new List<EjercicioSesion>();
+            for (var i = 0; i < exercises.Length; i++)
+            {
+                var (name, series, primaryMuscle) = exercises[i];
+                var exercise = new Ejercicio
+                {
+                    Id = Guid.NewGuid(),
+                    Nombre = name,
+                    GrupoMuscularPrincipal = primaryMuscle,
                     Activo = true
                 };
                 var exerciseSession = new EjercicioSesion(

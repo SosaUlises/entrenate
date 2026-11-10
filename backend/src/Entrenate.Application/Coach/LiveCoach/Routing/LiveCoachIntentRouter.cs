@@ -17,6 +17,10 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         NavigatePreviousExercise,
         NavigateToExercise,
         ReturnToCurrentExercise,
+        NavigateFirstExercise,
+        NavigateLastExercise,
+        NavigateNextByMuscleGroup,
+        NavigateToMuscleGroup,
         ConfirmPendingAction,
         CancelPendingAction,
         UpdatePendingCurrentSet,
@@ -237,14 +241,34 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             if (IsSkipCurrentExerciseRequest(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.SkipCurrentExercise, false);
 
+            if (IsUnsupportedExerciseSkipRequest(pendingDecision))
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.OtherMutation,
+                    false,
+                    "Solo puedo saltar el ejercicio actual.");
+            }
+
             if (IsReturnToCurrentExerciseRequest(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.ReturnToCurrentExercise, false);
+
+            if (IsNavigateFirstExerciseRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.NavigateFirstExercise, false);
+
+            if (IsNavigateLastExerciseRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.NavigateLastExercise, false);
+
+            if (IsNavigateNextByMuscleGroupRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.NavigateNextByMuscleGroup, false);
 
             if (IsNavigatePreviousExerciseRequest(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.NavigatePreviousExercise, false);
 
             if (IsNavigateNextExerciseRequest(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.NavigateNextExercise, false);
+
+            if (IsNavigateToMuscleGroupRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.NavigateToMuscleGroup, false);
 
             if (IsNavigateToExerciseRequest(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.NavigateToExercise, false);
@@ -444,6 +468,58 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                      text.Contains("llevame", StringComparison.Ordinal)) &&
                     (text.Contains("siguiente", StringComparison.Ordinal) ||
                      text.Contains("proximo", StringComparison.Ordinal)));
+        }
+
+        private static bool IsUnsupportedExerciseSkipRequest(string text)
+        {
+            return (text.StartsWith("salta ", StringComparison.Ordinal) ||
+                    text.StartsWith("omiti ", StringComparison.Ordinal)) &&
+                   (text.Contains("siguiente", StringComparison.Ordinal) ||
+                    text.Contains("anterior", StringComparison.Ordinal) ||
+                    text.Contains("ultimo", StringComparison.Ordinal) ||
+                    text.Contains("primero", StringComparison.Ordinal));
+        }
+
+        private static bool IsNavigateFirstExerciseRequest(string text)
+        {
+            return HasVisualNavigationVerb(text) &&
+                   (text.Contains("primer ejercicio", StringComparison.Ordinal) ||
+                    text.EndsWith("al primero", StringComparison.Ordinal) ||
+                    text.EndsWith("el primero", StringComparison.Ordinal) ||
+                    text.EndsWith(" primero", StringComparison.Ordinal));
+        }
+
+        private static bool IsNavigateLastExerciseRequest(string text)
+        {
+            return HasVisualNavigationVerb(text) &&
+                   (text.Contains("ultimo ejercicio", StringComparison.Ordinal) ||
+                    text.EndsWith("al ultimo", StringComparison.Ordinal) ||
+                    text.EndsWith("el ultimo", StringComparison.Ordinal) ||
+                    text.EndsWith(" ultimo", StringComparison.Ordinal));
+        }
+
+        private static bool IsNavigateNextByMuscleGroupRequest(string text)
+        {
+            return HasVisualNavigationVerb(text) &&
+                   (text.Contains("siguiente", StringComparison.Ordinal) ||
+                    text.Contains("proximo", StringComparison.Ordinal)) &&
+                   text.Contains(" de ", StringComparison.Ordinal);
+        }
+
+        private static bool IsNavigateToMuscleGroupRequest(string text)
+        {
+            return HasVisualNavigationVerb(text) &&
+                   (text.Contains("un ejercicio de ", StringComparison.Ordinal) ||
+                    text.Contains("uno de ", StringComparison.Ordinal) ||
+                    text.Contains("ejercicio de ", StringComparison.Ordinal));
+        }
+
+        private static bool HasVisualNavigationVerb(string text)
+        {
+            return text.StartsWith("mostrame ", StringComparison.Ordinal) ||
+                   text.StartsWith("anda ", StringComparison.Ordinal) ||
+                   text.StartsWith("llevame ", StringComparison.Ordinal) ||
+                   text.StartsWith("volve ", StringComparison.Ordinal);
         }
 
         private static bool IsReturnToCurrentExerciseRequest(string text)

@@ -305,3 +305,4 @@ Next:
 
 - The neutral Exercise Demo V2 system is canonical.
 - GymBro and legacy demos have been removed.
+
