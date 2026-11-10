@@ -342,6 +342,194 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
+        [Theory]
+        [InlineData("¿cuántas repeticiones me tocan?", LiveCoachIntentKind.CurrentRepetitionsQuery)]
+        [InlineData("¿cuánto peso tengo que usar?", LiveCoachIntentKind.CurrentWeightQuery)]
+        [InlineData("¿qué RIR me toca?", LiveCoachIntentKind.CurrentRirQuery)]
+        [InlineData("¿cuánto descanso tengo?", LiveCoachIntentKind.CurrentRestQuery)]
+        [InlineData("¿qué descanso me toca?", LiveCoachIntentKind.CurrentRestQuery)]
+        [InlineData("¿qué me toca en esta serie?", LiveCoachIntentKind.CurrentPrescriptionQuery)]
+        [InlineData("recordame la serie", LiveCoachIntentKind.CurrentPrescriptionQuery)]
+        public void IntentRouter_WhenCurrentPrescriptionIsQueried_RoutesDeterministically(
+            string question,
+            LiveCoachIntentKind expected)
+        {
+            var routing = _intentRouter.Route(question);
+
+            Assert.Equal(expected, routing.Kind);
+        }
+
+        [Theory]
+        [InlineData("¿cuánto falta de descanso?", LiveCoachIntentKind.RestTimerQuery)]
+        [InlineData("iniciá el descanso", LiveCoachIntentKind.StartRestTimer)]
+        public void IntentRouter_WhenRestIntentDiffers_PreservesExistingRouting(
+            string question,
+            LiveCoachIntentKind expected)
+        {
+            var routing = _intentRouter.Route(question);
+
+            Assert.Equal(expected, routing.Kind);
+        }
+
+        [Fact]
+        public void IntentRouter_WhenCompletedRepetitionsAreQueried_DoesNotUseCurrentPrescription()
+        {
+            var routing = _intentRouter.Route("¿cuántas reps hice?");
+
+            Assert.NotEqual(LiveCoachIntentKind.CurrentRepetitionsQuery, routing.Kind);
+        }
+
+        [Theory]
+        [InlineData(8, 8, "Te tocan 8 repeticiones.")]
+        [InlineData(8, 10, "Te tocan entre 8 y 10 repeticiones.")]
+        public async Task Handle_WhenCurrentRepetitionsQueried_ReturnsExactModelPrescription(
+            int minRepetitions,
+            int maxRepetitions,
+            string expected)
+        {
+            var session = CreatePrescriptionSession(
+                ("Hip Thrust", 3, minRepetitions, maxRepetitions, 2, 2, 120));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-current-reps",
+                    "audio",
+                    "¿cuántas repeticiones me tocan?",
+                    null),
+                CancellationToken.None);
+
+            Assert.Equal(expected, result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCurrentWeightQueried_ReturnsNoExplicitTarget()
+        {
+            var session = CreatePrescriptionSession(("Hip Thrust", 3, 8, 8, 1, 1, 120));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-current-weight",
+                    "audio",
+                    "¿cuánto peso tengo que usar?",
+                    null),
+                CancellationToken.None);
+
+            Assert.Equal("No tenés un peso objetivo definido para esta serie.", result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData(2, 2, "Te toca RIR 2.")]
+        [InlineData(1, 2, "Te toca RIR entre 1 y 2.")]
+        public async Task Handle_WhenCurrentRirQueried_ReturnsExactModelPrescription(
+            int minRir,
+            int maxRir,
+            string expected)
+        {
+            var session = CreatePrescriptionSession(("Hip Thrust", 3, 8, 10, minRir, maxRir, 120));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-current-rir", "audio", "¿qué RIR me toca?", null),
+                CancellationToken.None);
+
+            Assert.Equal(expected, result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData(60, "Te toca descansar 1 minuto.")]
+        [InlineData(90, "Te toca descansar 1 minuto y 30 segundos.")]
+        [InlineData(120, "Te tocan 2 minutos de descanso.")]
+        [InlineData(0, "Esta serie no tiene un descanso objetivo definido.")]
+        public async Task Handle_WhenCurrentRestQueried_FormatsPrescribedDuration(
+            int restSeconds,
+            string expected)
+        {
+            var session = CreatePrescriptionSession(("Hip Thrust", 3, 8, 10, 1, 2, restSeconds));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-current-rest", "audio", "¿cuánto descanso tengo?", null),
+                CancellationToken.None);
+
+            Assert.Equal(expected, result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenFullCurrentPrescriptionQueried_IncludesOnlyPrescribedFields()
+        {
+            var session = CreatePrescriptionSession(("Hip Thrust", 3, 8, 8, 1, 1, 120));
+            var exercise = session.Ejercicios.Single();
+            exercise.RegistrarOActualizarSerie(1, 100, 8, 1, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-current-full", "audio", "¿qué me toca en esta serie?", null),
+                CancellationToken.None);
+
+            Assert.Equal(
+                "Hip Thrust, serie 2: 8 repeticiones, RIR 1 y 2 minutos de descanso.",
+                result.Text);
+            Assert.DoesNotContain("kilo", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenVisibleExerciseDiffers_CurrentPrescriptionUsesAuthoritativeTarget()
+        {
+            var session = CreatePrescriptionSession(
+                ("Hip Thrust", 3, 8, 8, 1, 1, 120),
+                ("Curl Femoral", 3, 12, 12, 2, 2, 90));
+            var ordered = session.Ejercicios.OrderBy(exercise => exercise.Orden).ToList();
+            ordered[0].RegistrarOActualizarSerie(1, 100, 8, 1, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+            var snapshot = new ClientSnapshotInput(
+                ordered[1].EjercicioId,
+                1,
+                false,
+                null,
+                null,
+                ordered[1].Id);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-current-visible-drift",
+                    "audio",
+                    "¿qué me toca en esta serie?",
+                    snapshot),
+                CancellationToken.None);
+
+            Assert.StartsWith("Hip Thrust, serie 2:", result.Text, StringComparison.Ordinal);
+            Assert.DoesNotContain("Curl Femoral", result.Text, StringComparison.Ordinal);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenSessionHasNoPendingTarget_CurrentPrescriptionReportsCompletion()
+        {
+            var session = CreatePrescriptionSession(("Hip Thrust", 1, 8, 8, 1, 1, 120));
+            session.Ejercicios.Single().RegistrarOActualizarSerie(1, 100, 8, 1, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-current-complete", "audio", "recordame la serie", null),
+                CancellationToken.None);
+
+            Assert.Equal("Ya completaste todas las series de la sesión.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
         [Fact]
         public async Task Handle_WhenNavigateFirstRequested_NavigatesBySessionOrder()
         {
@@ -1526,7 +1714,6 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         [InlineData("¿ya terminó el descanso?")]
         [InlineData("¿ya terminó?")]
         [InlineData("¿cuánto falta?")]
-        [InlineData("¿qué descanso me toca?")]
         public void IntentRouter_WhenRestIsQueried_RoutesToReadOnlyRestTimerQuery(string phrase)
         {
             var routing = _intentRouter.Route(phrase);
@@ -1923,7 +2110,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 session.Id, "turn-rest-prescribed", "audio", "¿Qué descanso me toca?", null), CancellationToken.None);
 
             Assert.Null(result.ClientAction);
-            Assert.Equal("Te tocan 150 segundos de descanso.", result.Text);
+            Assert.Equal("Te toca descansar 2 minutos y 30 segundos.", result.Text);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
@@ -2585,6 +2772,42 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 Guid.NewGuid(),
                 DateTime.UtcNow.AddMinutes(-20),
                 list);
+        }
+
+        private static SesionEntrenamiento CreatePrescriptionSession(
+            params (string Name, int Sets, int MinRepetitions, int MaxRepetitions, int MinRir, int MaxRir, int RestSeconds)[] prescriptions)
+        {
+            var exercises = new List<EjercicioSesion>();
+            for (var index = 0; index < prescriptions.Length; index++)
+            {
+                var prescription = prescriptions[index];
+                var exercise = new Ejercicio
+                {
+                    Id = Guid.NewGuid(),
+                    Nombre = prescription.Name,
+                    GrupoMuscularPrincipal = "General",
+                    Activo = true
+                };
+                var sessionExercise = new EjercicioSesion(
+                    exercise.Id,
+                    index + 1,
+                    prescription.Sets,
+                    prescription.MinRepetitions,
+                    prescription.MaxRepetitions,
+                    prescription.MinRir,
+                    prescription.MaxRir,
+                    prescription.RestSeconds);
+                typeof(EjercicioSesion)
+                    .GetProperty("Ejercicio", BindingFlags.Public | BindingFlags.Instance)?
+                    .SetValue(sessionExercise, exercise);
+                exercises.Add(sessionExercise);
+            }
+
+            return new SesionEntrenamiento(
+                TestUserId,
+                Guid.NewGuid(),
+                DateTime.UtcNow.AddMinutes(-20),
+                exercises);
         }
 
         private static SesionEntrenamiento CreateSession(

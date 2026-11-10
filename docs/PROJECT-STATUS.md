@@ -226,6 +226,7 @@ Live Coach V0 currently includes:
 Current Live Coach mutations must always operate through controlled backend-owned
 contracts and authoritative Training state.
 
+- Live Coach V0 — semantic exercise navigation is closed: deterministic voice commands can navigate visually to the first or last exercise, to exercises by structured muscle group, and to the next matching exercise using the visible exercise as cursor. Navigation remains visual-only, omitted exercises remain viewable without reactivation, and authoritative Training state continues to be owned by `CurrentPendingTrainingSetResolver`.
 ### Coach principles
 
 - Deterministic engines and product rules are the source of truth.

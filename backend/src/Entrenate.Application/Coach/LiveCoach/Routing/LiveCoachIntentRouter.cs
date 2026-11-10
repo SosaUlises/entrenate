@@ -30,6 +30,11 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         StartRestTimer,
         StopRestTimer,
         RestTimerQuery,
+        CurrentRepetitionsQuery,
+        CurrentWeightQuery,
+        CurrentRirQuery,
+        CurrentRestQuery,
+        CurrentPrescriptionQuery,
         PreviousSetPerformance,
         PreviousSetRir,
         RemainingSets,
@@ -232,8 +237,23 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             if (IsStartRestTimerRequest(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.StartRestTimer, false);
 
+            if (IsCurrentRestQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentRestQuery, false);
+
             if (IsRestQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.RestTimerQuery, false);
+
+            if (IsCurrentPrescriptionQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentPrescriptionQuery, false);
+
+            if (IsCurrentRepetitionsQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentRepetitionsQuery, false);
+
+            if (IsCurrentWeightQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentWeightQuery, false);
+
+            if (IsCurrentRirQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentRirQuery, false);
 
             if (IsReactivateExerciseRequest(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.ReactivateExercise, false);
@@ -818,6 +838,91 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             }
 
             return false;
+        }
+
+        private static bool IsCurrentRestQuery(string text)
+        {
+            var mentionsRest = text.Contains("descanso", StringComparison.Ordinal) ||
+                               text.Contains("descansar", StringComparison.Ordinal);
+            if (!mentionsRest)
+                return false;
+
+            if (text.Contains("falta", StringComparison.Ordinal) ||
+                text.Contains("queda", StringComparison.Ordinal) ||
+                text.Contains("activo", StringComparison.Ordinal) ||
+                text.Contains("corriendo", StringComparison.Ordinal) ||
+                text.Contains("termino", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return text.Contains("me toca", StringComparison.Ordinal) ||
+                   text.Contains("tengo que descansar", StringComparison.Ordinal) ||
+                   text.Contains("cuanto descanso tengo", StringComparison.Ordinal) ||
+                   text.Contains("que descanso tengo", StringComparison.Ordinal);
+        }
+
+        private static bool IsCurrentPrescriptionQuery(string text)
+        {
+            return text.Contains("que me toca en esta serie", StringComparison.Ordinal) ||
+                   text.Contains("recordame la serie", StringComparison.Ordinal) ||
+                   text.Contains("cual es la prescripcion", StringComparison.Ordinal) ||
+                   text.Contains("que tengo que hacer ahora", StringComparison.Ordinal);
+        }
+
+        private static bool IsCurrentRepetitionsQuery(string text)
+        {
+            if (HasPreviousPerformanceCue(text))
+                return false;
+
+            var mentionsRepetitions = text.Contains("rep", StringComparison.Ordinal) ||
+                                      text.Contains("repeticion", StringComparison.Ordinal) ||
+                                      text.Contains("cuantas tengo que hacer", StringComparison.Ordinal);
+            if (!mentionsRepetitions)
+                return false;
+
+            return text.Contains("me toca", StringComparison.Ordinal) ||
+                   text.Contains("tengo que hacer", StringComparison.Ordinal) ||
+                   text.Contains("hago", StringComparison.Ordinal) ||
+                   text.Contains("tengo", StringComparison.Ordinal);
+        }
+
+        private static bool IsCurrentWeightQuery(string text)
+        {
+            if (HasPreviousPerformanceCue(text))
+                return false;
+
+            var mentionsWeight = text.Contains("peso", StringComparison.Ordinal) ||
+                                 text.Contains("kilo", StringComparison.Ordinal) ||
+                                 text.Contains("con cuanto", StringComparison.Ordinal);
+            if (!mentionsWeight)
+                return false;
+
+            return text.Contains("me toca", StringComparison.Ordinal) ||
+                   text.Contains("tengo que", StringComparison.Ordinal) ||
+                   text.Contains("uso", StringComparison.Ordinal) ||
+                   text.Contains("usar", StringComparison.Ordinal) ||
+                   text.Contains("tengo", StringComparison.Ordinal);
+        }
+
+        private static bool IsCurrentRirQuery(string text)
+        {
+            if (!text.Contains("rir", StringComparison.Ordinal) || HasPreviousPerformanceCue(text))
+                return false;
+
+            return text.Contains("me toca", StringComparison.Ordinal) ||
+                   text.Contains("tengo", StringComparison.Ordinal) ||
+                   text.Contains("hago esta serie", StringComparison.Ordinal);
+        }
+
+        private static bool HasPreviousPerformanceCue(string text)
+        {
+            return text.Contains("hice", StringComparison.Ordinal) ||
+                   text.Contains("anterior", StringComparison.Ordinal) ||
+                   text.Contains("ultima", StringComparison.Ordinal) ||
+                   text.Contains("recien", StringComparison.Ordinal) ||
+                   text.Contains("vez pasada", StringComparison.Ordinal) ||
+                   text.Contains("levante", StringComparison.Ordinal);
         }
 
         private static bool IsStartRestTimerRequest(string normalizedText)

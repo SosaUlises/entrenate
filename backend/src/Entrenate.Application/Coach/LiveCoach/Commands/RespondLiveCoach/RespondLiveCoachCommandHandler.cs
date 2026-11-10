@@ -325,6 +325,21 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             var nowUtc = DateTime.UtcNow;
             var context = _contextBuilder.Build(session, request.ClientSnapshot, nowUtc);
 
+            if (routing.Kind is LiveCoachIntentKind.CurrentRepetitionsQuery or
+                LiveCoachIntentKind.CurrentWeightQuery or
+                LiveCoachIntentKind.CurrentRirQuery or
+                LiveCoachIntentKind.CurrentRestQuery or
+                LiveCoachIntentKind.CurrentPrescriptionQuery)
+            {
+                var prescription = _toolRegistry.GetCurrentPrescription(context).Data;
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    LiveCoachCurrentPrescriptionQueryResolver.Resolve(
+                        routing.Kind,
+                        context,
+                        prescription));
+            }
+
             if (routing.Kind == LiveCoachIntentKind.StartRestTimer)
             {
                 if (context.Rest.IsActive)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Entrenate.Application.Coach.LiveCoach.Models;
+using Entrenate.Application.TrainingSessions;
 using Entrenate.Domain.Entidades;
 
 namespace Entrenate.Application.Coach.LiveCoach.Context
@@ -32,9 +33,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Context
             var orderedExercises = session.Ejercicios.OrderBy(e => e.Orden).ToList();
 
             // 1. Authoritative active exercise resolution
-            var activeExercise = orderedExercises.FirstOrDefault(e => e.Series.Count < e.SeriesObjetivo)
-                ?? orderedExercises.LastOrDefault()
-                ?? orderedExercises.FirstOrDefault();
+            var currentTarget = CurrentPendingTrainingSetResolver.Resolve(session);
+            var activeExercise = currentTarget?.ExerciseSession;
 
             var isStale = false;
             string? driftNote = null;
@@ -80,7 +80,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Context
                     activeExercise.Orden,
                     nextExerciseName);
 
-                var setNumber = activeExercise.Series.Count + 1;
+                var setNumber = currentTarget!.SetNumber;
                 setContext = new LiveCoachSetContext(
                     setNumber,
                     setNumber <= activeExercise.SeriesObjetivo,
