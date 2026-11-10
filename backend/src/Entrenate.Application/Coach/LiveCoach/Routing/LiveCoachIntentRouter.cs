@@ -16,6 +16,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         NavigateNextExercise,
         NavigatePreviousExercise,
         NavigateToExercise,
+        ReturnToCurrentExercise,
         ConfirmPendingAction,
         CancelPendingAction,
         UpdatePendingCurrentSet,
@@ -32,6 +33,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         PreviousExercisePerformance,
         CompareWithPreviousSession,
         NextExercise,
+        CurrentExercise,
         RemainingExercises,
         SessionProgress,
         OtherMutation,
@@ -235,6 +237,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             if (IsSkipCurrentExerciseRequest(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.SkipCurrentExercise, false);
 
+            if (IsReturnToCurrentExerciseRequest(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.ReturnToCurrentExercise, false);
+
             if (IsNavigatePreviousExerciseRequest(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.NavigatePreviousExercise, false);
 
@@ -292,6 +297,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
             if (IsPreviousSetPerformanceQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.PreviousSetPerformance, false);
+
+            if (IsCurrentExerciseQuery(pendingDecision))
+                return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentExercise, false);
 
             if (IsNextExerciseQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.NextExercise, false);
@@ -436,6 +444,24 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                      text.Contains("llevame", StringComparison.Ordinal)) &&
                     (text.Contains("siguiente", StringComparison.Ordinal) ||
                      text.Contains("proximo", StringComparison.Ordinal)));
+        }
+
+        private static bool IsReturnToCurrentExerciseRequest(string text)
+        {
+            var targetsCurrent = text.Contains("ejercicio actual", StringComparison.Ordinal) ||
+                                 text.Contains("serie actual", StringComparison.Ordinal) ||
+                                 text.Contains("que me toca", StringComparison.Ordinal) ||
+                                 text.Contains("que estaba haciendo", StringComparison.Ordinal) ||
+                                 text.Contains("donde tengo que seguir", StringComparison.Ordinal) ||
+                                 text.Contains("donde sigo", StringComparison.Ordinal) ||
+                                 text is "volve al actual";
+            if (!targetsCurrent)
+                return false;
+
+            return text.StartsWith("volve ", StringComparison.Ordinal) ||
+                   text.StartsWith("mostrame ", StringComparison.Ordinal) ||
+                   text.StartsWith("llevame ", StringComparison.Ordinal) ||
+                   text is "donde tengo que seguir" or "mostrame donde sigo";
         }
 
         private static bool IsNavigatePreviousExerciseRequest(string text)
@@ -593,6 +619,15 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                    text.Contains("proximo", StringComparison.Ordinal) ||
                    text.Contains("despues de este", StringComparison.Ordinal) ||
                    (text.Contains("toca", StringComparison.Ordinal) && !text.Contains("descanso", StringComparison.Ordinal));
+        }
+
+        private static bool IsCurrentExerciseQuery(string text)
+        {
+            if (!text.Contains("ejercicio", StringComparison.Ordinal))
+                return false;
+
+            return text.Contains("que ejercicio me toca", StringComparison.Ordinal) ||
+                   text.Contains("cual es el ejercicio actual", StringComparison.Ordinal);
         }
 
         private static bool IsRemainingExercisesQuery(string text)

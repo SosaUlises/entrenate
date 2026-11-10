@@ -242,6 +242,107 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         [Fact]
+        public async Task Handle_WhenReturnToCurrentRequested_NavigatesFromVisiblePreviewToAuthoritativeExercise()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Curl Femoral", 3));
+            var ordered = session.Ejercicios.OrderBy(x => x.Orden).ToList();
+            ordered[0].RegistrarOActualizarSerie(1, 80, 8, 2, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-return-current",
+                    "audio",
+                    "volvé al que me toca",
+                    new ClientSnapshotInput(null, null, null, null, null, ordered[1].Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Volviendo a Hip Thrust.", result.Text);
+            Assert.Equal("NavigateToExercise", result.ClientAction?.Type);
+            Assert.Equal(ordered[0].Id, result.ClientAction?.ExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenAlreadyViewingAuthoritativeExercise_DoesNotEmitNavigation()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Curl Femoral", 3));
+            var current = session.Ejercicios.OrderBy(x => x.Orden).First();
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-already-current",
+                    "audio",
+                    "mostrame el ejercicio actual",
+                    new ClientSnapshotInput(null, null, null, null, null, current.Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Ya estás en Hip Thrust, que es el ejercicio que te toca.", result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenSessionHasNoPendingTarget_ReturnCurrentDoesNotNavigate()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 1), ("Curl Femoral", 1));
+            foreach (var exercise in session.Ejercicios)
+                CompleteSets(exercise, 1);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-complete-current", "audio", "volvé al que me toca", null),
+                CancellationToken.None);
+
+            Assert.Equal("Ya completaste todas las series de la sesión.", result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenFirstExerciseIsOmitted_ReturnCurrentUsesNextPendingExercise()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Curl Femoral", 3));
+            var ordered = session.Ejercicios.OrderBy(x => x.Orden).ToList();
+            session.OmitirEjercicio(ordered[0].Id);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-current-after-skip",
+                    "audio",
+                    "mostrame el que me toca",
+                    new ClientSnapshotInput(null, null, null, null, null, ordered[0].Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Volviendo a Curl Femoral.", result.Text);
+            Assert.Equal(ordered[1].Id, result.ClientAction?.ExerciseSessionId);
+            Assert.True(ordered[0].Omitido);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCurrentExerciseQueried_ReturnsAuthoritativeExerciseAndSet()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Curl Femoral", 3));
+            session.Ejercicios.OrderBy(x => x.Orden).First()
+                .RegistrarOActualizarSerie(1, 80, 8, 2, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-current-query", "audio", "¿qué ejercicio me toca?", null),
+                CancellationToken.None);
+
+            Assert.Equal("Te toca Hip Thrust, serie 2.", result.Text);
+            Assert.Null(result.ClientAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
         public async Task Handle_WhenNavigateByNameRequested_CanOpenOmittedExerciseWithoutReactivatingIt()
         {
             var session = CreateMultiExerciseSession(("Hip Thrust", 3), ("Prensa", 3));

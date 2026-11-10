@@ -262,6 +262,14 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     request.Text);
             }
 
+            if (routing.Kind == LiveCoachIntentKind.ReturnToCurrentExercise)
+            {
+                return CreateReturnToCurrentExerciseResponse(
+                    session,
+                    request.ClientTurnId,
+                    request.ClientSnapshot?.VisibleExerciseSessionId);
+            }
+
             if (routing.Kind is LiveCoachIntentKind.NavigateNextExercise or
                 LiveCoachIntentKind.NavigatePreviousExercise or
                 LiveCoachIntentKind.NavigateToExercise)
@@ -417,6 +425,16 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 return CreateDirectResponse(
                     request.ClientTurnId,
                     LiveCoachPerformanceQueryResolver.ResolveNextExercise(session));
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.CurrentExercise)
+            {
+                var current = CurrentPendingTrainingSetResolver.Resolve(session);
+                return CreateDirectResponse(
+                    request.ClientTurnId,
+                    current is null
+                        ? "Ya completaste todas las series de la sesión."
+                        : $"Te toca {current.ExerciseSession.Ejercicio.Nombre}, serie {current.SetNumber}.");
             }
 
             if (routing.Kind == LiveCoachIntentKind.RemainingExercises)
@@ -683,6 +701,31 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 clientAction: new LiveCoachClientActionDto(
                     actionType,
                     ExerciseSessionId: resolution.Exercise.Id));
+        }
+
+        private LiveCoachRespondResponseDto CreateReturnToCurrentExerciseResponse(
+            Entrenate.Domain.Entidades.SesionEntrenamiento session,
+            string clientTurnId,
+            Guid? visibleExerciseSessionId)
+        {
+            var current = CurrentPendingTrainingSetResolver.Resolve(session);
+            if (current is null)
+                return CreateDirectResponse(clientTurnId, "Ya completaste todas las series de la sesión.");
+
+            var exercise = current.ExerciseSession;
+            if (visibleExerciseSessionId == exercise.Id)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    $"Ya estás en {exercise.Ejercicio.Nombre}, que es el ejercicio que te toca.");
+            }
+
+            return CreateDirectResponse(
+                clientTurnId,
+                $"Volviendo a {exercise.Ejercicio.Nombre}.",
+                clientAction: new LiveCoachClientActionDto(
+                    "NavigateToExercise",
+                    ExerciseSessionId: exercise.Id));
         }
 
         private LiveCoachRespondResponseDto CreateDirectResponse(

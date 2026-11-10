@@ -20,12 +20,17 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Routing
 
         [Theory]
         [InlineData("mostrame el siguiente ejercicio", LiveCoachIntentKind.NavigateNextExercise)]
+        [InlineData("mostrame el siguiente", LiveCoachIntentKind.NavigateNextExercise)]
         [InlineData("pasá al siguiente", LiveCoachIntentKind.NavigateNextExercise)]
         [InlineData("siguiente ejercicio", LiveCoachIntentKind.NavigateNextExercise)]
         [InlineData("volvé al ejercicio anterior", LiveCoachIntentKind.NavigatePreviousExercise)]
+        [InlineData("volvé al anterior", LiveCoachIntentKind.NavigatePreviousExercise)]
         [InlineData("mostrame el anterior", LiveCoachIntentKind.NavigatePreviousExercise)]
         [InlineData("abrí hip thrust", LiveCoachIntentKind.NavigateToExercise)]
         [InlineData("llevame a curl femoral", LiveCoachIntentKind.NavigateToExercise)]
+        [InlineData("volvé al ejercicio actual", LiveCoachIntentKind.ReturnToCurrentExercise)]
+        [InlineData("volvé al actual", LiveCoachIntentKind.ReturnToCurrentExercise)]
+        [InlineData("mostrame el que me toca", LiveCoachIntentKind.ReturnToCurrentExercise)]
         public void Route_VisualNavigationPhrase_ReturnsNavigationIntent(
             string phrase,
             LiveCoachIntentKind expected)
@@ -33,6 +38,14 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Routing
             var result = new LiveCoachIntentRouter().Route(phrase);
 
             Assert.Equal(expected, result.Kind);
+        }
+
+        [Fact]
+        public void Route_CurrentExerciseQuestion_ReturnsDeterministicQueryIntent()
+        {
+            var result = new LiveCoachIntentRouter().Route("¿qué ejercicio me toca?");
+
+            Assert.Equal(LiveCoachIntentKind.CurrentExercise, result.Kind);
         }
 
         [Fact]
