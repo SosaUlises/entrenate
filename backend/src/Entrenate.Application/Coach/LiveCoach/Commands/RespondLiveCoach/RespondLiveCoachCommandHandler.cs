@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Entrenate.Application.Coach.LiveCoach.Context;
 using Entrenate.Application.Coach.LiveCoach.Actions;
+using Entrenate.Application.Coach.LiveCoach.Clarifications;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Prompt;
 using Entrenate.Application.Coach.LiveCoach.Routing;
@@ -33,6 +34,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
         private readonly ILiveCoachSetActionExtractor _setActionExtractor;
         private readonly ILiveCoachPendingActionStore _pendingActionStore;
         private readonly ILiveCoachPendingActionExecutor _pendingActionExecutor;
+        private readonly ILiveCoachClarificationStore _clarificationStore;
         private readonly ILogger<RespondLiveCoachCommandHandler> _logger;
 
         public RespondLiveCoachCommandHandler(
@@ -47,6 +49,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             ILiveCoachSetActionExtractor setActionExtractor,
             ILiveCoachPendingActionStore pendingActionStore,
             ILiveCoachPendingActionExecutor pendingActionExecutor,
+            ILiveCoachClarificationStore clarificationStore,
             ILogger<RespondLiveCoachCommandHandler> logger)
         {
             _sessionRepository = sessionRepository;
@@ -60,6 +63,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             _setActionExtractor = setActionExtractor;
             _pendingActionStore = pendingActionStore;
             _pendingActionExecutor = pendingActionExecutor;
+            _clarificationStore = clarificationStore;
             _logger = logger;
         }
 
@@ -95,14 +99,64 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             }
 
             // 2. Pending-action state and deterministic intent routing
+            var routingNowUtc = DateTime.UtcNow;
             var pendingLookup = _pendingActionStore.FindActive(
                 userId,
                 session.Id,
-                DateTime.UtcNow);
+                routingNowUtc);
             var activePendingAction = pendingLookup.Status == PendingLiveCoachActionLookupStatus.Active
                 ? pendingLookup.Action
                 : null;
             var routing = _intentRouter.Route(request.Text, activePendingAction is not null);
+            var clarificationLookup = _clarificationStore.FindActive(userId, session.Id, routingNowUtc);
+            var bestSetCriterion = LiveCoachBestSetClarificationResolver.ParseCriterion(
+                RemoveDiacritics(request.Text).Trim().ToLowerInvariant());
+
+            if (activePendingAction is null && bestSetCriterion.HasValue)
+            {
+                if (clarificationLookup.Status == PendingLiveCoachClarificationLookupStatus.Expired)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "Decime de nuevo qué querés comparar.");
+                }
+
+                if (clarificationLookup.Status == PendingLiveCoachClarificationLookupStatus.Active &&
+                    clarificationLookup.Clarification is { } clarification &&
+                    clarification.Kind == LiveCoachClarificationKind.BestSetCriterion &&
+                    clarification.ValidCriteria.Contains(bestSetCriterion.Value))
+                {
+                    var taken = _clarificationStore.TakeActive(userId, session.Id, routingNowUtc);
+                    if (taken.Status != PendingLiveCoachClarificationLookupStatus.Active ||
+                        taken.Clarification is null)
+                    {
+                        return CreateDirectResponse(
+                            request.ClientTurnId,
+                            "Decime de nuevo qué querés comparar.");
+                    }
+
+                    var current = CurrentPendingTrainingSetResolver.Resolve(session);
+                    var capturedExercise = session.Ejercicios.FirstOrDefault(
+                        exercise => exercise.Id == taken.Clarification.ExerciseSessionId);
+                    if (capturedExercise is null ||
+                        capturedExercise.Omitido ||
+                        current?.ExerciseSession.Id != capturedExercise.Id)
+                    {
+                        return CreateDirectResponse(
+                            request.ClientTurnId,
+                            "La sesión cambió. Preguntame de nuevo cuál fue tu mejor serie.");
+                    }
+
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        LiveCoachPerformanceQueryResolver.ResolveBestSetToday(
+                            capturedExercise,
+                            bestSetCriterion.Value));
+                }
+            }
+
+            if (clarificationLookup.Status == PendingLiveCoachClarificationLookupStatus.Active)
+                _clarificationStore.Clear(userId, session.Id);
 
             if (routing.Kind == LiveCoachIntentKind.ConfirmPendingAction && activePendingAction is not null)
             {
@@ -444,9 +498,38 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
 
             if (routing.Kind == LiveCoachIntentKind.BestSetToday)
             {
+                var current = CurrentPendingTrainingSetResolver.Resolve(session);
+                if (current is null)
+                {
+                    return CreateDirectResponse(
+                        request.ClientTurnId,
+                        "Ya completaste todas las series de la sesión.");
+                }
+
+                _clarificationStore.Set(new PendingLiveCoachClarification(
+                    Guid.NewGuid(),
+                    userId,
+                    session.Id,
+                    request.ClientTurnId,
+                    current.ExerciseSession.Id,
+                    LiveCoachClarificationKind.BestSetCriterion,
+                    [
+                        LiveCoachBestSetCriterion.Weight,
+                        LiveCoachBestSetCriterion.Repetitions,
+                        LiveCoachBestSetCriterion.Volume
+                    ],
+                    DateTime.UtcNow.AddSeconds(45)));
+
                 return CreateDirectResponse(
                     request.ClientTurnId,
-                    LiveCoachPerformanceQueryResolver.ResolveBestSetToday());
+                    LiveCoachPerformanceQueryResolver.ResolveBestSetToday(),
+                    clarification: new LiveCoachClarificationDto(
+                        "BestSetCriterion",
+                        [
+                            new("peso", "Peso"),
+                            new("repeticiones", "Repeticiones"),
+                            new("volumen", "Volumen")
+                        ]));
             }
 
             if (routing.Kind == LiveCoachIntentKind.PreviousExercisePerformance)
@@ -855,7 +938,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             string text,
             PendingLiveCoachActionDto? pendingAction = null,
             Entrenate.Application.TrainingSessions.DTOs.TrainingSessionDto? updatedSession = null,
-            LiveCoachClientActionDto? clientAction = null)
+            LiveCoachClientActionDto? clientAction = null,
+            LiveCoachClarificationDto? clarification = null)
         {
             var responseId = Guid.NewGuid();
             _responseCache.Set(responseId, text, TimeSpan.FromSeconds(60));
@@ -867,7 +951,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 true,
                 pendingAction,
                 updatedSession,
-                clientAction);
+                clientAction,
+                clarification);
         }
 
         private static PendingLiveCoachActionDto ToDto(PendingLiveCoachAction action)

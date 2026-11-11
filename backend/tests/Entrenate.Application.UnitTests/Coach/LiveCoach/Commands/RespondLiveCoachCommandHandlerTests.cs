@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Entrenate.Application.Coach.AdaptiveTraining.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach;
 using Entrenate.Application.Coach.LiveCoach.Actions;
+using Entrenate.Application.Coach.LiveCoach.Clarifications;
 using Entrenate.Application.Coach.LiveCoach.Context;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Models;
@@ -42,6 +43,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         private readonly LiveCoachSetActionExtractor _setActionExtractor;
         private readonly FakePendingActionStore _pendingActionStore;
         private readonly FakePendingActionExecutor _pendingActionExecutor;
+        private readonly FakeClarificationStore _clarificationStore;
 
         private readonly RespondLiveCoachCommandHandler _handler;
 
@@ -58,6 +60,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             _setActionExtractor = new LiveCoachSetActionExtractor();
             _pendingActionStore = new FakePendingActionStore();
             _pendingActionExecutor = new FakePendingActionExecutor(_pendingActionStore);
+            _clarificationStore = new FakeClarificationStore();
 
             _handler = new RespondLiveCoachCommandHandler(
                 _sessionRepository,
@@ -71,6 +74,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 _setActionExtractor,
                 _pendingActionStore,
                 _pendingActionExecutor,
+                _clarificationStore,
                 NullLogger<RespondLiveCoachCommandHandler>.Instance);
         }
 
@@ -2783,7 +2787,173 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             var result = await _handler.Handle(command, CancellationToken.None);
 
             Assert.NotNull(result);
+            Assert.NotNull(result.Clarification);
+            Assert.Equal("BestSetCriterion", result.Clarification.Kind);
+            Assert.Collection(
+                result.Clarification.Options,
+                option =>
+                {
+                    Assert.Equal("peso", option.Value);
+                    Assert.Equal("Peso", option.Label);
+                },
+                option =>
+                {
+                    Assert.Equal("repeticiones", option.Value);
+                    Assert.Equal("Repeticiones", option.Label);
+                },
+                option =>
+                {
+                    Assert.Equal("volumen", option.Value);
+                    Assert.Equal("Volumen", option.Label);
+                });
             Assert.Equal("¿Querés comparar por peso, repeticiones o volumen?", result.Text);
+            Assert.Single(_clarificationStore.Clarifications);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("peso", "Tu mejor serie por peso fue 8 repeticiones con 120 kilos, RIR 1.")]
+        [InlineData("por peso", "Tu mejor serie por peso fue 8 repeticiones con 120 kilos, RIR 1.")]
+        [InlineData("más peso", "Tu mejor serie por peso fue 8 repeticiones con 120 kilos, RIR 1.")]
+        [InlineData("repeticiones", "Tu mejor serie por repeticiones fue 13 repeticiones con 80 kilos, RIR 2.")]
+        [InlineData("reps", "Tu mejor serie por repeticiones fue 13 repeticiones con 80 kilos, RIR 2.")]
+        [InlineData("por repeticiones", "Tu mejor serie por repeticiones fue 13 repeticiones con 80 kilos, RIR 2.")]
+        [InlineData("volumen", "Tu mejor serie por volumen fue 10 repeticiones con 110 kilos.")]
+        [InlineData("por volumen", "Tu mejor serie por volumen fue 10 repeticiones con 110 kilos.")]
+        public async Task Handle_WhenBestSetCriterionFollowUpIsValid_ResolvesDeterministically(
+            string criterion,
+            string expected)
+        {
+            var session = CreateBestSetSession();
+            _sessionRepository.Sessions[session.Id] = session;
+            await AskBestSetAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, $"turn-best-{criterion}", "audio", criterion, null),
+                CancellationToken.None);
+
+            Assert.Equal(expected, result.Text);
+            Assert.Null(result.Clarification);
+            Assert.Empty(_clarificationStore.Clarifications);
+            Assert.True(_responseCache.Cache.ContainsKey(result.ResponseId));
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenBestSetCriterionHasNoClarification_DoesNotTreatItAsBestSet()
+        {
+            var session = CreateBestSetSession();
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-weight-without-context", "audio", "peso", null),
+                CancellationToken.None);
+
+            Assert.Equal("Respuesta del coach.", result.Text);
+            Assert.Equal(1, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenBestSetClarificationExpired_DoesNotApplyCriterion()
+        {
+            var session = CreateBestSetSession();
+            _sessionRepository.Sessions[session.Id] = session;
+            await AskBestSetAsync(session);
+            _clarificationStore.ExpireAll();
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-best-expired", "audio", "peso", null),
+                CancellationToken.None);
+
+            Assert.Equal("Decime de nuevo qué querés comparar.", result.Text);
+            Assert.Empty(_clarificationStore.Clarifications);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenExplicitIntentArrivesDuringClarification_ExecutesItAndClearsContext()
+        {
+            var session = CreateBestSetSession();
+            _sessionRepository.Sessions[session.Id] = session;
+            await AskBestSetAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-rest-during-best", "audio", "¿Cuánto descanso tengo?", null),
+                CancellationToken.None);
+
+            Assert.Equal("Te toca descansar 1 minuto y 30 segundos.", result.Text);
+            Assert.Empty(_clarificationStore.Clarifications);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenAuthoritativeExerciseChangedDuringClarification_AsksToRepeat()
+        {
+            var session = CreateBestSetSession();
+            _sessionRepository.Sessions[session.Id] = session;
+            await AskBestSetAsync(session);
+            session.Ejercicios.OrderBy(item => item.Orden).First()
+                .RegistrarOActualizarSerie(4, 90, 8, 1, DateTime.UtcNow);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-best-stale", "audio", "peso", null),
+                CancellationToken.None);
+
+            Assert.Equal("La sesión cambió. Preguntame de nuevo cuál fue tu mejor serie.", result.Text);
+            Assert.Empty(_clarificationStore.Clarifications);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenBestSetFollowUpUsesAnotherSession_DoesNotApplyOldContext()
+        {
+            var originalSession = CreateBestSetSession();
+            var otherSession = CreateMultiExerciseSession(("Remo", 3));
+            _sessionRepository.Sessions[originalSession.Id] = originalSession;
+            _sessionRepository.Sessions[otherSession.Id] = otherSession;
+            await AskBestSetAsync(originalSession);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(otherSession.Id, "turn-best-other-session", "audio", "peso", null),
+                CancellationToken.None);
+
+            Assert.Equal("Respuesta del coach.", result.Text);
+            Assert.Equal(1, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenVisibleExerciseChangesDuringBestSetClarification_UsesCapturedExercise()
+        {
+            var session = CreateBestSetSession();
+            var visibleExercise = session.Ejercicios.OrderBy(item => item.Orden).Last();
+            _sessionRepository.Sessions[session.Id] = session;
+            await AskBestSetAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-best-visible-different",
+                    "audio",
+                    "peso",
+                    new ClientSnapshotInput(null, null, null, null, null, visibleExercise.Id)),
+                CancellationToken.None);
+
+            Assert.Equal("Tu mejor serie por peso fue 8 repeticiones con 120 kilos, RIR 1.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCapturedExerciseHasNoCompletedSets_ReturnsNaturalEmptyState()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await AskBestSetAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-best-empty", "audio", "peso", null),
+                CancellationToken.None);
+
+            Assert.Equal("Aún no tenés series completadas de Hip Thrust hoy.", result.Text);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
@@ -2808,6 +2978,28 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         #endregion
+
+        private Task<LiveCoachRespondResponseDto> AskBestSetAsync(SesionEntrenamiento session)
+        {
+            return _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    $"turn-best-question-{Guid.NewGuid():N}",
+                    "audio",
+                    "¿Cuál fue mi mejor serie de este ejercicio hoy?",
+                    null),
+                CancellationToken.None);
+        }
+
+        private static SesionEntrenamiento CreateBestSetSession()
+        {
+            var session = CreateMultiExerciseSession(("Hip Thrust", 4), ("Curl Femoral", 3));
+            var exercise = session.Ejercicios.OrderBy(item => item.Orden).First();
+            exercise.RegistrarOActualizarSerie(1, 120, 8, 1, DateTime.UtcNow);
+            exercise.RegistrarOActualizarSerie(2, 80, 13, 2, DateTime.UtcNow);
+            exercise.RegistrarOActualizarSerie(3, 110, 10, null, DateTime.UtcNow);
+            return session;
+        }
 
         private static void CompleteSets(EjercicioSesion exercise, int count)
         {
@@ -3111,6 +3303,72 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                     return new(PendingLiveCoachActionTakeStatus.Expired);
                 Actions.Remove(actionId);
                 return new(PendingLiveCoachActionTakeStatus.Success, action);
+            }
+        }
+
+        private sealed class FakeClarificationStore : ILiveCoachClarificationStore
+        {
+            public Dictionary<Guid, PendingLiveCoachClarification> Clarifications { get; } = [];
+
+            public void Set(PendingLiveCoachClarification clarification)
+            {
+                Clear(clarification.UserId, clarification.SessionId);
+                Clarifications[clarification.ClarificationId] = clarification;
+            }
+
+            public PendingLiveCoachClarificationLookupResult FindActive(
+                string userId,
+                Guid sessionId,
+                DateTime nowUtc)
+            {
+                var clarification = Clarifications.Values.FirstOrDefault(item =>
+                    item.UserId == userId && item.SessionId == sessionId);
+                if (clarification is null)
+                    return new(PendingLiveCoachClarificationLookupStatus.NotFound);
+                if (nowUtc > clarification.ExpiresAtUtc)
+                {
+                    Clarifications.Remove(clarification.ClarificationId);
+                    return new(PendingLiveCoachClarificationLookupStatus.Expired);
+                }
+
+                return new(PendingLiveCoachClarificationLookupStatus.Active, clarification);
+            }
+
+            public PendingLiveCoachClarificationLookupResult TakeActive(
+                string userId,
+                Guid sessionId,
+                DateTime nowUtc)
+            {
+                var lookup = FindActive(userId, sessionId, nowUtc);
+                if (lookup.Status != PendingLiveCoachClarificationLookupStatus.Active ||
+                    lookup.Clarification is null)
+                {
+                    return lookup;
+                }
+
+                Clarifications.Remove(lookup.Clarification.ClarificationId);
+                return lookup;
+            }
+
+            public void Clear(string userId, Guid sessionId)
+            {
+                foreach (var clarification in Clarifications.Values
+                    .Where(item => item.UserId == userId && item.SessionId == sessionId)
+                    .ToList())
+                {
+                    Clarifications.Remove(clarification.ClarificationId);
+                }
+            }
+
+            public void ExpireAll()
+            {
+                foreach (var clarification in Clarifications.Values.ToList())
+                {
+                    Clarifications[clarification.ClarificationId] = clarification with
+                    {
+                        ExpiresAtUtc = DateTime.UtcNow.AddSeconds(-1)
+                    };
+                }
             }
         }
 

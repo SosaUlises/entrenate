@@ -36,6 +36,17 @@ export type LiveCoachRespondResponse = {
   pendingAction?: LiveCoachPendingAction | null;
   updatedSession?: import("@/features/training/types/training.types").TrainingSession | null;
   clientAction?: LiveCoachClientAction | null;
+  clarification?: LiveCoachClarification | null;
+};
+
+export type LiveCoachClarification = {
+  kind: "BestSetCriterion";
+  options: LiveCoachClarificationOption[];
+};
+
+export type LiveCoachClarificationOption = {
+  value: "peso" | "repeticiones" | "volumen";
+  label: string;
 };
 
 export type LiveCoachClientAction =

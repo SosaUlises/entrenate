@@ -11,7 +11,16 @@ namespace Entrenate.Application.Coach.LiveCoach.DTOs
         bool CanSynthesizeVoice,
         PendingLiveCoachActionDto? PendingAction = null,
         TrainingSessionDto? UpdatedSession = null,
-        LiveCoachClientActionDto? ClientAction = null);
+        LiveCoachClientActionDto? ClientAction = null,
+        LiveCoachClarificationDto? Clarification = null);
+
+    public sealed record LiveCoachClarificationDto(
+        string Kind,
+        IReadOnlyCollection<LiveCoachClarificationOptionDto> Options);
+
+    public sealed record LiveCoachClarificationOptionDto(
+        string Value,
+        string Label);
 
     public sealed record LiveCoachClientActionDto(
         string Type,

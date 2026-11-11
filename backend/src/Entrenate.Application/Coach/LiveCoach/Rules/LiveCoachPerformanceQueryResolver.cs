@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Entrenate.Application.Coach.LiveCoach.Clarifications;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.TrainingSessions;
 using Entrenate.Domain.Entidades;
@@ -103,6 +104,41 @@ namespace Entrenate.Application.Coach.LiveCoach.Rules
         public static string ResolveBestSetToday()
         {
             return "¿Querés comparar por peso, repeticiones o volumen?";
+        }
+
+        public static string ResolveBestSetToday(
+            EjercicioSesion exercise,
+            LiveCoachBestSetCriterion criterion)
+        {
+            var completedSets = exercise.Series
+                .Where(set => set.EstaRealmenteCompletada())
+                .ToList();
+
+            if (completedSets.Count == 0)
+                return $"Aún no tenés series completadas de {exercise.Ejercicio.Nombre} hoy.";
+
+            var bestSet = criterion switch
+            {
+                LiveCoachBestSetCriterion.Weight => completedSets
+                    .OrderByDescending(set => set.Peso)
+                    .ThenByDescending(set => set.Repeticiones)
+                    .ThenBy(set => set.NumeroSerie)
+                    .First(),
+                LiveCoachBestSetCriterion.Repetitions => completedSets
+                    .OrderByDescending(set => set.Repeticiones)
+                    .ThenByDescending(set => set.Peso)
+                    .ThenBy(set => set.NumeroSerie)
+                    .First(),
+                LiveCoachBestSetCriterion.Volume => completedSets
+                    .OrderByDescending(set => set.Peso * set.Repeticiones)
+                    .ThenByDescending(set => set.Peso)
+                    .ThenByDescending(set => set.Repeticiones)
+                    .ThenBy(set => set.NumeroSerie)
+                    .First(),
+                _ => throw new ArgumentOutOfRangeException(nameof(criterion), criterion, null)
+            };
+
+            return FormatBestSetAnswer(bestSet, criterion);
         }
 
         public static async Task<string> ResolvePreviousExercisePerformanceAsync(
@@ -307,6 +343,27 @@ namespace Entrenate.Application.Coach.LiveCoach.Rules
             return remainingSets == 1
                 ? $"Te queda 1 serie de {progress.ExerciseName}."
                 : $"Te quedan {remainingSets} series de {progress.ExerciseName}.";
+        }
+
+        private static string FormatBestSetAnswer(
+            SerieEntrenamiento set,
+            LiveCoachBestSetCriterion criterion)
+        {
+            var criterionLabel = criterion switch
+            {
+                LiveCoachBestSetCriterion.Weight => "peso",
+                LiveCoachBestSetCriterion.Repetitions => "repeticiones",
+                LiveCoachBestSetCriterion.Volume => "volumen",
+                _ => throw new ArgumentOutOfRangeException(nameof(criterion), criterion, null)
+            };
+            var repetitions = set.Repeticiones == 1
+                ? "1 repetición"
+                : $"{set.Repeticiones} repeticiones";
+            var weight = set.Peso.ToString("0.##", CultureInfo.InvariantCulture);
+            var kilograms = set.Peso == 1 ? "kilo" : "kilos";
+            var rir = set.Rir.HasValue ? $", RIR {set.Rir.Value}" : string.Empty;
+
+            return $"Tu mejor serie por {criterionLabel} fue {repetitions} con {weight} {kilograms}{rir}.";
         }
 
         private sealed record CurrentExerciseProgress(

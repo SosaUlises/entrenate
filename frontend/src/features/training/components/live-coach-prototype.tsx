@@ -453,20 +453,24 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     const query = textInput.trim();
     if (!query) return;
 
-    setTranscript(query);
+    if (!coachResponse?.clarification || pendingAction) {
+      setTranscript(query);
+    }
     setTextInput("");
     setShowTextInput(false);
     await askCoach(query, "text");
   }
 
-  async function startRecording(preservePendingAction = false) {
+  async function startRecording(preserveCurrentResponse = false) {
     if (actionPending) return;
     interactionSnapshotRef.current = getClientSnapshot();
     cleanupMedia();
     stopAudio("new-query-audio");
     setErrorMessage(null);
-    setTranscript(null);
-    if (!preservePendingAction) setCoachResponse(null);
+    if (!preserveCurrentResponse) {
+      setTranscript(null);
+      setCoachResponse(null);
+    }
     setActionError(null);
 
     if (
@@ -558,7 +562,9 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
 
       if (result.status === "success") {
         const text = result.data.transcript;
-        setTranscript(text);
+        if (!coachResponse?.clarification || pendingAction) {
+          setTranscript(text);
+        }
         await askCoach(text, "audio");
       } else {
         setErrorMessage(result.message || "Ocurrió un error al procesar el audio.");
@@ -694,7 +700,10 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     if (outside) handleCancelOrClose();
   }
 
-  const presentation = statePresentations[state];
+  const clarification = pendingAction ? null : coachResponse?.clarification ?? null;
+  const presentation = clarification && state === "success"
+    ? { description: "Elegí una opción o respondé con tu voz.", label: "Te escucho" }
+    : statePresentations[state];
   const faceState = mapToFaceState(state, pendingAction !== null);
   const confirmationControlsDisabled =
     actionPending ||
@@ -957,27 +966,100 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
                   {pendingActionPanel}
                 </div>
 
-                {!pendingAction ? <div className="flex gap-2">
-                  {coachResponse.canSynthesizeVoice && (
+                {clarification ? (
+                  <div className="space-y-3" aria-label="Opciones para responder al Coach">
+                    <div className="grid grid-cols-3 gap-2">
+                      {clarification.options.map((option) => (
+                        <button
+                          className="min-h-11 rounded-control-sm border border-border-strong bg-surface-interactive px-2.5 py-2 text-sm font-semibold text-text-primary transition-colors duration-150 hover:border-thermal-accent/60 hover:bg-surface-active focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                          key={option.value}
+                          onClick={() => void askCoach(option.value, "text")}
+                          type="button"
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {showTextInput ? (
+                      <form className="pt-1" onSubmit={handleTextSubmit}>
+                        <div className="flex gap-2">
+                          <input
+                            aria-label="Respuesta para el Live Coach"
+                            autoFocus
+                            className="min-h-11 flex-1 rounded-control-sm border border-border bg-surface-interactive px-3.5 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-2 focus-visible:outline-focus"
+                            onChange={(event) => setTextInput(event.target.value)}
+                            placeholder="Escribí tu respuesta"
+                            type="text"
+                            value={textInput}
+                          />
+                          <button
+                            aria-label="Enviar respuesta"
+                            className="flex size-11 shrink-0 items-center justify-center rounded-control-sm bg-thermal-accent text-black transition-colors duration-150 hover:bg-thermal-accent/90 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none disabled:opacity-50"
+                            disabled={!textInput.trim()}
+                            type="submit"
+                          >
+                            <ArrowRight aria-hidden="true" size={18} />
+                          </button>
+                        </div>
+                      </form>
+                    ) : null}
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button onClick={() => void startRecording(true)}>
+                        <Mic aria-hidden="true" size={16} />
+                        <span>Responder</span>
+                      </Button>
+                      <Button onClick={handleReset} variant="outline">
+                        <RotateCcw aria-hidden="true" size={16} />
+                        <span>Otra consulta</span>
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-wrap justify-center gap-1">
+                      {coachResponse.canSynthesizeVoice ? (
+                        <Button
+                          onClick={() => playSpokenAnswer(coachResponse.responseId, true)}
+                          size="sm"
+                          variant="ghost"
+                        >
+                          <Volume2 aria-hidden="true" size={15} />
+                          <span>Escuchar</span>
+                        </Button>
+                      ) : null}
+                      <Button
+                        onClick={() => setShowTextInput((current) => !current)}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        <MessageSquare aria-hidden="true" size={15} />
+                        <span>{showTextInput ? "Ocultar texto" : "Escribir"}</span>
+                      </Button>
+                    </div>
+                  </div>
+                ) : !pendingAction ? (
+                  <div className="flex gap-2">
+                    {coachResponse.canSynthesizeVoice && (
+                      <Button
+                        className="flex-1"
+                        onClick={() => playSpokenAnswer(coachResponse.responseId, true)}
+                        variant="secondary"
+                      >
+                        <Volume2 aria-hidden="true" size={16} />
+                        <span>Escuchar</span>
+                      </Button>
+                    )}
+
                     <Button
                       className="flex-1"
-                      onClick={() => playSpokenAnswer(coachResponse.responseId, true)}
-                      variant="secondary"
+                      onClick={handleReset}
+                      variant={coachResponse.canSynthesizeVoice ? "outline" : "primary"}
                     >
-                      <Volume2 aria-hidden="true" size={16} />
-                      <span>Escuchar</span>
+                      <RotateCcw aria-hidden="true" size={16} />
+                      <span>Otra consulta</span>
                     </Button>
-                  )}
-
-                  <Button
-                    className="flex-1"
-                    onClick={handleReset}
-                    variant={coachResponse.canSynthesizeVoice ? "outline" : "primary"}
-                  >
-                    <RotateCcw aria-hidden="true" size={16} />
-                    <span>Otra consulta</span>
-                  </Button>
-                </div> : null}
+                  </div>
+                ) : null}
               </div>
             )}
 
