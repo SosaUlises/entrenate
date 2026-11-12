@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using Entrenate.Application.Coach.LiveCoach.Actions;
 
 namespace Entrenate.Application.Coach.LiveCoach.Routing
 {
@@ -48,6 +50,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         CurrentExercise,
         RemainingExercises,
         SessionProgress,
+        LiveAdaptationTimeConstraint,
         OtherMutation,
         OutOfScope
     }
@@ -55,7 +58,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
     public sealed record LiveCoachRoutingResult(
         LiveCoachIntentKind Kind,
         bool RequiresPreviousPerformance,
-        string? DirectAnswer = null);
+        string? DirectAnswer = null,
+        int? RemainingMinutes = null);
 
     public interface ILiveCoachIntentRouter
     {
@@ -245,6 +249,14 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
             if (IsRestQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.RestTimerQuery, false);
+
+            if (TryGetLiveAdaptationMinutes(pendingDecision, out var remainingMinutes))
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.LiveAdaptationTimeConstraint,
+                    false,
+                    RemainingMinutes: remainingMinutes);
+            }
 
             if (IsCurrentPrescriptionQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentPrescriptionQuery, false);
@@ -879,6 +891,37 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
             return (adjustsDuration && hasNumber) ||
                    (hasTimeUnit && hasNumber && (hasTarget || hasTimerStartVerb));
+        }
+
+        private static bool TryGetLiveAdaptationMinutes(
+            string normalizedText,
+            out int remainingMinutes)
+        {
+            remainingMinutes = 0;
+            if (Tokenize(normalizedText).Exists(RestTargetWords.Contains))
+                return false;
+
+            var normalizedNumbers = SpanishNumberNormalizer.NormalizeNumberWords(normalizedText);
+            var mentionsMinutes = normalizedNumbers.Contains(" minuto", StringComparison.Ordinal);
+            var hasCurrentConstraint =
+                (normalizedNumbers.Contains("me quedan ", StringComparison.Ordinal) && mentionsMinutes) ||
+                (normalizedNumbers.Contains("solo tengo ", StringComparison.Ordinal) && mentionsMinutes) ||
+                (normalizedNumbers.Contains("tengo ", StringComparison.Ordinal) &&
+                    normalizedNumbers.Contains(" minutos disponibles", StringComparison.Ordinal)) ||
+                (normalizedNumbers.Contains("tengo ", StringComparison.Ordinal) &&
+                    normalizedNumbers.Contains(" minutos mas", StringComparison.Ordinal)) ||
+                (normalizedNumbers.Contains("solo puedo entrenar ", StringComparison.Ordinal) && mentionsMinutes) ||
+                (normalizedNumbers.Contains("puedo entrenar ", StringComparison.Ordinal) &&
+                    normalizedNumbers.Contains(" minutos mas", StringComparison.Ordinal)) ||
+                normalizedNumbers.Contains("me tengo que ir en ", StringComparison.Ordinal) ||
+                normalizedNumbers.Contains("quiero terminar en ", StringComparison.Ordinal) ||
+                (normalizedNumbers.Contains("dispongo de ", StringComparison.Ordinal) && mentionsMinutes);
+            if (!hasCurrentConstraint)
+                return false;
+
+            var match = Regex.Match(normalizedNumbers, @"\b(?<minutes>\d{1,3})\b");
+            return match.Success &&
+                int.TryParse(match.Groups["minutes"].Value, out remainingMinutes);
         }
 
         private static bool IsRestQuery(string normalizedText)

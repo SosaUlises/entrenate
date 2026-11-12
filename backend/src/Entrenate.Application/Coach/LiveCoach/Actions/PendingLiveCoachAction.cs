@@ -1,3 +1,5 @@
+using Entrenate.Application.Coach.LiveCoach.Adaptation;
+
 namespace Entrenate.Application.Coach.LiveCoach.Actions
 {
     public static class LiveCoachActionTypes
@@ -5,6 +7,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
         public const string RegisterCurrentSet = "RegisterCurrentSet";
         public const string SkipCurrentExercise = "SkipCurrentExercise";
         public const string ReactivateExercise = "ReactivateExercise";
+        public const string ApplyTimeConstraintAdaptation = "ApplyTimeConstraintAdaptation";
     }
 
     public sealed record PendingLiveCoachAction(
@@ -19,7 +22,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
         DateTime ExpiresAtUtc,
         string Type = LiveCoachActionTypes.RegisterCurrentSet,
         string? ExerciseName = null,
-        int PendingSetCount = 0);
+        int PendingSetCount = 0,
+        LiveTimeConstraintProposal? TimeConstraintProposal = null);
 
     public sealed record PendingLiveCoachSetPatch(
         decimal? WeightKg = null,

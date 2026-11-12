@@ -7,7 +7,7 @@ import { cancelLiveCoachAction, confirmLiveCoachAction } from "../services/live-
 
 export type ConfirmLiveCoachPendingActionResult =
   | { data: LiveCoachActionConfirmation; status: "success" }
-  | { status: "conflict" | "error" | "not-found" | "unauthenticated" };
+  | { status: "conflict" | "error" | "expired" | "not-found" | "unauthenticated" };
 
 export async function confirmLiveCoachPendingAction(
   actionId: string,
@@ -28,7 +28,10 @@ export async function confirmLiveCoachPendingAction(
         return { status: "unauthenticated" };
       }
       if (error.status === 404) return { status: "not-found" };
-      if (error.status === 409) return { status: "conflict" };
+      if (error.status === 409) {
+        const detail = error.problemDetail?.toLocaleLowerCase("es") ?? "";
+        return { status: detail.includes("expir") ? "expired" : "conflict" };
+      }
     }
     return { status: "error" };
   }

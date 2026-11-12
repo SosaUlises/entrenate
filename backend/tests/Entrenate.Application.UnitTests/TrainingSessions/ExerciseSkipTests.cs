@@ -41,6 +41,67 @@ namespace Entrenate.Application.UnitTests.TrainingSessions
         }
 
         [Fact]
+        public void Resolve_WhenCurrentCompletesAndAllFollowingExercisesAreOmitted_ReturnsNoTarget()
+        {
+            var current = CreateExercise(1);
+            var omittedSecond = CreateExercise(2);
+            var omittedThird = CreateExercise(3);
+            var session = CreateSession(current, omittedSecond, omittedThird);
+            session.OmitirEjercicio(omittedSecond.Id);
+            session.OmitirEjercicio(omittedThird.Id);
+
+            CompleteTargetSets(current);
+
+            Assert.Null(CurrentPendingTrainingSetResolver.Resolve(session));
+            Assert.True(omittedSecond.Omitido);
+            Assert.True(omittedThird.Omitido);
+        }
+
+        [Fact]
+        public void Resolve_WhenCompletedExerciseIsFollowedOnlyByOmittedExercises_ReturnsNoTarget()
+        {
+            var completed = CreateExercise(1);
+            var omittedSecond = CreateExercise(2);
+            var omittedThird = CreateExercise(3);
+            var session = CreateSession(completed, omittedSecond, omittedThird);
+            CompleteTargetSets(completed);
+            session.OmitirEjercicio(omittedSecond.Id);
+            session.OmitirEjercicio(omittedThird.Id);
+
+            Assert.Null(CurrentPendingTrainingSetResolver.Resolve(session));
+        }
+
+        [Fact]
+        public void Resolve_WhenOmittedExerciseWithCompletedSetsExists_StillIgnoresIt()
+        {
+            var completed = CreateExercise(1);
+            var omittedWithWork = CreateExercise(2);
+            var session = CreateSession(completed, omittedWithWork);
+            CompleteTargetSets(completed);
+            omittedWithWork.RegistrarOActualizarSerie(1, 60, 10, 2, DateTime.UtcNow);
+            session.OmitirEjercicio(omittedWithWork.Id);
+
+            Assert.Null(CurrentPendingTrainingSetResolver.Resolve(session));
+            Assert.Single(omittedWithWork.Series);
+        }
+
+        [Fact]
+        public void Resolve_WhenFollowingExerciseIsReactivated_FindsItsFirstRealGap()
+        {
+            var completed = CreateExercise(1);
+            var reactivated = CreateExercise(2);
+            var session = CreateSession(completed, reactivated);
+            CompleteTargetSets(completed);
+            session.OmitirEjercicio(reactivated.Id);
+            session.ReactivarEjercicio(reactivated.Id);
+
+            var current = CurrentPendingTrainingSetResolver.Resolve(session);
+
+            Assert.Equal(reactivated.Id, current?.ExerciseSession.Id);
+            Assert.Equal(1, current?.SetNumber);
+        }
+
+        [Fact]
         public void OmitirOrReactivar_AfterSessionCompletes_Fails()
         {
             var exercise = CreateExercise(1);
@@ -70,5 +131,18 @@ namespace Entrenate.Application.UnitTests.TrainingSessions
 
         private static EjercicioSesion CreateExercise(int order)
             => new(Guid.NewGuid(), order, 3, 8, 10, 1, 2, 120);
+
+        private static void CompleteTargetSets(EjercicioSesion exercise)
+        {
+            for (var setNumber = 1; setNumber <= exercise.SeriesObjetivo; setNumber++)
+            {
+                exercise.RegistrarOActualizarSerie(
+                    setNumber,
+                    80,
+                    8,
+                    2,
+                    DateTime.UtcNow);
+            }
+        }
     }
 }

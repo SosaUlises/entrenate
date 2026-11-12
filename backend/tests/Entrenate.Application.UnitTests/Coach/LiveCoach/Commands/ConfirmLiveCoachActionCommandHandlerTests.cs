@@ -1,4 +1,5 @@
 using Entrenate.Application.Coach.LiveCoach.Actions;
+using Entrenate.Application.Coach.LiveCoach.Adaptation;
 using Entrenate.Application.Coach.LiveCoach.Commands.ConfirmLiveCoachAction;
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
@@ -97,6 +98,39 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.Equal(action.ExerciseSessionId, reactivate.ExerciseSessionId);
             Assert.Equal("Hip Thrust reactivado.", result.Text);
             Assert.Null(result.ClientAction);
+        }
+
+        [Fact]
+        public async Task Handle_WhenTimeAdaptationIsValid_UsesDeterministicApplyCommand()
+        {
+            var proposal = new LiveTimeConstraintProposal(
+                Guid.NewGuid(),
+                "owner",
+                Guid.NewGuid(),
+                DateTime.UtcNow,
+                DateTime.UtcNow.AddSeconds(45),
+                20,
+                34,
+                20,
+                "fingerprint",
+                [new(LiveTimeConstraintChangeType.OmitExercise, Guid.NewGuid(), "Curl")]);
+            var action = CreateAction() with
+            {
+                SessionId = proposal.SessionId,
+                Type = LiveCoachActionTypes.ApplyTimeConstraintAdaptation,
+                TimeConstraintProposal = proposal
+            };
+            var updated = CreateSession(action);
+            var sender = new RecordingSender(action.SessionId, updated);
+            var handler = CreateHandler(action, updated, sender);
+
+            var result = await handler.Handle(
+                new ConfirmLiveCoachActionCommand(action.ActionId, RestTimerIsActive: false),
+                CancellationToken.None);
+
+            var command = Assert.IsType<ApplyLiveTimeConstraintAdaptationCommand>(sender.Requests.Single());
+            Assert.Equal(proposal, command.Proposal);
+            Assert.Equal("Listo. Ajusté la sesión para acercarla a 20 minutos.", result.Text);
         }
 
         [Fact]
@@ -285,6 +319,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                         command.Rir, true, DateTime.UtcNow),
                     SkipCurrentExerciseCommand => updatedSession ?? throw new InvalidOperationException(),
                     ReactivateExerciseCommand => updatedSession ?? throw new InvalidOperationException(),
+                    ApplyLiveTimeConstraintAdaptationCommand => updatedSession ?? throw new InvalidOperationException(),
                     GetTrainingSessionByIdQuery => updatedSession ?? new TrainingSessionDto(
                         sessionId, null, DateTime.UtcNow.Date, DateTime.UtcNow,
                         null, EstadoSesionEntrenamiento.EnCurso, []),

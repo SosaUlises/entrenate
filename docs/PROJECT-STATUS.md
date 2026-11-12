@@ -104,6 +104,8 @@
   
   - Live Coach V0 — voice exercise reactivation is closed: omitted exercises can be resolved by name and reactivated through the existing server-side pending-action flow, with tactile/voice confirmation, ownership, stale, TTL and single-use protections. Reactivation reuses Training's authoritative command and lets `CurrentPendingTrainingSetResolver` naturally return to the earliest real pending set.
 
+- Live Coach V0 — interactive clarification follow-ups are closed: Coach responses can expose typed, short-lived clarification metadata that allows the Training UI to continue multi-turn flows without treating every response as final. Best-set criteria can be answered through voice, text or structured quick actions for weight, repetitions and volume, while the backend remains the source of truth and pending mutations preserve their separate confirmation UX.
+
 - Training — omitted exercises can be reactivated while the session remains
   `EnCurso`; reactivation restores the exercise to the authoritative pending resolver
   without altering previously completed sets.

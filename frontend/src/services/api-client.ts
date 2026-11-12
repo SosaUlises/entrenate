@@ -30,6 +30,7 @@ type ApiRequestOptions<TBody extends RequestBody | undefined = undefined> = Omit
 type ApiClientErrorOptions = {
   code: string;
   details?: unknown;
+  problemDetail?: string;
   status?: number;
 };
 
@@ -45,6 +46,7 @@ const statusMessages: Record<number, string> = {
 export class ApiClientError extends Error {
   readonly code: string;
   readonly details?: unknown;
+  readonly problemDetail?: string;
   readonly status?: number;
 
   constructor(message: string, options: ApiClientErrorOptions) {
@@ -52,6 +54,7 @@ export class ApiClientError extends Error {
     this.name = "ApiClientError";
     this.code = options.code;
     this.details = options.details;
+    this.problemDetail = options.problemDetail;
     this.status = options.status;
   }
 }
@@ -138,6 +141,7 @@ function createApiError(response: Response, payload: unknown): ApiClientError {
   return new ApiClientError(message, {
     code: `http_${response.status}`,
     details: problemDetails?.errors,
+    problemDetail: problemDetails?.detail,
     status: response.status,
   });
 }

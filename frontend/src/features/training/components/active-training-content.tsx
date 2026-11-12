@@ -248,11 +248,15 @@ export function ActiveTrainingContent() {
     updatedSession: TrainingSession,
     clientAction?: LiveCoachClientAction | null,
   ): boolean {
+    const authoritativeTarget = getFirstMissingTarget(updatedSession);
     setView({ status: "ready", session: updatedSession });
     setIsDirty(false);
+    setGuidedRest((current) => current && authoritativeTarget
+      ? { ...current, next: authoritativeTarget }
+      : null);
 
     if (!clientAction || !clientAction.type.startsWith("Navigate")) {
-      setVisibleExerciseSessionId(getFirstMissingTarget(updatedSession)?.exercise.id ?? null);
+      setVisibleExerciseSessionId(authoritativeTarget?.exercise.id ?? null);
     }
 
     return clientAction

@@ -2979,6 +2979,167 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
         #endregion
 
+        [Fact]
+        public async Task Handle_WhenTimeConstraintNeedsCut_CreatesPendingAdaptationWithoutMutatingSession()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-time-adaptation",
+                    "audio",
+                    "Me quedan 8 minutos",
+                    null),
+                CancellationToken.None);
+
+            Assert.NotNull(result.PendingAction);
+            Assert.Equal(LiveCoachActionTypes.ApplyTimeConstraintAdaptation, result.PendingAction.Type);
+            var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
+            Assert.NotNull(action.TimeConstraintProposal);
+            Assert.Equal(8, action.TimeConstraintProposal.RequestedRemainingMinutes);
+            Assert.False(session.Ejercicios.Last().Omitido);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenTimeConstraintUsesWrittenNumber_CreatesDeterministicProposalWithoutProvider()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-time-adaptation-written",
+                    "audio",
+                    "Me quedan ocho minutos disponibles para entrenar",
+                    null),
+                CancellationToken.None);
+
+            Assert.NotNull(result.PendingAction);
+            Assert.Equal(LiveCoachActionTypes.ApplyTimeConstraintAdaptation, result.PendingAction.Type);
+            Assert.Equal(8, _pendingActionStore.Actions[result.PendingAction.ActionId]
+                .TimeConstraintProposal?.RequestedRemainingMinutes);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenTimeAdaptationIsConfirmedByVoice_UsesPendingExecutor()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-time-pending", "audio", "Me quedan ocho minutos", null),
+                CancellationToken.None);
+            _pendingActionExecutor.TextToReturn =
+                "Listo. Ajusté la sesión para acercarla a 8 minutos.";
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-time-confirm", "audio", "sí", null),
+                CancellationToken.None);
+
+            Assert.Equal(1, _pendingActionExecutor.ConfirmCount);
+            Assert.Equal(
+                LiveCoachActionTypes.ApplyTimeConstraintAdaptation,
+                _pendingActionExecutor.ConfirmedAction?.Type);
+            Assert.NotNull(result.UpdatedSession);
+            Assert.Equal("Listo. Ajusté la sesión para acercarla a 8 minutos.", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenTimeAdaptationIsCancelledByVoice_KeepsSessionUnchanged()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-time-pending-cancel", "audio", "Me quedan ocho minutos", null),
+                CancellationToken.None);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-time-cancel", "audio", "no", null),
+                CancellationToken.None);
+
+            Assert.Equal("Listo, mantengo la sesión sin cambios.", result.Text);
+            Assert.Equal(1, _pendingActionExecutor.CancelCount);
+            Assert.All(session.Ejercicios, exercise => Assert.False(exercise.Omitido));
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenTimeAdaptationBecameStale_ReturnsSpecificMessage()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-time-pending-stale", "audio", "Me quedan ocho minutos", null),
+                CancellationToken.None);
+            _pendingActionExecutor.ThrowConflict = true;
+            _pendingActionExecutor.ConflictMessage =
+                "Tu sesión cambió desde que preparé el ajuste.";
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-time-stale", "audio", "sí", null),
+                CancellationToken.None);
+
+            Assert.Equal(
+                "Tu sesión cambió desde que preparé el ajuste. Pedímelo de nuevo y lo recalculo.",
+                result.Text);
+            Assert.Null(result.UpdatedSession);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenTimeConstraintAlreadyFits_DoesNotCreatePendingAction()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-time-fits",
+                    "text",
+                    "Me quedan 20 minutos",
+                    null),
+                CancellationToken.None);
+
+            Assert.Null(result.PendingAction);
+            Assert.Contains("te alcanza", result.Text);
+            Assert.Empty(_pendingActionStore.Actions);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData(4)]
+        [InlineData(121)]
+        public async Task Handle_WhenTimeConstraintIsOutsideRange_ReturnsNaturalValidation(int minutes)
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    $"turn-time-range-{minutes}",
+                    "text",
+                    $"Me quedan {minutes} minutos",
+                    null),
+                CancellationToken.None);
+
+            Assert.Equal("Necesito un tiempo entre 5 y 120 minutos para ajustar la sesión.", result.Text);
+            Assert.Null(result.PendingAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
         private Task<LiveCoachRespondResponseDto> AskBestSetAsync(SesionEntrenamiento session)
         {
             return _handler.Handle(

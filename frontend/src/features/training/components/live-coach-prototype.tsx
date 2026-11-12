@@ -47,6 +47,28 @@ type StatePresentation = {
   label: string;
 };
 
+const pendingActionLabels: Record<
+  LiveCoachPendingAction["type"],
+  { cancel: string; confirm: string }
+> = {
+  ApplyTimeConstraintAdaptation: {
+    cancel: "Mantener sesión",
+    confirm: "Aplicar ajuste",
+  },
+  ReactivateExercise: {
+    cancel: "Cancelar",
+    confirm: "Reactivar ejercicio",
+  },
+  RegisterCurrentSet: {
+    cancel: "Cancelar",
+    confirm: "Registrar serie",
+  },
+  SkipCurrentExercise: {
+    cancel: "Cancelar",
+    confirm: "Saltar ejercicio",
+  },
+};
+
 const statePresentations: Record<LiveCoachState, StatePresentation> = {
   idle: {
     description: "Tocá para hablar.",
@@ -84,6 +106,14 @@ const statePresentations: Record<LiveCoachState, StatePresentation> = {
 
 function getVisibleErrorMessage(message: string | null): string {
   if (!message) return "Intentá nuevamente.";
+
+  if (
+    message === "Tu sesión cambió desde que preparé el ajuste. Pedímelo de nuevo y lo recalculo." ||
+    message === "Ese ajuste ya venció. Pedímelo de nuevo y lo recalculo." ||
+    message === "Ese ajuste ya no está disponible. Pedímelo de nuevo y lo recalculo."
+  ) {
+    return message;
+  }
 
   const normalized = message.toLocaleLowerCase("es");
   if (normalized.includes("sesión activa")) return "No encontré una sesión activa.";
@@ -653,15 +683,30 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       return;
     }
 
-    if (result.status === "conflict" || result.status === "not-found") {
+    if (result.status === "conflict" || result.status === "expired" || result.status === "not-found") {
       setCoachResponse((current) => current ? { ...current, pendingAction: null } : current);
       setPendingAction(null);
+      if (pendingAction.type === "ApplyTimeConstraintAdaptation") {
+        setErrorMessage(result.status === "expired"
+          ? "Ese ajuste ya venció. Pedímelo de nuevo y lo recalculo."
+          : result.status === "not-found"
+            ? "Ese ajuste ya no está disponible. Pedímelo de nuevo y lo recalculo."
+            : "Tu sesión cambió desde que preparé el ajuste. Pedímelo de nuevo y lo recalculo.");
+        setState("error");
+        return;
+      }
       setErrorMessage(pendingAction.type === "SkipCurrentExercise"
         ? "La sesión cambió. Volvé a pedirme que salte el ejercicio."
         : pendingAction.type === "ReactivateExercise"
           ? "La sesión cambió. Volvé a pedirme que reactive el ejercicio."
         : "La sesión cambió. Volvé a indicarme la serie.");
       setState("error");
+      return;
+    }
+
+    if (pendingAction.type === "ApplyTimeConstraintAdaptation") {
+      setActionError("No pudimos aplicar el ajuste. Intentá nuevamente.");
+      setState("success");
       return;
     }
 
@@ -715,6 +760,9 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     state !== "listening" &&
     state !== "transcribing" &&
     state !== "answering";
+  const pendingLabels = pendingAction
+    ? pendingActionLabels[pendingAction.type] ?? { cancel: "Cancelar", confirm: "Confirmar" }
+    : null;
   const pendingActionPanel = pendingAction ? (
     <div className="border-t border-border/60 pt-4">
       <p className="font-brand text-lg font-bold leading-6 text-text-primary">
@@ -730,15 +778,11 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       ) : null}
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Button disabled={confirmationControlsDisabled} onClick={cancelPendingAction} variant="ghost">
-          Cancelar
+          {pendingLabels?.cancel}
         </Button>
         <Button disabled={confirmationControlsDisabled} isLoading={actionPending} onClick={() => void confirmPendingAction()}>
           <Check aria-hidden="true" size={16} />
-          {pendingAction.type === "SkipCurrentExercise"
-            ? "Saltar ejercicio"
-            : pendingAction.type === "ReactivateExercise"
-              ? "Reactivar ejercicio"
-              : "Registrar serie"}
+          {pendingLabels?.confirm}
         </Button>
       </div>
       {showVoiceConfirmationAction ? <Button

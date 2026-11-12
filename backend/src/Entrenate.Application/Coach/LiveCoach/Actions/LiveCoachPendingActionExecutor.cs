@@ -1,6 +1,7 @@
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
+using Entrenate.Application.Coach.LiveCoach.Adaptation;
 using Entrenate.Application.Coach.LiveCoach.Rules;
 using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
 using Entrenate.Application.TrainingSessions.Commands.SkipCurrentExercise;
@@ -74,6 +75,19 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
                 return new LiveCoachActionConfirmationDto(
                     reactivatedSession,
                     $"{action.ExerciseName} reactivado.");
+            }
+
+            if (action.Type == LiveCoachActionTypes.ApplyTimeConstraintAdaptation)
+            {
+                if (action.TimeConstraintProposal is null)
+                    throw new ConflictException("La propuesta de ajuste ya no está disponible.");
+
+                var adaptedSession = await _sender.Send(
+                    new ApplyLiveTimeConstraintAdaptationCommand(action.TimeConstraintProposal),
+                    cancellationToken);
+                return new LiveCoachActionConfirmationDto(
+                    adaptedSession,
+                    $"Listo. Ajusté la sesión para acercarla a {action.TimeConstraintProposal.RequestedRemainingMinutes} minutos.");
             }
 
             await _sender.Send(

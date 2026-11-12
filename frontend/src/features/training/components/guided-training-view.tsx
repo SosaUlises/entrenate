@@ -37,6 +37,12 @@ export function GuidedTrainingView({ rest, setRest, session, onDirtyChange, onFi
 }) {
   const [showSavedNotice, setShowSavedNotice] = useState(false);
   const target = getFirstMissingTarget(session);
+  const restMatchesAuthoritativeTarget = Boolean(
+    rest &&
+    target &&
+    rest.next.exercise.id === target.exercise.id &&
+    rest.next.setNumber === target.setNumber,
+  );
   const previewExercise = visibleExerciseSessionId && visibleExerciseSessionId !== target?.exercise.id
     ? session.ejercicios.find((exercise) => exercise.id === visibleExerciseSessionId) ?? null
     : null;
@@ -47,13 +53,17 @@ export function GuidedTrainingView({ rest, setRest, session, onDirtyChange, onFi
     return () => window.clearTimeout(timeout);
   }, [showSavedNotice]);
 
+  useEffect(() => {
+    if (rest && !restMatchesAuthoritativeTarget) setRest(null);
+  }, [rest, restMatchesAuthoritativeTarget, setRest]);
+
   function adjustRest(seconds: number) {
     setRest((current) => current
       ? { ...current, remaining: Math.max(0, current.remaining + seconds) }
       : null);
   }
 
-  if (rest) {
+  if (rest && restMatchesAuthoritativeTarget) {
     return <RestView onAdjust={adjustRest} onContinue={() => setRest(null)} remaining={rest.remaining} session={session} showSavedNotice={showSavedNotice} target={rest.next} />;
   }
 
