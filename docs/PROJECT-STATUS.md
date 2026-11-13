@@ -28,6 +28,17 @@
 
 ## Current work
 
+- Live Coach V0 is technically and functionally closed. The completed vertical
+  includes authenticated STT, TTS and text fallback; grounded deterministic
+  queries; current-set registration with editing and explicit confirmation;
+  shared rest-timer control; performance and prescription queries; exercise
+  skip/reactivation; visual and semantic navigation; typed clarifications; and
+  confirmed Time, Fatigue, Performance and Combined live adaptations.
+- Deterministic Live Coach flows bypass the conversation provider, mutations use
+  server-side ephemeral single-use pending actions with ownership, expiry and
+  stale validation, and authoritative Training updates synchronize through
+  `updatedSession` without conflating visual navigation with session state.
+
 - Live Coach V0 — STT vertical slice is closed: in-browser audio capture
   (`getUserMedia`, `MediaRecorder`, codec selection hierarchy, 15s limit), authenticated
   endpoint `POST /api/coach/live/transcriptions`, `ILiveCoachSpeechToText` abstraction,
@@ -108,6 +119,8 @@
 
 - Live Coach V0 — Live Adaptation Fatigue Signal V0.2 is closed: explicit current-session fatigue signals are classified deterministically as moderate or high and converted into ephemeral volume-reduction proposals over the authoritative active session. The engine preserves the current exercise and completed performance, prioritizes already-started work, omits only future exercises through the existing `Omitido` semantics, requires explicit confirmation, reuses shared Live Adaptation stale/fingerprint infrastructure and never invokes the conversation provider for adaptation decisions.
 - Live Coach V0 — Live Adaptation Performance Signal V0.3 is closed: explicit in-session performance signals are classified deterministically and evaluated against authoritative completed-set data and the current prescription. Underperformance is detected from missed repetition targets and higher-than-prescribed effort without inventing target weight or altering recorded performance. Because the active-session domain does not expose safe prescription mutations for reps, RIR or rest, V0.3 conservatively adapts only future volume through a confirmed omission proposal, reusing the shared Live Adaptation pending, fingerprint and stale-validation infrastructure.
+
+- Live Coach V0 — Live Adaptation Combined Signals V0.4 is closed: time, fatigue and performance signals can be detected together and coordinated through a deterministic `LiveAdaptationOrchestrator` that reuses the existing adaptation engines, produces a single deduplicated proposal, preserves the authoritative current exercise, treats time as the hard constraint when present, incorporates fatigue conservatively, uses performance only with valid evidence, replaces stale adaptation proposals safely and never invokes the conversation provider for adaptation decisions.
 - Training — omitted exercises can be reactivated while the session remains
   `EnCurso`; reactivation restores the exercise to the authoritative pending resolver
   without altering previously completed sets.
@@ -130,8 +143,8 @@
   when the provider reports `incomplete` due to `max_output_tokens`;
   partial answers are never returned as completed responses.
 
-- Next: add Live Coach voice reactivation for omitted exercises and continue with
-  the next controlled in-session capabilities.
+- Next: no Live Coach V0 blocker remains. Any post-V0 in-session capability
+  requires a separately approved product and technical scope.
 
 ## Entrenate Coach
 
