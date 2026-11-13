@@ -8,16 +8,6 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
         Proposal
     }
 
-    public enum LiveTimeConstraintChangeType
-    {
-        OmitExercise
-    }
-
-    public sealed record LiveTimeConstraintChange(
-        LiveTimeConstraintChangeType Type,
-        Guid ExerciseSessionId,
-        string ExerciseName);
-
     public sealed record LiveTimeConstraintProposal(
         Guid ProposalId,
         string UserId,
@@ -28,13 +18,17 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
         int EstimatedMinutesBefore,
         int EstimatedMinutesAfter,
         string PendingWorkFingerprint,
-        IReadOnlyCollection<LiveTimeConstraintChange> Changes,
-        string PublicSummary = "");
+        IReadOnlyCollection<LiveAdaptationChange> Changes,
+        string PublicSummary = "") : ILiveAdaptationProposal
+    {
+        public string SuccessMessage =>
+            $"Listo. Ajusté la sesión para acercarla a {RequestedRemainingMinutes} minutos.";
+    }
 
     public sealed record LiveTimeConstraintResult(
         LiveTimeConstraintResultStatus Status,
         int RequestedRemainingMinutes,
         int EstimatedMinutesBefore,
         int EstimatedMinutesAfter,
-        IReadOnlyCollection<LiveTimeConstraintChange> Changes);
+        IReadOnlyCollection<LiveAdaptationChange> Changes);
 }

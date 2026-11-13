@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
 {
-    public sealed class ApplyLiveTimeConstraintAdaptationCommandHandlerTests
+    public sealed class ApplyLiveAdaptationCommandHandlerTests
     {
         [Fact]
         public async Task Handle_WhenProposalIsCurrent_OmitsAllChangesAndSavesOnce()
@@ -22,13 +22,13 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
             var session = CreateSession();
             var proposal = CreateProposal(session);
             var repository = new FakeRepository(session);
-            var handler = new ApplyLiveTimeConstraintAdaptationCommandHandler(
+            var handler = new ApplyLiveAdaptationCommandHandler(
                 new StubCurrentUser("user"),
                 repository,
                 new StubSender(ToDto(session)));
 
             var result = await handler.Handle(
-                new ApplyLiveTimeConstraintAdaptationCommand(proposal),
+                new ApplyLiveAdaptationCommand(proposal),
                 CancellationToken.None);
 
             Assert.True(session.Ejercicios.Last().Omitido);
@@ -47,7 +47,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
             var handler = CreateHandler(repository, session);
 
             await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(
-                new ApplyLiveTimeConstraintAdaptationCommand(proposal),
+                new ApplyLiveAdaptationCommand(proposal),
                 CancellationToken.None));
 
             Assert.Equal(0, repository.SaveCount);
@@ -64,7 +64,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
             var handler = CreateHandler(repository, session);
 
             await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(
-                new ApplyLiveTimeConstraintAdaptationCommand(proposal),
+                new ApplyLiveAdaptationCommand(proposal),
                 CancellationToken.None));
         }
 
@@ -73,25 +73,25 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
         {
             var session = CreateSession();
             var repository = new FakeRepository(session);
-            var handler = new ApplyLiveTimeConstraintAdaptationCommandHandler(
+            var handler = new ApplyLiveAdaptationCommandHandler(
                 new StubCurrentUser("other"),
                 repository,
                 new StubSender(ToDto(session)));
 
             await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(
-                new ApplyLiveTimeConstraintAdaptationCommand(CreateProposal(session)),
+                new ApplyLiveAdaptationCommand(CreateProposal(session)),
                 CancellationToken.None));
         }
 
-        private static ApplyLiveTimeConstraintAdaptationCommandHandler CreateHandler(
+        private static ApplyLiveAdaptationCommandHandler CreateHandler(
             FakeRepository repository,
             SesionEntrenamiento session)
             => new(new StubCurrentUser("user"), repository, new StubSender(ToDto(session)));
 
         private static LiveTimeConstraintProposal CreateProposal(SesionEntrenamiento session)
         {
-            var change = new LiveTimeConstraintChange(
-                LiveTimeConstraintChangeType.OmitExercise,
+            var change = new LiveAdaptationChange(
+                LiveAdaptationChangeType.OmitExercise,
                 session.Ejercicios.Last().Id,
                 session.Ejercicios.Last().Ejercicio.Nombre);
             return new(

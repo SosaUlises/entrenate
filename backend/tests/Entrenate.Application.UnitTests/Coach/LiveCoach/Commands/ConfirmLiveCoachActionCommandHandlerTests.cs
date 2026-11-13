@@ -113,12 +113,12 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 34,
                 20,
                 "fingerprint",
-                [new(LiveTimeConstraintChangeType.OmitExercise, Guid.NewGuid(), "Curl")]);
+                [new(LiveAdaptationChangeType.OmitExercise, Guid.NewGuid(), "Curl")]);
             var action = CreateAction() with
             {
                 SessionId = proposal.SessionId,
                 Type = LiveCoachActionTypes.ApplyTimeConstraintAdaptation,
-                TimeConstraintProposal = proposal
+                AdaptationProposal = proposal
             };
             var updated = CreateSession(action);
             var sender = new RecordingSender(action.SessionId, updated);
@@ -128,7 +128,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 new ConfirmLiveCoachActionCommand(action.ActionId, RestTimerIsActive: false),
                 CancellationToken.None);
 
-            var command = Assert.IsType<ApplyLiveTimeConstraintAdaptationCommand>(sender.Requests.Single());
+            var command = Assert.IsType<ApplyLiveAdaptationCommand>(sender.Requests.Single());
             Assert.Equal(proposal, command.Proposal);
             Assert.Equal("Listo. Ajusté la sesión para acercarla a 20 minutos.", result.Text);
         }
@@ -319,7 +319,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                         command.Rir, true, DateTime.UtcNow),
                     SkipCurrentExerciseCommand => updatedSession ?? throw new InvalidOperationException(),
                     ReactivateExerciseCommand => updatedSession ?? throw new InvalidOperationException(),
-                    ApplyLiveTimeConstraintAdaptationCommand => updatedSession ?? throw new InvalidOperationException(),
+                    ApplyLiveAdaptationCommand => updatedSession ?? throw new InvalidOperationException(),
                     GetTrainingSessionByIdQuery => updatedSession ?? new TrainingSessionDto(
                         sessionId, null, DateTime.UtcNow.Date, DateTime.UtcNow,
                         null, EstadoSesionEntrenamiento.EnCurso, []),

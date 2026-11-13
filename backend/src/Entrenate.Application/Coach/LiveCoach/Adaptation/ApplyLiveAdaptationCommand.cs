@@ -3,7 +3,7 @@ using MediatR;
 
 namespace Entrenate.Application.Coach.LiveCoach.Adaptation
 {
-    public sealed record ApplyLiveTimeConstraintAdaptationCommand(
-        LiveTimeConstraintProposal Proposal)
+    public sealed record ApplyLiveAdaptationCommand(
+        ILiveAdaptationProposal Proposal)
         : IRequest<TrainingSessionDto>;
 }

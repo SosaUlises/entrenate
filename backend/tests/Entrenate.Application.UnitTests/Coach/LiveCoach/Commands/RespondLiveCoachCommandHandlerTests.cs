@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Entrenate.Application.Coach.AdaptiveTraining.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach;
 using Entrenate.Application.Coach.LiveCoach.Actions;
+using Entrenate.Application.Coach.LiveCoach.Adaptation;
 using Entrenate.Application.Coach.LiveCoach.Clarifications;
 using Entrenate.Application.Coach.LiveCoach.Context;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
@@ -2997,8 +2998,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.NotNull(result.PendingAction);
             Assert.Equal(LiveCoachActionTypes.ApplyTimeConstraintAdaptation, result.PendingAction.Type);
             var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
-            Assert.NotNull(action.TimeConstraintProposal);
-            Assert.Equal(8, action.TimeConstraintProposal.RequestedRemainingMinutes);
+            var proposal = Assert.IsType<LiveTimeConstraintProposal>(action.AdaptationProposal);
+            Assert.Equal(8, proposal.RequestedRemainingMinutes);
             Assert.False(session.Ejercicios.Last().Omitido);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
@@ -3020,8 +3021,9 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.NotNull(result.PendingAction);
             Assert.Equal(LiveCoachActionTypes.ApplyTimeConstraintAdaptation, result.PendingAction.Type);
-            Assert.Equal(8, _pendingActionStore.Actions[result.PendingAction.ActionId]
-                .TimeConstraintProposal?.RequestedRemainingMinutes);
+            var proposal = Assert.IsType<LiveTimeConstraintProposal>(
+                _pendingActionStore.Actions[result.PendingAction.ActionId].AdaptationProposal);
+            Assert.Equal(8, proposal.RequestedRemainingMinutes);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
@@ -3094,6 +3096,117 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 "Tu sesión cambió desde que preparé el ajuste. Pedímelo de nuevo y lo recalculo.",
                 result.Text);
             Assert.Null(result.UpdatedSession);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Theory]
+        [InlineData("estoy cansado", LiveFatigueSeverity.Moderate)]
+        [InlineData("estoy muy cansado", LiveFatigueSeverity.High)]
+        public async Task Handle_WhenFatigueIsExplicit_CreatesDeterministicPendingActionWithoutProvider(
+            string text,
+            LiveFatigueSeverity expectedSeverity)
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press", 3), ("Remo", 3), ("Curl", 3), ("Tríceps", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-fatigue", "audio", text, null),
+                CancellationToken.None);
+
+            Assert.NotNull(result.PendingAction);
+            Assert.Equal(LiveCoachActionTypes.ApplyFatigueAdaptation, result.PendingAction.Type);
+            var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
+            var proposal = Assert.IsType<LiveFatigueAdaptationProposal>(action.AdaptationProposal);
+            Assert.Equal(expectedSeverity, proposal.FatigueSeverity);
+            Assert.False(session.Ejercicios.Last().Omitido);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenFatigueAdaptationIsConfirmedByVoice_UsesPendingExecutor()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-fatigue-pending", "audio", "estoy muy cansado", null),
+                CancellationToken.None);
+            _pendingActionExecutor.TextToReturn =
+                "Listo. Ajusté el trabajo pendiente para esta sesión.";
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-fatigue-confirm", "audio", "sí", null),
+                CancellationToken.None);
+
+            Assert.Equal(1, _pendingActionExecutor.ConfirmCount);
+            Assert.Equal(
+                LiveCoachActionTypes.ApplyFatigueAdaptation,
+                _pendingActionExecutor.ConfirmedAction?.Type);
+            Assert.NotNull(result.UpdatedSession);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenFatigueAdaptationIsCancelledByVoice_KeepsSessionUnchanged()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-fatigue-cancel-pending", "audio", "estoy cansado", null),
+                CancellationToken.None);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-fatigue-cancel", "audio", "no", null),
+                CancellationToken.None);
+
+            Assert.Equal("Listo, mantengo la sesión sin cambios.", result.Text);
+            Assert.Equal(1, _pendingActionExecutor.CancelCount);
+            Assert.All(session.Ejercicios, exercise => Assert.False(exercise.Omitido));
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenFatigueAdaptationBecameStale_ReturnsSpecificMessage()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-fatigue-stale-pending", "audio", "estoy muy cansado", null),
+                CancellationToken.None);
+            _pendingActionExecutor.ThrowConflict = true;
+            _pendingActionExecutor.ConflictMessage =
+                "Tu sesión cambió desde que preparé el ajuste.";
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-fatigue-stale", "audio", "sí", null),
+                CancellationToken.None);
+
+            Assert.Equal(
+                "Tu sesión cambió desde que preparé el ajuste. Pedímelo de nuevo y lo recalculo.",
+                result.Text);
+            Assert.Null(result.UpdatedSession);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenFatigueCannotReduce_ReturnsNaturalAnswerWithoutPendingAction()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-fatigue-no-cut", "audio", "estoy cansado", null),
+                CancellationToken.None);
+
+            Assert.Null(result.PendingAction);
+            Assert.Contains("No hay más trabajo posterior", result.Text);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 

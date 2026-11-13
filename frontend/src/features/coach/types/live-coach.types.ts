@@ -64,7 +64,8 @@ export type LiveCoachPendingAction = {
     | "RegisterCurrentSet"
     | "SkipCurrentExercise"
     | "ReactivateExercise"
-    | "ApplyTimeConstraintAdaptation";
+    | "ApplyTimeConstraintAdaptation"
+    | "ApplyFatigueAdaptation";
   summary: string;
   expiresAtUtc: string;
 };

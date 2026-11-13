@@ -8,6 +8,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
         public const string SkipCurrentExercise = "SkipCurrentExercise";
         public const string ReactivateExercise = "ReactivateExercise";
         public const string ApplyTimeConstraintAdaptation = "ApplyTimeConstraintAdaptation";
+        public const string ApplyFatigueAdaptation = "ApplyFatigueAdaptation";
     }
 
     public sealed record PendingLiveCoachAction(
@@ -23,7 +24,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
         string Type = LiveCoachActionTypes.RegisterCurrentSet,
         string? ExerciseName = null,
         int PendingSetCount = 0,
-        LiveTimeConstraintProposal? TimeConstraintProposal = null);
+        ILiveAdaptationProposal? AdaptationProposal = null);
 
     public sealed record PendingLiveCoachSetPatch(
         decimal? WeightKg = null,

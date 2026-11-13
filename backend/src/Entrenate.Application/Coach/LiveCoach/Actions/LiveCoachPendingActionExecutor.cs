@@ -77,17 +77,18 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
                     $"{action.ExerciseName} reactivado.");
             }
 
-            if (action.Type == LiveCoachActionTypes.ApplyTimeConstraintAdaptation)
+            if (action.Type is LiveCoachActionTypes.ApplyTimeConstraintAdaptation or
+                LiveCoachActionTypes.ApplyFatigueAdaptation)
             {
-                if (action.TimeConstraintProposal is null)
+                if (action.AdaptationProposal is null)
                     throw new ConflictException("La propuesta de ajuste ya no está disponible.");
 
                 var adaptedSession = await _sender.Send(
-                    new ApplyLiveTimeConstraintAdaptationCommand(action.TimeConstraintProposal),
+                    new ApplyLiveAdaptationCommand(action.AdaptationProposal),
                     cancellationToken);
                 return new LiveCoachActionConfirmationDto(
                     adaptedSession,
-                    $"Listo. Ajusté la sesión para acercarla a {action.TimeConstraintProposal.RequestedRemainingMinutes} minutos.");
+                    action.AdaptationProposal.SuccessMessage);
             }
 
             await _sender.Send(

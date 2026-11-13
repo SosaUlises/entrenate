@@ -189,8 +189,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                             ? "La sesión cambió. Volvé a pedirme que salte el ejercicio."
                             : activePendingAction.Type == LiveCoachActionTypes.ReactivateExercise
                                 ? "La sesión cambió. Volvé a pedirme que reactive el ejercicio."
-                            : activePendingAction.Type == LiveCoachActionTypes.ApplyTimeConstraintAdaptation
-                                ? GetTimeAdaptationUnavailableText(exception)
+                            : IsAdaptationAction(activePendingAction.Type)
+                                ? GetAdaptationUnavailableText(exception)
                             : "La propuesta ya no está vigente. Decime nuevamente cómo salió la serie.");
                 }
             }
@@ -208,7 +208,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                             ? "Listo, seguimos con este ejercicio."
                             : activePendingAction.Type == LiveCoachActionTypes.ReactivateExercise
                                 ? "Listo, lo dejo omitido."
-                            : activePendingAction.Type == LiveCoachActionTypes.ApplyTimeConstraintAdaptation
+                            : IsAdaptationAction(activePendingAction.Type)
                                 ? "Listo, mantengo la sesión sin cambios."
                             : "Listo, no la registro.");
                 }
@@ -228,8 +228,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                         request.ClientTurnId,
                         activePendingAction.Type == LiveCoachActionTypes.ReactivateExercise
                             ? "¿Querés reactivarlo? Decime sí o no."
-                            : activePendingAction.Type == LiveCoachActionTypes.ApplyTimeConstraintAdaptation
-                                ? "¿Querés aplicar el ajuste de tiempo? Decime sí o no."
+                            : IsAdaptationAction(activePendingAction.Type)
+                                ? "¿Querés aplicar el ajuste? Decime sí o no."
                             : "¿Querés saltarlo? Decime sí o no.",
                         ToDto(activePendingAction));
                 }
@@ -316,6 +316,16 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     routing.RemainingMinutes.Value);
             }
 
+            if (routing.Kind == LiveCoachIntentKind.LiveAdaptationFatigueSignal &&
+                routing.FatigueSeverity.HasValue)
+            {
+                return CreateFatigueAdaptationResponse(
+                    session,
+                    userId,
+                    request.ClientTurnId,
+                    routing.FatigueSeverity.Value);
+            }
+
             if (routing.Kind == LiveCoachIntentKind.SkipCurrentExercise)
             {
                 return CreateSkipCurrentExerciseResponse(
@@ -385,11 +395,12 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             }
 
             if (routing.Kind == LiveCoachIntentKind.PendingActionClarification &&
-                activePendingAction?.Type == LiveCoachActionTypes.ApplyTimeConstraintAdaptation)
+                activePendingAction is not null &&
+                IsAdaptationAction(activePendingAction.Type))
             {
                 return CreateDirectResponse(
                     request.ClientTurnId,
-                    "¿Querés aplicar el ajuste de tiempo? Decime sí o no.",
+                    "¿Querés aplicar el ajuste? Decime sí o no.",
                     ToDto(activePendingAction));
             }
 
@@ -824,7 +835,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 null,
                 expiresAtUtc,
                 LiveCoachActionTypes.ApplyTimeConstraintAdaptation,
-                TimeConstraintProposal: proposal);
+                AdaptationProposal: proposal);
             _pendingActionStore.Set(action);
 
             var omittedNames = FormatNaturalList(result.Changes.Select(change => change.ExerciseName));
@@ -832,6 +843,61 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             var text = reachesTarget
                 ? $"Para acercarnos a {remainingMinutes} minutos puedo mantener {current.ExerciseSession.Ejercicio.Nombre} y omitir {omittedNames}. Lo pendiente pasaría de ~{result.EstimatedMinutesBefore} a ~{result.EstimatedMinutesAfter} minutos. ¿Querés aplicar este ajuste?"
                 : $"Sin recortar {current.ExerciseSession.Ejercicio.Nombre}, puedo omitir {omittedNames}. Lo pendiente pasaría de ~{result.EstimatedMinutesBefore} a ~{result.EstimatedMinutesAfter} minutos. ¿Querés aplicar este ajuste?";
+
+            return CreateDirectResponse(clientTurnId, text, ToDto(action));
+        }
+
+        private LiveCoachRespondResponseDto CreateFatigueAdaptationResponse(
+            Entrenate.Domain.Entidades.SesionEntrenamiento session,
+            string userId,
+            string clientTurnId,
+            LiveFatigueSeverity severity)
+        {
+            var result = LiveFatigueAdaptationEngine.Evaluate(session, severity);
+            if (result.Status == LiveFatigueAdaptationResultStatus.NoPendingWork)
+                return CreateDirectResponse(clientTurnId, "Ya completaste todas las series de la sesión.");
+            if (result.Status == LiveFatigueAdaptationResultStatus.NothingToReduce)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    "Solo te queda el ejercicio que estás haciendo. No hay más trabajo posterior para recortar.");
+            }
+
+            var nowUtc = DateTime.UtcNow;
+            var expiresAtUtc = nowUtc.AddSeconds(45);
+            var actionId = Guid.NewGuid();
+            var publicSummary = severity == LiveFatigueSeverity.High
+                ? "Reducir trabajo pendiente por fatiga alta"
+                : "Ajustar trabajo pendiente por cansancio";
+            var proposal = new LiveFatigueAdaptationProposal(
+                actionId,
+                userId,
+                session.Id,
+                nowUtc,
+                expiresAtUtc,
+                severity,
+                LiveTimeConstraintFingerprint.Create(session),
+                result.Changes,
+                publicSummary);
+            var current = CurrentPendingTrainingSetResolver.Resolve(session)!;
+            var action = new PendingLiveCoachAction(
+                actionId,
+                userId,
+                session.Id,
+                current.ExerciseSession.Id,
+                current.SetNumber,
+                0,
+                0,
+                null,
+                expiresAtUtc,
+                LiveCoachActionTypes.ApplyFatigueAdaptation,
+                AdaptationProposal: proposal);
+            _pendingActionStore.Set(action);
+
+            var omittedNames = FormatNaturalList(result.Changes.Select(change => change.ExerciseName));
+            var text = severity == LiveFatigueSeverity.High
+                ? $"Como me dijiste que estás muy cansado, puedo mantener el ejercicio actual y omitir {omittedNames}. ¿Querés aplicar este ajuste?"
+                : $"Como me dijiste que estás cansado, puedo mantener {result.CurrentExerciseName} y omitir {omittedNames}. ¿Querés aplicar este ajuste?";
 
             return CreateDirectResponse(clientTurnId, text, ToDto(action));
         }
@@ -1072,13 +1138,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             if (action.Type == LiveCoachActionTypes.ReactivateExercise)
                 return $"Reactivar {action.ExerciseName}";
 
-            if (action.Type == LiveCoachActionTypes.ApplyTimeConstraintAdaptation &&
-                action.TimeConstraintProposal is not null)
-            {
-                return string.IsNullOrWhiteSpace(action.TimeConstraintProposal.PublicSummary)
-                    ? $"Ajustar sesión a ~{action.TimeConstraintProposal.RequestedRemainingMinutes} minutos"
-                    : action.TimeConstraintProposal.PublicSummary;
-            }
+            if (IsAdaptationAction(action.Type) && action.AdaptationProposal is not null)
+                return action.AdaptationProposal.PublicSummary;
 
             var weight = action.WeightKg.ToString("0.##", CultureInfo.InvariantCulture);
             return $"{weight} kg × {action.Repetitions}" +
@@ -1096,10 +1157,14 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             };
         }
 
-        private static string GetTimeAdaptationUnavailableText(Exception exception)
+        private static string GetAdaptationUnavailableText(Exception exception)
             => exception.Message.Contains("expir", StringComparison.OrdinalIgnoreCase)
                 ? "Ese ajuste ya venció. Pedímelo de nuevo y lo recalculo."
                 : "Tu sesión cambió desde que preparé el ajuste. Pedímelo de nuevo y lo recalculo.";
+
+        private static bool IsAdaptationAction(string actionType)
+            => actionType is LiveCoachActionTypes.ApplyTimeConstraintAdaptation or
+                LiveCoachActionTypes.ApplyFatigueAdaptation;
 
         private static string CreateRestTimerQueryAnswer(
             Entrenate.Application.Coach.LiveCoach.Models.LiveCoachSessionContext context,

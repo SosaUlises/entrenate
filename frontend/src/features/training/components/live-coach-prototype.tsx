@@ -51,6 +51,10 @@ const pendingActionLabels: Record<
   LiveCoachPendingAction["type"],
   { cancel: string; confirm: string }
 > = {
+  ApplyFatigueAdaptation: {
+    cancel: "Mantener sesión",
+    confirm: "Aplicar ajuste",
+  },
   ApplyTimeConstraintAdaptation: {
     cancel: "Mantener sesión",
     confirm: "Aplicar ajuste",
@@ -68,6 +72,10 @@ const pendingActionLabels: Record<
     confirm: "Saltar ejercicio",
   },
 };
+
+function isAdaptationPendingAction(type: LiveCoachPendingAction["type"]) {
+  return type === "ApplyTimeConstraintAdaptation" || type === "ApplyFatigueAdaptation";
+}
 
 const statePresentations: Record<LiveCoachState, StatePresentation> = {
   idle: {
@@ -686,7 +694,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     if (result.status === "conflict" || result.status === "expired" || result.status === "not-found") {
       setCoachResponse((current) => current ? { ...current, pendingAction: null } : current);
       setPendingAction(null);
-      if (pendingAction.type === "ApplyTimeConstraintAdaptation") {
+      if (isAdaptationPendingAction(pendingAction.type)) {
         setErrorMessage(result.status === "expired"
           ? "Ese ajuste ya venció. Pedímelo de nuevo y lo recalculo."
           : result.status === "not-found"
@@ -704,7 +712,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       return;
     }
 
-    if (pendingAction.type === "ApplyTimeConstraintAdaptation") {
+    if (isAdaptationPendingAction(pendingAction.type)) {
       setActionError("No pudimos aplicar el ajuste. Intentá nuevamente.");
       setState("success");
       return;

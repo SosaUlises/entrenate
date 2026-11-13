@@ -77,8 +77,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
 
             var changes = removed
                 .OrderBy(exercise => exercise.Order)
-                .Select(exercise => new LiveTimeConstraintChange(
-                    LiveTimeConstraintChangeType.OmitExercise,
+                .Select(exercise => new LiveAdaptationChange(
+                    LiveAdaptationChangeType.OmitExercise,
                     exercise.ExerciseSessionId,
                     exercise.Name))
                 .ToArray();

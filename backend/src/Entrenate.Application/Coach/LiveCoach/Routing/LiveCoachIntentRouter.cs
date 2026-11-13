@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Entrenate.Application.Coach.LiveCoach.Actions;
+using Entrenate.Application.Coach.LiveCoach.Adaptation;
 
 namespace Entrenate.Application.Coach.LiveCoach.Routing
 {
@@ -51,6 +52,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         RemainingExercises,
         SessionProgress,
         LiveAdaptationTimeConstraint,
+        LiveAdaptationFatigueSignal,
         OtherMutation,
         OutOfScope
     }
@@ -59,7 +61,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         LiveCoachIntentKind Kind,
         bool RequiresPreviousPerformance,
         string? DirectAnswer = null,
-        int? RemainingMinutes = null);
+        int? RemainingMinutes = null,
+        LiveFatigueSeverity? FatigueSeverity = null);
 
     public interface ILiveCoachIntentRouter
     {
@@ -204,6 +207,12 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             var pendingDecision = NormalizePendingDecision(question);
             var confirmsPending = ConfirmPendingActionPhrases.Contains(pendingDecision);
             var cancelsPending = CancelPendingActionPhrases.Contains(pendingDecision);
+            var hasTimeConstraint = TryGetLiveAdaptationMinutes(
+                pendingDecision,
+                out var remainingMinutes);
+            var hasFatigueSignal = TryGetFatigueSeverity(
+                pendingDecision,
+                out var fatigueSeverity);
 
             if (hasPendingAction)
             {
@@ -212,6 +221,30 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
                 if (cancelsPending)
                     return new LiveCoachRoutingResult(LiveCoachIntentKind.CancelPendingAction, false);
+
+                if (hasTimeConstraint && hasFatigueSignal)
+                {
+                    return new LiveCoachRoutingResult(
+                        LiveCoachIntentKind.ConversationalQuestion,
+                        false,
+                        "¿Querés que ajuste la sesión por el tiempo disponible o por el cansancio?");
+                }
+
+                if (hasTimeConstraint)
+                {
+                    return new LiveCoachRoutingResult(
+                        LiveCoachIntentKind.LiveAdaptationTimeConstraint,
+                        false,
+                        RemainingMinutes: remainingMinutes);
+                }
+
+                if (hasFatigueSignal)
+                {
+                    return new LiveCoachRoutingResult(
+                        LiveCoachIntentKind.LiveAdaptationFatigueSignal,
+                        false,
+                        FatigueSeverity: fatigueSeverity);
+                }
 
                 if (IsPendingSetUpdateRequest(pendingDecision))
                     return new LiveCoachRoutingResult(LiveCoachIntentKind.UpdatePendingCurrentSet, false);
@@ -250,12 +283,28 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             if (IsRestQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.RestTimerQuery, false);
 
-            if (TryGetLiveAdaptationMinutes(pendingDecision, out var remainingMinutes))
+            if (hasTimeConstraint && hasFatigueSignal)
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.ConversationalQuestion,
+                    false,
+                    "¿Querés que ajuste la sesión por el tiempo disponible o por el cansancio?");
+            }
+
+            if (hasTimeConstraint)
             {
                 return new LiveCoachRoutingResult(
                     LiveCoachIntentKind.LiveAdaptationTimeConstraint,
                     false,
                     RemainingMinutes: remainingMinutes);
+            }
+
+            if (hasFatigueSignal)
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.LiveAdaptationFatigueSignal,
+                    false,
+                    FatigueSeverity: fatigueSeverity);
             }
 
             if (IsCurrentPrescriptionQuery(pendingDecision))
@@ -922,6 +971,49 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             var match = Regex.Match(normalizedNumbers, @"\b(?<minutes>\d{1,3})\b");
             return match.Success &&
                 int.TryParse(match.Groups["minutes"].Value, out remainingMinutes);
+        }
+
+        private static bool TryGetFatigueSeverity(
+            string normalizedText,
+            out LiveFatigueSeverity severity)
+        {
+            severity = LiveFatigueSeverity.Moderate;
+
+            if (normalizedText.Contains("dolor", StringComparison.Ordinal) ||
+                normalizedText.Contains("duele", StringComparison.Ordinal) ||
+                normalizedText.Contains("lesion", StringComparison.Ordinal) ||
+                normalizedText.Contains("lastime", StringComparison.Ordinal) ||
+                normalizedText.Contains("pinch", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (normalizedText.Contains("ayer", StringComparison.Ordinal) ||
+                normalizedText.Contains("cuando estoy", StringComparison.Ordinal) ||
+                normalizedText.Contains("la rutina me deja", StringComparison.Ordinal) ||
+                normalizedText.Contains("es normal", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var isHigh = normalizedText.Contains("muy cansad", StringComparison.Ordinal) ||
+                         normalizedText.Contains("muy fatigad", StringComparison.Ordinal) ||
+                         normalizedText.Contains("fundid", StringComparison.Ordinal) ||
+                         normalizedText.Contains("no me da mas", StringComparison.Ordinal) ||
+                         normalizedText.Contains("hecho mierda", StringComparison.Ordinal);
+            var isModerate = normalizedText.Contains("estoy cansad", StringComparison.Ordinal) ||
+                             normalizedText.Contains("estoy fatigad", StringComparison.Ordinal) ||
+                             normalizedText.Contains("me siento cansad", StringComparison.Ordinal) ||
+                             normalizedText.Contains("me siento fatigad", StringComparison.Ordinal) ||
+                             normalizedText.Contains("bastante cansad", StringComparison.Ordinal);
+
+            if (!isHigh && !isModerate)
+                return false;
+
+            severity = isHigh
+                ? LiveFatigueSeverity.High
+                : LiveFatigueSeverity.Moderate;
+            return true;
         }
 
         private static bool IsRestQuery(string normalizedText)

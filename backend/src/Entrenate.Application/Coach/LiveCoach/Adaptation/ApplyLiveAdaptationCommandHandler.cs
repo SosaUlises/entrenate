@@ -6,14 +6,14 @@ using MediatR;
 
 namespace Entrenate.Application.Coach.LiveCoach.Adaptation
 {
-    public sealed class ApplyLiveTimeConstraintAdaptationCommandHandler
-        : IRequestHandler<ApplyLiveTimeConstraintAdaptationCommand, TrainingSessionDto>
+    public sealed class ApplyLiveAdaptationCommandHandler
+        : IRequestHandler<ApplyLiveAdaptationCommand, TrainingSessionDto>
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly ITrainingSessionRepository _sessionRepository;
         private readonly ISender _sender;
 
-        public ApplyLiveTimeConstraintAdaptationCommandHandler(
+        public ApplyLiveAdaptationCommandHandler(
             ICurrentUserService currentUserService,
             ITrainingSessionRepository sessionRepository,
             ISender sender)
@@ -24,7 +24,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
         }
 
         public async Task<TrainingSessionDto> Handle(
-            ApplyLiveTimeConstraintAdaptationCommand request,
+            ApplyLiveAdaptationCommand request,
             CancellationToken cancellationToken)
         {
             var userId = _currentUserService.UserId;
@@ -52,7 +52,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
 
             foreach (var change in request.Proposal.Changes)
             {
-                if (change.Type != LiveTimeConstraintChangeType.OmitExercise)
+                if (change.Type != LiveAdaptationChangeType.OmitExercise)
                     throw new ConflictException("La propuesta contiene un cambio no compatible.");
 
                 session.OmitirEjercicio(change.ExerciseSessionId);
