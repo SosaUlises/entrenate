@@ -43,13 +43,13 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Routing
         }
 
         [Fact]
-        public void Route_WhenTimeAndFatigueAreCombined_AsksWhichConstraintToUse()
+        public void Route_WhenTimeAndFatigueAreCombined_ReturnsBothSignals()
         {
             var result = _router.Route("estoy muy cansado y me quedan 20 minutos");
 
-            Assert.Equal(LiveCoachIntentKind.ConversationalQuestion, result.Kind);
-            Assert.Contains("tiempo", result.DirectAnswer);
-            Assert.Contains("cansancio", result.DirectAnswer);
+            Assert.Equal(LiveCoachIntentKind.LiveAdaptationCombinedSignals, result.Kind);
+            Assert.Equal(20, result.RemainingMinutes);
+            Assert.Equal(LiveFatigueSeverity.High, result.FatigueSeverity);
         }
     }
 }

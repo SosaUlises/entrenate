@@ -108,7 +108,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             var activePendingAction = pendingLookup.Status == PendingLiveCoachActionLookupStatus.Active
                 ? pendingLookup.Action
                 : null;
-            var routing = _intentRouter.Route(request.Text, activePendingAction is not null);
+            var routing = _intentRouter.Route(request.Text, activePendingAction?.Type);
             var clarificationLookup = _clarificationStore.FindActive(userId, session.Id, routingNowUtc);
             var bestSetCriterion = LiveCoachBestSetClarificationResolver.ParseCriterion(
                 RemoveDiacritics(request.Text).Trim().ToLowerInvariant());
@@ -297,6 +297,16 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     "Esa acción ya no está vigente porque venció. Pedímela de nuevo.");
             }
 
+            if (activePendingAction is not null &&
+                IsAdaptationAction(activePendingAction.Type) &&
+                IsAdaptationIntent(routing.Kind))
+            {
+                _pendingActionStore.Cancel(
+                    activePendingAction.ActionId,
+                    userId,
+                    routingNowUtc);
+            }
+
             if (routing.Kind == LiveCoachIntentKind.RegisterCurrentSet)
             {
                 return CreateRegisterCurrentSetResponse(
@@ -334,6 +344,18 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     userId,
                     request.ClientTurnId,
                     routing.PerformanceSignalType.Value);
+            }
+
+            if (routing.Kind == LiveCoachIntentKind.LiveAdaptationCombinedSignals)
+            {
+                return CreateCombinedAdaptationResponse(
+                    session,
+                    userId,
+                    request.ClientTurnId,
+                    new LiveAdaptationSignals(
+                        routing.RemainingMinutes,
+                        routing.FatigueSeverity,
+                        routing.PerformanceSignalType));
             }
 
             if (routing.Kind == LiveCoachIntentKind.SkipCurrentExercise)
@@ -984,6 +1006,73 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             return CreateDirectResponse(clientTurnId, proposalText, ToDto(action));
         }
 
+        private LiveCoachRespondResponseDto CreateCombinedAdaptationResponse(
+            Entrenate.Domain.Entidades.SesionEntrenamiento session,
+            string userId,
+            string clientTurnId,
+            LiveAdaptationSignals signals)
+        {
+            if (signals.RemainingMinutes is < LiveTimeConstraintAdaptationEngine.MinimumRemainingMinutes or
+                > LiveTimeConstraintAdaptationEngine.MaximumRemainingMinutes)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    "Necesito un tiempo entre 5 y 120 minutos para ajustar la sesión.");
+            }
+
+            var result = LiveAdaptationOrchestrator.Evaluate(session, signals);
+            if (result.Status == LiveCombinedAdaptationStatus.NoPendingWork)
+                return CreateDirectResponse(clientTurnId, "Ya completaste todas las series de la sesión.");
+            if (result.Status == LiveCombinedAdaptationStatus.NoApplicableChange)
+            {
+                var responseText = signals.RemainingMinutes.HasValue &&
+                    result.EstimatedMinutesBefore <= signals.RemainingMinutes.Value
+                        ? $"Lo pendiente ya entra en aproximadamente {result.EstimatedMinutesBefore} minutos y no hay un recorte adicional seguro para aplicar."
+                        : "No hay un recorte adicional seguro que pueda aplicar sin tocar el ejercicio actual o trabajo ya iniciado.";
+                return CreateDirectResponse(clientTurnId, responseText);
+            }
+
+            var nowUtc = DateTime.UtcNow;
+            var expiresAtUtc = nowUtc.AddSeconds(45);
+            var actionId = Guid.NewGuid();
+            var proposal = new LiveCombinedAdaptationProposal(
+                actionId,
+                userId,
+                session.Id,
+                nowUtc,
+                expiresAtUtc,
+                signals,
+                result.AppliedReasons,
+                result.PerformanceEvidence,
+                result.EstimatedMinutesBefore,
+                result.EstimatedMinutesAfter,
+                LiveTimeConstraintFingerprint.Create(session),
+                result.Changes,
+                BuildCombinedPublicSummary(signals, result.AppliedReasons));
+            var current = CurrentPendingTrainingSetResolver.Resolve(session)!;
+            var action = new PendingLiveCoachAction(
+                actionId,
+                userId,
+                session.Id,
+                current.ExerciseSession.Id,
+                current.SetNumber,
+                0,
+                0,
+                null,
+                expiresAtUtc,
+                LiveCoachActionTypes.ApplyCombinedAdaptation,
+                AdaptationProposal: proposal);
+            _pendingActionStore.Set(action);
+
+            var reasons = FormatCombinedReasons(signals, result);
+            var omittedNames = FormatNaturalList(result.Changes.Select(change => change.ExerciseName));
+            var timeResult = signals.RemainingMinutes.HasValue
+                ? $" Lo pendiente quedaría en ~{result.EstimatedMinutesAfter} minutos."
+                : string.Empty;
+            var text = $"{reasons}, puedo mantener {result.CurrentExerciseName} y omitir {omittedNames}.{timeResult} ¿Querés aplicar este ajuste?";
+            return CreateDirectResponse(clientTurnId, text, ToDto(action));
+        }
+
         private LiveCoachRespondResponseDto CreateReactivateExerciseResponse(
             Entrenate.Domain.Entidades.SesionEntrenamiento session,
             string userId,
@@ -1257,6 +1346,42 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             return $"Tu última serie estuvo dentro de la prescripción: {evidence.ActualRepetitions} reps sobre un objetivo de {repetitionTarget}.";
         }
 
+        private static string FormatCombinedReasons(
+            LiveAdaptationSignals signals,
+            LiveCombinedAdaptationResult result)
+        {
+            var reasons = new List<string>();
+            if (signals.RemainingMinutes.HasValue)
+                reasons.Add($"te quedan {signals.RemainingMinutes.Value} minutos");
+            if (signals.FatigueSeverity.HasValue)
+            {
+                reasons.Add(signals.FatigueSeverity == LiveFatigueSeverity.High
+                    ? "me dijiste que estás muy cansado"
+                    : "me dijiste que estás cansado");
+            }
+            if (result.AppliedReasons.Contains(LiveAdaptationReason.Performance) &&
+                result.PerformanceEvidence is not null)
+            {
+                reasons.Add("en la última serie quedaste por debajo de la prescripción");
+            }
+
+            return $"Como {FormatNaturalList(reasons)}";
+        }
+
+        private static string BuildCombinedPublicSummary(
+            LiveAdaptationSignals signals,
+            IReadOnlyCollection<LiveAdaptationReason> appliedReasons)
+        {
+            var labels = new List<string>();
+            if (signals.RemainingMinutes.HasValue)
+                labels.Add("tiempo disponible");
+            if (signals.FatigueSeverity.HasValue)
+                labels.Add("cansancio reportado");
+            if (appliedReasons.Contains(LiveAdaptationReason.Performance))
+                labels.Add("rendimiento registrado");
+            return $"Ajustar sesión por {FormatNaturalList(labels)}";
+        }
+
         private static string GetAdaptationUnavailableText(Exception exception)
             => exception.Message.Contains("expir", StringComparison.OrdinalIgnoreCase)
                 ? "Ese ajuste ya venció. Pedímelo de nuevo y lo recalculo."
@@ -1265,7 +1390,14 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
         private static bool IsAdaptationAction(string actionType)
             => actionType is LiveCoachActionTypes.ApplyTimeConstraintAdaptation or
                 LiveCoachActionTypes.ApplyFatigueAdaptation or
-                LiveCoachActionTypes.ApplyPerformanceAdaptation;
+                LiveCoachActionTypes.ApplyPerformanceAdaptation or
+                LiveCoachActionTypes.ApplyCombinedAdaptation;
+
+        private static bool IsAdaptationIntent(LiveCoachIntentKind intentKind)
+            => intentKind is LiveCoachIntentKind.LiveAdaptationTimeConstraint or
+                LiveCoachIntentKind.LiveAdaptationFatigueSignal or
+                LiveCoachIntentKind.LiveAdaptationPerformanceSignal or
+                LiveCoachIntentKind.LiveAdaptationCombinedSignals;
 
         private static string CreateRestTimerQueryAnswer(
             Entrenate.Application.Coach.LiveCoach.Models.LiveCoachSessionContext context,

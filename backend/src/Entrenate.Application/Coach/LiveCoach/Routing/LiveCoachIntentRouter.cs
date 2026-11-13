@@ -54,6 +54,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         LiveAdaptationTimeConstraint,
         LiveAdaptationFatigueSignal,
         LiveAdaptationPerformanceSignal,
+        LiveAdaptationCombinedSignals,
         OtherMutation,
         OutOfScope
     }
@@ -68,7 +69,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
     public interface ILiveCoachIntentRouter
     {
-        LiveCoachRoutingResult Route(string question, bool hasPendingAction = false);
+        LiveCoachRoutingResult Route(string question, string? pendingActionType = null);
     }
 
     public sealed class LiveCoachIntentRouter : ILiveCoachIntentRouter
@@ -196,7 +197,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             "peso", "resumen", "cómo vengo", "como vengo", "orden", "falta"
         };
 
-        public LiveCoachRoutingResult Route(string question, bool hasPendingAction = false)
+        public LiveCoachRoutingResult Route(string question, string? pendingActionType = null)
         {
             if (string.IsNullOrWhiteSpace(question))
             {
@@ -218,6 +219,12 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             var hasPerformanceSignal = TryGetPerformanceSignalType(
                 pendingDecision,
                 out var performanceSignalType);
+            var adaptationSignalCount = CountAdaptationSignals(
+                hasTimeConstraint,
+                hasFatigueSignal,
+                hasPerformanceSignal);
+            var rejectsAdaptation = RejectsAdaptation(pendingDecision);
+            var hasPendingAction = pendingActionType is not null;
 
             if (hasPendingAction)
             {
@@ -227,39 +234,32 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                 if (cancelsPending)
                     return new LiveCoachRoutingResult(LiveCoachIntentKind.CancelPendingAction, false);
 
-                if (CountAdaptationSignals(
-                    hasTimeConstraint,
-                    hasFatigueSignal,
-                    hasPerformanceSignal) > 1)
+                if (adaptationSignalCount > 0)
                 {
-                    return new LiveCoachRoutingResult(
-                        LiveCoachIntentKind.ConversationalQuestion,
-                        false,
-                        "¿Querés que ajuste la sesión por el tiempo, el cansancio o el rendimiento de hoy?");
-                }
+                    if (rejectsAdaptation && IsAdaptationActionType(pendingActionType))
+                        return new LiveCoachRoutingResult(LiveCoachIntentKind.CancelPendingAction, false);
 
-                if (hasTimeConstraint)
-                {
-                    return new LiveCoachRoutingResult(
-                        LiveCoachIntentKind.LiveAdaptationTimeConstraint,
-                        false,
-                        RemainingMinutes: remainingMinutes);
-                }
+                    if (!IsAdaptationActionType(pendingActionType))
+                    {
+                        return new LiveCoachRoutingResult(
+                            LiveCoachIntentKind.ConversationalQuestion,
+                            false,
+                            "Primero confirmá o cancelá la acción pendiente y después ajustamos la sesión.");
+                    }
 
-                if (hasFatigueSignal)
-                {
-                    return new LiveCoachRoutingResult(
-                        LiveCoachIntentKind.LiveAdaptationFatigueSignal,
-                        false,
-                        FatigueSeverity: fatigueSeverity);
-                }
+                    if (rejectsAdaptation)
+                    {
+                        return new LiveCoachRoutingResult(
+                            LiveCoachIntentKind.ConversationalQuestion,
+                            false,
+                            "Mantengo la sesión sin recortes.");
+                    }
 
-                if (hasPerformanceSignal)
-                {
-                    return new LiveCoachRoutingResult(
-                        LiveCoachIntentKind.LiveAdaptationPerformanceSignal,
-                        false,
-                        PerformanceSignalType: performanceSignalType);
+                    return CreateAdaptationRoutingResult(
+                        adaptationSignalCount,
+                        hasTimeConstraint ? remainingMinutes : null,
+                        hasFatigueSignal ? fatigueSeverity : null,
+                        hasPerformanceSignal ? performanceSignalType : null);
                 }
 
                 if (IsPendingSetUpdateRequest(pendingDecision))
@@ -299,40 +299,20 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             if (IsRestQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.RestTimerQuery, false);
 
-            if (CountAdaptationSignals(
-                hasTimeConstraint,
-                hasFatigueSignal,
-                hasPerformanceSignal) > 1)
+            if (adaptationSignalCount > 0 && rejectsAdaptation)
             {
                 return new LiveCoachRoutingResult(
                     LiveCoachIntentKind.ConversationalQuestion,
                     false,
-                    "¿Querés que ajuste la sesión por el tiempo, el cansancio o el rendimiento de hoy?");
+                    "Entendido. Mantengo la sesión sin recortes.");
             }
 
-            if (hasTimeConstraint)
-            {
-                return new LiveCoachRoutingResult(
-                    LiveCoachIntentKind.LiveAdaptationTimeConstraint,
-                    false,
-                    RemainingMinutes: remainingMinutes);
-            }
-
-            if (hasFatigueSignal)
-            {
-                return new LiveCoachRoutingResult(
-                    LiveCoachIntentKind.LiveAdaptationFatigueSignal,
-                    false,
-                    FatigueSeverity: fatigueSeverity);
-            }
-
-            if (hasPerformanceSignal)
-            {
-                return new LiveCoachRoutingResult(
-                    LiveCoachIntentKind.LiveAdaptationPerformanceSignal,
-                    false,
-                    PerformanceSignalType: performanceSignalType);
-            }
+            if (adaptationSignalCount > 0)
+                return CreateAdaptationRoutingResult(
+                    adaptationSignalCount,
+                    hasTimeConstraint ? remainingMinutes : null,
+                    hasFatigueSignal ? fatigueSeverity : null,
+                    hasPerformanceSignal ? performanceSignalType : null);
 
             if (IsCurrentPrescriptionQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.CurrentPrescriptionQuery, false);
@@ -1100,6 +1080,55 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
 
         private static int CountAdaptationSignals(params bool[] signals)
             => signals.Count(signal => signal);
+
+        private static LiveCoachRoutingResult CreateAdaptationRoutingResult(
+            int signalCount,
+            int? remainingMinutes,
+            LiveFatigueSeverity? fatigueSeverity,
+            LivePerformanceSignalType? performanceSignalType)
+        {
+            if (signalCount > 1)
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.LiveAdaptationCombinedSignals,
+                    false,
+                    RemainingMinutes: remainingMinutes,
+                    FatigueSeverity: fatigueSeverity,
+                    PerformanceSignalType: performanceSignalType);
+            }
+
+            if (remainingMinutes.HasValue)
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.LiveAdaptationTimeConstraint,
+                    false,
+                    RemainingMinutes: remainingMinutes);
+            }
+
+            if (fatigueSeverity.HasValue)
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.LiveAdaptationFatigueSignal,
+                    false,
+                    FatigueSeverity: fatigueSeverity);
+            }
+
+            return new LiveCoachRoutingResult(
+                LiveCoachIntentKind.LiveAdaptationPerformanceSignal,
+                false,
+                PerformanceSignalType: performanceSignalType);
+        }
+
+        private static bool RejectsAdaptation(string normalizedText)
+            => normalizedText.Contains("no quiero recortar nada", StringComparison.Ordinal) ||
+                normalizedText.Contains("no recortes nada", StringComparison.Ordinal) ||
+                normalizedText.Contains("sin recortar", StringComparison.Ordinal);
+
+        private static bool IsAdaptationActionType(string? actionType)
+            => actionType is LiveCoachActionTypes.ApplyTimeConstraintAdaptation or
+                LiveCoachActionTypes.ApplyFatigueAdaptation or
+                LiveCoachActionTypes.ApplyPerformanceAdaptation or
+                LiveCoachActionTypes.ApplyCombinedAdaptation;
 
         private static bool IsRestQuery(string normalizedText)
         {

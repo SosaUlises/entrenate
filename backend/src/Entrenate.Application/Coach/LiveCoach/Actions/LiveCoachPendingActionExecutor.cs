@@ -79,7 +79,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
 
             if (action.Type is LiveCoachActionTypes.ApplyTimeConstraintAdaptation or
                 LiveCoachActionTypes.ApplyFatigueAdaptation or
-                LiveCoachActionTypes.ApplyPerformanceAdaptation)
+                LiveCoachActionTypes.ApplyPerformanceAdaptation or
+                LiveCoachActionTypes.ApplyCombinedAdaptation)
             {
                 if (action.AdaptationProposal is null)
                     throw new ConflictException("La propuesta de ajuste ya no está disponible.");

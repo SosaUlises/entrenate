@@ -3339,6 +3339,240 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         [Fact]
+        public async Task Handle_WhenTimeAndFatigueAreCombined_CreatesSingleCombinedProposal()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press", 3), ("Remo", 3), ("Curl", 3), ("Tríceps", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-combined-time-fatigue",
+                    "audio",
+                    "estoy cansado y me quedan 15 minutos",
+                    null),
+                CancellationToken.None);
+
+            Assert.NotNull(result.PendingAction);
+            Assert.Equal(LiveCoachActionTypes.ApplyCombinedAdaptation, result.PendingAction.Type);
+            Assert.Single(_pendingActionStore.Actions);
+            var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
+            var proposal = Assert.IsType<LiveCombinedAdaptationProposal>(action.AdaptationProposal);
+            Assert.Equal(15, proposal.Signals.RemainingMinutes);
+            Assert.Equal(LiveFatigueSeverity.Moderate, proposal.Signals.FatigueSeverity);
+            Assert.DoesNotContain(session.Ejercicios, exercise => exercise.Omitido);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPerformanceHasNoEvidence_TimeStillCreatesCombinedProposal()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press", 3), ("Remo", 3), ("Curl", 3), ("Tríceps", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-combined-time-performance-no-evidence",
+                    "audio",
+                    "hoy estoy más débil y me quedan 12 minutos",
+                    null),
+                CancellationToken.None);
+
+            var action = _pendingActionStore.Actions[result.PendingAction!.ActionId];
+            var proposal = Assert.IsType<LiveCombinedAdaptationProposal>(action.AdaptationProposal);
+            Assert.Contains(LiveAdaptationReason.TimeConstraint, proposal.Reasons);
+            Assert.DoesNotContain(LiveAdaptationReason.Performance, proposal.Reasons);
+            Assert.Null(proposal.PerformanceEvidence);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPerformanceHasEvidence_CombinedProposalIncludesIt()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3), ("Curl", 3));
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-combined-time-performance-evidence",
+                    "audio",
+                    "no llego a las reps y me quedan 15 minutos",
+                    null),
+                CancellationToken.None);
+
+            var action = _pendingActionStore.Actions[result.PendingAction!.ActionId];
+            var proposal = Assert.IsType<LiveCombinedAdaptationProposal>(action.AdaptationProposal);
+            Assert.Contains(LiveAdaptationReason.Performance, proposal.Reasons);
+            Assert.True(proposal.PerformanceEvidence?.MissedPrescription);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNewAdaptationArrives_ReplacesPreviousAdaptation()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press", 3), ("Remo", 3), ("Curl", 3), ("Tríceps", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var first = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-old-fatigue", "audio", "estoy cansado", null),
+                CancellationToken.None);
+
+            var replacement = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-new-time", "audio", "me quedan 15 minutos", null),
+                CancellationToken.None);
+
+            Assert.NotNull(first.PendingAction);
+            Assert.NotNull(replacement.PendingAction);
+            Assert.NotEqual(first.PendingAction.ActionId, replacement.PendingAction.ActionId);
+            Assert.DoesNotContain(first.PendingAction.ActionId, _pendingActionStore.Actions.Keys);
+            Assert.True(_pendingActionStore.Actions.ContainsKey(replacement.PendingAction.ActionId));
+            Assert.Single(_pendingActionStore.Actions);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNewAdaptationNeedsNoChange_InvalidatesPreviousAdaptation()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press", 3), ("Remo", 3), ("Curl", 3), ("Triceps", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var first = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-old-adaptation", "audio", "estoy cansado", null),
+                CancellationToken.None);
+
+            var replacement = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-new-adaptation-no-change", "audio", "me quedan 120 minutos", null),
+                CancellationToken.None);
+
+            Assert.NotNull(first.PendingAction);
+            Assert.Null(replacement.PendingAction);
+            Assert.DoesNotContain(first.PendingAction.ActionId, _pendingActionStore.Actions.Keys);
+            Assert.Empty(_pendingActionStore.Actions);
+        }
+
+        [Fact]
+        public async Task Handle_WhenSetMutationIsPending_DoesNotReplaceItWithAdaptation()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var pending = await CreatePendingActionAsync(session);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-blocked-adaptation", "audio", "estoy cansado", null),
+                CancellationToken.None);
+
+            Assert.Equal(pending.ActionId, result.PendingAction?.ActionId);
+            Assert.Contains("confirmá o cancelá", result.Text);
+            Assert.Single(_pendingActionStore.Actions);
+        }
+
+        [Fact]
+        public async Task Handle_WhenAdaptationArrivesDuringClarification_ClearsClarification()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            _clarificationStore.Set(new PendingLiveCoachClarification(
+                Guid.NewGuid(),
+                TestUserId,
+                session.Id,
+                "turn-best-before-adaptation",
+                session.Ejercicios.First().Id,
+                LiveCoachClarificationKind.BestSetCriterion,
+                [LiveCoachBestSetCriterion.Weight],
+                DateTime.UtcNow.AddSeconds(45)));
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-adaptation-during-clarification", "audio", "me quedan 8 minutos", null),
+                CancellationToken.None);
+
+            Assert.Empty(_clarificationStore.Clarifications);
+            Assert.Equal(LiveCoachActionTypes.ApplyTimeConstraintAdaptation, result.PendingAction?.Type);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCombinedAdaptationIsConfirmedByVoice_UsesSinglePendingAction()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press", 3), ("Remo", 3), ("Curl", 3), ("Tríceps", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-combined-confirm-pending", "audio", "estoy cansado y me quedan 15 minutos", null),
+                CancellationToken.None);
+            _pendingActionExecutor.TextToReturn = "Listo. Apliqué el ajuste combinado a esta sesión.";
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-combined-confirm", "audio", "sí", null),
+                CancellationToken.None);
+
+            Assert.Equal(1, _pendingActionExecutor.ConfirmCount);
+            Assert.Equal(
+                LiveCoachActionTypes.ApplyCombinedAdaptation,
+                _pendingActionExecutor.ConfirmedAction?.Type);
+            Assert.NotNull(result.UpdatedSession);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCombinedAdaptationIsCancelledByVoice_KeepsSessionUnchanged()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press", 3), ("Remo", 3), ("Curl", 3), ("Triceps", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-combined-cancel-pending", "audio", "estoy cansado y me quedan 15 minutos", null),
+                CancellationToken.None);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-combined-cancel", "audio", "no", null),
+                CancellationToken.None);
+
+            Assert.Equal(1, _pendingActionExecutor.CancelCount);
+            Assert.Null(result.PendingAction);
+            Assert.All(session.Ejercicios, exercise => Assert.False(exercise.Omitido));
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenCombinedAdaptationBecameStale_DoesNotApplyPartially()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press", 3), ("Remo", 3), ("Curl", 3), ("Triceps", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-combined-stale-pending", "audio", "estoy cansado y me quedan 15 minutos", null),
+                CancellationToken.None);
+            _pendingActionExecutor.ThrowConflict = true;
+            _pendingActionExecutor.ConflictMessage =
+                "La sesion cambio desde que prepare el ajuste.";
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-combined-stale", "audio", "si", null),
+                CancellationToken.None);
+
+            Assert.Contains("recalculo", result.Text);
+            Assert.Null(result.UpdatedSession);
+            Assert.All(session.Ejercicios, exercise => Assert.False(exercise.Omitido));
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
         public async Task Handle_WhenTimeConstraintAlreadyFits_DoesNotCreatePendingAction()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
@@ -3644,7 +3878,17 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         {
             public Dictionary<Guid, PendingLiveCoachAction> Actions { get; } = [];
 
-            public void Set(PendingLiveCoachAction action) => Actions[action.ActionId] = action;
+            public void Set(PendingLiveCoachAction action)
+            {
+                foreach (var existing in Actions.Values
+                    .Where(item => item.UserId == action.UserId && item.SessionId == action.SessionId)
+                    .ToList())
+                {
+                    Actions.Remove(existing.ActionId);
+                }
+
+                Actions[action.ActionId] = action;
+            }
 
             public PendingLiveCoachActionLookupResult FindActive(
                 string userId,

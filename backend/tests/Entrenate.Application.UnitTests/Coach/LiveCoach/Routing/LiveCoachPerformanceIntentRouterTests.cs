@@ -51,13 +51,13 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Routing
         }
 
         [Fact]
-        public void Route_WhenFatigueAndPerformanceAreCombined_AsksForClarification()
+        public void Route_WhenFatigueAndPerformanceAreCombined_ReturnsBothSignals()
         {
             var result = _router.Route("estoy cansado y hoy estoy más débil");
 
-            Assert.Equal(LiveCoachIntentKind.ConversationalQuestion, result.Kind);
-            Assert.Contains("cansancio", result.DirectAnswer);
-            Assert.Contains("rendimiento", result.DirectAnswer);
+            Assert.Equal(LiveCoachIntentKind.LiveAdaptationCombinedSignals, result.Kind);
+            Assert.Equal(LiveFatigueSeverity.Moderate, result.FatigueSeverity);
+            Assert.Equal(LivePerformanceSignalType.PerceivedWeakness, result.PerformanceSignalType);
         }
     }
 }

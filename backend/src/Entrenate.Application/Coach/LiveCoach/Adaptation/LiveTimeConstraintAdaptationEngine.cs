@@ -90,6 +90,24 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
                 changes);
         }
 
+        public static int EstimatePendingMinutes(
+            SesionEntrenamiento session,
+            IEnumerable<Guid>? additionallyOmittedExerciseSessionIds = null)
+        {
+            ArgumentNullException.ThrowIfNull(session);
+            var additionallyOmitted = additionallyOmittedExerciseSessionIds?.ToHashSet() ?? [];
+            var pending = session.Ejercicios
+                .Where(exercise =>
+                    !exercise.Omitido &&
+                    !additionallyOmitted.Contains(exercise.Id))
+                .OrderBy(exercise => exercise.Orden)
+                .Select(ToPendingExercise)
+                .Where(exercise => exercise.PendingSets > 0)
+                .ToList();
+
+            return ToMinutes(EstimateSeconds(pending));
+        }
+
         private static void RemoveFromEnd(
             List<PendingExercise> retained,
             List<PendingExercise> removed,
