@@ -9,6 +9,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
         public const string ReactivateExercise = "ReactivateExercise";
         public const string ApplyTimeConstraintAdaptation = "ApplyTimeConstraintAdaptation";
         public const string ApplyFatigueAdaptation = "ApplyFatigueAdaptation";
+        public const string ApplyPerformanceAdaptation = "ApplyPerformanceAdaptation";
     }
 
     public sealed record PendingLiveCoachAction(

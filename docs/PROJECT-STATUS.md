@@ -106,6 +106,7 @@
 
 - Live Coach V0 — interactive clarification follow-ups are closed: Coach responses can expose typed, short-lived clarification metadata that allows the Training UI to continue multi-turn flows without treating every response as final. Best-set criteria can be answered through voice, text or structured quick actions for weight, repetitions and volume, while the backend remains the source of truth and pending mutations preserve their separate confirmation UX.
 
+- Live Coach V0 — Live Adaptation Fatigue Signal V0.2 is closed: explicit current-session fatigue signals are classified deterministically as moderate or high and converted into ephemeral volume-reduction proposals over the authoritative active session. The engine preserves the current exercise and completed performance, prioritizes already-started work, omits only future exercises through the existing `Omitido` semantics, requires explicit confirmation, reuses shared Live Adaptation stale/fingerprint infrastructure and never invokes the conversation provider for adaptation decisions.
 - Training — omitted exercises can be reactivated while the session remains
   `EnCurso`; reactivation restores the exercise to the authoritative pending resolver
   without altering previously completed sets.

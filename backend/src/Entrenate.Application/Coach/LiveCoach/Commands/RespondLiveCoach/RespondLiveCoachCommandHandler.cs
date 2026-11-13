@@ -326,6 +326,16 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     routing.FatigueSeverity.Value);
             }
 
+            if (routing.Kind == LiveCoachIntentKind.LiveAdaptationPerformanceSignal &&
+                routing.PerformanceSignalType.HasValue)
+            {
+                return CreatePerformanceAdaptationResponse(
+                    session,
+                    userId,
+                    request.ClientTurnId,
+                    routing.PerformanceSignalType.Value);
+            }
+
             if (routing.Kind == LiveCoachIntentKind.SkipCurrentExercise)
             {
                 return CreateSkipCurrentExerciseResponse(
@@ -902,6 +912,78 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             return CreateDirectResponse(clientTurnId, text, ToDto(action));
         }
 
+        private LiveCoachRespondResponseDto CreatePerformanceAdaptationResponse(
+            Entrenate.Domain.Entidades.SesionEntrenamiento session,
+            string userId,
+            string clientTurnId,
+            LivePerformanceSignalType signalType)
+        {
+            var result = LivePerformanceAdaptationEngine.Evaluate(session, signalType);
+            if (result.Status == LivePerformanceAdaptationResultStatus.NoPendingWork)
+                return CreateDirectResponse(clientTurnId, "Ya completaste todas las series de la sesión.");
+
+            if (result.Status == LivePerformanceAdaptationResultStatus.InsufficientContext)
+            {
+                var responseText = signalType == LivePerformanceSignalType.ExcessiveEffort
+                    ? "No tengo un peso objetivo definido para esta serie y todavía no hay una serie reciente para comparar. Registrá primero cómo salió y la evalúo contra la prescripción."
+                    : "Registrá primero cómo salió la serie y la comparo con la prescripción.";
+                return CreateDirectResponse(clientTurnId, responseText);
+            }
+
+            var evidence = result.Evidence!;
+            var evidenceText = FormatPerformanceEvidence(evidence);
+            var weightLimitation = signalType == LivePerformanceSignalType.ExcessiveEffort
+                ? "No tengo un peso objetivo definido para ajustar la carga automáticamente. "
+                : string.Empty;
+            if (result.Status == LivePerformanceAdaptationResultStatus.WithinPrescription)
+            {
+                var responseText = signalType == LivePerformanceSignalType.ExcessiveEffort
+                    ? $"{weightLimitation}{evidenceText} Si querés, seguimos con la serie actual y evaluamos la próxima."
+                    : $"{evidenceText} Si querés, seguimos con la serie actual y evaluamos la próxima.";
+                return CreateDirectResponse(clientTurnId, responseText);
+            }
+
+            if (result.Status == LivePerformanceAdaptationResultStatus.UnderperformanceWithoutSafeCut)
+            {
+                return CreateDirectResponse(
+                    clientTurnId,
+                    $"{weightLimitation}{evidenceText} No queda un ejercicio posterior no iniciado que pueda recortar sin tocar el trabajo actual o ya empezado.");
+            }
+
+            var nowUtc = DateTime.UtcNow;
+            var expiresAtUtc = nowUtc.AddSeconds(45);
+            var actionId = Guid.NewGuid();
+            var proposal = new LivePerformanceAdaptationProposal(
+                actionId,
+                userId,
+                session.Id,
+                nowUtc,
+                expiresAtUtc,
+                signalType,
+                evidence,
+                LiveTimeConstraintFingerprint.Create(session),
+                result.Changes,
+                "Reducir volumen posterior por rendimiento bajo");
+            var current = CurrentPendingTrainingSetResolver.Resolve(session)!;
+            var action = new PendingLiveCoachAction(
+                actionId,
+                userId,
+                session.Id,
+                current.ExerciseSession.Id,
+                current.SetNumber,
+                0,
+                0,
+                null,
+                expiresAtUtc,
+                LiveCoachActionTypes.ApplyPerformanceAdaptation,
+                AdaptationProposal: proposal);
+            _pendingActionStore.Set(action);
+
+            var omittedName = result.Changes.Single().ExerciseName;
+            var proposalText = $"{weightLimitation}{evidenceText} Puedo mantener {result.CurrentExerciseName} y omitir {omittedName} para reducir el volumen posterior de hoy. ¿Querés aplicar este ajuste?";
+            return CreateDirectResponse(clientTurnId, proposalText, ToDto(action));
+        }
+
         private LiveCoachRespondResponseDto CreateReactivateExerciseResponse(
             Entrenate.Domain.Entidades.SesionEntrenamiento session,
             string userId,
@@ -1157,6 +1239,24 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             };
         }
 
+        private static string FormatPerformanceEvidence(LivePerformanceEvidence evidence)
+        {
+            var repetitionTarget = evidence.TargetMinimumRepetitions == evidence.TargetMaximumRepetitions
+                ? evidence.TargetMinimumRepetitions.ToString(CultureInfo.InvariantCulture)
+                : $"{evidence.TargetMinimumRepetitions}–{evidence.TargetMaximumRepetitions}";
+            if (evidence.MissedPrescription)
+            {
+                return $"En la última serie hiciste {evidence.ActualRepetitions} reps y el objetivo era {repetitionTarget}, así que quedaste por debajo de la prescripción.";
+            }
+
+            if (evidence.ExceededTargetEffort && evidence.ActualRir.HasValue)
+            {
+                return $"En la última serie registraste RIR {evidence.ActualRir.Value} y el objetivo era RIR {evidence.TargetMinimumRir}–{evidence.TargetMaximumRir}, así que el esfuerzo fue mayor al prescripto.";
+            }
+
+            return $"Tu última serie estuvo dentro de la prescripción: {evidence.ActualRepetitions} reps sobre un objetivo de {repetitionTarget}.";
+        }
+
         private static string GetAdaptationUnavailableText(Exception exception)
             => exception.Message.Contains("expir", StringComparison.OrdinalIgnoreCase)
                 ? "Ese ajuste ya venció. Pedímelo de nuevo y lo recalculo."
@@ -1164,7 +1264,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
 
         private static bool IsAdaptationAction(string actionType)
             => actionType is LiveCoachActionTypes.ApplyTimeConstraintAdaptation or
-                LiveCoachActionTypes.ApplyFatigueAdaptation;
+                LiveCoachActionTypes.ApplyFatigueAdaptation or
+                LiveCoachActionTypes.ApplyPerformanceAdaptation;
 
         private static string CreateRestTimerQueryAnswer(
             Entrenate.Application.Coach.LiveCoach.Models.LiveCoachSessionContext context,

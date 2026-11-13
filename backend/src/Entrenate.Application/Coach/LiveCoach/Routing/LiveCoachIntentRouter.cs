@@ -53,6 +53,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         SessionProgress,
         LiveAdaptationTimeConstraint,
         LiveAdaptationFatigueSignal,
+        LiveAdaptationPerformanceSignal,
         OtherMutation,
         OutOfScope
     }
@@ -62,7 +63,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
         bool RequiresPreviousPerformance,
         string? DirectAnswer = null,
         int? RemainingMinutes = null,
-        LiveFatigueSeverity? FatigueSeverity = null);
+        LiveFatigueSeverity? FatigueSeverity = null,
+        LivePerformanceSignalType? PerformanceSignalType = null);
 
     public interface ILiveCoachIntentRouter
     {
@@ -213,6 +215,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             var hasFatigueSignal = TryGetFatigueSeverity(
                 pendingDecision,
                 out var fatigueSeverity);
+            var hasPerformanceSignal = TryGetPerformanceSignalType(
+                pendingDecision,
+                out var performanceSignalType);
 
             if (hasPendingAction)
             {
@@ -222,12 +227,15 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                 if (cancelsPending)
                     return new LiveCoachRoutingResult(LiveCoachIntentKind.CancelPendingAction, false);
 
-                if (hasTimeConstraint && hasFatigueSignal)
+                if (CountAdaptationSignals(
+                    hasTimeConstraint,
+                    hasFatigueSignal,
+                    hasPerformanceSignal) > 1)
                 {
                     return new LiveCoachRoutingResult(
                         LiveCoachIntentKind.ConversationalQuestion,
                         false,
-                        "¿Querés que ajuste la sesión por el tiempo disponible o por el cansancio?");
+                        "¿Querés que ajuste la sesión por el tiempo, el cansancio o el rendimiento de hoy?");
                 }
 
                 if (hasTimeConstraint)
@@ -244,6 +252,14 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                         LiveCoachIntentKind.LiveAdaptationFatigueSignal,
                         false,
                         FatigueSeverity: fatigueSeverity);
+                }
+
+                if (hasPerformanceSignal)
+                {
+                    return new LiveCoachRoutingResult(
+                        LiveCoachIntentKind.LiveAdaptationPerformanceSignal,
+                        false,
+                        PerformanceSignalType: performanceSignalType);
                 }
 
                 if (IsPendingSetUpdateRequest(pendingDecision))
@@ -283,12 +299,15 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             if (IsRestQuery(pendingDecision))
                 return new LiveCoachRoutingResult(LiveCoachIntentKind.RestTimerQuery, false);
 
-            if (hasTimeConstraint && hasFatigueSignal)
+            if (CountAdaptationSignals(
+                hasTimeConstraint,
+                hasFatigueSignal,
+                hasPerformanceSignal) > 1)
             {
                 return new LiveCoachRoutingResult(
                     LiveCoachIntentKind.ConversationalQuestion,
                     false,
-                    "¿Querés que ajuste la sesión por el tiempo disponible o por el cansancio?");
+                    "¿Querés que ajuste la sesión por el tiempo, el cansancio o el rendimiento de hoy?");
             }
 
             if (hasTimeConstraint)
@@ -305,6 +324,14 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                     LiveCoachIntentKind.LiveAdaptationFatigueSignal,
                     false,
                     FatigueSeverity: fatigueSeverity);
+            }
+
+            if (hasPerformanceSignal)
+            {
+                return new LiveCoachRoutingResult(
+                    LiveCoachIntentKind.LiveAdaptationPerformanceSignal,
+                    false,
+                    PerformanceSignalType: performanceSignalType);
             }
 
             if (IsCurrentPrescriptionQuery(pendingDecision))
@@ -1015,6 +1042,64 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
                 : LiveFatigueSeverity.Moderate;
             return true;
         }
+
+        private static bool TryGetPerformanceSignalType(
+            string normalizedText,
+            out LivePerformanceSignalType signalType)
+        {
+            signalType = LivePerformanceSignalType.PerceivedWeakness;
+
+            if (normalizedText.Contains("dolor", StringComparison.Ordinal) ||
+                normalizedText.Contains("duele", StringComparison.Ordinal) ||
+                normalizedText.Contains("lesion", StringComparison.Ordinal) ||
+                normalizedText.Contains("pinch", StringComparison.Ordinal) ||
+                normalizedText.Contains("tiron", StringComparison.Ordinal) ||
+                normalizedText.Contains("molestia fuerte", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (normalizedText.Contains("ayer", StringComparison.Ordinal) ||
+                normalizedText.Contains("cuando entreno", StringComparison.Ordinal) ||
+                normalizedText.StartsWith("por que", StringComparison.Ordinal) ||
+                normalizedText.Contains("como puedo ser mas fuerte", StringComparison.Ordinal) ||
+                normalizedText.Contains("quiero ganar fuerza", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (normalizedText.Contains("no llego a las rep", StringComparison.Ordinal) ||
+                normalizedText.Contains("no puedo sacar las rep", StringComparison.Ordinal))
+            {
+                signalType = LivePerformanceSignalType.MissedRepetitions;
+                return true;
+            }
+
+            if ((normalizedText.Contains("peso", StringComparison.Ordinal) &&
+                 (normalizedText.Contains("muy pesado", StringComparison.Ordinal) ||
+                  normalizedText.Contains("demasiado pesado", StringComparison.Ordinal))) ||
+                normalizedText.Contains("esto esta demasiado pesado", StringComparison.Ordinal) ||
+                normalizedText.Contains("me esta costando mucho", StringComparison.Ordinal))
+            {
+                signalType = LivePerformanceSignalType.ExcessiveEffort;
+                return true;
+            }
+
+            if (normalizedText.Contains("hoy estoy mas debil", StringComparison.Ordinal) ||
+                normalizedText.Contains("hoy estoy floj", StringComparison.Ordinal) ||
+                normalizedText.Contains("no tengo la misma fuerza", StringComparison.Ordinal) ||
+                normalizedText.Contains("rindiendo peor hoy", StringComparison.Ordinal) ||
+                normalizedText.Contains("rindiendo peor de lo normal", StringComparison.Ordinal))
+            {
+                signalType = LivePerformanceSignalType.PerceivedWeakness;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static int CountAdaptationSignals(params bool[] signals)
+            => signals.Count(signal => signal);
 
         private static bool IsRestQuery(string normalizedText)
         {

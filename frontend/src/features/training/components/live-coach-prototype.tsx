@@ -51,6 +51,10 @@ const pendingActionLabels: Record<
   LiveCoachPendingAction["type"],
   { cancel: string; confirm: string }
 > = {
+  ApplyPerformanceAdaptation: {
+    cancel: "Mantener sesión",
+    confirm: "Aplicar ajuste",
+  },
   ApplyFatigueAdaptation: {
     cancel: "Mantener sesión",
     confirm: "Aplicar ajuste",
@@ -74,7 +78,9 @@ const pendingActionLabels: Record<
 };
 
 function isAdaptationPendingAction(type: LiveCoachPendingAction["type"]) {
-  return type === "ApplyTimeConstraintAdaptation" || type === "ApplyFatigueAdaptation";
+  return type === "ApplyTimeConstraintAdaptation"
+    || type === "ApplyFatigueAdaptation"
+    || type === "ApplyPerformanceAdaptation";
 }
 
 const statePresentations: Record<LiveCoachState, StatePresentation> = {

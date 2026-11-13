@@ -3211,6 +3211,134 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         [Fact]
+        public async Task Handle_WhenPerformanceIsBelowPrescription_CreatesVolumeProposalWithoutProvider()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-performance", "audio", "hoy estoy más débil", null),
+                CancellationToken.None);
+
+            Assert.NotNull(result.PendingAction);
+            Assert.Equal(LiveCoachActionTypes.ApplyPerformanceAdaptation, result.PendingAction.Type);
+            var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
+            var proposal = Assert.IsType<LivePerformanceAdaptationProposal>(action.AdaptationProposal);
+            Assert.True(proposal.Evidence.MissedPrescription);
+            Assert.False(session.Ejercicios.Last().Omitido);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenLastSetMetPrescription_DoesNotCreateAdaptation()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 8, 1, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-performance-within", "audio", "hoy estoy más débil", null),
+                CancellationToken.None);
+
+            Assert.Null(result.PendingAction);
+            Assert.Contains("dentro de la prescripción", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenWeightFeelsHeavyWithoutEvidence_DoesNotInventTargetWeight()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-performance-weight", "audio", "este peso está demasiado pesado", null),
+                CancellationToken.None);
+
+            Assert.Null(result.PendingAction);
+            Assert.Contains("No tengo un peso objetivo definido", result.Text);
+            Assert.Contains("Registrá primero", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPerformanceAdaptationIsConfirmedByVoice_UsesPendingExecutor()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-performance-pending", "audio", "no llego a las reps", null),
+                CancellationToken.None);
+            _pendingActionExecutor.TextToReturn =
+                "Listo. Reduje el trabajo posterior de esta sesión.";
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-performance-confirm", "audio", "sí", null),
+                CancellationToken.None);
+
+            Assert.Equal(1, _pendingActionExecutor.ConfirmCount);
+            Assert.Equal(
+                LiveCoachActionTypes.ApplyPerformanceAdaptation,
+                _pendingActionExecutor.ConfirmedAction?.Type);
+            Assert.NotNull(result.UpdatedSession);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPerformanceAdaptationIsCancelled_DoesNotMutateSession()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-performance-cancel-pending", "audio", "no llego a las reps", null),
+                CancellationToken.None);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-performance-cancel", "audio", "no", null),
+                CancellationToken.None);
+
+            Assert.Equal("Listo, mantengo la sesión sin cambios.", result.Text);
+            Assert.All(session.Ejercicios, exercise => Assert.False(exercise.Omitido));
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenPerformanceAdaptationBecameStale_ReturnsSpecificMessage()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            _sessionRepository.Sessions[session.Id] = session;
+            await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-performance-stale-pending", "audio", "hoy estoy más débil", null),
+                CancellationToken.None);
+            _pendingActionExecutor.ThrowConflict = true;
+            _pendingActionExecutor.ConflictMessage =
+                "Tu sesión cambió desde que preparé el ajuste.";
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id, "turn-performance-stale", "audio", "sí", null),
+                CancellationToken.None);
+
+            Assert.Equal(
+                "Tu sesión cambió desde que preparé el ajuste. Pedímelo de nuevo y lo recalculo.",
+                result.Text);
+            Assert.Null(result.UpdatedSession);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
         public async Task Handle_WhenTimeConstraintAlreadyFits_DoesNotCreatePendingAction()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
