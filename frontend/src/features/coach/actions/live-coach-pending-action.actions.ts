@@ -1,0 +1,49 @@
+"use server";
+
+import { clearAuthSession, getAuthToken } from "@/features/auth/services/session.service";
+import type { LiveCoachActionConfirmation } from "../types/live-coach.types";
+import { ApiClientError } from "@/services/api-client";
+import { cancelLiveCoachAction, confirmLiveCoachAction } from "../services/live-coach.service";
+
+export type ConfirmLiveCoachPendingActionResult =
+  | { data: LiveCoachActionConfirmation; status: "success" }
+  | { status: "conflict" | "error" | "expired" | "not-found" | "unauthenticated" };
+
+export async function confirmLiveCoachPendingAction(
+  actionId: string,
+  restTimerIsActive: boolean,
+): Promise<ConfirmLiveCoachPendingActionResult> {
+  const authToken = await getAuthToken();
+  if (!authToken) return { status: "unauthenticated" };
+
+  try {
+    return {
+      data: await confirmLiveCoachAction(actionId, restTimerIsActive, authToken),
+      status: "success",
+    };
+  } catch (error) {
+    if (error instanceof ApiClientError) {
+      if (error.status === 401) {
+        await clearAuthSession();
+        return { status: "unauthenticated" };
+      }
+      if (error.status === 404) return { status: "not-found" };
+      if (error.status === 409) {
+        const detail = error.problemDetail?.toLocaleLowerCase("es") ?? "";
+        return { status: detail.includes("expir") ? "expired" : "conflict" };
+      }
+    }
+    return { status: "error" };
+  }
+}
+
+export async function cancelLiveCoachPendingActionRequest(actionId: string): Promise<void> {
+  const authToken = await getAuthToken();
+  if (!authToken) return;
+
+  try {
+    await cancelLiveCoachAction(actionId, authToken);
+  } catch {
+    // Cancellation remains safe locally; the server-side action expires after its short TTL.
+  }
+}

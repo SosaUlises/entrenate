@@ -12,5 +12,6 @@ namespace Entrenate.Application.TrainingSessions.DTOs
         int RirObjetivoMaximo,
         int DescansoObjetivoSegundos,
         string? Notas,
-        IReadOnlyCollection<TrainingSetDto> Series);
+        IReadOnlyCollection<TrainingSetDto> Series,
+        bool Omitido = false);
 }

@@ -5,6 +5,7 @@ import { ApiClientError } from "@/services/api-client";
 import {
   cancelTrainingSession, completeTrainingSession, getActiveTrainingSession,
   startTrainingSession, upsertTrainingSet,
+  reactivateTrainingExercise,
 } from "../services/training.service";
 import type { TrainingSession, TrainingSet, TrainingSetInput } from "../types/training.types";
 
@@ -48,4 +49,8 @@ export async function completeTrainingSessionAction(id: string): Promise<Result<
 
 export async function cancelTrainingSessionAction(id: string): Promise<Result<void>> {
   return run((token) => cancelTrainingSession(id, token));
+}
+
+export async function reactivateTrainingExerciseAction(sessionId: string, exerciseSessionId: string): Promise<Result<TrainingSession>> {
+  return run((token) => reactivateTrainingExercise(sessionId, exerciseSessionId, token));
 }

@@ -101,7 +101,8 @@ namespace Entrenate.Application.TrainingSessions.Commands.StartTrainingSession
                                 y.Rir,
                                 y.Completada,
                                 y.FechaHoraRegistro))
-                            .ToList()))
+                            .ToList(),
+                        x.Omitido))
                     .ToList());
         }
     }

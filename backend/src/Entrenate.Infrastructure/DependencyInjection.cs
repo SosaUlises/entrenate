@@ -1,7 +1,10 @@
-﻿using Entrenate.Application.Common.Interfaces;
+using Entrenate.Application.Coach.LiveCoach.Actions;
+using Entrenate.Application.Coach.LiveCoach.Clarifications;
+using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.Common.Settings;
 using Entrenate.Infrastructure.Authentication;
 using Entrenate.Infrastructure.Coach.Conversation;
+using Entrenate.Infrastructure.Coach.LiveCoach;
 using Entrenate.Infrastructure.Email;
 using Entrenate.Infrastructure.Identity;
 using Entrenate.Infrastructure.Persistence;
@@ -231,6 +234,79 @@ namespace Entrenate.Infrastructure
                             "Bearer",
                             settings.ApiKey);
                 });
+            services.AddHttpClient<
+                ILiveCoachSpeechToText,
+                GroqLiveCoachSpeechToTextAdapter>((serviceProvider, client) =>
+                {
+                    var settings = serviceProvider
+                        .GetRequiredService<
+                            Microsoft.Extensions.Options.IOptions<GroqSettings>>()
+                        .Value;
+
+                    client.BaseAddress = new Uri(
+                        settings.BaseUrl.TrimEnd('/') + "/");
+                    var timeoutSeconds = settings.SttTimeoutSeconds > 0
+                        ? settings.SttTimeoutSeconds
+                        : 10;
+                    client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+                    client.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue(
+                            "Bearer",
+                            settings.ApiKey);
+                });
+
+            services.AddOptions<ElevenLabsSettings>()
+                .Bind(configuration.GetSection("ElevenLabs"))
+                .PostConfigure(settings =>
+                {
+                    if (string.IsNullOrWhiteSpace(settings.ApiKey))
+                    {
+                        settings.ApiKey = configuration["ElevenLabs:ApiKey"]
+                            ?? configuration["ElevenLabs__ApiKey"]
+                            ?? configuration["ELEVENLABS_API_KEY"]
+                            ?? configuration["ElevenLabsApiKey"]
+                            ?? string.Empty;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(settings.BaseUrl))
+                    {
+                        settings.BaseUrl = "https://api.elevenlabs.io/v1/";
+                    }
+
+                    if (string.IsNullOrWhiteSpace(settings.VoiceId))
+                    {
+                        settings.VoiceId = configuration["ElevenLabs:VoiceId"]
+                            ?? configuration["ElevenLabs__VoiceId"]
+                            ?? configuration["ELEVENLABS_VOICE_ID"]
+                            ?? "21m00Tcm4TlvDq8ikWAM";
+                    }
+
+                    if (string.IsNullOrWhiteSpace(settings.ModelId))
+                    {
+                        settings.ModelId = "eleven_multilingual_v2";
+                    }
+                });
+
+            services.AddHttpClient<
+                ILiveCoachTextToSpeech,
+                ElevenLabsLiveCoachTextToSpeechAdapter>((serviceProvider, client) =>
+                {
+                    var settings = serviceProvider
+                        .GetRequiredService<
+                            Microsoft.Extensions.Options.IOptions<ElevenLabsSettings>>()
+                        .Value;
+
+                    var baseUrl = string.IsNullOrWhiteSpace(settings.BaseUrl)
+                        ? "https://api.elevenlabs.io/v1/"
+                        : settings.BaseUrl;
+
+                    client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+                    var timeoutSeconds = settings.TimeoutSeconds > 0
+                        ? settings.TimeoutSeconds
+                        : 15;
+                    client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+                });
+
             services.AddScoped<DatabaseSeeder>();
 
             services.AddScoped<ITrainingProfileRepository,TrainingProfileRepository>();
@@ -238,6 +314,9 @@ namespace Entrenate.Infrastructure
             services.AddScoped<IExerciseRepository, ExerciseRepository>();
             services.AddScoped<IRoutineRepository, RoutineRepository>();
             services.AddScoped<ITrainingSessionRepository, TrainingSessionRepository>();
+            services.AddSingleton<ILiveCoachResponseCache, MemoryLiveCoachResponseCache>();
+            services.AddSingleton<ILiveCoachPendingActionStore, MemoryLiveCoachPendingActionStore>();
+            services.AddSingleton<ILiveCoachClarificationStore, MemoryLiveCoachClarificationStore>();
 
 
 

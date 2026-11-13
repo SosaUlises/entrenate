@@ -1,0 +1,687 @@
+/* ==========================================================================
+   Live Coach Face — Acero Térmico V5 Animated Assistant
+   Presencia viva, sobria y técnica sin boca. Los ojos conservan siempre
+   su forma circular base (sin deformación, sin scale no uniforme).
+   La expresividad se resuelve exclusivamente mediante traslación, postura,
+   separación entre ojos, micro-movimientos y micro-elementos externos.
+   ========================================================================== */
+
+.faceMotion,
+.gazeMotion,
+.eyeAnchor,
+.eyePosture,
+.eyeLid,
+.eyeShape,
+.thoughtDot,
+.ideaBeacon {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.faceMotion {
+  transform-origin: 60px 36px;
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gazeMotion {
+  transform-origin: 60px 36px;
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.eyeAnchor {
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.eyeLeft {
+  transform-origin: 33px 36px;
+}
+
+.eyeRight {
+  transform-origin: 87px 36px;
+}
+
+.eyePosture,
+.eyeLid,
+.eyeShape {
+  transition:
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 320ms ease;
+}
+
+.eyeShape {
+  fill: var(--technical-white, #e8e7df);
+  filter: drop-shadow(0 0 7px rgba(232, 231, 223, 0.24));
+}
+
+/* --------------------------------------------------------------------------
+   Micro-elementos temporales externos
+   -------------------------------------------------------------------------- */
+
+/* Círculos de pensamiento: inactivos por defecto */
+.thoughtBubbles {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+.thoughtDot {
+  fill: var(--technical-white, #e8e7df);
+  opacity: 0;
+}
+
+/* Foquito minimalista técnico de idea: inactivo por defecto */
+.ideaBeacon {
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 60px 10px;
+}
+
+.ideaRay {
+  stroke: var(--thermal-accent, #e1734e);
+  stroke-linecap: round;
+  stroke-width: 1.2;
+}
+
+.ideaBulb {
+  fill: none;
+  stroke: var(--thermal-accent, #e1734e);
+  stroke-width: 1.3;
+}
+
+.ideaFilament {
+  fill: var(--thermal-accent, #e1734e);
+}
+
+.ideaBase1,
+.ideaBase2 {
+  stroke: var(--technical-white, #e8e7df);
+  stroke-linecap: round;
+  stroke-width: 1.1;
+}
+
+/* --------------------------------------------------------------------------
+   Posturas base estáticas por estado (interpolación limpia y fallback reduced)
+   -------------------------------------------------------------------------- */
+
+/* Listening: ojos atentos con convergencia sutil hacia el frente */
+[data-state="listening"] .faceMotion {
+  transform: translateY(-1px);
+}
+
+[data-state="listening"] .eyeLeft {
+  transform: translateX(1.5px);
+}
+
+[data-state="listening"] .eyeRight {
+  transform: translateX(-1.5px);
+}
+
+[data-state="listening"] .eyeShape {
+  filter: drop-shadow(0 0 10px rgba(232, 231, 223, 0.36))
+    drop-shadow(0 0 3px rgba(225, 115, 78, 0.28));
+}
+
+/* Thinking: ojos redondos plenos (sin deformar ni achicar). Asimetría posicional pura */
+[data-state="thinking"] .faceMotion {
+  transform: translateY(-1px);
+}
+
+[data-state="thinking"] .gazeMotion {
+  transform: translate(2.5px, -2.5px);
+}
+
+[data-state="thinking"] .eyeLeft .eyePosture {
+  transform: translateY(-1.5px);
+}
+
+[data-state="thinking"] .eyeRight .eyePosture {
+  transform: translateY(0.5px);
+}
+
+[data-state="thinking"] .eyeShape {
+  filter: drop-shadow(0 0 9px rgba(232, 231, 223, 0.32));
+  transform: none;
+}
+
+[data-state="thinking"] .thoughtBubbles {
+  opacity: 1;
+}
+
+/* Speaking: articulación energética y elocuente */
+[data-state="speaking"] .faceMotion {
+  transform: translateY(-0.5px);
+}
+
+[data-state="speaking"] .eyeShape {
+  filter: drop-shadow(0 0 11px rgba(232, 231, 223, 0.38))
+    drop-shadow(0 0 3px rgba(225, 115, 78, 0.32));
+}
+
+/* Success / Listo: postura erguida, ojos circulares plenos, sutil convergencia resuelta */
+[data-state="success"] .faceMotion {
+  transform: translateY(-2px);
+}
+
+[data-state="success"] .gazeMotion {
+  transform: translate(0, 0);
+}
+
+[data-state="success"] .eyeLeft .eyePosture {
+  transform: translateX(1.5px);
+}
+
+[data-state="success"] .eyeRight .eyePosture {
+  transform: translateX(-1.5px);
+}
+
+[data-state="success"] .eyeShape {
+  filter: drop-shadow(0 0 8px rgba(232, 231, 223, 0.32));
+  transform: none;
+}
+
+/* Error: reacción sobria, contenida y firme */
+[data-state="error"] .eyeLeft .eyePosture {
+  transform: rotate(-6deg) translateY(1px);
+}
+
+[data-state="error"] .eyeRight .eyePosture {
+  transform: rotate(6deg) translateY(1px);
+}
+
+[data-state="error"] .eyeShape {
+  filter: drop-shadow(0 0 8px rgba(216, 93, 86, 0.32));
+}
+
+/* Waiting confirmation / Pending action: expectante, estable y atento al usuario */
+[data-state="waitingConfirmation"] .faceMotion {
+  transform: translateY(-0.5px);
+}
+
+[data-state="waitingConfirmation"] .eyeShape {
+  filter: drop-shadow(0 0 9px rgba(232, 231, 223, 0.32))
+    drop-shadow(0 0 2px rgba(216, 174, 85, 0.24));
+}
+
+/* --------------------------------------------------------------------------
+   Animaciones dinámicas en ejecución (cuando isAnimating está activo)
+   -------------------------------------------------------------------------- */
+
+/* IDLE: respiración suave, drift espacial orgánico, saccades y blink irregular */
+.animated[data-state="idle"] .faceMotion {
+  animation: idle-breathe-float 7.8s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+}
+
+.animated[data-state="idle"] .gazeMotion {
+  animation: idle-saccades 10.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.animated[data-state="idle"] .eyeLeft .eyeLid {
+  animation: idle-blink 11.6s ease-in-out infinite;
+}
+
+.animated[data-state="idle"] .eyeRight .eyeLid {
+  animation: idle-blink 11.6s ease-in-out infinite;
+  animation-delay: 20ms;
+}
+
+/* LISTENING: respiración atenta, pulso armónico de escucha y micro-balanceo */
+.animated[data-state="listening"] .faceMotion {
+  animation: listening-breathe 2.4s ease-in-out infinite;
+}
+
+/* THINKING: búsqueda activa despierta con presencia plena (cero deformación) */
+.animated[data-state="thinking"] .faceMotion {
+  animation: thinking-head 3.8s ease-in-out infinite;
+}
+
+.animated[data-state="thinking"] .gazeMotion {
+  animation: thinking-gaze 3.6s ease-in-out infinite;
+}
+
+.animated[data-state="thinking"] .eyeLeft .eyePosture {
+  animation: thinking-left-posture 3.2s ease-in-out infinite;
+}
+
+.animated[data-state="thinking"] .eyeRight .eyePosture {
+  animation: thinking-right-posture 3.4s ease-in-out infinite;
+}
+
+.animated[data-state="thinking"] .eyeLid {
+  animation: thinking-blink 7.6s ease-in-out infinite;
+}
+
+/* Círculos de pensamiento: micro-dots que ascienden suavemente */
+.animated[data-state="thinking"] .dot1 {
+  animation: thought-rise 2.3s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation-delay: 0ms;
+}
+
+.animated[data-state="thinking"] .dot2 {
+  animation: thought-rise 2.3s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation-delay: 360ms;
+}
+
+.animated[data-state="thinking"] .dot3 {
+  animation: thought-rise 2.3s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation-delay: 720ms;
+}
+
+/* SPEAKING: modulación vocal rítmica con squash & stretch dinámico y bobs elásticos */
+.animated[data-state="speaking"] .faceMotion {
+  animation: speaking-cadence 560ms cubic-bezier(0.33, 1, 0.68, 1) infinite alternate;
+}
+
+.animated[data-state="speaking"] .eyeLeft .eyePosture {
+  animation: speaking-left-squash 480ms ease-in-out infinite;
+}
+
+.animated[data-state="speaking"] .eyeRight .eyePosture {
+  animation: speaking-right-squash 520ms ease-in-out infinite;
+  animation-delay: 40ms;
+}
+
+/* SUCCESS: settle de postura erguida de certeza, ojos 100% estables en su forma base */
+.animated[data-state="success"] .faceMotion {
+  animation:
+    success-settle 560ms cubic-bezier(0.16, 1, 0.3, 1) 1,
+    success-breathe 5.2s ease-in-out infinite 560ms;
+}
+
+.animated[data-state="success"] .eyeLid {
+  animation: success-blink 9.6s ease-in-out infinite;
+}
+
+/* Foquito minimalista de insight: pop técnico externo (460ms), no toca a los ojos */
+.animated[data-state="success"] .ideaBeacon {
+  animation: idea-pop-fade 460ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ERROR: micro-shake horizontal de reacción y firmeza contenida */
+.animated[data-state="error"] .faceMotion {
+  animation: error-shake 460ms cubic-bezier(0.36, 0.07, 0.19, 0.97) 1;
+}
+
+/* WAITING CONFIRMATION: respiración pausada y expectante */
+.animated[data-state="waitingConfirmation"] .faceMotion {
+  animation: waiting-breathe 3.2s ease-in-out infinite;
+}
+
+.animated[data-state="waitingConfirmation"] .eyeLid {
+  animation: waiting-blink 5.8s ease-in-out infinite;
+}
+
+/* --------------------------------------------------------------------------
+   Keyframes
+   -------------------------------------------------------------------------- */
+
+/* Idle: respiración + flotación suave espacial contenida */
+@keyframes idle-breathe-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  28% {
+    transform: translateY(-2px);
+  }
+
+  54% {
+    transform: translateY(0.8px);
+  }
+
+  78% {
+    transform: translateY(-1.2px);
+  }
+}
+
+/* Idle: saccades / pequeñas miradas intencionales del coach vivo */
+@keyframes idle-saccades {
+  0%,
+  22% {
+    transform: translate(0, 0);
+  }
+
+  26%,
+  42% {
+    transform: translate(2.2px, -0.9px);
+  }
+
+  46%,
+  68% {
+    transform: translate(0, 0);
+  }
+
+  72%,
+  84% {
+    transform: translate(-1.8px, 0.6px);
+  }
+
+  88%,
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* Idle: parpadeo orgánico irregular (simple + doble rápido + simple) */
+@keyframes idle-blink {
+  0%,
+  16%,
+  18.5%,
+  52%,
+  54.5%,
+  56.5%,
+  59%,
+  84%,
+  86.5%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  17.2%,
+  53.2%,
+  57.8%,
+  85.2% {
+    transform: scaleY(0.06);
+  }
+}
+
+/* Listening: respiración atenta */
+@keyframes listening-breathe {
+  0%,
+  100% {
+    transform: translateY(-1px);
+  }
+
+  50% {
+    transform: translateY(0.8px);
+  }
+}
+
+/* Thinking: micro-balanceo cognitivo sutil en Y */
+@keyframes thinking-head {
+  0%,
+  100% {
+    transform: translateY(-1px);
+  }
+
+  50% {
+    transform: translateY(0.4px);
+  }
+}
+
+/* Thinking: micro-movimientos lentos de búsqueda con pausas */
+@keyframes thinking-gaze {
+  0%,
+  28% {
+    transform: translate(2.5px, -2.5px);
+  }
+
+  44%,
+  66% {
+    transform: translate(-0.5px, -1.8px);
+  }
+
+  82%,
+  100% {
+    transform: translate(2.2px, -2.7px);
+  }
+}
+
+/* Thinking: ojo izquierdo elevado, micro-drift vertical puro (cero scale) */
+@keyframes thinking-left-posture {
+  0%,
+  100% {
+    transform: translateY(-1.5px);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* Thinking: ojo derecho atento, micro-drift vertical puro (cero scale) */
+@keyframes thinking-right-posture {
+  0%,
+  100% {
+    transform: translateY(0.5px);
+  }
+
+  50% {
+    transform: translateY(0px);
+  }
+}
+
+/* Thinking: parpadeo muy sutil durante la búsqueda */
+@keyframes thinking-blink {
+  0%,
+  52%,
+  56%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  54% {
+    transform: scaleY(0.08);
+  }
+}
+
+/* Círculos de pensamiento: ascienden suavemente, crecen sutilmente y se desvanecen */
+@keyframes thought-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(3.5px) scale(0.8);
+  }
+
+  22% {
+    opacity: 0.65;
+    transform: translateY(0) scale(1);
+  }
+
+  65% {
+    opacity: 0.5;
+    transform: translateY(-3px) scale(1.15);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(1.25);
+  }
+}
+
+/* Speaking: cadencia vertical del habla */
+@keyframes speaking-cadence {
+  0% {
+    transform: translateY(-1.8px);
+  }
+
+  100% {
+    transform: translateY(1.2px);
+  }
+}
+
+/* Speaking: squash & stretch dinámico ojo izquierdo */
+@keyframes speaking-left-squash {
+  0%,
+  100% {
+    transform: scale(0.92, 1.14) translateY(-1px);
+  }
+
+  38% {
+    transform: scale(1.1, 0.86) translateY(1.5px);
+  }
+
+  68% {
+    transform: scale(0.98, 1.05) translateY(-0.5px);
+  }
+}
+
+/* Speaking: squash & stretch dinámico ojo derecho (desfasado para riqueza acústica) */
+@keyframes speaking-right-squash {
+  0%,
+  100% {
+    transform: scale(1.08, 0.88) translateY(1.2px);
+  }
+
+  44% {
+    transform: scale(0.93, 1.15) translateY(-1.6px);
+  }
+
+  76% {
+    transform: scale(1.02, 0.96) translateY(0.2px);
+  }
+}
+
+/* Success: settle inicial del rostro con aplomo (solo translateY de 1-2px, sin deformar ojos) */
+@keyframes success-settle {
+  0% {
+    transform: translateY(0);
+  }
+
+  35% {
+    transform: translateY(-3px);
+  }
+
+  70% {
+    transform: translateY(-1.6px);
+  }
+
+  100% {
+    transform: translateY(-2px);
+  }
+}
+
+/* Success: respiración en postura erguida resuelta */
+@keyframes success-breathe {
+  0%,
+  100% {
+    transform: translateY(-2px);
+  }
+
+  50% {
+    transform: translateY(-1.2px);
+  }
+}
+
+/* Success: parpadeo sereno */
+@keyframes success-blink {
+  0%,
+  42%,
+  45%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  43.5% {
+    transform: scaleY(0.08);
+  }
+}
+
+/* Idea / Foquito: pop técnico externo limpio, breve (460ms), no toca a los ojos */
+@keyframes idea-pop-fade {
+  0% {
+    filter: none;
+    opacity: 0;
+    transform: translateY(3px) scale(0.5);
+  }
+
+  22% {
+    filter: drop-shadow(0 0 7px rgba(225, 115, 78, 0.65));
+    opacity: 1;
+    transform: translateY(0) scale(1.1);
+  }
+
+  52% {
+    filter: drop-shadow(0 0 5px rgba(225, 115, 78, 0.45));
+    opacity: 0.95;
+    transform: translateY(-0.3px) scale(1);
+  }
+
+  75% {
+    filter: drop-shadow(0 0 2px rgba(225, 115, 78, 0.2));
+    opacity: 0.4;
+    transform: translateY(-1.5px) scale(0.92);
+  }
+
+  100% {
+    filter: none;
+    opacity: 0;
+    transform: translateY(-3px) scale(0.8);
+  }
+}
+
+/* Error: shake horizontal contenido */
+@keyframes error-shake {
+  0% {
+    transform: translateX(0);
+  }
+
+  18% {
+    transform: translateX(-3.5px);
+  }
+
+  42% {
+    transform: translateX(3px);
+  }
+
+  66% {
+    transform: translateX(-1.8px);
+  }
+
+  85% {
+    transform: translateX(1px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Waiting confirmation: respiración pausada y expectante */
+@keyframes waiting-breathe {
+  0%,
+  100% {
+    transform: translateY(-0.8px);
+  }
+
+  50% {
+    transform: translateY(0.8px);
+  }
+}
+
+@keyframes waiting-blink {
+  0%,
+  88%,
+  93%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  90.5% {
+    transform: scaleY(0.08);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced Motion: accesibilidad estricta
+   Se eliminan todas las animaciones continuas mientras se preservan
+   las posturas estáticas y contrastantes de cada estado.
+   Los micro-elementos animados se ocultan para evitar distracción.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .faceMotion,
+  .gazeMotion,
+  .eyeAnchor,
+  .eyePosture,
+  .eyeLid,
+  .eyeShape,
+  .thoughtDot,
+  .ideaBeacon {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .thoughtBubbles,
+  .ideaBeacon {
+    display: none !important;
+  }
+}

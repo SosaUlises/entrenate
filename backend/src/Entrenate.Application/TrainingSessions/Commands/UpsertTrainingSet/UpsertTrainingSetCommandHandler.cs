@@ -58,6 +58,18 @@ namespace Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet
                     "El ejercicio no pertenece a la sesión de entrenamiento.");
             }
 
+            if (request.RequireCurrentPendingSet)
+            {
+                var current = CurrentPendingTrainingSetResolver.Resolve(session);
+                if (current is null ||
+                    current.ExerciseSession.Id != request.ExerciseSessionId ||
+                    current.SetNumber != request.SetNumber)
+                {
+                    throw new ConflictException(
+                        "La sesión cambió. Volvé a indicar la serie actual.");
+                }
+            }
+
             var trainingSet = exerciseSession.RegistrarOActualizarSerie(
                 request.SetNumber,
                 request.Peso,

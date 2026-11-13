@@ -16,7 +16,9 @@ type ProblemDetails = {
   message?: string;
 };
 
-type ApiRequestOptions<TBody extends JsonBody | undefined = undefined> = Omit<
+type RequestBody = JsonBody | FormData;
+
+type ApiRequestOptions<TBody extends RequestBody | undefined = undefined> = Omit<
   RequestInit,
   "body" | "headers"
 > & {
@@ -28,6 +30,7 @@ type ApiRequestOptions<TBody extends JsonBody | undefined = undefined> = Omit<
 type ApiClientErrorOptions = {
   code: string;
   details?: unknown;
+  problemDetail?: string;
   status?: number;
 };
 
@@ -43,6 +46,7 @@ const statusMessages: Record<number, string> = {
 export class ApiClientError extends Error {
   readonly code: string;
   readonly details?: unknown;
+  readonly problemDetail?: string;
   readonly status?: number;
 
   constructor(message: string, options: ApiClientErrorOptions) {
@@ -50,18 +54,21 @@ export class ApiClientError extends Error {
     this.name = "ApiClientError";
     this.code = options.code;
     this.details = options.details;
+    this.problemDetail = options.problemDetail;
     this.status = options.status;
   }
 }
 
 export async function apiRequest<
   TResponse,
-  TBody extends JsonBody | undefined = undefined,
+  TBody extends RequestBody | undefined = undefined,
 >(path: string, options: ApiRequestOptions<TBody> = {}): Promise<TResponse> {
   const { authToken, body, headers, ...requestOptions } = options;
   const requestHeaders = new Headers(headers);
 
-  if (body !== undefined && !requestHeaders.has("Content-Type")) {
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+
+  if (body !== undefined && !isFormData && !requestHeaders.has("Content-Type")) {
     requestHeaders.set("Content-Type", "application/json");
   }
 
@@ -79,7 +86,7 @@ export async function apiRequest<
   try {
     response = await fetch(requestUrl, {
       ...requestOptions,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
       headers: requestHeaders,
     });
   } catch {
@@ -134,6 +141,7 @@ function createApiError(response: Response, payload: unknown): ApiClientError {
   return new ApiClientError(message, {
     code: `http_${response.status}`,
     details: problemDetails?.errors,
+    problemDetail: problemDetails?.detail,
     status: response.status,
   });
 }

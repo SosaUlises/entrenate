@@ -12,10 +12,12 @@ import {
   cancelTrainingSessionAction, completeTrainingSessionAction,
   getActiveTrainingSessionAction,
 } from "../actions/training.actions";
-import { areTargetSetsComplete } from "../training-position";
+import { areTargetSetsComplete, getFirstMissingTarget } from "../training-position";
+import type { LiveCoachClientAction } from "@/features/coach/types/live-coach.types";
 import type { TrainingSession, TrainingSet } from "../types/training.types";
 import { FreeTrainingView } from "./free-training-view";
-import { GuidedTrainingView } from "./guided-training-view";
+import { GuidedTrainingView, type GuidedRestState } from "./guided-training-view";
+import { LiveCoachPrototype } from "./live-coach-prototype";
 
 type ViewState = { status: "loading" | "empty" | "error" } | { status: "ready"; session: TrainingSession };
 type FinishMode = "complete" | "cancel";
@@ -34,6 +36,8 @@ export function ActiveTrainingContent() {
   const [isDirty, setIsDirty] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
   const [sessionNotice, setSessionNotice] = useState<string | null>(null);
+  const [guidedRest, setGuidedRest] = useState<GuidedRestState | null>(null);
+  const [visibleExerciseSessionId, setVisibleExerciseSessionId] = useState<string | null>(null);
   const [workoutGuideIds, setWorkoutGuideIds] = useState<Record<string, string>>({});
   const catalogRequestedRef = useRef(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -79,6 +83,9 @@ export function ActiveTrainingContent() {
         router.replace("/login");
       } else if (result.status === "success") {
         setView({ status: "ready", session: result.data });
+        setVisibleExerciseSessionId(
+          getFirstMissingTarget(result.data)?.exercise.id ?? result.data.ejercicios[0]?.id ?? null,
+        );
       } else {
         setView({ status: result.status === "not-found" ? "empty" : "error" });
       }
@@ -106,8 +113,19 @@ export function ActiveTrainingContent() {
     });
   }, [invalidateSession, mode, router, view.status]);
 
+  useEffect(() => {
+    if (!guidedRest || guidedRest.remaining === 0) return;
+    const interval = window.setInterval(() => {
+      setGuidedRest((current) => current
+        ? { ...current, remaining: Math.max(0, current.remaining - 1) }
+        : null);
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [guidedRest]);
+
   function reload() {
     setIsDirty(false);
+    setGuidedRest(null);
     setView({ status: "loading" });
     setRequestKey((key) => key + 1);
   }
@@ -126,6 +144,7 @@ export function ActiveTrainingContent() {
     if (action === "home") {
       router.push("/home");
     } else {
+      setGuidedRest(null);
       setMode(null);
     }
   }
@@ -154,6 +173,7 @@ export function ActiveTrainingContent() {
         : await cancelTrainingSessionAction(sessionId);
       if (result.status === "success") {
         dialogRef.current?.close();
+        setGuidedRest(null);
         setView({ status: "empty" });
         setSessionNotice(null);
         router.replace(requestedFinishMode === "complete" ? `/history/${sessionId}` : "/home");
@@ -192,7 +212,60 @@ export function ActiveTrainingContent() {
     } : current);
   }
 
+  function applyLiveCoachClientAction(
+    action: LiveCoachClientAction,
+    updatedSession?: TrainingSession | null,
+  ): boolean {
+    if (action.type === "StopRestTimer") {
+      setGuidedRest(null);
+      return true;
+    }
+
+    if (action.type === "StartRestTimer") {
+      const currentSession = updatedSession ?? (view.status === "ready" ? view.session : null);
+      const next = currentSession ? getFirstMissingTarget(currentSession) : null;
+      if (!next || action.durationSeconds <= 0) return false;
+
+      setGuidedRest((current) => current && current.remaining > 0
+        ? current
+        : { next, remaining: action.durationSeconds });
+      return true;
+    }
+
+    if (action.type === "NavigateNextExercise" ||
+        action.type === "NavigatePreviousExercise" ||
+        action.type === "NavigateToExercise") {
+      const currentSession = updatedSession ?? (view.status === "ready" ? view.session : null);
+      if (!currentSession?.ejercicios.some((exercise) => exercise.id === action.exerciseSessionId)) return false;
+      setVisibleExerciseSessionId(action.exerciseSessionId);
+      return true;
+    }
+
+    return false;
+  }
+
+  function synchronizeLiveCoachSession(
+    updatedSession: TrainingSession,
+    clientAction?: LiveCoachClientAction | null,
+  ): boolean {
+    const authoritativeTarget = getFirstMissingTarget(updatedSession);
+    setView({ status: "ready", session: updatedSession });
+    setIsDirty(false);
+    setGuidedRest((current) => current && authoritativeTarget
+      ? { ...current, next: authoritativeTarget }
+      : null);
+
+    if (!clientAction || !clientAction.type.startsWith("Navigate")) {
+      setVisibleExerciseSessionId(authoritativeTarget?.exercise.id ?? null);
+    }
+
+    return clientAction
+      ? applyLiveCoachClientAction(clientAction, updatedSession)
+      : true;
+  }
+
   const session = view.status === "ready" ? view.session : null;
+
   const hasIncompleteTargets = session ? !areTargetSetsComplete(session) : false;
   const targetsComplete = Boolean(session && !hasIncompleteTargets);
   const shouldShowRecoveredFinalState = targetsComplete && mode === null;
@@ -213,6 +286,17 @@ export function ActiveTrainingContent() {
         <div className="min-w-0 flex-1 pt-3">
           <h1 className="truncate text-[0.8125rem] font-semibold uppercase leading-5 tracking-[0.08em] text-text-secondary" id="training-title">Entrenamiento en curso</h1>
         </div>
+        {session ? (
+          <LiveCoachPrototype
+            onClientAction={applyLiveCoachClientAction}
+            onSessionUpdated={synchronizeLiveCoachSession}
+            restTimer={guidedRest
+              ? { isActive: guidedRest.remaining > 0, remainingSeconds: guidedRest.remaining }
+              : { isActive: false, remainingSeconds: null }}
+            session={session}
+            visibleExerciseSessionId={visibleExerciseSessionId}
+          />
+        ) : null}
         {showTrainingActions || showModeSelectionActions ? (
           <details className="group relative shrink-0" ref={actionsRef}>
             <summary aria-label="Acciones del entrenamiento" className="flex size-12 cursor-pointer list-none items-center justify-center rounded-control-sm text-text-secondary transition-colors hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus group-open:bg-surface-active group-open:text-text-primary [&::-webkit-details-marker]:hidden" ref={actionsTriggerRef}>
@@ -255,8 +339,12 @@ export function ActiveTrainingContent() {
               onMissing={reload}
               onSaved={recordSet}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
+              onVisibleExerciseChange={setVisibleExerciseSessionId}
+              rest={guidedRest}
               session={session}
+              setRest={setGuidedRest}
               workoutGuideIds={workoutGuideIds}
+              visibleExerciseSessionId={visibleExerciseSessionId}
             />
           ) : mode === null ? (
             <div className="mt-6 min-w-0 max-w-full">
@@ -296,8 +384,12 @@ export function ActiveTrainingContent() {
               onMissing={reload}
               onSaved={recordSet}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
+              onVisibleExerciseChange={setVisibleExerciseSessionId}
+              rest={guidedRest}
               session={session}
+              setRest={setGuidedRest}
               workoutGuideIds={workoutGuideIds}
+              visibleExerciseSessionId={visibleExerciseSessionId}
             />
           ) : null}
           {mode === "free" ? (
@@ -306,8 +398,14 @@ export function ActiveTrainingContent() {
               onFinish={() => openFinish("complete")}
               onMissing={reload}
               onSaved={recordSet}
+              onSessionUpdated={(updatedSession) => {
+                setView({ status: "ready", session: updatedSession });
+                setIsDirty(false);
+              }}
               onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }}
+              onVisibleExerciseChange={setVisibleExerciseSessionId}
               session={session}
+              visibleExerciseSessionId={visibleExerciseSessionId}
             />
           ) : null}
         </>

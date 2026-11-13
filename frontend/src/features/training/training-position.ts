@@ -15,6 +15,8 @@ export function getFirstMissingTarget(
   justSaved?: { exerciseId: string; set: TrainingSet },
 ): TrainingTarget | null {
   for (const [index, exercise] of getOrderedExercises(session).entries()) {
+    if (exercise.omitido) continue;
+
     const completedNumbers = new Set(
       exercise.series.filter((set) => set.completada).map((set) => set.numeroSerie),
     );
@@ -56,7 +58,7 @@ export function getSessionTargetProgress(session: TrainingSession): {
   total: number;
 } {
   return getOrderedExercises(session).reduce(
-    (progress, exercise) => ({
+    (progress, exercise) => exercise.omitido ? progress : ({
       completed: progress.completed + getCompletedTargetSetCount(exercise),
       total: progress.total + exercise.seriesObjetivo,
     }),

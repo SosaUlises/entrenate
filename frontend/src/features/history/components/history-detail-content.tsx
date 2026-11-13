@@ -148,6 +148,11 @@ function ExerciseResult({
         <div className="min-w-0 flex-1">
           <h2 className="break-words font-brand text-xl font-bold leading-7 text-text-primary" id={`history-exercise-${exercise.id}`}>{exercise.nombre}</h2>
           <p className="mt-2 text-[0.8125rem] font-semibold leading-5 text-steel">Objetivo · {prescription}</p>
+          {exercise.omitido ? (
+            <p className="mt-2 text-[0.8125rem] font-semibold leading-5 text-thermal-accent">
+              {sets.filter((set) => set.completada && set.numeroSerie <= exercise.seriesObjetivo).length}/{exercise.seriesObjetivo} series · Omitido
+            </p>
+          ) : null}
         </div>
         {canShowProgress ? (
           <Link

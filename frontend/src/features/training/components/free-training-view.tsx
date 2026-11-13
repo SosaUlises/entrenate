@@ -3,7 +3,7 @@
 import { Check, ChevronDown, LoaderCircle, Save, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { upsertTrainingSetAction } from "../actions/training.actions";
+import { reactivateTrainingExerciseAction, upsertTrainingSetAction } from "../actions/training.actions";
 import { getCompletedTargetSetCount, getOrderedExercises } from "../training-position";
 import type { TrainingSession, TrainingSessionExercise, TrainingSet, TrainingSetInput } from "../types/training.types";
 import { TrainingProgressRail } from "./training-progress-rail";
@@ -20,24 +20,22 @@ function getFirstPendingTargetNumber(exercise: TrainingSessionExercise): number 
   return null;
 }
 
-function getInitialExpandedExerciseId(exercises: TrainingSessionExercise[]): string | null {
-  return exercises.find((exercise) => getCompletedTargetSetCount(exercise) < exercise.seriesObjetivo)?.id ?? null;
-}
-
-export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, onSaved, onUnauthenticated }: {
+export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, onSaved, onSessionUpdated, onUnauthenticated, onVisibleExerciseChange, visibleExerciseSessionId }: {
   session: TrainingSession;
   onDirtyChange: (isDirty: boolean) => void;
   onFinish: () => void;
   onMissing: () => void;
   onSaved: (exerciseId: string, set: TrainingSet) => void;
+  onSessionUpdated: (session: TrainingSession) => void;
   onUnauthenticated: () => void;
+  onVisibleExerciseChange: (exerciseSessionId: string | null) => void;
+  visibleExerciseSessionId: string | null;
 }) {
   const orderedExercises = useMemo(() => getOrderedExercises(session), [session]);
-  const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(() =>
-    getInitialExpandedExerciseId(getOrderedExercises(session)),
-  );
   const [extraCounts, setExtraCounts] = useState<Record<string, number>>({});
   const [dirtyRows, setDirtyRows] = useState<Set<string>>(() => new Set());
+  const [reactivatingExerciseId, setReactivatingExerciseId] = useState<string | null>(null);
+  const [reactivationError, setReactivationError] = useState<string | null>(null);
 
   useEffect(() => {
     onDirtyChange(dirtyRows.size > 0);
@@ -55,6 +53,22 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
     });
   }, []);
 
+  async function reactivateExercise(exerciseId: string) {
+    if (reactivatingExerciseId) return;
+    setReactivatingExerciseId(exerciseId);
+    setReactivationError(null);
+    const result = await reactivateTrainingExerciseAction(session.id, exerciseId);
+    setReactivatingExerciseId(null);
+    if (result.status === "success") {
+      onSessionUpdated(result.data);
+      onVisibleExerciseChange(exerciseId);
+      return;
+    }
+    if (result.status === "unauthenticated") return onUnauthenticated();
+    if (result.status === "not-found" || result.status === "conflict") return onMissing();
+    setReactivationError("No pudimos reactivar el ejercicio. Intentá nuevamente.");
+  }
+
   return (
     <div className="min-w-0 w-full max-w-full">
       <div className="mt-3">
@@ -69,7 +83,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
         {orderedExercises.map((exercise) => {
           const completedTargetCount = getCompletedTargetSetCount(exercise);
           const isComplete = completedTargetCount === exercise.seriesObjetivo;
-          const isExpanded = expandedExerciseId === exercise.id;
+          const isExpanded = visibleExerciseSessionId === exercise.id;
           const firstPendingTargetNumber = getFirstPendingTargetNumber(exercise);
           const highestSaved = Math.max(0, ...exercise.series.map((set) => set.numeroSerie));
           const count = Math.max(exercise.seriesObjetivo + (extraCounts[exercise.id] ?? 0), highestSaved);
@@ -81,7 +95,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                 aria-controls={contentId}
                 aria-expanded={isExpanded}
                 className="group flex min-h-[5rem] w-full min-w-0 items-center gap-3 py-3 text-left transition-colors duration-150 hover:bg-surface/25 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
-                onClick={() => setExpandedExerciseId((current) => current === exercise.id ? null : exercise.id)}
+                onClick={() => onVisibleExerciseChange(isExpanded ? null : exercise.id)}
                 type="button"
               >
                 <span className="min-w-0 flex-1">
@@ -92,11 +106,13 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
                   <span
-                    aria-label={`${completedTargetCount} de ${exercise.seriesObjetivo} series objetivo completadas`}
-                    className={`inline-flex items-center gap-1 font-brand text-[1.0625rem] font-bold tabular-nums ${isComplete ? "text-success" : "text-info/75"}`}
+                    aria-label={exercise.omitido
+                      ? `${completedTargetCount} de ${exercise.seriesObjetivo} series objetivo completadas; ejercicio omitido`
+                      : `${completedTargetCount} de ${exercise.seriesObjetivo} series objetivo completadas`}
+                    className={`inline-flex items-center gap-1 font-brand text-[1.0625rem] font-bold tabular-nums ${exercise.omitido ? "text-thermal-accent" : isComplete ? "text-success" : "text-info/75"}`}
                   >
-                    {isComplete ? <Check aria-hidden="true" size={17} strokeWidth={2.25} /> : null}
-                    {completedTargetCount} / {exercise.seriesObjetivo}
+                    {isComplete && !exercise.omitido ? <Check aria-hidden="true" size={17} strokeWidth={2.25} /> : null}
+                    {exercise.omitido ? "Omitido" : `${completedTargetCount} / ${exercise.seriesObjetivo}`}
                   </span>
                   <span className={`flex size-11 items-center justify-center rounded-control-sm transition-colors duration-150 motion-reduce:transition-none ${isExpanded ? "training-expanded-control" : "bg-transparent text-text-secondary/80 group-hover:text-text-primary"}`}>
                     <ChevronDown aria-hidden="true" className={`transition-transform duration-150 motion-reduce:transition-none ${isExpanded ? "rotate-180" : ""}`} size={20} strokeWidth={1.9} />
@@ -111,6 +127,13 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                 inert={!isExpanded}
               >
                 <div className="min-h-0 min-w-0 overflow-hidden pb-4">
+                {exercise.omitido ? (
+                  <div className="border-t border-border/40 pt-3">
+                    <p className="text-sm leading-5 text-text-secondary">{completedTargetCount}/{exercise.seriesObjetivo} series registradas · Omitido</p>
+                    {reactivationError ? <p className="mt-2 text-sm text-error" role="alert">{reactivationError}</p> : null}
+                    <Button className="mt-3" isLoading={reactivatingExerciseId === exercise.id} onClick={() => void reactivateExercise(exercise.id)} size="sm" variant="secondary">Reactivar ejercicio</Button>
+                  </div>
+                ) : <>
                 {exercise.notas?.trim() ? <p className="mb-3 text-[0.8125rem] leading-5 text-text-secondary">{exercise.notas}</p> : null}
                 <div aria-hidden="true" className="grid min-w-0 grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,.8fr)_minmax(0,.62fr)_6.5rem] gap-1 border-b border-border/50 pb-2 text-[0.8125rem] font-semibold leading-4 tracking-[0.06em] text-text-secondary">
                   <span>SET</span>
@@ -155,6 +178,7 @@ export function FreeTrainingView({ session, onDirtyChange, onFinish, onMissing, 
                 >
                   + Agregar serie
                 </button>
+                </>}
                 </div>
               </div>
             </section>
