@@ -28,6 +28,7 @@
 
 ## Current work
 
+- Live Coach V1 implementation complete — final manual E2E pending.
 - Live Coach V0 is technically and functionally closed. The completed vertical
   includes authenticated STT, TTS and text fallback; grounded deterministic
   queries; current-set registration with editing and explicit confirmation;
