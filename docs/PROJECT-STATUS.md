@@ -131,6 +131,13 @@
   best sets and what to observe next time. No summary text or cross-session
   conclusions are persisted.
 
+- Live Coach V1.4 — UX & Interaction Polish is closed: pending mutations,
+  clarifications, proactive suggestions and normal responses now follow one explicit
+  visual priority; microphone and speech lifecycles are cancellation-safe; errors
+  preserve text and provide retry/text fallback; stale and expired actions use
+  specific copy; and the animated face keeps its base eye geometry without glow or
+  strong deformation. Training remains authoritative and no capability was added.
+
 - Training / Live Coach — Exercise Skip V0 is closed:
   `EjercicioSesion` supports an explicit persisted `Omitido` state, omitted exercises
   are ignored by `CurrentPendingTrainingSetResolver`, completed series are preserved,
@@ -171,8 +178,8 @@
   when the provider reports `incomplete` due to `max_output_tokens`;
   partial answers are never returned as completed responses.
 
-- Next: Live Coach V1.3 has no known blocker; later Coach capabilities require a
-  separately approved product and technical scope.
+- Next: run the planned general E2E closure for Live Coach V1. No known blocker is
+  pending from V1.4.
 
 ## Entrenate Coach
 

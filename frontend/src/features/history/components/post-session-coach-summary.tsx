@@ -33,6 +33,7 @@ export function PostSessionCoachSummary({
   const [answer, setAnswer] = useState<string | null>(null);
   const [answerPending, setAnswerPending] = useState(false);
   const [answerError, setAnswerError] = useState(false);
+  const [lastQuestion, setLastQuestion] = useState<string | null>(null);
   const [requestKey, setRequestKey] = useState(0);
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export function PostSessionCoachSummary({
     setAnswerPending(true);
     setAnswerError(false);
     setAnswer(null);
+    setLastQuestion(question);
     const result = await answerPostSessionCoachQuestionAction(sessionId, question);
     if (result.status === "unauthenticated") onUnauthenticated();
     else if (result.status === "ready") setAnswer(result.answer);
@@ -108,7 +110,16 @@ export function PostSessionCoachSummary({
           </div>
           {answerPending ? <p className="mt-4 text-sm text-text-muted" role="status">Revisando la sesión...</p> : null}
           {answer ? <p className="mt-4 border-l border-thermal-accent pl-4 text-[0.9375rem] leading-6 text-text-primary">{answer}</p> : null}
-          {answerError ? <p className="mt-4 text-sm text-error" role="alert">No pudimos responder. Intentá nuevamente.</p> : null}
+          {answerError ? (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <p className="text-sm text-error" role="alert">No pudimos responder.</p>
+              {lastQuestion ? (
+                <Button onClick={() => void ask(lastQuestion)} size="sm" variant="secondary">
+                  Reintentar
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>
