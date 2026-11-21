@@ -599,7 +599,10 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 return CreateDirectResponse(
                     request.ClientTurnId,
                     $"Descanso iniciado: {durationSeconds.Value} segundos.",
-                    clientAction: new LiveCoachClientActionDto("StartRestTimer", durationSeconds.Value));
+                    clientAction: new LiveCoachClientActionDto(
+                        "StartRestTimer",
+                        durationSeconds.Value,
+                        eligibility.ExerciseSessionId));
             }
 
             if (routing.Kind == LiveCoachIntentKind.StopRestTimer)
@@ -987,6 +990,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     "Necesito un tiempo entre 5 y 120 minutos para ajustar la sesión.");
             }
 
+            RememberTimeConstraint(userId, session.Id, remainingMinutes, DateTime.UtcNow);
+
             var result = LiveTimeConstraintAdaptationEngine.Evaluate(session, remainingMinutes);
             if (result.Status == LiveTimeConstraintResultStatus.NoPendingWork)
                 return CreateDirectResponse(clientTurnId, "Ya completaste todas las series de la sesión.");
@@ -1202,6 +1207,15 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 return CreateDirectResponse(
                     clientTurnId,
                     "Necesito un tiempo entre 5 y 120 minutos para ajustar la sesión.");
+            }
+
+            if (signals.RemainingMinutes.HasValue)
+            {
+                RememberTimeConstraint(
+                    userId,
+                    session.Id,
+                    signals.RemainingMinutes.Value,
+                    DateTime.UtcNow);
             }
 
             var result = LiveAdaptationOrchestrator.Evaluate(session, signals);
@@ -1611,6 +1625,28 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 return CreateDirectResponse(clientTurnId, text);
             }
 
+            if (followUp.Kind == LiveCoachSessionFollowUpKind.ProactiveEvidence &&
+                conversation.LastProactiveTrigger is not null)
+            {
+                var proactive = conversation.LastProactiveTrigger;
+                if (proactive.ExerciseSessionId.HasValue &&
+                    !session.Ejercicios.Any(exercise =>
+                        exercise.Id == proactive.ExerciseSessionId.Value))
+                {
+                    RememberConversation(
+                        userId,
+                        session.Id,
+                        current => current with { LastProactiveTrigger = null },
+                        nowUtc);
+                    return CreateDirectResponse(
+                        clientTurnId,
+                        "La sesión cambió y esa sugerencia ya no está vigente.");
+                }
+                return CreateDirectResponse(
+                    clientTurnId,
+                    proactive.EvidenceText);
+            }
+
             return CreateDirectResponse(
                 clientTurnId,
                 "¿Querés comparar con la serie anterior o con la sesión anterior?");
@@ -1734,6 +1770,24 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                         expiresAtUtc)
                 },
                 DateTime.UtcNow);
+        }
+
+        private void RememberTimeConstraint(
+            string userId,
+            Guid sessionId,
+            int availableMinutes,
+            DateTime nowUtc)
+        {
+            RememberConversation(
+                userId,
+                sessionId,
+                current => current with
+                {
+                    LastTimeConstraint = new LiveCoachTimeConstraintReference(
+                        availableMinutes,
+                        nowUtc)
+                },
+                nowUtc);
         }
 
         private void RememberConversation(

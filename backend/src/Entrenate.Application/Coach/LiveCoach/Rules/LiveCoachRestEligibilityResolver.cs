@@ -19,7 +19,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Rules
 
     public sealed record LiveCoachRestEligibility(
         LiveCoachRestEligibilityStatus Status,
-        int? RestSeconds = null);
+        int? RestSeconds = null,
+        Guid? ExerciseSessionId = null);
 
     /// <summary>
     /// Decide de forma autoritativa, con el estado real de Training, si corresponde iniciar el descanso.
@@ -59,7 +60,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Rules
 
             return new LiveCoachRestEligibility(
                 LiveCoachRestEligibilityStatus.Eligible,
-                completedExercise.DescansoObjetivoSegundos);
+                completedExercise.DescansoObjetivoSegundos,
+                completedExercise.Id);
         }
 
         public static LiveCoachRestEligibility Resolve(SesionEntrenamiento session)
@@ -84,7 +86,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Rules
             return previousSetCompleted
                 ? new LiveCoachRestEligibility(
                     LiveCoachRestEligibilityStatus.Eligible,
-                    previousExercise.DescansoObjetivoSegundos)
+                    previousExercise.DescansoObjetivoSegundos,
+                    previousExercise.Id)
                 : new LiveCoachRestEligibility(LiveCoachRestEligibilityStatus.NoRecentlyCompletedSet);
         }
 

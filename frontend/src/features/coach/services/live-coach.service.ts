@@ -5,6 +5,8 @@ import type {
   LiveCoachRespondResponse,
   LiveCoachActionConfirmation,
   LiveCoachTranscriptionResponse,
+  LiveCoachProactiveEvaluation,
+  LiveCoachProactiveRequest,
 } from "../types/live-coach.types";
 
 export function transcribeLiveAudio(
@@ -16,6 +18,21 @@ export function transcribeLiveAudio(
     {
       authToken,
       body: formData,
+      cache: "no-store",
+      method: "POST",
+    },
+  );
+}
+
+export function evaluateLiveCoachProactive(
+  payload: LiveCoachProactiveRequest,
+  authToken: string,
+): Promise<LiveCoachProactiveEvaluation> {
+  return apiRequest<LiveCoachProactiveEvaluation, LiveCoachProactiveRequest>(
+    "/api/coach/live/proactive",
+    {
+      authToken,
+      body: payload,
       cache: "no-store",
       method: "POST",
     },

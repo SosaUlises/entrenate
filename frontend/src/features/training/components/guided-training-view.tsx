@@ -15,7 +15,12 @@ const ExerciseMovementDemo = dynamic(
   { ssr: false },
 );
 
-export type GuidedRestState = { remaining: number; next: TrainingTarget };
+export type GuidedRestState = {
+  remaining: number;
+  next: TrainingTarget;
+  sourceExerciseSessionId: string;
+  startedAtUtc: string;
+};
 type RestAdjustmentFeedback = { amount: number; id: number };
 
 function formatTime(seconds: number): string {
@@ -124,7 +129,12 @@ export function GuidedTrainingView({ rest, setRest, session, onDirtyChange, onFi
     if (next) {
       onVisibleExerciseChange(next.exercise.id);
       setShowSavedNotice(true);
-      setRest({ next, remaining: exercise.descansoObjetivoSegundos });
+      setRest({
+        next,
+        remaining: exercise.descansoObjetivoSegundos,
+        sourceExerciseSessionId: exercise.id,
+        startedAtUtc: new Date().toISOString(),
+      });
     } else {
       onVisibleExerciseChange(null);
     }

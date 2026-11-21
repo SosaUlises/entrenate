@@ -127,7 +127,10 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
                 return new LiveCoachActionConfirmationDto(
                     updatedSession,
                     $"Serie registrada. Descanso: {durationSeconds} segundos.",
-                    new LiveCoachClientActionDto("StartRestTimer", durationSeconds));
+                    new LiveCoachClientActionDto(
+                        "StartRestTimer",
+                        durationSeconds,
+                        action.ExerciseSessionId));
             }
 
             return new LiveCoachActionConfirmationDto(updatedSession, "Serie registrada.");

@@ -15,6 +15,7 @@ import {
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { respondLiveCoachAction } from "@/features/coach/actions/respond-live-coach.action";
+import { evaluateLiveCoachProactiveAction } from "@/features/coach/actions/evaluate-live-coach-proactive.action";
 import {
   cancelLiveCoachPendingActionRequest,
   confirmLiveCoachPendingAction,
@@ -25,6 +26,7 @@ import type {
   LiveCoachClientAction,
   LiveCoachPendingAction,
   LiveCoachRespondResponse,
+  LiveCoachProactiveSuggestion,
 } from "@/features/coach/types/live-coach.types";
 import { cn } from "@/lib/class-names";
 import { getFirstMissingTarget } from "../training-position";
@@ -200,6 +202,7 @@ function getAudioFileExtension(mimeType: string): string {
 }
 
 type LiveCoachPrototypeProps = {
+  isTrainingInputDirty?: boolean;
   session?: TrainingSession | null;
   visibleExerciseSessionId?: string | null;
   onSessionUpdated?: (
@@ -213,10 +216,12 @@ type LiveCoachPrototypeProps = {
   restTimer?: {
     isActive: boolean;
     remainingSeconds: number | null;
+    sourceExerciseSessionId: string | null;
+    startedAtUtc: string | null;
   };
 };
 
-export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer, session, visibleExerciseSessionId }: LiveCoachPrototypeProps) {
+export function LiveCoachPrototype({ isTrainingInputDirty = false, onClientAction, onSessionUpdated, restTimer, session, visibleExerciseSessionId }: LiveCoachPrototypeProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<LiveCoachState>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
@@ -228,6 +233,8 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
   const [showTextInput, setShowTextInput] = useState(false);
   const [actionPending, setActionPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [proactiveSuggestion, setProactiveSuggestion] = useState<LiveCoachProactiveSuggestion | null>(null);
+  const [proactivePulse, setProactivePulse] = useState(0);
   const [voiceEnabled, setVoiceEnabled] = useState(() => {
     if (typeof window === "undefined") return true;
     try {
@@ -302,6 +309,60 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       stopAudio("component-unmount");
     };
   }, []);
+
+  const sessionActivityFingerprint = session?.ejercicios
+    .map((exercise) => {
+      const latest = [...exercise.series]
+        .sort((first, second) => second.fechaHoraRegistro.localeCompare(first.fechaHoraRegistro))[0];
+      return `${exercise.id}:${exercise.omitido}:${latest?.fechaHoraRegistro ?? "none"}:${latest?.repeticiones ?? ""}:${latest?.rir ?? ""}`;
+    })
+    .join("|") ?? "no-session";
+
+  useEffect(() => {
+    if (!session?.id || !restTimer?.startedAtUtc || !restTimer.sourceExerciseSessionId) return;
+    const source = session.ejercicios.find((exercise) => exercise.id === restTimer.sourceExerciseSessionId);
+    if (!source || source.descansoObjetivoSegundos <= 0) return;
+    const dueAt = new Date(restTimer.startedAtUtc).getTime()
+      + (source.descansoObjetivoSegundos + 60) * 1000;
+    const timeout = window.setTimeout(
+      () => setProactivePulse((current) => current + 1),
+      Math.max(0, dueAt - Date.now()),
+    );
+    return () => window.clearTimeout(timeout);
+  }, [restTimer?.sourceExerciseSessionId, restTimer?.startedAtUtc, session]);
+
+  useEffect(() => {
+    if (!session?.id || state !== "idle" || isTrainingInputDirty || pendingAction || coachResponse?.clarification) {
+      return;
+    }
+    let active = true;
+    void evaluateLiveCoachProactiveAction({
+      sessionId: session.id,
+      snapshot: restTimer?.startedAtUtc && restTimer.sourceExerciseSessionId
+        ? {
+          restExerciseSessionId: restTimer.sourceExerciseSessionId,
+          restStartedAtUtc: restTimer.startedAtUtc,
+        }
+        : null,
+    }).then((result) => {
+      if (active && result.status === "success" && result.data.suggestion) {
+        setProactiveSuggestion(result.data.suggestion);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [
+    coachResponse?.clarification,
+    isTrainingInputDirty,
+    pendingAction,
+    proactivePulse,
+    restTimer?.sourceExerciseSessionId,
+    restTimer?.startedAtUtc,
+    session?.id,
+    sessionActivityFingerprint,
+    state,
+  ]);
 
   function toggleVoice() {
     const next = !voiceEnabled;
@@ -436,6 +497,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       return;
     }
 
+    setProactiveSuggestion(null);
     stopAudio("new-query-ask");
     setActionError(null);
     setState("answering");
@@ -824,7 +886,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
         aria-controls="live-coach-dialog"
         aria-haspopup="dialog"
         aria-label={`Abrir Live Coach. Estado: ${presentation.label}`}
-        className="flex min-h-12 shrink-0 items-center gap-2 rounded-control-sm px-2 text-text-secondary transition-colors duration-150 hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+        className="relative flex min-h-12 shrink-0 items-center gap-2 rounded-control-sm px-2 text-text-secondary transition-colors duration-150 hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
         onClick={openSheet}
         type="button"
       >
@@ -832,6 +894,12 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
         <span className="hidden text-[0.8125rem] font-semibold min-[380px]:inline">
           Live Coach
         </span>
+        {proactiveSuggestion ? (
+          <span
+            aria-label="Live Coach tiene una sugerencia"
+            className="absolute right-1 top-1 size-2 rounded-full bg-thermal-accent"
+          />
+        ) : null}
       </button>
 
       <dialog
@@ -905,6 +973,39 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
           <div className={cn(styles.stateBody, "mt-4 space-y-4")} key={state}>
             {state === "idle" && (
               <div className="space-y-2">
+                {proactiveSuggestion ? (
+                  <div className="mb-4 border-l-2 border-thermal-accent/75 pl-3.5 text-left" role="status">
+                    <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-thermal-accent">
+                      Sugerencia
+                    </p>
+                    <p className="mt-1.5 text-sm font-medium leading-6 text-text-primary">
+                      {proactiveSuggestion.text}
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {proactiveSuggestion.actionLabel && proactiveSuggestion.actionPrompt ? (
+                        <Button
+                          onClick={() => {
+                            const prompt = proactiveSuggestion.actionPrompt;
+                            if (!prompt) return;
+                            setProactiveSuggestion(null);
+                            void askCoach(prompt, "text");
+                          }}
+                          size="sm"
+                          variant="secondary"
+                        >
+                          {proactiveSuggestion.actionLabel}
+                        </Button>
+                      ) : null}
+                      <Button
+                        onClick={() => setProactiveSuggestion(null)}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        Ahora no
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
                 <Button fullWidth onClick={() => void startRecording()}>
                   <Mic aria-hidden="true" size={18} />
                   <span>Hablar al Coach</span>

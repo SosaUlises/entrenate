@@ -14,7 +14,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Conversation
         NavigateToReferencedExercise,
         AdaptationChanges,
         ReferencedExerciseCompletion,
-        AmbiguousPerformanceComparison
+        AmbiguousPerformanceComparison,
+        ProactiveEvidence
     }
 
     public sealed record LiveCoachSessionFollowUp(
@@ -31,7 +32,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Conversation
                     "mostrame ese otra vez" or "volve al que te dije antes" or
                     "volveme al que te dije antes" or "que sacaste" or "que ajustaste" or
                     "cuales sacaste" or "que ejercicios sacaste" or
-                    "ese ejercicio ya lo hice" or "ya hice ese ejercicio" or "ese ya lo hice";
+                    "ese ejercicio ya lo hice" or "ya hice ese ejercicio" or "ese ya lo hice" or
+                    "por que" or "por que me decis eso";
         }
 
         public static LiveCoachSessionFollowUp? Resolve(
@@ -95,6 +97,12 @@ namespace Entrenate.Application.Coach.LiveCoach.Conversation
                 context.LastPerformanceQueryKind.HasValue)
             {
                 return new(LiveCoachSessionFollowUpKind.AmbiguousPerformanceComparison);
+            }
+
+            if ((text is "por que" or "por que me decis eso") &&
+                context.LastProactiveTrigger is not null)
+            {
+                return new(LiveCoachSessionFollowUpKind.ProactiveEvidence);
             }
 
             return null;

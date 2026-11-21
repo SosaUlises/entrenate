@@ -4,6 +4,25 @@ using Entrenate.Application.Coach.LiveCoach.Routing;
 
 namespace Entrenate.Application.Coach.LiveCoach.Conversation
 {
+    public enum LiveCoachProactiveTriggerType
+    {
+        RepeatedUnderperformance,
+        ExcessiveEffort,
+        SessionTimeDrift,
+        LongRest
+    }
+
+    public sealed record LiveCoachProactiveTriggerReference(
+        LiveCoachProactiveTriggerType Type,
+        Guid? ExerciseSessionId,
+        string SourceFingerprint,
+        DateTime TriggeredAtUtc,
+        string EvidenceText);
+
+    public sealed record LiveCoachTimeConstraintReference(
+        int AvailableMinutes,
+        DateTime CapturedAtUtc);
+
     public sealed record LiveCoachAdaptationReference(
         Guid ProposalId,
         IReadOnlyCollection<Guid> AffectedExerciseSessionIds,
@@ -19,6 +38,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Conversation
         LiveCoachIntentKind? LastPerformanceQueryKind = null,
         LiveCoachBestSetCriterion? LastBestSetCriterion = null,
         LiveCoachAdaptationReference? LastAdaptation = null,
+        LiveCoachTimeConstraintReference? LastTimeConstraint = null,
+        IReadOnlyCollection<LiveCoachProactiveTriggerReference>? RecentProactiveTriggers = null,
+        LiveCoachProactiveTriggerReference? LastProactiveTrigger = null,
         DateTime LastUpdatedAtUtc = default);
 
     public interface ILiveCoachSessionConversationStore

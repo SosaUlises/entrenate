@@ -106,6 +106,16 @@
 
   - Live Coach V0 — Current Prescription Queries V1 is closed: deterministic voice queries expose the authoritative current set prescription through `CurrentPendingTrainingSetResolver` and `GetCurrentPrescription`, including repetitions, RIR, prescribed rest and a compact full-series summary. The current model does not define a target weight, so Coach reports that explicitly instead of inventing one. Prescription queries remain read-only, bypass the provider and stay isolated from rest-timer state and visual exercise navigation.
 
+- Live Coach V1.0 — Session Conversational Context is closed: Live Coach maintains a small, typed and renewable in-memory context scoped to the authenticated user and active training session, enabling conservative multi-turn follow-ups for performance, progress, navigation and recent adaptations. Stored references are always revalidated against authoritative Training state, explicit intents override contextual memory, deterministic follow-ups use zero provider calls, and the context expires or invalidates safely when the session or referenced state changes.
+
+- Live Coach V1.1 — Proactive Coach is closed: Training can surface one silent,
+  contextual suggestion at a time for two consecutive missed-repetition sets,
+  two consecutive higher-effort sets, a rest exceeding prescription by 60 seconds,
+  or renewed time drift after a recent explicit time constraint. Detection is
+  deterministic, provider-free, cooldown/deduplication is session-scoped, pending
+  actions and clarifications suppress suggestions, and no suggestion mutates Training
+  or starts TTS automatically.
+
 - Training / Live Coach — Exercise Skip V0 is closed:
   `EjercicioSesion` supports an explicit persisted `Omitido` state, omitted exercises
   are ignored by `CurrentPendingTrainingSetResolver`, completed series are preserved,

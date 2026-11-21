@@ -14,6 +14,8 @@ using Entrenate.Application.Coach.LiveCoach.Context;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Models;
 using Entrenate.Application.Coach.LiveCoach.Prompt;
+using Entrenate.Application.Coach.LiveCoach.Proactive;
+using Entrenate.Application.Coach.LiveCoach.Queries.EvaluateLiveCoachProactive;
 using Entrenate.Application.Coach.LiveCoach.Routing;
 using Entrenate.Application.Coach.LiveCoach.Tools;
 using Entrenate.Application.Coach.Progress.Analysis;
@@ -49,6 +51,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         private readonly FakeSessionConversationStore _sessionConversationStore;
 
         private readonly RespondLiveCoachCommandHandler _handler;
+        private readonly EvaluateLiveCoachProactiveQueryHandler _proactiveHandler;
 
         public RespondLiveCoachCommandHandlerTests()
         {
@@ -81,6 +84,12 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 _clarificationStore,
                 _sessionConversationStore,
                 NullLogger<RespondLiveCoachCommandHandler>.Instance);
+            _proactiveHandler = new EvaluateLiveCoachProactiveQueryHandler(
+                _sessionRepository,
+                _currentUserService,
+                _pendingActionStore,
+                _clarificationStore,
+                _sessionConversationStore);
         }
 
         [Fact]
@@ -3815,6 +3824,110 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.Contains("serie anterior", result.Text);
             Assert.Contains("sesión anterior", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_ProactiveWhyFollowUp_UsesStructuredEvidenceWithoutProvider()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            _sessionConversationStore.Set(
+                new LiveCoachSessionConversationContext(
+                    TestUserId,
+                    session.Id,
+                    LastProactiveTrigger: new LiveCoachProactiveTriggerReference(
+                        LiveCoachProactiveTriggerType.RepeatedUnderperformance,
+                        session.Ejercicios.First().Id,
+                        "fingerprint",
+                        DateTime.UtcNow,
+                        "Las últimas dos series quedaron debajo del mínimo de 8 repeticiones.")),
+                DateTime.UtcNow);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-proactive-why", "text", "¿por qué?", null),
+                CancellationToken.None);
+
+            Assert.Contains("mínimo de 8 repeticiones", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_TimeConstraint_RemembersContextEvenWithoutProposal()
+        {
+            var session = CreateMultiExerciseSession(("Press", 1));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-time-context", "text", "me quedan 20 minutos", null),
+                CancellationToken.None);
+
+            var context = _sessionConversationStore.Contexts[(TestUserId, session.Id)];
+            Assert.Equal(20, context.LastTimeConstraint?.AvailableMinutes);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task EvaluateProactive_WhenPendingActionExists_ReturnsNoSuggestion()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await CreatePendingActionAsync(session);
+
+            var result = await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id),
+                CancellationToken.None);
+
+            Assert.Null(result.Suggestion);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task EvaluateProactive_WhenClarificationExists_ReturnsNoSuggestion()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            _clarificationStore.Set(new PendingLiveCoachClarification(
+                Guid.NewGuid(),
+                TestUserId,
+                session.Id,
+                "turn-clarification",
+                session.Ejercicios.First().Id,
+                LiveCoachClarificationKind.BestSetCriterion,
+                [LiveCoachBestSetCriterion.Weight],
+                DateTime.UtcNow.AddMinutes(1)));
+
+            var result = await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id),
+                CancellationToken.None);
+
+            Assert.Null(result.Suggestion);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task EvaluateProactive_EmitsOnceAndStoresStructuredContext()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            var exercise = session.Ejercicios.First();
+            exercise.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-2));
+            exercise.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow.AddMinutes(-1));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var first = await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id),
+                CancellationToken.None);
+            var duplicate = await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id),
+                CancellationToken.None);
+
+            Assert.Equal("RepeatedUnderperformance", first.Suggestion?.Trigger);
+            Assert.Null(duplicate.Suggestion);
+            var context = _sessionConversationStore.Contexts[(TestUserId, session.Id)];
+            Assert.Equal(
+                LiveCoachProactiveTriggerType.RepeatedUnderperformance,
+                context.LastProactiveTrigger?.Type);
+            Assert.Equal(exercise.Id, context.LastReferencedExerciseSessionId);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 

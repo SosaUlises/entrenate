@@ -27,6 +27,25 @@ export type LiveCoachRespondRequest = {
   clientSnapshot?: LiveCoachClientSnapshot | null;
 };
 
+export type LiveCoachProactiveRequest = {
+  sessionId: string;
+  snapshot?: {
+    restExerciseSessionId?: string | null;
+    restStartedAtUtc?: string | null;
+  } | null;
+};
+
+export type LiveCoachProactiveSuggestion = {
+  trigger: "RepeatedUnderperformance" | "ExcessiveEffort" | "SessionTimeDrift" | "LongRest";
+  text: string;
+  actionLabel?: string | null;
+  actionPrompt?: string | null;
+};
+
+export type LiveCoachProactiveEvaluation = {
+  suggestion?: LiveCoachProactiveSuggestion | null;
+};
+
 export type LiveCoachRespondResponse = {
   responseId: string;
   clientTurnId: string;
@@ -50,7 +69,7 @@ export type LiveCoachClarificationOption = {
 };
 
 export type LiveCoachClientAction =
-  | { type: "StartRestTimer"; durationSeconds: number }
+  | { type: "StartRestTimer"; durationSeconds: number; exerciseSessionId?: string | null }
   | { type: "StopRestTimer"; durationSeconds?: null }
   | {
     type: "NavigateNextExercise" | "NavigatePreviousExercise" | "NavigateToExercise";

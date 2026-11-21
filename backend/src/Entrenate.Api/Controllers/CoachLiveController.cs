@@ -10,6 +10,8 @@ using Entrenate.Application.Coach.LiveCoach.Commands.TranscribeLiveAudio;
 using Entrenate.Application.Coach.LiveCoach.Context;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Models;
+using Entrenate.Application.Coach.LiveCoach.Proactive;
+using Entrenate.Application.Coach.LiveCoach.Queries.EvaluateLiveCoachProactive;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -235,6 +237,31 @@ namespace Entrenate.Api.Controllers
 
             var response = await _sender.Send(command, cancellationToken);
             return Ok(response);
+        }
+
+        [HttpPost("proactive")]
+        public async Task<IActionResult> EvaluateProactive(
+            [FromBody] EvaluateLiveCoachProactiveRequest request,
+            CancellationToken cancellationToken)
+        {
+            if (request.SessionId == Guid.Empty)
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Sesión requerida",
+                    Detail = "El campo sessionId es obligatorio.",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            var snapshot = request.Snapshot is null
+                ? null
+                : new LiveCoachProactiveSnapshot(
+                    request.Snapshot.RestExerciseSessionId,
+                    request.Snapshot.RestStartedAtUtc);
+            return Ok(await _sender.Send(
+                new EvaluateLiveCoachProactiveQuery(request.SessionId, snapshot),
+                cancellationToken));
         }
 
         [HttpPost("speech")]
