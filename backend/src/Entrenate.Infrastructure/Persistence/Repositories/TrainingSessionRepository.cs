@@ -158,7 +158,11 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                             y.Repeticiones,
                             y.Rir,
                             y.Completada,
-                            y.FechaHoraRegistro))
+                            y.FechaHoraRegistro,
+                            y.RepeticionesObjetivoMinimas,
+                            y.RepeticionesObjetivoMaximas,
+                            y.RirObjetivoMinimo,
+                            y.RirObjetivoMaximo))
                         .ToList()))
                 .ToListAsync(cancellationToken);
         }
@@ -210,7 +214,11 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                             y.Repeticiones,
                             y.Rir,
                             y.Completada,
-                            y.FechaHoraRegistro))
+                            y.FechaHoraRegistro,
+                            y.RepeticionesObjetivoMinimas,
+                            y.RepeticionesObjetivoMaximas,
+                            y.RirObjetivoMinimo,
+                            y.RirObjetivoMaximo))
                         .ToList()))
                 .ToListAsync(cancellationToken);
         }
@@ -264,7 +272,11 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                             y.Repeticiones,
                             y.Rir,
                             y.Completada,
-                            y.FechaHoraRegistro))
+                            y.FechaHoraRegistro,
+                            y.RepeticionesObjetivoMinimas,
+                            y.RepeticionesObjetivoMaximas,
+                            y.RirObjetivoMinimo,
+                            y.RirObjetivoMaximo))
                         .ToList()))
                 .ToListAsync(cancellationToken);
         }

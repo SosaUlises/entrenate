@@ -209,6 +209,37 @@ namespace Entrenate.Domain.Entidades
             ejercicio.Reactivar();
         }
 
+        public void AdaptarPrescripcionPendiente(
+            Guid ejercicioSesionId,
+            int effectiveFromSetNumber,
+            int previousRepMin,
+            int previousRepMax,
+            int previousRirMin,
+            int previousRirMax,
+            int newRepMin,
+            int newRepMax,
+            int newRirMin,
+            int newRirMax)
+        {
+            if (Estado != EstadoSesionEntrenamiento.EnCurso)
+                throw new InvalidOperationException("Solo se puede adaptar una sesion en curso.");
+
+            var ejercicio = BuscarEjercicio(ejercicioSesionId);
+            if (ejercicio.Omitido)
+                throw new InvalidOperationException("No se puede adaptar un ejercicio omitido.");
+
+            ejercicio.AdaptarPrescripcionPendiente(
+                effectiveFromSetNumber,
+                previousRepMin,
+                previousRepMax,
+                previousRirMin,
+                previousRirMax,
+                newRepMin,
+                newRepMax,
+                newRirMin,
+                newRirMax);
+        }
+
         private EjercicioSesion BuscarEjercicio(Guid ejercicioSesionId)
             => _ejercicios.FirstOrDefault(x => x.Id == ejercicioSesionId)
                 ?? throw new InvalidOperationException("El ejercicio no pertenece a la sesión.");

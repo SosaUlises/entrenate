@@ -1122,76 +1122,42 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             string clientTurnId,
             LivePerformanceSignalType signalType)
         {
-            var result = LivePerformanceAdaptationEngine.Evaluate(session, signalType);
-            if (result.Status == LivePerformanceAdaptationResultStatus.NoPendingWork)
+            var result = LivePrescriptionAdaptationEngine.Evaluate(
+                session,
+                userId,
+                signalType,
+                DateTime.UtcNow);
+            if (result.Status == LivePrescriptionAdaptationStatus.NoPendingWork)
                 return CreateDirectResponse(clientTurnId, "Ya completaste todas las series de la sesión.");
-
-            if (result.Status == LivePerformanceAdaptationResultStatus.InsufficientContext)
-            {
-                var responseText = signalType == LivePerformanceSignalType.ExcessiveEffort
-                    ? "No tengo un peso objetivo definido para esta serie y todavía no hay una serie reciente para comparar. Registrá primero cómo salió y la evalúo contra la prescripción."
-                    : "Registrá primero cómo salió la serie y la comparo con la prescripción.";
-                return CreateDirectResponse(clientTurnId, responseText);
-            }
-
-            var evidence = result.Evidence!;
-            var evidenceText = FormatPerformanceEvidence(evidence);
-            var weightLimitation = signalType == LivePerformanceSignalType.ExcessiveEffort
-                ? "No tengo un peso objetivo definido para ajustar la carga automáticamente. "
-                : string.Empty;
-            if (result.Status == LivePerformanceAdaptationResultStatus.WithinPrescription)
-            {
-                var responseText = signalType == LivePerformanceSignalType.ExcessiveEffort
-                    ? $"{weightLimitation}{evidenceText} Si querés, seguimos con la serie actual y evaluamos la próxima."
-                    : $"{evidenceText} Si querés, seguimos con la serie actual y evaluamos la próxima.";
-                return CreateDirectResponse(clientTurnId, responseText);
-            }
-
-            if (result.Status == LivePerformanceAdaptationResultStatus.UnderperformanceWithoutSafeCut)
-            {
+            if (result.Status == LivePrescriptionAdaptationStatus.InsufficientEvidence)
                 return CreateDirectResponse(
                     clientTurnId,
-                    $"{weightLimitation}{evidenceText} No queda un ejercicio posterior no iniciado que pueda recortar sin tocar el trabajo actual o ya empezado.");
-            }
+                    "Necesito dos series consecutivas registradas con la misma señal para ajustar la prescripción pendiente de forma segura.");
+            if (result.Status == LivePrescriptionAdaptationStatus.NoSafeChange)
+                return CreateDirectResponse(
+                    clientTurnId,
+                    "La prescripción pendiente ya está en el límite conservador y no puedo reducirla más de forma segura.");
 
-            var nowUtc = DateTime.UtcNow;
-            var expiresAtUtc = nowUtc.AddSeconds(45);
-            var actionId = Guid.NewGuid();
-            var proposal = new LivePerformanceAdaptationProposal(
-                actionId,
-                userId,
-                session.Id,
-                nowUtc,
-                expiresAtUtc,
-                signalType,
-                evidence,
-                LiveTimeConstraintFingerprint.Create(session),
-                result.Changes,
-                "Reducir volumen posterior por rendimiento bajo");
-            var current = CurrentPendingTrainingSetResolver.Resolve(session)!;
+            var proposal = result.Proposal!;
             var action = new PendingLiveCoachAction(
-                actionId,
+                proposal.ProposalId,
                 userId,
                 session.Id,
-                current.ExerciseSession.Id,
-                current.SetNumber,
+                proposal.ExerciseSessionId,
+                proposal.EffectiveFromSetNumber,
                 0,
                 0,
                 null,
-                expiresAtUtc,
-                LiveCoachActionTypes.ApplyPerformanceAdaptation,
-                AdaptationProposal: proposal);
-            _pendingActionStore.Set(action);
-            RememberAdaptation(
-                userId,
-                session.Id,
-                proposal.ProposalId,
                 proposal.ExpiresAtUtc,
-                proposal.Changes,
-                [LiveAdaptationReason.Performance]);
+                LiveCoachActionTypes.ApplyPrescriptionAdaptation,
+                proposal.ExerciseName,
+                PrescriptionAdaptationProposal: proposal);
+            _pendingActionStore.Set(action);
+            RememberPrescriptionAdaptation(userId, proposal);
 
-            var omittedName = result.Changes.Single().ExerciseName;
-            var proposalText = $"{weightLimitation}{evidenceText} Puedo mantener {result.CurrentExerciseName} y omitir {omittedName} para reducir el volumen posterior de hoy. ¿Querés aplicar este ajuste?";
+            var proposalText = signalType == LivePerformanceSignalType.ExcessiveEffort
+                ? $"Las últimas dos series quedaron más cerca del fallo de lo previsto. Puedo ajustar las series pendientes de {proposal.ExerciseName} de RIR {proposal.PreviousRirMin}–{proposal.PreviousRirMax} a RIR {proposal.NewRirMin}–{proposal.NewRirMax}. ¿Querés aplicar este ajuste?"
+                : $"Las últimas dos series quedaron por debajo del objetivo. Puedo ajustar las series pendientes de {proposal.ExerciseName} de {proposal.PreviousRepMin}–{proposal.PreviousRepMax} a {proposal.NewRepMin}–{proposal.NewRepMax} repeticiones. ¿Querés aplicar este ajuste?";
             return CreateDirectResponse(clientTurnId, proposalText, ToDto(action));
         }
 
@@ -1553,6 +1519,42 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
 
             if (followUp.Kind == LiveCoachSessionFollowUpKind.AdaptationChanges)
             {
+                var prescription = conversation.LastPrescriptionAdaptation;
+                if (prescription is not null)
+                {
+                    var exercise = session.Ejercicios.FirstOrDefault(item =>
+                        item.Id == prescription.ExerciseSessionId);
+                    if (exercise is null)
+                        return CreateDirectResponse(clientTurnId, "La sesión cambió. Pedime de nuevo el ajuste.");
+
+                    var changedRepetitions = prescription.PreviousRepMin != prescription.NewRepMin ||
+                        prescription.PreviousRepMax != prescription.NewRepMax;
+                    var prescriptionWasApplied = exercise.RepeticionesMinimasObjetivo == prescription.NewRepMin &&
+                        exercise.RepeticionesMaximasObjetivo == prescription.NewRepMax &&
+                        exercise.RirObjetivoMinimo == prescription.NewRirMin &&
+                        exercise.RirObjetivoMaximo == prescription.NewRirMax;
+                    var changeText = changedRepetitions
+                        ? $"Las series pendientes de {prescription.ExerciseName} pasaron de {prescription.PreviousRepMin}–{prescription.PreviousRepMax} a {prescription.NewRepMin}–{prescription.NewRepMax} repeticiones."
+                        : $"Las series pendientes de {prescription.ExerciseName} pasaron de RIR {prescription.PreviousRirMin}–{prescription.PreviousRirMax} a RIR {prescription.NewRirMin}–{prescription.NewRirMax}.";
+                    var pending = pendingLookup.Status == PendingLiveCoachActionLookupStatus.Active &&
+                        pendingLookup.Action?.Type == LiveCoachActionTypes.ApplyPrescriptionAdaptation;
+                    if (!prescriptionWasApplied && !pending)
+                    {
+                        RememberConversation(
+                            userId,
+                            session.Id,
+                            current => current with { LastPrescriptionAdaptation = null },
+                            nowUtc);
+                        return CreateDirectResponse(clientTurnId, "No hay un ajuste vigente en esta sesión.");
+                    }
+                    return CreateDirectResponse(
+                        clientTurnId,
+                        pending && !prescriptionWasApplied ? $"El ajuste propone este cambio: {changeText}" : changeText,
+                        pendingAction: pending && pendingLookup.Action is not null
+                            ? ToDto(pendingLookup.Action)
+                            : null);
+                }
+
                 var adaptation = conversation.LastAdaptation;
                 if (adaptation is null)
                     return CreateDirectResponse(clientTurnId, "No tengo un ajuste reciente para revisar.");
@@ -1790,6 +1792,33 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 nowUtc);
         }
 
+        private void RememberPrescriptionAdaptation(
+            string userId,
+            LivePrescriptionAdaptationProposal proposal)
+        {
+            RememberConversation(
+                userId,
+                proposal.SessionId,
+                current => current with
+                {
+                    LastIntentKind = LiveCoachIntentKind.LiveAdaptationPerformanceSignal,
+                    LastPrescriptionAdaptation = new LiveCoachPrescriptionAdaptationReference(
+                        proposal.ExerciseSessionId,
+                        proposal.ExerciseName,
+                        proposal.EffectiveFromSetNumber,
+                        proposal.PreviousRepMin,
+                        proposal.PreviousRepMax,
+                        proposal.PreviousRirMin,
+                        proposal.PreviousRirMax,
+                        proposal.NewRepMin,
+                        proposal.NewRepMax,
+                        proposal.NewRirMin,
+                        proposal.NewRirMax,
+                        proposal.ExpiresAtUtc)
+                },
+                proposal.CreatedAtUtc);
+        }
+
         private void RememberConversation(
             string userId,
             Guid sessionId,
@@ -1847,6 +1876,12 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
 
             if (IsAdaptationAction(action.Type) && action.AdaptationProposal is not null)
                 return action.AdaptationProposal.PublicSummary;
+
+            if (action.Type == LiveCoachActionTypes.ApplyPrescriptionAdaptation &&
+                action.PrescriptionAdaptationProposal is not null)
+            {
+                return action.PrescriptionAdaptationProposal.PublicSummary;
+            }
 
             var weight = action.WeightKg.ToString("0.##", CultureInfo.InvariantCulture);
             return $"{weight} kg × {action.Repetitions}" +
@@ -1927,7 +1962,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             => actionType is LiveCoachActionTypes.ApplyTimeConstraintAdaptation or
                 LiveCoachActionTypes.ApplyFatigueAdaptation or
                 LiveCoachActionTypes.ApplyPerformanceAdaptation or
-                LiveCoachActionTypes.ApplyCombinedAdaptation;
+                LiveCoachActionTypes.ApplyCombinedAdaptation or
+                LiveCoachActionTypes.ApplyPrescriptionAdaptation;
 
         private static bool IsAdaptationIntent(LiveCoachIntentKind intentKind)
             => intentKind is LiveCoachIntentKind.LiveAdaptationTimeConstraint or

@@ -1128,7 +1128,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Routing
             => actionType is LiveCoachActionTypes.ApplyTimeConstraintAdaptation or
                 LiveCoachActionTypes.ApplyFatigueAdaptation or
                 LiveCoachActionTypes.ApplyPerformanceAdaptation or
-                LiveCoachActionTypes.ApplyCombinedAdaptation;
+                LiveCoachActionTypes.ApplyCombinedAdaptation or
+                LiveCoachActionTypes.ApplyPrescriptionAdaptation;
 
         private static bool IsRestQuery(string normalizedText)
         {

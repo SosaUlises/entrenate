@@ -11,6 +11,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
         public const string ApplyFatigueAdaptation = "ApplyFatigueAdaptation";
         public const string ApplyPerformanceAdaptation = "ApplyPerformanceAdaptation";
         public const string ApplyCombinedAdaptation = "ApplyCombinedAdaptation";
+        public const string ApplyPrescriptionAdaptation = "ApplyPrescriptionAdaptation";
     }
 
     public sealed record PendingLiveCoachAction(
@@ -26,7 +27,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
         string Type = LiveCoachActionTypes.RegisterCurrentSet,
         string? ExerciseName = null,
         int PendingSetCount = 0,
-        ILiveAdaptationProposal? AdaptationProposal = null);
+        ILiveAdaptationProposal? AdaptationProposal = null,
+        LivePrescriptionAdaptationProposal? PrescriptionAdaptationProposal = null);
 
     public sealed record PendingLiveCoachSetPatch(
         decimal? WeightKg = null,

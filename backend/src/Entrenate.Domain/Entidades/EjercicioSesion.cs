@@ -150,6 +150,11 @@ namespace Entrenate.Domain.Entidades
             {
                 serie = new SerieEntrenamiento();
                 serie.ConfigurarNumeroSerie(numeroSerie);
+                serie.RegistrarPrescripcion(
+                    RepeticionesMinimasObjetivo,
+                    RepeticionesMaximasObjetivo,
+                    RirObjetivoMinimo,
+                    RirObjetivoMaximo);
                 serie.RegistrarRendimiento(
                     peso,
                     repeticiones,
@@ -162,6 +167,11 @@ namespace Entrenate.Domain.Entidades
                 return serie;
             }
 
+            serie.RegistrarPrescripcion(
+                RepeticionesMinimasObjetivo,
+                RepeticionesMaximasObjetivo,
+                RirObjetivoMinimo,
+                RirObjetivoMaximo);
             serie.RegistrarRendimiento(
                 peso,
                 repeticiones,
@@ -170,6 +180,54 @@ namespace Entrenate.Domain.Entidades
             serie.MarcarComoCompletada();
 
             return serie;
+        }
+
+        internal void AdaptarPrescripcionPendiente(
+            int effectiveFromSetNumber,
+            int previousRepMin,
+            int previousRepMax,
+            int previousRirMin,
+            int previousRirMax,
+            int newRepMin,
+            int newRepMax,
+            int newRirMin,
+            int newRirMax)
+        {
+            if (effectiveFromSetNumber < 1 || effectiveFromSetNumber > SeriesObjetivo)
+                throw new InvalidOperationException("No hay series pendientes para adaptar.");
+
+            if (RepeticionesMinimasObjetivo != previousRepMin ||
+                RepeticionesMaximasObjetivo != previousRepMax ||
+                RirObjetivoMinimo != previousRirMin ||
+                RirObjetivoMaximo != previousRirMax)
+            {
+                throw new InvalidOperationException("La prescripcion pendiente cambio.");
+            }
+
+            var firstPending = Enumerable.Range(1, SeriesObjetivo)
+                .FirstOrDefault(number => !_series.Any(set =>
+                    set.NumeroSerie == number && set.EstaRealmenteCompletada()));
+            if (firstPending == 0 || firstPending != effectiveFromSetNumber)
+                throw new InvalidOperationException("La serie pendiente actual cambio.");
+
+            if (newRepMin < 1 || newRepMax < newRepMin)
+                throw new ArgumentException("El rango de repeticiones objetivo no es valido.");
+            if (newRirMin < 0 || newRirMax > 5 || newRirMax < newRirMin)
+                throw new ArgumentException("El rango de RIR objetivo no es valido.");
+
+            foreach (var completedSet in _series.Where(set => set.EstaRealmenteCompletada()))
+            {
+                completedSet.RegistrarPrescripcion(
+                    previousRepMin,
+                    previousRepMax,
+                    previousRirMin,
+                    previousRirMax);
+            }
+
+            RepeticionesMinimasObjetivo = newRepMin;
+            RepeticionesMaximasObjetivo = newRepMax;
+            RirObjetivoMinimo = newRirMin;
+            RirObjetivoMaximo = newRirMax;
         }
 
         internal void Omitir()

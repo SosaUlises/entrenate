@@ -22,6 +22,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Proactive
             Assert.Equal(
                 LiveCoachProactiveTriggerType.RepeatedUnderperformance,
                 result.First().Type);
+            Assert.Equal("Revisar prescripción", result.First().ActionLabel);
         }
 
         [Fact]

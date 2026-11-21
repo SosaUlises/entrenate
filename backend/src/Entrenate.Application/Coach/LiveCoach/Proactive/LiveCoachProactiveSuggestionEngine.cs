@@ -75,59 +75,31 @@ namespace Entrenate.Application.Coach.LiveCoach.Proactive
         private static (LiveCoachProactiveCandidate? Underperformance, LiveCoachProactiveCandidate? ExcessiveEffort)
             EvaluatePerformance(SesionEntrenamiento session)
         {
-            var exercise = session.Ejercicios
-                .Where(item => !item.Omitido)
-                .Select(item => new
-                {
-                    Exercise = item,
-                    LastRecordedAt = item.Series
-                        .Where(set => set.EstaRealmenteCompletada())
-                        .Select(set => set.FechaHoraRegistro)
-                        .DefaultIfEmpty()
-                        .Max()
-                })
-                .Where(item => item.LastRecordedAt != default)
-                .OrderByDescending(item => item.LastRecordedAt)
-                .Select(item => item.Exercise)
-                .FirstOrDefault();
-            if (exercise is null)
+            var evidence = LiveCoachPerformanceTrendDetector.Detect(session);
+            if (evidence is null)
                 return (null, null);
 
-            var lastTwo = exercise.Series
-                .Where(set => set.EstaRealmenteCompletada())
-                .Where(set => set.NumeroSerie >= 1 && set.NumeroSerie <= exercise.SeriesObjetivo)
-                .OrderByDescending(set => set.NumeroSerie)
-                .Take(2)
-                .OrderBy(set => set.NumeroSerie)
-                .ToArray();
-            if (lastTwo.Length != 2 || lastTwo[1].NumeroSerie != lastTwo[0].NumeroSerie + 1)
-                return (null, null);
+            var exercise = evidence.Exercise;
 
-            var fingerprint = string.Join('|', lastTwo.Select(set =>
-                $"{set.NumeroSerie}:{set.Repeticiones}:{set.Rir}:{set.FechaHoraRegistro.Ticks}"));
-            var missed = lastTwo.All(set => set.Repeticiones < exercise.RepeticionesMinimasObjetivo);
-            var effort = lastTwo.All(set =>
-                set.Rir.HasValue && set.Rir.Value < exercise.RirObjetivoMinimo);
-
-            var underperformance = missed
+            var underperformance = evidence.RepeatedUnderperformance
                 ? new LiveCoachProactiveCandidate(
                     LiveCoachProactiveTriggerType.RepeatedUnderperformance,
                     exercise.Id,
-                    fingerprint,
+                    evidence.SourceFingerprint,
                     "Las últimas dos series quedaron por debajo de la prescripción. Si querés, puedo ajustar el trabajo que queda.",
                     $"Las últimas dos series de {exercise.Ejercicio.Nombre} quedaron por debajo del mínimo de {exercise.RepeticionesMinimasObjetivo} repeticiones.",
-                    "Revisar sesión",
-                    "No llego a las repeticiones en las últimas dos series; revisá lo que queda de la sesión.")
+                    "Revisar prescripción",
+                    "No llego a las repeticiones en las últimas dos series; revisá la prescripción pendiente.")
                 : null;
-            var excessiveEffort = effort
+            var excessiveEffort = evidence.ExcessiveEffort
                 ? new LiveCoachProactiveCandidate(
                     LiveCoachProactiveTriggerType.ExcessiveEffort,
                     exercise.Id,
-                    fingerprint,
+                    evidence.SourceFingerprint,
                     "Las últimas dos series quedaron más cerca del fallo de lo previsto. Puedo revisar lo que queda de la sesión.",
                     $"Las últimas dos series de {exercise.Ejercicio.Nombre} tuvieron un RIR menor al objetivo {exercise.RirObjetivoMinimo}–{exercise.RirObjetivoMaximo}.",
-                    "Revisar sesión",
-                    "Este peso está demasiado pesado en las últimas dos series; revisá lo que queda de la sesión.")
+                    "Revisar prescripción",
+                    "Este peso está demasiado pesado en las últimas dos series; revisá la prescripción pendiente.")
                 : null;
             return (underperformance, excessiveEffort);
         }

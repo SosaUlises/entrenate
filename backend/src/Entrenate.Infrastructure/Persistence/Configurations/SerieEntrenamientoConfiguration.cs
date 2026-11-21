@@ -31,6 +31,11 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
             builder.Property(x => x.FechaHoraRegistro)
                 .IsRequired();
 
+            builder.Property(x => x.RepeticionesObjetivoMinimas);
+            builder.Property(x => x.RepeticionesObjetivoMaximas);
+            builder.Property(x => x.RirObjetivoMinimo);
+            builder.Property(x => x.RirObjetivoMaximo);
+
             builder.HasIndex(x => new
             {
                 x.EjercicioSesionId,

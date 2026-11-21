@@ -440,7 +440,19 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.Property<int>("Repeticiones")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("RepeticionesObjetivoMaximas")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RepeticionesObjetivoMinimas")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("Rir")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirObjetivoMaximo")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirObjetivoMinimo")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");

@@ -147,7 +147,7 @@ function ExerciseResult({
       <div className="flex min-w-0 items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h2 className="break-words font-brand text-xl font-bold leading-7 text-text-primary" id={`history-exercise-${exercise.id}`}>{exercise.nombre}</h2>
-          <p className="mt-2 text-[0.8125rem] font-semibold leading-5 text-steel">Objetivo · {prescription}</p>
+          <p className="mt-2 text-[0.8125rem] font-semibold leading-5 text-steel">Objetivo final · {prescription}</p>
           {exercise.omitido ? (
             <p className="mt-2 text-[0.8125rem] font-semibold leading-5 text-thermal-accent">
               {sets.filter((set) => set.completada && set.numeroSerie <= exercise.seriesObjetivo).length}/{exercise.seriesObjetivo} series · Omitido
@@ -184,6 +184,12 @@ function ExerciseResult({
             <tbody className="divide-y divide-border/35">
               {sets.map((set) => {
                 const extra = set.numeroSerie > exercise.seriesObjetivo;
+                const repTarget = set.repeticionesObjetivoMinimas != null && set.repeticionesObjetivoMaximas != null
+                  ? `${set.repeticionesObjetivoMinimas}–${set.repeticionesObjetivoMaximas}`
+                  : null;
+                const rirTarget = set.rirObjetivoMinimo != null && set.rirObjetivoMaximo != null
+                  ? `${set.rirObjetivoMinimo}–${set.rirObjetivoMaximo}`
+                  : null;
                 return (
                   <tr className="h-12 font-brand text-lg font-bold leading-6 tabular-nums text-text-primary" key={set.id}>
                     <td className="min-w-0 py-2.5">
@@ -198,7 +204,10 @@ function ExerciseResult({
                         </>
                       )}
                     </td>
-                    <td className="min-w-0 truncate py-2.5">{set.repeticiones}</td>
+                    <td className="min-w-0 py-2.5">
+                      <span className="block truncate">{set.repeticiones}</span>
+                      {repTarget ? <span className="block font-sans text-[0.6875rem] font-semibold leading-4 text-steel">Obj. {repTarget}</span> : null}
+                    </td>
                     <td className="min-w-0 truncate py-2.5">
                       {set.rir ?? (
                         <>
@@ -206,6 +215,7 @@ function ExerciseResult({
                           <span className="sr-only">Sin RIR registrado</span>
                         </>
                       )}
+                      {rirTarget ? <span className="block font-sans text-[0.6875rem] font-semibold leading-4 text-steel">Obj. {rirTarget}</span> : null}
                     </td>
                   </tr>
                 );

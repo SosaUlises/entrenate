@@ -29,6 +29,20 @@ namespace Entrenate.Application.Coach.LiveCoach.Conversation
         IReadOnlyCollection<LiveAdaptationReason> Reasons,
         DateTime ProposalExpiresAtUtc);
 
+    public sealed record LiveCoachPrescriptionAdaptationReference(
+        Guid ExerciseSessionId,
+        string ExerciseName,
+        int EffectiveFromSetNumber,
+        int PreviousRepMin,
+        int PreviousRepMax,
+        int PreviousRirMin,
+        int PreviousRirMax,
+        int NewRepMin,
+        int NewRepMax,
+        int NewRirMin,
+        int NewRirMax,
+        DateTime ProposalExpiresAtUtc);
+
     public sealed record LiveCoachSessionConversationContext(
         string UserId,
         Guid SessionId,
@@ -38,6 +52,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Conversation
         LiveCoachIntentKind? LastPerformanceQueryKind = null,
         LiveCoachBestSetCriterion? LastBestSetCriterion = null,
         LiveCoachAdaptationReference? LastAdaptation = null,
+        LiveCoachPrescriptionAdaptationReference? LastPrescriptionAdaptation = null,
         LiveCoachTimeConstraintReference? LastTimeConstraint = null,
         IReadOnlyCollection<LiveCoachProactiveTriggerReference>? RecentProactiveTriggers = null,
         LiveCoachProactiveTriggerReference? LastProactiveTrigger = null,

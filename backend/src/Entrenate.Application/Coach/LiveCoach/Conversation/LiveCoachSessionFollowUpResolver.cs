@@ -81,7 +81,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Conversation
             }
 
             if ((text is "que sacaste" or "que ajustaste" or "cuales sacaste" or
-                 "que ejercicios sacaste") && context.LastAdaptation is not null)
+                 "que ejercicios sacaste") &&
+                (context.LastAdaptation is not null || context.LastPrescriptionAdaptation is not null))
             {
                 return new(LiveCoachSessionFollowUpKind.AdaptationChanges);
             }

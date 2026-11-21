@@ -93,6 +93,20 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
                     action.AdaptationProposal.SuccessMessage);
             }
 
+            if (action.Type == LiveCoachActionTypes.ApplyPrescriptionAdaptation)
+            {
+                if (action.PrescriptionAdaptationProposal is null)
+                    throw new ConflictException("La propuesta de ajuste ya no esta disponible.");
+
+                var adaptedSession = await _sender.Send(
+                    new ApplyLivePrescriptionAdaptationCommand(
+                        action.PrescriptionAdaptationProposal),
+                    cancellationToken);
+                return new LiveCoachActionConfirmationDto(
+                    adaptedSession,
+                    action.PrescriptionAdaptationProposal.SuccessMessage);
+            }
+
             await _sender.Send(
                 new UpsertTrainingSetCommand(
                     action.SessionId,

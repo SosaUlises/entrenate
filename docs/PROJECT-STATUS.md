@@ -116,6 +116,13 @@
   actions and clarifications suppress suggestions, and no suggestion mutates Training
   or starts TTS automatically.
 
+- Live Coach V1.2 — Safe Prescription Adaptation is closed: repeated structured
+  underperformance can conservatively reduce the pending repetition range by two
+  reps with a floor of four, and repeated excessive effort can increase the pending
+  RIR margin by one up to RIR 5. Changes begin at the first pending set, require an
+  explicit single-use confirmation, never set a target weight or alter the base
+  routine, and preserve completed-set prescription snapshots for History.
+
 - Training / Live Coach — Exercise Skip V0 is closed:
   `EjercicioSesion` supports an explicit persisted `Omitido` state, omitted exercises
   are ignored by `CurrentPendingTrainingSetResolver`, completed series are preserved,
@@ -128,7 +135,10 @@
 - Live Coach V0 — interactive clarification follow-ups are closed: Coach responses can expose typed, short-lived clarification metadata that allows the Training UI to continue multi-turn flows without treating every response as final. Best-set criteria can be answered through voice, text or structured quick actions for weight, repetitions and volume, while the backend remains the source of truth and pending mutations preserve their separate confirmation UX.
 
 - Live Coach V0 — Live Adaptation Fatigue Signal V0.2 is closed: explicit current-session fatigue signals are classified deterministically as moderate or high and converted into ephemeral volume-reduction proposals over the authoritative active session. The engine preserves the current exercise and completed performance, prioritizes already-started work, omits only future exercises through the existing `Omitido` semantics, requires explicit confirmation, reuses shared Live Adaptation stale/fingerprint infrastructure and never invokes the conversation provider for adaptation decisions.
-- Live Coach V0 — Live Adaptation Performance Signal V0.3 is closed: explicit in-session performance signals are classified deterministically and evaluated against authoritative completed-set data and the current prescription. Underperformance is detected from missed repetition targets and higher-than-prescribed effort without inventing target weight or altering recorded performance. Because the active-session domain does not expose safe prescription mutations for reps, RIR or rest, V0.3 conservatively adapts only future volume through a confirmed omission proposal, reusing the shared Live Adaptation pending, fingerprint and stale-validation infrastructure.
+- Live Coach V0 — Live Adaptation Performance Signal V0.3 remains the conservative
+  future-volume fallback used by combined adaptations. Live Coach V1.2 adds the
+  explicit, confirmed reps/RIR prescription operation for repeated structured
+  performance evidence without changing recorded performance.
 
 - Live Coach V0 — Live Adaptation Combined Signals V0.4 is closed: time, fatigue and performance signals can be detected together and coordinated through a deterministic `LiveAdaptationOrchestrator` that reuses the existing adaptation engines, produces a single deduplicated proposal, preserves the authoritative current exercise, treats time as the hard constraint when present, incorporates fatigue conservatively, uses performance only with valid evidence, replaces stale adaptation proposals safely and never invokes the conversation provider for adaptation decisions.
 - Training — omitted exercises can be reactivated while the session remains
@@ -153,8 +163,8 @@
   when the provider reports `incomplete` due to `max_output_tokens`;
   partial answers are never returned as completed responses.
 
-- Next: no Live Coach V0 blocker remains. Any post-V0 in-session capability
-  requires a separately approved product and technical scope.
+- Next: Live Coach V1.2 has no known blocker; later in-session capabilities require
+  a separately approved product and technical scope.
 
 ## Entrenate Coach
 

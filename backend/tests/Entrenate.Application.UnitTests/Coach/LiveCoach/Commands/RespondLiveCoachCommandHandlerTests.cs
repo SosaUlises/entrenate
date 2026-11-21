@@ -3231,10 +3231,11 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         [Fact]
-        public async Task Handle_WhenPerformanceIsBelowPrescription_CreatesVolumeProposalWithoutProvider()
+        public async Task Handle_WhenPerformanceIsBelowPrescription_CreatesPrescriptionProposalWithoutProvider()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
-            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow.AddMinutes(-1));
+            session.Ejercicios.First().RegistrarOActualizarSerie(2, 100, 6, 0, DateTime.UtcNow);
             _sessionRepository.Sessions[session.Id] = session;
 
             var result = await _handler.Handle(
@@ -3243,10 +3244,12 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 CancellationToken.None);
 
             Assert.NotNull(result.PendingAction);
-            Assert.Equal(LiveCoachActionTypes.ApplyPerformanceAdaptation, result.PendingAction.Type);
+            Assert.Equal(LiveCoachActionTypes.ApplyPrescriptionAdaptation, result.PendingAction.Type);
             var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
-            var proposal = Assert.IsType<LivePerformanceAdaptationProposal>(action.AdaptationProposal);
-            Assert.True(proposal.Evidence.MissedPrescription);
+            var proposal = Assert.IsType<LivePrescriptionAdaptationProposal>(action.PrescriptionAdaptationProposal);
+            Assert.Equal(6, proposal.NewRepMin);
+            Assert.Equal(8, proposal.NewRepMax);
+            Assert.Equal(3, proposal.EffectiveFromSetNumber);
             Assert.False(session.Ejercicios.Last().Omitido);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
@@ -3255,7 +3258,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         public async Task Handle_WhenLastSetMetPrescription_DoesNotCreateAdaptation()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
-            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 8, 1, DateTime.UtcNow);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 8, 1, DateTime.UtcNow.AddMinutes(-1));
+            session.Ejercicios.First().RegistrarOActualizarSerie(2, 100, 8, 1, DateTime.UtcNow);
             _sessionRepository.Sessions[session.Id] = session;
 
             var result = await _handler.Handle(
@@ -3264,7 +3268,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 CancellationToken.None);
 
             Assert.Null(result.PendingAction);
-            Assert.Contains("dentro de la prescripción", result.Text);
+            Assert.Contains("Necesito dos series consecutivas", result.Text);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
@@ -3280,8 +3284,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 CancellationToken.None);
 
             Assert.Null(result.PendingAction);
-            Assert.Contains("No tengo un peso objetivo definido", result.Text);
-            Assert.Contains("Registrá primero", result.Text);
+            Assert.Contains("Necesito dos series consecutivas", result.Text);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
@@ -3289,7 +3292,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         public async Task Handle_WhenPerformanceAdaptationIsConfirmedByVoice_UsesPendingExecutor()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
-            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow.AddMinutes(-1));
+            session.Ejercicios.First().RegistrarOActualizarSerie(2, 100, 6, 0, DateTime.UtcNow);
             _sessionRepository.Sessions[session.Id] = session;
             await _handler.Handle(
                 new RespondLiveCoachCommand(
@@ -3305,7 +3309,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.Equal(1, _pendingActionExecutor.ConfirmCount);
             Assert.Equal(
-                LiveCoachActionTypes.ApplyPerformanceAdaptation,
+                LiveCoachActionTypes.ApplyPrescriptionAdaptation,
                 _pendingActionExecutor.ConfirmedAction?.Type);
             Assert.NotNull(result.UpdatedSession);
             Assert.Equal(0, _conversationProvider.CallCount);
@@ -3315,7 +3319,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         public async Task Handle_WhenPerformanceAdaptationIsCancelled_DoesNotMutateSession()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
-            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow.AddMinutes(-1));
+            session.Ejercicios.First().RegistrarOActualizarSerie(2, 100, 6, 0, DateTime.UtcNow);
             _sessionRepository.Sessions[session.Id] = session;
             await _handler.Handle(
                 new RespondLiveCoachCommand(
@@ -3336,7 +3341,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         public async Task Handle_WhenPerformanceAdaptationBecameStale_ReturnsSpecificMessage()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
-            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow.AddMinutes(-1));
+            session.Ejercicios.First().RegistrarOActualizarSerie(2, 100, 6, 0, DateTime.UtcNow);
             _sessionRepository.Sessions[session.Id] = session;
             await _handler.Handle(
                 new RespondLiveCoachCommand(
@@ -3928,6 +3934,19 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 LiveCoachProactiveTriggerType.RepeatedUnderperformance,
                 context.LastProactiveTrigger?.Type);
             Assert.Equal(exercise.Id, context.LastReferencedExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+
+            var actionResult = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-proactive-prescription",
+                    "text",
+                    first.Suggestion!.ActionPrompt!,
+                    null),
+                CancellationToken.None);
+            Assert.Equal(
+                LiveCoachActionTypes.ApplyPrescriptionAdaptation,
+                actionResult.PendingAction?.Type);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
