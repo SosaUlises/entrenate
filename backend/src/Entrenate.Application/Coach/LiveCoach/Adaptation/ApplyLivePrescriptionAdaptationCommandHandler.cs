@@ -3,6 +3,7 @@ using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.TrainingSessions.DTOs;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById;
 using MediatR;
+using Entrenate.Domain.Enums;
 
 namespace Entrenate.Application.Coach.LiveCoach.Adaptation
 {
@@ -60,6 +61,19 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
                 request.Proposal.PreviousRirMax,
                 request.Proposal.NewRepMin,
                 request.Proposal.NewRepMax,
+                request.Proposal.NewRirMin,
+                request.Proposal.NewRirMax);
+            session.RegistrarAdaptacionLiveCoach(
+                TipoAdaptacionLiveCoach.Prescripcion,
+                DateTime.UtcNow,
+                request.Proposal.ExerciseSessionId,
+                request.Proposal.EffectiveFromSetNumber,
+                request.Proposal.PreviousRepMin,
+                request.Proposal.PreviousRepMax,
+                request.Proposal.NewRepMin,
+                request.Proposal.NewRepMax,
+                request.Proposal.PreviousRirMin,
+                request.Proposal.PreviousRirMax,
                 request.Proposal.NewRirMin,
                 request.Proposal.NewRirMax);
 

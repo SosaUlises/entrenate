@@ -12,6 +12,7 @@ using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Models;
 using Entrenate.Application.Coach.LiveCoach.Proactive;
 using Entrenate.Application.Coach.LiveCoach.Queries.EvaluateLiveCoachProactive;
+using Entrenate.Application.Coach.LiveCoach.PostSession;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -313,6 +314,21 @@ namespace Entrenate.Api.Controllers
 
             return NoContent();
         }
+
+        [HttpGet("sessions/{sessionId:guid}/summary")]
+        public async Task<IActionResult> GetPostSessionSummary(
+            Guid sessionId,
+            CancellationToken cancellationToken)
+            => Ok(await _sender.Send(
+                new GetPostSessionCoachSummaryQuery(sessionId), cancellationToken));
+
+        [HttpPost("sessions/{sessionId:guid}/summary/respond")]
+        public async Task<IActionResult> AnswerPostSessionQuestion(
+            Guid sessionId,
+            [FromBody] PostSessionCoachQuestionRequest request,
+            CancellationToken cancellationToken)
+            => Ok(await _sender.Send(
+                new AnswerPostSessionCoachQuery(sessionId, request.Question), cancellationToken));
     }
 }
 

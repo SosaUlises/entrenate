@@ -46,6 +46,48 @@ export type LiveCoachProactiveEvaluation = {
   suggestion?: LiveCoachProactiveSuggestion | null;
 };
 
+export type PostSessionBestSet = {
+  criterion: "Volume" | "Weight" | "Repetitions";
+  exerciseName: string;
+  setNumber: number;
+  weightKg: number;
+  repetitions: number;
+  rir: number | null;
+  volume: number;
+};
+
+export type PostSessionAdaptation = {
+  type: string;
+  label: string;
+  detail: string | null;
+};
+
+export type PostSessionExerciseSummary = {
+  exerciseSessionId: string;
+  exerciseName: string;
+  completed: boolean;
+  omitted: boolean;
+  completedSets: number;
+  missedRepetitionSets: number;
+  excessiveEffortSets: number;
+};
+
+export type PostSessionCoachSummary = {
+  sessionId: string;
+  totalExercises: number;
+  completedExercises: number;
+  omittedExercises: number;
+  completedSets: number;
+  underperformanceEvents: number;
+  excessiveEffortEvents: number;
+  adaptationsApplied: PostSessionAdaptation[];
+  bestSets: PostSessionBestSet[];
+  exercises: PostSessionExerciseSummary[];
+  notableObservations: string[];
+};
+
+export type PostSessionCoachAnswer = { answer: string };
+
 export type LiveCoachRespondResponse = {
   responseId: string;
   clientTurnId: string;

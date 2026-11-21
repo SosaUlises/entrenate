@@ -93,6 +93,9 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
             Assert.Equal(session.Id, result.Id);
             Assert.Equal(1, repository.SaveCount);
             Assert.Equal(6, session.Ejercicios.Single().RepeticionesMinimasObjetivo);
+            var audit = Assert.Single(session.AdaptacionesLiveCoach);
+            Assert.Equal(3, audit.SerieEfectivaDesde);
+            Assert.Equal(6, audit.RepeticionesMinimasNuevas);
         }
 
         [Fact]
@@ -110,6 +113,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
             await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(
                 new ApplyLivePrescriptionAdaptationCommand(proposal), CancellationToken.None));
             Assert.Equal(0, repository.SaveCount);
+            Assert.Empty(session.AdaptacionesLiveCoach);
         }
 
         private static void RegisterMissedSets(SesionEntrenamiento session)

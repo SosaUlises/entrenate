@@ -3,6 +3,7 @@ using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.TrainingSessions.DTOs;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById;
 using MediatR;
+using Entrenate.Domain.Enums;
 
 namespace Entrenate.Application.Coach.LiveCoach.Adaptation
 {
@@ -57,6 +58,17 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
 
                 session.OmitirEjercicio(change.ExerciseSessionId);
             }
+
+            session.RegistrarAdaptacionLiveCoach(
+                request.Proposal switch
+                {
+                    LiveTimeConstraintProposal => TipoAdaptacionLiveCoach.Tiempo,
+                    LiveFatigueAdaptationProposal => TipoAdaptacionLiveCoach.Fatiga,
+                    LivePerformanceAdaptationProposal => TipoAdaptacionLiveCoach.Rendimiento,
+                    LiveCombinedAdaptationProposal => TipoAdaptacionLiveCoach.Combinada,
+                    _ => throw new ConflictException("La propuesta contiene un tipo no compatible.")
+                },
+                DateTime.UtcNow);
 
             await _sessionRepository.SaveChangesAsync(cancellationToken);
             return await _sender.Send(

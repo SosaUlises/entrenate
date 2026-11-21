@@ -15,6 +15,7 @@ import {
   formatHistoryTime,
 } from "../history-formatters";
 import { TRAINING_SESSION_STATUS } from "../types/history.types";
+import { PostSessionCoachSummary } from "./post-session-coach-summary";
 
 type DetailState =
   | { status: "loading" }
@@ -70,13 +71,13 @@ export function HistoryDetailContent({ id }: { id: string }) {
           <Button className="mt-5" onClick={() => { setState({ status: "loading" }); setRequestKey((key) => key + 1); }} variant="secondary">Reintentar</Button>
         </div>
       ) : session ? (
-        <SessionDetail session={session} />
+        <SessionDetail onUnauthenticated={() => { invalidateSession(); router.replace("/login"); }} session={session} />
       ) : null}
     </section>
   );
 }
 
-function SessionDetail({ session }: { session: TrainingSession }) {
+function SessionDetail({ onUnauthenticated, session }: { onUnauthenticated: () => void; session: TrainingSession }) {
   const exercises = [...session.ejercicios].sort((first, second) => first.orden - second.orden);
   const registeredSetCount = exercises.reduce(
     (total, exercise) => total + exercise.series.filter((set) => set.completada).length,
@@ -105,6 +106,8 @@ function SessionDetail({ session }: { session: TrainingSession }) {
         <SummaryValue label="Series" value={String(registeredSetCount)} />
         <SummaryValue label="Duración" value={duration ?? "—"} />
       </dl>
+
+      {completed ? <PostSessionCoachSummary onUnauthenticated={onUnauthenticated} sessionId={session.id} /> : null}
 
       <div className="mt-10 border-t border-border/70">
         {exercises.map((exercise) => (

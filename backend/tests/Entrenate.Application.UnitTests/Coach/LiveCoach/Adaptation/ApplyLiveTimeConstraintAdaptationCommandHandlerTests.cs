@@ -35,6 +35,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
             Assert.False(session.Ejercicios.First().Omitido);
             Assert.Equal(1, repository.SaveCount);
             Assert.Equal(session.Id, result.Id);
+            var audit = Assert.Single(session.AdaptacionesLiveCoach);
+            Assert.Equal(TipoAdaptacionLiveCoach.Tiempo, audit.Tipo);
         }
 
         [Fact]
@@ -52,6 +54,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
 
             Assert.Equal(0, repository.SaveCount);
             Assert.All(session.Ejercicios, exercise => Assert.False(exercise.Omitido));
+            Assert.Empty(session.AdaptacionesLiveCoach);
         }
 
         [Fact]

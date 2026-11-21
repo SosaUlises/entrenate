@@ -120,6 +120,9 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                     .ThenInclude(x => x.Ejercicio)
                 .Include(x => x.Ejercicios.OrderBy(y => y.Orden))
                     .ThenInclude(x => x.Series.OrderBy(y => y.NumeroSerie))
+                .Include(x => x.Adaptacion)
+                    .ThenInclude(x => x!.Cambios)
+                .Include(x => x.AdaptacionesLiveCoach.OrderBy(y => y.FechaAplicacionUtc))
                 .FirstOrDefaultAsync(
                     x => x.Id == sessionId &&
                         x.UsuarioId == userId,

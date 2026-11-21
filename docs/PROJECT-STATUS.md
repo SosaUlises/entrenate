@@ -123,6 +123,14 @@
   explicit single-use confirmation, never set a target weight or alter the base
   routine, and preserve completed-set prescription snapshots for History.
 
+- Live Coach V1.3 — Post-Session Coach is closed: completed sessions expose a
+  deterministic summary derived from authoritative exercises, really completed
+  sets, historical reps/RIR snapshots, omitted exercises and applied adaptation
+  audit. History presents compact metrics and grounded observations, plus
+  provider-free structured questions about positive work, deviations, adaptations,
+  best sets and what to observe next time. No summary text or cross-session
+  conclusions are persisted.
+
 - Training / Live Coach — Exercise Skip V0 is closed:
   `EjercicioSesion` supports an explicit persisted `Omitido` state, omitted exercises
   are ignored by `CurrentPendingTrainingSetResolver`, completed series are preserved,
@@ -163,8 +171,8 @@
   when the provider reports `incomplete` due to `max_output_tokens`;
   partial answers are never returned as completed responses.
 
-- Next: Live Coach V1.2 has no known blocker; later in-session capabilities require
-  a separately approved product and technical scope.
+- Next: Live Coach V1.3 has no known blocker; later Coach capabilities require a
+  separately approved product and technical scope.
 
 ## Entrenate Coach
 
