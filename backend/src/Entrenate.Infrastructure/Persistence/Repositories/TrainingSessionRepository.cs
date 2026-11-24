@@ -1,4 +1,4 @@
-﻿using Entrenate.Application.Coach.AdaptiveTraining.DTOs;
+using Entrenate.Application.Coach.AdaptiveTraining.DTOs;
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.Coach.Progress.Analysis;
@@ -57,6 +57,7 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
             return _context.SesionesEntrenamiento
                 .Include(x => x.Ejercicios)
                     .ThenInclude(x => x.Series)
+                .Include(x => x.AdaptacionesLiveCoach)
                 .FirstOrDefaultAsync(
                     x => x.Id == sessionId &&
                         x.UsuarioId == userId,

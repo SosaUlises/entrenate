@@ -35,14 +35,18 @@ namespace Entrenate.Domain.Entidades
             int? rirMinimoAnterior = null,
             int? rirMaximoAnterior = null,
             int? rirMinimoNuevo = null,
-            int? rirMaximoNuevo = null)
+            int? rirMaximoNuevo = null,
+            Guid? id = null)
         {
             if (sesionEntrenamientoId == Guid.Empty)
                 throw new ArgumentException("La sesion es obligatoria.", nameof(sesionEntrenamientoId));
             if (fechaAplicacionUtc.Kind != DateTimeKind.Utc)
                 throw new ArgumentException("La fecha debe estar expresada en UTC.", nameof(fechaAplicacionUtc));
 
-            Id = Guid.NewGuid();
+            if (id.HasValue && id.Value != Guid.Empty)
+            {
+                Id = id.Value;
+            }
             SesionEntrenamientoId = sesionEntrenamientoId;
             Tipo = tipo;
             FechaAplicacionUtc = fechaAplicacionUtc;
