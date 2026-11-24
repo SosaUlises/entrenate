@@ -25,7 +25,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
             var handler = new ApplyLiveAdaptationCommandHandler(
                 new StubCurrentUser("user"),
                 repository,
-                new StubSender(ToDto(session)));
+                new StubSender(() => ToDto(session)));
 
             var result = await handler.Handle(
                 new ApplyLiveAdaptationCommand(proposal),
@@ -35,6 +35,9 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
             Assert.False(session.Ejercicios.First().Omitido);
             Assert.Equal(1, repository.SaveCount);
             Assert.Equal(session.Id, result.Id);
+            var omittedDto = Assert.Single(result.Ejercicios, e => e.Omitido);
+            Assert.Equal(session.Ejercicios.Last().Id, omittedDto.Id);
+            Assert.Contains(result.Ejercicios, e => !e.Omitido);
             var audit = Assert.Single(session.AdaptacionesLiveCoach);
             Assert.Equal(TipoAdaptacionLiveCoach.Tiempo, audit.Tipo);
         }
@@ -144,21 +147,49 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
                 session.HoraInicio,
                 session.HoraFin,
                 session.Estado,
-                []);
+                session.Ejercicios
+                    .OrderBy(x => x.Orden)
+                    .Select(x => new TrainingSessionExerciseDto(
+                        x.Id,
+                        x.EjercicioId,
+                        x.Ejercicio.Nombre,
+                        x.Orden,
+                        x.SeriesObjetivo,
+                        x.RepeticionesMinimasObjetivo,
+                        x.RepeticionesMaximasObjetivo,
+                        x.RirObjetivoMinimo,
+                        x.RirObjetivoMaximo,
+                        x.DescansoObjetivoSegundos,
+                        x.Notas,
+                        [],
+                        x.Omitido))
+                    .ToList());
 
         private sealed class StubCurrentUser(string userId) : ICurrentUserService
         {
             public string? UserId { get; } = userId;
         }
 
-        private sealed class StubSender(TrainingSessionDto response) : ISender
+        private sealed class StubSender : ISender
         {
+            private readonly Func<TrainingSessionDto> _responseFactory;
+
+            public StubSender(TrainingSessionDto response)
+            {
+                _responseFactory = () => response;
+            }
+
+            public StubSender(Func<TrainingSessionDto> responseFactory)
+            {
+                _responseFactory = responseFactory;
+            }
+
             public Task<TResponse> Send<TResponse>(
                 IRequest<TResponse> request,
                 CancellationToken cancellationToken = default)
             {
                 Assert.IsType<GetTrainingSessionByIdQuery>(request);
-                return Task.FromResult((TResponse)(object)response);
+                return Task.FromResult((TResponse)(object)_responseFactory());
             }
 
             public Task<object?> Send(object request, CancellationToken cancellationToken = default)

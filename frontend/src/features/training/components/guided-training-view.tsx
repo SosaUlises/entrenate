@@ -74,13 +74,17 @@ export function GuidedTrainingView({ rest, setRest, session, onDirtyChange, onFi
 
   if (!target) {
     const registeredSets = session.ejercicios.reduce((total, exercise) => total + exercise.series.length, 0);
+    const omittedExercises = session.ejercicios.filter((exercise) => exercise.omitido);
     return (
       <div className="mt-3 min-w-0 w-full">
         <TrainingProgressRail session={session} />
         <div className="mt-8 border-t border-border/50 pt-8">
           <h2 className="max-w-sm font-brand text-3xl font-bold leading-tight text-text-primary">Entrenamiento listo</h2>
           <p className="mt-3 text-[0.9375rem] font-medium leading-6 text-text-secondary">
-            {session.ejercicios.length} {session.ejercicios.length === 1 ? "ejercicio" : "ejercicios"} · {registeredSets} {registeredSets === 1 ? "serie registrada" : "series registradas"}
+            {session.ejercicios.length} {session.ejercicios.length === 1 ? "ejercicio" : "ejercicios"}
+            {omittedExercises.length > 0 ? ` (${omittedExercises.length} ${omittedExercises.length === 1 ? "omitido" : "omitidos"})` : ""}
+            {" · "}
+            {registeredSets} {registeredSets === 1 ? "serie registrada" : "series registradas"}
           </p>
           <Button className="mt-8" fullWidth onClick={onFinish} size="lg">Finalizar entrenamiento</Button>
         </div>
@@ -140,19 +144,37 @@ export function GuidedTrainingView({ rest, setRest, session, onDirtyChange, onFi
     }
   }
 
+  const omittedExercises = session.ejercicios.filter((item) => item.omitido);
+
   return (
     <div className="mt-3 flex min-h-[calc(100dvh-7.5rem)] min-w-0 w-full flex-col">
       <TrainingProgressRail session={session} />
       <div className="mt-4 min-w-0">
-        <p className="font-brand text-[0.8125rem] font-semibold leading-5 tracking-[0.08em] text-text-secondary/85">
-          EJERCICIO {String(exercisePosition).padStart(2, "0")} / {String(session.ejercicios.length).padStart(2, "0")}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-brand text-[0.8125rem] font-semibold leading-5 tracking-[0.08em] text-text-secondary/85">
+            EJERCICIO {String(exercisePosition).padStart(2, "0")} / {String(session.ejercicios.length).padStart(2, "0")}
+          </p>
+          {omittedExercises.length > 0 ? (
+            <span
+              className="text-[0.8125rem] font-semibold text-thermal-accent"
+              role="status"
+            >
+              {omittedExercises.length} {omittedExercises.length === 1 ? "omitido" : "omitidos"}
+            </span>
+          ) : null}
+        </div>
         <div className="mt-1 flex min-w-0 items-start justify-between gap-3">
           <h2 className="min-w-0 break-words font-brand text-2xl font-bold leading-[1.12] text-text-primary sm:text-[1.75rem]">{exercise.nombre}</h2>
           {hasEntrenateExerciseDemoV2(exercise.nombre) || workoutGuideIds[exercise.ejercicioId] ? (
             <GuidedTechniquePreview exerciseName={exercise.nombre} key={exercise.ejercicioId} workoutGuideId={workoutGuideIds[exercise.ejercicioId]} />
           ) : null}
         </div>
+        {omittedExercises.length > 0 ? (
+          <p className="mt-2 text-xs leading-5 text-text-secondary">
+            <span className="font-semibold text-thermal-accent">Omitidos en esta sesión:</span>{" "}
+            {omittedExercises.map((item) => item.nombre).join(", ")}
+          </p>
+        ) : null}
       </div>
 
       <GuidedSetForm
@@ -262,9 +284,16 @@ function RestView({ onAdjust, onContinue, remaining, session, showSavedNotice, t
       <div className="min-w-0 border-t border-border/50 pt-5 text-left">
         <div className="flex min-w-0 items-center justify-between gap-3">
           <p className="text-[0.8125rem] font-semibold leading-5 tracking-[0.08em] text-text-secondary/85">SIGUE</p>
-          <p className="shrink-0 font-brand text-[0.8125rem] font-semibold leading-5 tabular-nums text-text-secondary">
-            EJERCICIO {String(target.exercisePosition).padStart(2, "0")} / {String(session.ejercicios.length).padStart(2, "0")}
-          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <p className="font-brand text-[0.8125rem] font-semibold leading-5 tabular-nums text-text-secondary">
+              EJERCICIO {String(target.exercisePosition).padStart(2, "0")} / {String(session.ejercicios.length).padStart(2, "0")}
+            </p>
+            {session.ejercicios.some((item) => item.omitido) ? (
+              <span className="text-[0.8125rem] font-semibold text-thermal-accent">
+                · {session.ejercicios.filter((item) => item.omitido).length} omitidos
+              </span>
+            ) : null}
+          </div>
         </div>
         <p className="mt-2 break-words font-brand text-xl font-bold leading-tight text-text-primary">{target.exercise.nombre}</p>
         <p className="mt-1 font-brand text-[0.9375rem] font-semibold leading-5 tabular-nums text-text-secondary">

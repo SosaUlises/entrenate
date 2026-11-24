@@ -3619,6 +3619,28 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
+        [Fact]
+        public async Task Handle_WhenTimeConstraint19MinutesFitsRemainingWork_DoesNotCreatePendingAction()
+        {
+            // Session with 6 pending sets estimated to ~14 minutes
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-time-fits-19",
+                    "text",
+                    "Me quedan 19 minutos",
+                    null),
+                CancellationToken.None);
+
+            Assert.Null(result.PendingAction);
+            Assert.Equal("Con 19 minutos te alcanza para completar lo pendiente según la estimación actual.", result.Text);
+            Assert.Empty(_pendingActionStore.Actions);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
         [Theory]
         [InlineData(4)]
         [InlineData(121)]
