@@ -1,5 +1,10 @@
 # Live Coach V0
 
+This document records the original visual prototype and interaction scope.
+See [project status](../PROJECT-STATUS.md) for the shipped Live Coach V1
+capabilities and [the final E2E checklist](live-coach-v1-e2e-checklist.md) for
+closure and regression coverage.
+
 ## Vision
 
 Live Coach is a focused presence inside an active Entrenate training session.

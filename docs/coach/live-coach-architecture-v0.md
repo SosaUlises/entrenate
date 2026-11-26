@@ -2,11 +2,10 @@
 
 ## 1. Purpose and status
 
-This document defines the technical boundaries and provider-agnostic contracts
-for Live Coach V0. It is an architecture specification, not an implementation.
-
-V0 remains read-only. It does not add STT, TTS, realtime transport, provider
-integrations, tool implementations, audio persistence or backend endpoints yet.
+This document records the V0 architecture design and its original read-only
+baseline. For the shipped voice flow, confirmed Training actions and V1
+closure, see [project status](../PROJECT-STATUS.md) and the
+[final E2E checklist](live-coach-v1-e2e-checklist.md).
 
 The interaction and privacy behavior in
 `docs/coach/live-coach-v0.md` is normative. This architecture must preserve it.

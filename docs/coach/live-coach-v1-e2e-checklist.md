@@ -1,13 +1,22 @@
 # Live Coach V1 — Checklist E2E Manual Final
 
-Esta checklist permite validar de punta a punta la integración completa de Live Coach V1 (V1.0 a V1.5) en Training, culminando en su revisión en History.
+**Estado: Live Coach V1 — CLOSED.** El usuario reportó que completó el E2E
+manual de V1.0–V1.5 y verificó las correcciones detectadas durante la prueba.
+Los casos de abajo quedan como guía de regresión y describen el comportamiento
+esperado. El reporte de cierre manual es global.
+
+Correcciones verificadas según el reporte: sincronización de migraciones EF Core,
+persistencia de la auditoría de adaptaciones aplicadas, visibilidad de ejercicios
+omitidos en Guided, invalidación de sugerencias obsoletas y análisis post-sesión
+con desvíos agrupados y conteos separados de ejercicios planificados, completados
+y omitidos.
 
 ---
 
 ### A. Abrir Coach + Voz / Texto / TTS
 
 #### A1. Apertura del sheet y estado base
-- **Acción / Frase sugerida**: Tocar el botón flotante del Live Coach durante una sesión activa en Training.
+- **Acción / Frase sugerida**: Tocar el botón Live Coach en el encabezado de Training durante una sesión activa.
 - **Resultado esperado**: Se abre el modal sheet con el rostro animado en postura idle sobria, sin deformaciones ni halos, mostrando el estado listo para escuchar.
 - **Qué valida**: Ciclo de vida del sheet modal, montaje del componente sin estados stale y jerarquía visual base.
 
@@ -50,7 +59,7 @@ Esta checklist permite validar de punta a punta la integración completa de Live
 - **Qué valida**: Edición de propuesta pendiente en memoria efímera sin persistir en BD antes de confirmar.
 
 #### C3. Confirmación explícita y auto-rest
-- **Acción / Frase sugerida**: *"Sí"* (o presionar botón "Confirmar").
+- **Acción / Frase sugerida**: *"Sí"* (o presionar «Registrar serie»).
 - **Resultado esperado**: La serie se persiste en Training, se actualiza `updatedSession`, se consume la acción pendiente (single-use) y se inicia automáticamente el timer con el descanso prescripto.
 - **Qué valida**: Persistencia autoritativa en base de datos, protección single-use, sincronización de Training y auto-rest coordinado.
 
@@ -85,7 +94,7 @@ Esta checklist permite validar de punta a punta la integración completa de Live
 #### E2. Volver al ejercicio actual
 - **Acción / Frase sugerida**: *"Volvé al actual"* (o *"¿Dónde tengo que seguir?"*).
 - **Resultado esperado**: La interfaz de Training vuelve automáticamente al ejercicio con trabajo pendiente.
-- **Qué valida**: Acción cliente `ReturnToCurrentExercise` determinística y sincronización visual hacia el target autoritativo.
+- **Qué valida**: Intent determinístico `ReturnToCurrentExercise` y navegación visual mediante `NavigateToExercise` hacia el ejercicio pendiente autoritativo.
 
 ---
 
@@ -126,8 +135,12 @@ Esta checklist permite validar de punta a punta la integración completa de Live
 
 #### H1. Sugerencia proactiva no invasiva
 - **Acción / Frase sugerida**: Dejar transcurrir el descanso 60 segundos por encima de la prescripción (o registrar dos series consecutivas por debajo del rango de reps).
-- **Resultado esperado**: Aparece un pill/banner de sugerencia proactiva en el sheet/Training de forma silenciosa (sin auto-TTS ni mutación automática), con botón de acción y botón "Ahora no".
+- **Resultado esperado**: Aparece una sugerencia silenciosa en Live Coach, con «Ahora no» y una acción cuando corresponde. La sugerencia respeta la elegibilidad del trabajo pendiente.
 - **Qué valida**: Motor proactivo determinístico V1.1, prioridad de señales, no intrusión auditiva y supresión si hay mutación/clarificación en curso.
+
+#### H2. Invalidación de una sugerencia obsoleta
+- **Acción**: Aplicar una adaptación que omita ejercicios futuros y completar las últimas series pendientes.
+- **Resultado esperado**: Guided muestra «Entrenamiento listo» con el conteo de omitidos y retira «Revisar prescripción». Durante el entrenamiento, los omitidos están disponibles para consulta en Guided. La finalización permanece manual.
 
 ---
 
@@ -147,7 +160,7 @@ Esta checklist permite validar de punta a punta la integración completa de Live
 - **Qué valida**: Orquestación determinística de adaptaciones (`LiveAdaptationOrchestrator`), preservación del ejercicio actual y requisito de confirmación.
 
 #### I2. Cancelación segura
-- **Acción / Frase sugerida**: *"No, dejalo así"* (o tocar "Cancelar").
+- **Acción / Frase sugerida**: *"No, dejalo así"* (o tocar "Mantener sesión").
 - **Resultado esperado**: Responde "Listo, mantengo la sesión sin cambios.", descarta la propuesta efímera y no altera el plan de entrenamiento.
 - **Qué valida**: Inmutabilidad de la sesión ante descarte y limpieza segura de pending actions.
 
@@ -157,7 +170,7 @@ Esta checklist permite validar de punta a punta la integración completa de Live
 
 #### J1. Propuesta de adaptación de prescripción
 - **Acción / Frase sugerida**: Presionar el botón de sugerencia proactiva por rendimiento o decir: *"Ajustame las repeticiones"*.
-- **Resultado esperado**: El Coach propone reducir el rango de repeticiones en 2 reps (piso 4) o aumentar RIR en 1 para las series futuras, sin alterar el peso objetivo y solicitando confirmación.
+- **Resultado esperado**: El Coach propone reducir el rango de repeticiones en 2 reps (piso 4) o aumentar el RIR en 1 para las series pendientes (tope RIR 5). La propuesta pide confirmación y solo modifica reps o RIR.
 - **Qué valida**: Reglas seguras de adaptación de prescripción (V1.2), cálculo determinístico y alcance acotado a series futuras.
 
 #### J2. Confirmación y preservación de snapshots
@@ -194,10 +207,10 @@ Esta checklist permite validar de punta a punta la integración completa de Live
 
 #### M1. Resumen post-sesión en History
 - **Acción / Frase sugerida**: Abrir la tarjeta de Post-Session Coach en el detalle de la sesión finalizada recién completada.
-- **Resultado esperado**: Muestra métricas reales consolidadas (series completadas, ejercicios omitidos presentados por separado, desvíos y adaptaciones aplicadas auditadas).
+- **Resultado esperado**: Historial distingue ejercicios planificados, completados y omitidos. El resumen agrupa desvíos entre ejercicios y destaca hasta tres, junto con las adaptaciones aplicadas que tienen auditoría.
 - **Qué valida**: Motor post-sesión determinístico (`PostSessionCoachSummaryEngine`), reporte grounded sin texto efímero inventado y omisión de propuestas canceladas.
 
 #### M2. Preguntas interactivas post-sesión
-- **Acción / Frase sugerida**: Tocar las preguntas estructuradas del resumen: *"¿Qué fue lo mejor hoy?"*, *"¿Qué desvíos hubo?"* y *"¿Qué adaptaciones se aplicaron?"*.
-- **Resultado esperado**: Responde instantáneamente con información determinística (`provider = 0`) calculada directamente sobre las series y adaptaciones registradas.
-- **Qué valida**: Consultas post-sesión read-only (`AnswerPostSessionCoachQuery`), cero alucinaciones LLM y verificación de los best sets por peso, reps y volumen.
+- **Acción / Frase sugerida**: Tocar «¿Cómo me fue hoy?», «¿Qué salió bien?», «¿Dónde rendí peor?», «¿Qué adaptaciones hicimos?» y «¿Qué debería mirar la próxima vez?».
+- **Resultado esperado**: Cada pregunta responde a su propósito con datos de las series y adaptaciones registradas.
+- **Qué valida**: Consultas determinísticas de solo lectura (`AnswerPostSessionCoachQuery`, `provider = 0`).
