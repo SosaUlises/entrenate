@@ -37,25 +37,50 @@ namespace Entrenate.Application.Coach.LiveCoach.PostSession
 
         private static PostSessionExerciseSummaryDto CreateExerciseSummary(EjercicioSesion exercise)
         {
-            var targetSets = exercise.Series
-                .Where(set => set.EstaRealmenteCompletada() &&
-                    set.NumeroSerie >= 1 && set.NumeroSerie <= exercise.SeriesObjetivo)
+            var completedSets = exercise.Series
+                .Where(set => set.EstaRealmenteCompletada())
                 .GroupBy(set => set.NumeroSerie)
                 .Select(group => group.OrderByDescending(set => set.FechaHoraRegistro).First())
                 .ToArray();
-            var missed = targetSets.Count(set => set.Repeticiones <
-                (set.RepeticionesObjetivoMinimas ?? exercise.RepeticionesMinimasObjetivo));
-            var effort = targetSets.Count(set => set.Rir.HasValue && set.Rir.Value <
-                (set.RirObjetivoMinimo ?? exercise.RirObjetivoMinimo));
-
-            return new(
+            var targetSetCount = completedSets.Count(IsPlannedSet);
+            var summary = new PostSessionExerciseSummaryDto(
                 exercise.Id,
                 exercise.Ejercicio.Nombre,
-                targetSets.Length == exercise.SeriesObjetivo,
+                !exercise.Omitido && targetSetCount == exercise.SeriesObjetivo,
                 exercise.Omitido,
-                targetSets.Length,
-                missed,
-                effort);
+                targetSetCount,
+                0, 0, 0, 0, 0, 0, 0);
+            if (exercise.Omitido)
+                return summary;
+
+            // Older planned sets can lack snapshots. Extra sets need recorded targets to be assessed.
+            var evidence = completedSets.Select(set =>
+            {
+                var planned = IsPlannedSet(set);
+                int? repMin = set.RepeticionesObjetivoMinimas ?? (planned ? exercise.RepeticionesMinimasObjetivo : null);
+                int? repMax = set.RepeticionesObjetivoMaximas ?? (planned ? exercise.RepeticionesMaximasObjetivo : null);
+                int? rirMin = set.RirObjetivoMinimo ?? (planned ? exercise.RirObjetivoMinimo : null);
+                var repShortfall = repMin is int min ? Math.Max(0, min - set.Repeticiones) : 0;
+                var rirShortfall = rirMin is int target && set.Rir is int rir ? Math.Max(0, target - rir) : 0;
+                return (
+                    Assessed: repMin.HasValue || (rirMin.HasValue && set.Rir.HasValue),
+                    RepShortfall: repShortfall,
+                    RirShortfall: rirShortfall,
+                    RepTargetMet: repMin <= set.Repeticiones && set.Repeticiones <= repMax);
+            }).Where(set => set.Assessed).ToArray();
+
+            return summary with
+            {
+                MissedRepetitionSets = evidence.Count(set => set.RepShortfall > 0),
+                ExcessiveEffortSets = evidence.Count(set => set.RirShortfall > 0),
+                AssessedSets = evidence.Length,
+                AffectedSets = evidence.Count(set => set.RepShortfall > 0 || set.RirShortfall > 0),
+                MaxRepetitionShortfall = evidence.Select(set => set.RepShortfall).DefaultIfEmpty().Max(),
+                MaxRirShortfall = evidence.Select(set => set.RirShortfall).DefaultIfEmpty().Max(),
+                RepetitionTargetMetSets = evidence.Count(set => set.RepTargetMet)
+            };
+
+            bool IsPlannedSet(SerieEntrenamiento set) => set.NumeroSerie >= 1 && set.NumeroSerie <= exercise.SeriesObjetivo;
         }
 
         private static IEnumerable<PostSessionAdaptationDto> CreateAdaptations(SesionEntrenamiento session)
@@ -116,23 +141,25 @@ namespace Entrenate.Application.Coach.LiveCoach.PostSession
             IReadOnlyCollection<PostSessionExerciseSummaryDto> exercises,
             IReadOnlyCollection<PostSessionAdaptationDto> adaptations)
         {
-            var worst = exercises.OrderByDescending(item => item.MissedRepetitionSets)
-                .ThenByDescending(item => item.ExcessiveEffortSets).FirstOrDefault();
-            if (worst is not null && worst.MissedRepetitionSets > 0)
-                yield return $"En {worst.ExerciseName} quedaste por debajo del rango objetivo en {FormatSets(worst.MissedRepetitionSets)}.";
-            else if (worst is not null && worst.ExcessiveEffortSets > 0)
-                yield return $"En {worst.ExerciseName}, {FormatSets(worst.ExcessiveEffortSets)} tuvieron un RIR menor al prescripto.";
+            var ranked = PostSessionDeviationReview.Rank(exercises);
+            if (ranked.Length > 0)
+            {
+                var names = string.Join(", ", ranked.Take(PostSessionDeviationReview.HighlightLimit).Select(item => item.ExerciseName));
+                yield return $"{PostSessionDeviationReview.DescribePattern(ranked)} " +
+                    (ranked.Length > PostSessionDeviationReview.HighlightLimit ? $"Entre ellos: {names}." : $"Ejercicios: {names}.");
+            }
 
             var prescription = adaptations.FirstOrDefault(item => item.Type == "PrescriptionAdaptation");
             if (prescription?.Detail is not null)
                 yield return prescription.Detail;
             if (exercises.Any(item => item.Omitted))
                 yield return $"Omitiste {FormatExercises(exercises.Count(item => item.Omitted))}; se reportan por separado del rendimiento.";
-            if (exercises.All(item => item.MissedRepetitionSets == 0 && item.ExcessiveEffortSets == 0))
-                yield return "No hubo desvíos relevantes respecto de la prescripción registrada.";
+            if (ranked.Length == 0)
+                yield return exercises.Any(item => item.AssessedSets > 0)
+                    ? PostSessionDeviationReview.DescribePattern(ranked)
+                    : "No hay series evaluables contra la prescripción.";
         }
 
-        private static string FormatSets(int count) => count == 1 ? "1 serie" : $"{count} series";
         private static string FormatExercises(int count) => count == 1 ? "1 ejercicio" : $"{count} ejercicios";
     }
 }

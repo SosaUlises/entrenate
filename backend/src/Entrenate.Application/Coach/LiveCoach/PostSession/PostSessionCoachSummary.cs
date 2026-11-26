@@ -21,7 +21,12 @@ namespace Entrenate.Application.Coach.LiveCoach.PostSession
         bool Omitted,
         int CompletedSets,
         int MissedRepetitionSets,
-        int ExcessiveEffortSets);
+        int ExcessiveEffortSets,
+        int AssessedSets,
+        int AffectedSets,
+        int MaxRepetitionShortfall,
+        int MaxRirShortfall,
+        int RepetitionTargetMetSets);
 
     public sealed record PostSessionCoachSummaryDto(
         Guid SessionId,

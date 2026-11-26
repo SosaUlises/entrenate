@@ -84,9 +84,9 @@ export function PostSessionCoachSummary({
       </div>
 
       <dl className="mt-5 grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-4">
-        <Metric label="Ejercicios" value={`${summary.completedExercises}/${summary.totalExercises}`} />
+        <Metric label="Ejercicios completados" value={String(summary.completedExercises)} />
         <Metric label="Series" value={String(summary.completedSets)} />
-        <Metric label="Omitidos" value={String(summary.omittedExercises)} />
+        <Metric label="Ejercicios omitidos" value={String(summary.omittedExercises)} />
         <Metric label="Ajustes" value={String(summary.adaptationsApplied.length)} />
       </dl>
 

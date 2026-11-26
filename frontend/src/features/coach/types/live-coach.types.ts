@@ -70,6 +70,11 @@ export type PostSessionExerciseSummary = {
   completedSets: number;
   missedRepetitionSets: number;
   excessiveEffortSets: number;
+  assessedSets: number;
+  affectedSets: number;
+  maxRepetitionShortfall: number;
+  maxRirShortfall: number;
+  repetitionTargetMetSets: number;
 };
 
 export type PostSessionCoachSummary = {

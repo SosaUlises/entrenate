@@ -102,7 +102,7 @@ function SessionDetail({ onUnauthenticated, session }: { onUnauthenticated: () =
       </header>
 
       <dl className="mt-7 grid grid-cols-3 divide-x divide-border/70 border-y border-border/70 py-5">
-        <SummaryValue label="Ejercicios" value={String(exercises.length)} />
+        <SummaryValue label="Ejercicios planificados" value={String(exercises.length)} />
         <SummaryValue label="Series" value={String(registeredSetCount)} />
         <SummaryValue label="Duración" value={duration ?? "—"} />
       </dl>
