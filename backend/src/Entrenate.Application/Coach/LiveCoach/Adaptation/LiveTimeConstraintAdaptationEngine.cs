@@ -34,7 +34,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
             var pending = session.Ejercicios
                 .Where(exercise => !exercise.Omitido)
                 .OrderBy(exercise => exercise.Orden)
-                .Select(ToPendingExercise)
+                .Select(exercise => ToPendingExercise(exercise, includeName: true))
                 .Where(exercise => exercise.PendingSets > 0)
                 .ToList();
             var beforeSeconds = EstimateSeconds(pending);
@@ -101,7 +101,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
                     !exercise.Omitido &&
                     !additionallyOmitted.Contains(exercise.Id))
                 .OrderBy(exercise => exercise.Orden)
-                .Select(ToPendingExercise)
+                .Select(exercise => ToPendingExercise(exercise, includeName: false))
                 .Where(exercise => exercise.PendingSets > 0)
                 .ToList();
 
@@ -131,22 +131,25 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
             }
         }
 
-        private static PendingExercise ToPendingExercise(EjercicioSesion exercise)
+        private static PendingExercise ToPendingExercise(EjercicioSesion exercise, bool includeName)
         {
-            var completedSets = exercise.Series
+            var pendingSets = CountPendingSets(exercise);
+
+            return new PendingExercise(
+                exercise.Id,
+                includeName ? exercise.Ejercicio.Nombre : string.Empty,
+                exercise.Orden,
+                exercise.SeriesObjetivo - pendingSets,
+                pendingSets,
+                exercise.DescansoObjetivoSegundos);
+        }
+
+        internal static int CountPendingSets(EjercicioSesion exercise)
+            => exercise.SeriesObjetivo - exercise.Series
                 .Where(set => set.EstaRealmenteCompletada())
                 .Select(set => set.NumeroSerie)
                 .Distinct()
                 .Count(number => number >= 1 && number <= exercise.SeriesObjetivo);
-
-            return new PendingExercise(
-                exercise.Id,
-                exercise.Ejercicio.Nombre,
-                exercise.Orden,
-                completedSets,
-                Math.Max(0, exercise.SeriesObjetivo - completedSets),
-                exercise.DescansoObjetivoSegundos);
-        }
 
         private static int EstimateSeconds(IReadOnlyCollection<PendingExercise> exercises)
         {

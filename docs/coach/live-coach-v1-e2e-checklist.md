@@ -1,6 +1,6 @@
 # Live Coach V1 — Checklist E2E Manual Final
 
-Esta checklist permite validar de punta a punta la integración completa de Live Coach V1 (V1.0 a V1.4) en una única sesión de entrenamiento activa en Training, culminando en su revisión en History.
+Esta checklist permite validar de punta a punta la integración completa de Live Coach V1 (V1.0 a V1.5) en Training, culminando en su revisión en History.
 
 ---
 
@@ -132,6 +132,14 @@ Esta checklist permite validar de punta a punta la integración completa de Live
 ---
 
 ### I. Time / Fatigue / Performance / Combined Adaptation
+
+#### Transparencia de ajustes (V1.5)
+
+- Revisá por voz y texto el motivo, el recorte y las series pendientes antes de confirmar. Expandí el detalle y compará la prescripción de cada ejercicio conservado. Una omisión anterior debe aparecer como «Ya omitido».
+- Para tiempo, compará el límite informado y la estimación antes/después. Para fatiga, verificá que el motivo se atribuya al cansancio informado. Para rendimiento y señales combinadas, contrastá la evidencia citada con el registro real.
+- Para prescripción, verificá repeticiones y RIR antes/después y la serie desde la que aplica. Las series registradas conservan sus objetivos históricos.
+- Aplicá por voz y con el botón. Compará lo que se aplicó, el total pendiente, la próxima serie y sus objetivos con Training. Si no quedan series, verificá que la finalización siga siendo manual.
+- Cancelá o dejá vencer otra propuesta y verificá que no haya cambios ni mensaje de aplicación exitosa.
 
 #### I1. Señal combinada o de tiempo
 - **Acción / Frase sugerida**: *"Me quedan 15 minutos y estoy muy cansado"*.

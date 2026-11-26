@@ -20,7 +20,9 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
         public async Task Handle_WhenProposalIsCurrent_OmitsAllChangesAndSavesOnce()
         {
             var session = CreateSession();
-            var proposal = CreateProposal(session);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 8, 1, DateTime.UtcNow);
+            session.OmitirEjercicio(session.Ejercicios.ElementAt(1).Id);
+            var proposal = CreateProposal(session) with { EstimatedMinutesAfter = 99 };
             var repository = new FakeRepository(session);
             var handler = new ApplyLiveAdaptationCommandHandler(
                 new StubCurrentUser("user"),
@@ -34,12 +36,33 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
             Assert.True(session.Ejercicios.Last().Omitido);
             Assert.False(session.Ejercicios.First().Omitido);
             Assert.Equal(1, repository.SaveCount);
-            Assert.Equal(session.Id, result.Id);
-            var omittedDto = Assert.Single(result.Ejercicios, e => e.Omitido);
-            Assert.Equal(session.Ejercicios.Last().Id, omittedDto.Id);
-            Assert.Contains(result.Ejercicios, e => !e.Omitido);
+            Assert.Equal(session.Id, result.UpdatedSession.Id);
+            Assert.Contains("Omití Curl.", result.Text);
+            Assert.DoesNotContain("Remo", result.Text);
+            Assert.Contains("Quedan 2 series. Sigue Press, serie 2, 8 a 10 repeticiones y RIR 1 a 2.", result.Text);
+            Assert.Contains("Tiempo pendiente estimado: 3 min.", result.Text);
+            Assert.Equal(2, result.UpdatedSession.Ejercicios.Count(exercise => exercise.Omitido));
+            Assert.Contains(result.UpdatedSession.Ejercicios,
+                exercise => exercise.Id == session.Ejercicios.Last().Id && exercise.Omitido);
+            Assert.Contains(result.UpdatedSession.Ejercicios, exercise => !exercise.Omitido);
             var audit = Assert.Single(session.AdaptacionesLiveCoach);
             Assert.Equal(TipoAdaptacionLiveCoach.Tiempo, audit.Tipo);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNoWorkRemains_LeavesFinalizationToTraining()
+        {
+            var session = CreateSession();
+            foreach (var exercise in session.Ejercicios.Take(2))
+                for (var number = 1; number <= 3; number++)
+                    exercise.RegistrarOActualizarSerie(number, 100, 8, 1, DateTime.UtcNow);
+            var repository = new FakeRepository(session);
+
+            var result = await CreateHandler(repository, session).Handle(
+                new ApplyLiveAdaptationCommand(CreateProposal(session)), CancellationToken.None);
+
+            Assert.Contains("No quedan series pendientes. Podés finalizar el entrenamiento.", result.Text);
+            Assert.Equal(EstadoSesionEntrenamiento.EnCurso, session.Estado);
         }
 
         [Fact]

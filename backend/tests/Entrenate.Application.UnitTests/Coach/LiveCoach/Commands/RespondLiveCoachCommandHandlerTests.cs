@@ -3003,7 +3003,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         [Fact]
         public async Task Handle_WhenTimeConstraintNeedsCut_CreatesPendingAdaptationWithoutMutatingSession()
         {
-            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            var session = CreateMultiExerciseSession(("Press", 3), ("Curl", 3), ("Remo", 3));
+            session.OmitirEjercicio(session.Ejercicios.ElementAt(1).Id);
             _sessionRepository.Sessions[session.Id] = session;
 
             var result = await _handler.Handle(
@@ -3020,6 +3021,14 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
             var proposal = Assert.IsType<LiveTimeConstraintProposal>(action.AdaptationProposal);
             Assert.Equal(8, proposal.RequestedRemainingMinutes);
+            var preview = Assert.IsType<LiveAdaptationPreview>(result.PendingAction.AdaptationPreview);
+            Assert.Equal(proposal.EstimatedMinutesBefore, preview.MinutesBefore);
+            Assert.Equal(proposal.EstimatedMinutesAfter, preview.MinutesAfter);
+            Assert.Equal(3, preview.PendingSets);
+            Assert.Collection(preview.Exercises,
+                exercise => Assert.Equal("retained", exercise.Status),
+                exercise => Assert.Equal("alreadyOmitted", exercise.Status),
+                exercise => Assert.Equal("newlyOmitted", exercise.Status));
             Assert.False(session.Ejercicios.Last().Omitido);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
@@ -3136,6 +3145,10 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.NotNull(result.PendingAction);
             Assert.Equal(LiveCoachActionTypes.ApplyFatigueAdaptation, result.PendingAction.Type);
+            var preview = Assert.IsType<LiveAdaptationPreview>(result.PendingAction.AdaptationPreview);
+            Assert.Contains("cansancio", preview.Explanation);
+            Assert.Contains(preview.Exercises, exercise => exercise.Status == "retained");
+            Assert.Contains(preview.Exercises, exercise => exercise.Status == "newlyOmitted");
             var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
             var proposal = Assert.IsType<LiveFatigueAdaptationProposal>(action.AdaptationProposal);
             Assert.Equal(expectedSeverity, proposal.FatigueSeverity);
@@ -3231,6 +3244,32 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         [Fact]
+        public void PerformancePreview_ExplainsRecordedEvidenceAndKeepsCompletedWorkSeparate()
+        {
+            var session = CreateMultiExerciseSession(("Press", 1), ("Remo", 3), ("Curl", 3));
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 80, 8, 1, DateTime.UtcNow);
+            var curl = session.Ejercicios.Last();
+            var now = DateTime.UtcNow;
+            var proposal = new LivePerformanceAdaptationProposal(
+                Guid.NewGuid(), "user", session.Id, now, now.AddSeconds(45),
+                LivePerformanceSignalType.MissedRepetitions,
+                new LivePerformanceEvidence(6, 1, 8, 10, 1, 2, true, false),
+                LiveTimeConstraintFingerprint.Create(session),
+                [new(LiveAdaptationChangeType.OmitExercise, curl.Id, "Curl")],
+                "Ajuste por rendimiento");
+
+            var preview = Assert.IsType<LiveAdaptationPreview>(
+                LiveAdaptationTransparency.Preview(session, proposal, null));
+
+            Assert.Contains("6 repeticiones para un objetivo de 8 a 10", preview.Explanation);
+            Assert.Equal(3, preview.PendingSets);
+            Assert.Collection(preview.Exercises,
+                exercise => Assert.Equal("completed", exercise.Status),
+                exercise => Assert.Equal("retained", exercise.Status),
+                exercise => Assert.Equal("newlyOmitted", exercise.Status));
+        }
+
+        [Fact]
         public async Task Handle_WhenPerformanceIsBelowPrescription_CreatesPrescriptionProposalWithoutProvider()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
@@ -3245,6 +3284,11 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.NotNull(result.PendingAction);
             Assert.Equal(LiveCoachActionTypes.ApplyPrescriptionAdaptation, result.PendingAction.Type);
+            var preview = Assert.IsType<LiveAdaptationPreview>(result.PendingAction.AdaptationPreview);
+            var change = Assert.IsType<LiveAdaptationPrescriptionChange>(preview.PrescriptionChange);
+            Assert.NotEqual(change.Before, change.After);
+            Assert.Equal(3, change.FromSet);
+            Assert.Contains(preview.Exercises, exercise => exercise.Name == change.ExerciseName && exercise.Target == change.After);
             var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
             var proposal = Assert.IsType<LivePrescriptionAdaptationProposal>(action.PrescriptionAdaptationProposal);
             Assert.Equal(6, proposal.NewRepMin);
@@ -3382,6 +3426,10 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.NotNull(result.PendingAction);
             Assert.Equal(LiveCoachActionTypes.ApplyCombinedAdaptation, result.PendingAction.Type);
+            var preview = Assert.IsType<LiveAdaptationPreview>(result.PendingAction.AdaptationPreview);
+            Assert.Contains("minutos disponibles", preview.Explanation);
+            Assert.Contains("cansancio", preview.Explanation);
+            Assert.True(preview.MinutesAfter < preview.MinutesBefore);
             Assert.Single(_pendingActionStore.Actions);
             var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
             var proposal = Assert.IsType<LiveCombinedAdaptationProposal>(action.AdaptationProposal);

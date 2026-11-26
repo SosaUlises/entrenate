@@ -132,6 +132,36 @@ export type LiveCoachPendingAction = {
     | "ApplyPrescriptionAdaptation";
   summary: string;
   expiresAtUtc: string;
+  adaptationPreview?: LiveAdaptationPreview | null;
+};
+
+export type LiveAdaptationTarget = {
+  repMin: number;
+  repMax: number;
+  rirMin: number;
+  rirMax: number;
+};
+
+export type LiveAdaptationPreview = {
+  title: string;
+  explanation: string;
+  pendingSets: number;
+  minutesBefore: number | null;
+  minutesAfter: number | null;
+  exercises: {
+    id: string;
+    name: string;
+    status: "retained" | "completed" | "newlyOmitted" | "alreadyOmitted";
+    pendingSets: number;
+    target: LiveAdaptationTarget;
+    restSeconds: number;
+  }[];
+  prescriptionChange: {
+    exerciseName: string;
+    fromSet: number;
+    before: LiveAdaptationTarget;
+    after: LiveAdaptationTarget;
+  } | null;
 };
 
 export type LiveCoachActionConfirmation = {

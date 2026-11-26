@@ -90,7 +90,9 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
             var result = await handler.Handle(
                 new ApplyLivePrescriptionAdaptationCommand(proposal), CancellationToken.None);
 
-            Assert.Equal(session.Id, result.Id);
+            Assert.Equal(session.Id, result.UpdatedSession.Id);
+            Assert.Contains("desde la serie 3 quedó en 6 a 8 repeticiones y RIR 1 a 2", result.Text);
+            Assert.Contains("Quedan 2 series. Sigue Hip Thrust, serie 3", result.Text);
             Assert.Equal(1, repository.SaveCount);
             Assert.Equal(6, session.Ejercicios.Single().RepeticionesMinimasObjetivo);
             var audit = Assert.Single(session.AdaptacionesLiveCoach);

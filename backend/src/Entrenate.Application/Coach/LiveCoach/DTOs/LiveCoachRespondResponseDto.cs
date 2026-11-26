@@ -1,4 +1,5 @@
 using System;
+using Entrenate.Application.Coach.LiveCoach.Adaptation;
 using Entrenate.Application.TrainingSessions.DTOs;
 
 namespace Entrenate.Application.Coach.LiveCoach.DTOs
@@ -36,6 +37,7 @@ namespace Entrenate.Application.Coach.LiveCoach.DTOs
         Guid ActionId,
         string Type,
         string Summary,
-        DateTime ExpiresAtUtc);
+        DateTime ExpiresAtUtc,
+        LiveAdaptationPreview? AdaptationPreview = null);
 }
 

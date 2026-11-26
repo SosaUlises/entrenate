@@ -261,7 +261,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                             : IsAdaptationAction(activePendingAction.Type)
                                 ? "¿Querés aplicar el ajuste? Decime sí o no."
                             : "¿Querés saltarlo? Decime sí o no.",
-                        ToDto(activePendingAction));
+                        ToDto(activePendingAction, session));
                 }
 
                 var patchExtraction = _setActionExtractor.ExtractPatch(request.Text);
@@ -277,7 +277,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     return CreateDirectResponse(
                         request.ClientTurnId,
                         invalidText,
-                        ToDto(activePendingAction));
+                        ToDto(activePendingAction, session));
                 }
 
                 if (patchExtraction.Status == LiveCoachPendingSetPatchStatus.Ambiguous ||
@@ -286,7 +286,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                     return CreateDirectResponse(
                         request.ClientTurnId,
                         "¿Querés cambiar el peso, las repeticiones o el RIR?",
-                        ToDto(activePendingAction));
+                        ToDto(activePendingAction, session));
                 }
 
                 var currentSet = CurrentPendingTrainingSetResolver.Resolve(session);
@@ -312,7 +312,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                         "La propuesta ya no está vigente. Decime nuevamente cómo salió la serie.");
                 }
 
-                var updatedDto = ToDto(update.Action);
+                var updatedDto = ToDto(update.Action, session);
                 return CreateDirectResponse(
                     request.ClientTurnId,
                     $"Perfecto: {updatedDto.Summary}. ¿La registro?",
@@ -515,7 +515,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 return CreateDirectResponse(
                     request.ClientTurnId,
                     "¿Querés saltarlo? Decime sí o no.",
-                    ToDto(activePendingAction));
+                    ToDto(activePendingAction, session));
             }
 
             if (routing.Kind == LiveCoachIntentKind.PendingActionClarification &&
@@ -524,7 +524,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 return CreateDirectResponse(
                     request.ClientTurnId,
                     "¿Querés reactivarlo? Decime sí o no.",
-                    ToDto(activePendingAction));
+                    ToDto(activePendingAction, session));
             }
 
             if (routing.Kind == LiveCoachIntentKind.PendingActionClarification &&
@@ -534,7 +534,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 return CreateDirectResponse(
                     request.ClientTurnId,
                     "¿Querés aplicar el ajuste? Decime sí o no.",
-                    ToDto(activePendingAction));
+                    ToDto(activePendingAction, session));
             }
 
             if (!string.IsNullOrWhiteSpace(routing.DirectAnswer))
@@ -542,7 +542,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 return CreateDirectResponse(
                     request.ClientTurnId,
                     routing.DirectAnswer,
-                    activePendingAction is null ? null : ToDto(activePendingAction));
+                    activePendingAction is null ? null : ToDto(activePendingAction, session));
             }
 
             // 3. Authorized context projection
@@ -973,7 +973,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             return CreateDirectResponse(
                 clientTurnId,
                 $"Te quedan {pendingSetCount} {seriesLabel} de {exerciseName}. ¿Querés saltarlo igual?",
-                ToDto(action));
+                ToDto(action, session));
         }
 
         private LiveCoachRespondResponseDto CreateTimeConstraintAdaptationResponse(
@@ -1051,7 +1051,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 ? $"Para acercarnos a {remainingMinutes} minutos puedo mantener {current.ExerciseSession.Ejercicio.Nombre} y omitir {omittedNames}. Lo pendiente pasaría de ~{result.EstimatedMinutesBefore} a ~{result.EstimatedMinutesAfter} minutos. ¿Querés aplicar este ajuste?"
                 : $"Sin recortar {current.ExerciseSession.Ejercicio.Nombre}, puedo omitir {omittedNames}. Lo pendiente pasaría de ~{result.EstimatedMinutesBefore} a ~{result.EstimatedMinutesAfter} minutos. ¿Querés aplicar este ajuste?";
 
-            return CreateDirectResponse(clientTurnId, text, ToDto(action));
+            return CreateDirectResponse(clientTurnId, text, ToDto(action, session));
         }
 
         private LiveCoachRespondResponseDto CreateFatigueAdaptationResponse(
@@ -1113,7 +1113,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 ? $"Como me dijiste que estás muy cansado, puedo mantener el ejercicio actual y omitir {omittedNames}. ¿Querés aplicar este ajuste?"
                 : $"Como me dijiste que estás cansado, puedo mantener {result.CurrentExerciseName} y omitir {omittedNames}. ¿Querés aplicar este ajuste?";
 
-            return CreateDirectResponse(clientTurnId, text, ToDto(action));
+            return CreateDirectResponse(clientTurnId, text, ToDto(action, session));
         }
 
         private LiveCoachRespondResponseDto CreatePerformanceAdaptationResponse(
@@ -1158,7 +1158,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             var proposalText = signalType == LivePerformanceSignalType.ExcessiveEffort
                 ? $"Las últimas dos series quedaron más cerca del fallo de lo previsto. Puedo ajustar las series pendientes de {proposal.ExerciseName} de RIR {proposal.PreviousRirMin}–{proposal.PreviousRirMax} a RIR {proposal.NewRirMin}–{proposal.NewRirMax}. ¿Querés aplicar este ajuste?"
                 : $"Las últimas dos series quedaron por debajo del objetivo. Puedo ajustar las series pendientes de {proposal.ExerciseName} de {proposal.PreviousRepMin}–{proposal.PreviousRepMax} a {proposal.NewRepMin}–{proposal.NewRepMax} repeticiones. ¿Querés aplicar este ajuste?";
-            return CreateDirectResponse(clientTurnId, proposalText, ToDto(action));
+            return CreateDirectResponse(clientTurnId, proposalText, ToDto(action, session));
         }
 
         private LiveCoachRespondResponseDto CreateCombinedAdaptationResponse(
@@ -1241,7 +1241,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 ? $" Lo pendiente quedaría en ~{result.EstimatedMinutesAfter} minutos."
                 : string.Empty;
             var text = $"{reasons}, puedo mantener {result.CurrentExerciseName} y omitir {omittedNames}.{timeResult} ¿Querés aplicar este ajuste?";
-            return CreateDirectResponse(clientTurnId, text, ToDto(action));
+            return CreateDirectResponse(clientTurnId, text, ToDto(action, session));
         }
 
         private LiveCoachRespondResponseDto CreateReactivateExerciseResponse(
@@ -1300,7 +1300,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
             return CreateDirectResponse(
                 clientTurnId,
                 $"{exerciseName} está omitido. ¿Querés reactivarlo?",
-                ToDto(action));
+                ToDto(action, session));
         }
 
         private LiveCoachRespondResponseDto CreateExerciseNavigationResponse(
@@ -1551,7 +1551,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                         clientTurnId,
                         pending && !prescriptionWasApplied ? $"El ajuste propone este cambio: {changeText}" : changeText,
                         pendingAction: pending && pendingLookup.Action is not null
-                            ? ToDto(pendingLookup.Action)
+                            ? ToDto(pendingLookup.Action, session)
                             : null);
                 }
 
@@ -1604,7 +1604,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                         ? $"Omití {names} en esta sesión."
                         : $"El ajuste propone omitir {names}.",
                     pendingAction: isPending && pendingLookup.Action is not null
-                        ? ToDto(pendingLookup.Action)
+                        ? ToDto(pendingLookup.Action, session)
                         : null);
             }
 
@@ -1852,13 +1852,16 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 clarification);
         }
 
-        private static PendingLiveCoachActionDto ToDto(PendingLiveCoachAction action)
+        private static PendingLiveCoachActionDto ToDto(
+            PendingLiveCoachAction action, Entrenate.Domain.Entidades.SesionEntrenamiento session)
         {
             return new PendingLiveCoachActionDto(
                 action.ActionId,
                 action.Type,
                 BuildSummary(action),
-                action.ExpiresAtUtc);
+                action.ExpiresAtUtc,
+                LiveAdaptationTransparency.Preview(
+                    session, action.AdaptationProposal, action.PrescriptionAdaptationProposal));
         }
 
         private static string BuildSummary(PendingLiveCoachAction action)

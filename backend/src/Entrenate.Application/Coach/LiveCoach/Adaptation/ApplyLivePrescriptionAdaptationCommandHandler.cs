@@ -1,6 +1,6 @@
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
-using Entrenate.Application.TrainingSessions.DTOs;
+using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.TrainingSessions.Queries.GetTrainingSessionById;
 using MediatR;
 using Entrenate.Domain.Enums;
@@ -8,7 +8,7 @@ using Entrenate.Domain.Enums;
 namespace Entrenate.Application.Coach.LiveCoach.Adaptation
 {
     public sealed class ApplyLivePrescriptionAdaptationCommandHandler
-        : IRequestHandler<ApplyLivePrescriptionAdaptationCommand, TrainingSessionDto>
+        : IRequestHandler<ApplyLivePrescriptionAdaptationCommand, LiveCoachActionConfirmationDto>
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly ITrainingSessionRepository _sessionRepository;
@@ -24,7 +24,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
             _sender = sender;
         }
 
-        public async Task<TrainingSessionDto> Handle(
+        public async Task<LiveCoachActionConfirmationDto> Handle(
             ApplyLivePrescriptionAdaptationCommand request,
             CancellationToken cancellationToken)
         {
@@ -78,7 +78,9 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
                 request.Proposal.NewRirMax);
 
             await _sessionRepository.SaveChangesAsync(cancellationToken);
-            return await _sender.Send(new GetTrainingSessionByIdQuery(session.Id), cancellationToken);
+            var updated = await _sender.Send(new GetTrainingSessionByIdQuery(session.Id), cancellationToken);
+            return new(updated, LiveAdaptationTransparency.AppliedPrescription(
+                session, updated, request.Proposal.ExerciseSessionId, request.Proposal.EffectiveFromSetNumber));
         }
     }
 }

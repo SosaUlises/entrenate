@@ -29,6 +29,9 @@
 ## Current work
 
 - Live Coach V1 implementation complete — final manual E2E pending.
+- V1.5 adds structured previews for Live Coach adaptations and deterministic
+  confirmations based on the saved session. The final manual V1 E2E includes
+  checking the preview against the resulting Training state.
 - Live Coach V0 is technically and functionally closed. The completed vertical
   includes authenticated STT, TTS and text fallback; grounded deterministic
   queries; current-set registration with editing and explicit confirmation;

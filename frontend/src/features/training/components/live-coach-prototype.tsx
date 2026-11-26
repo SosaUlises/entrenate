@@ -32,6 +32,7 @@ import { cn } from "@/lib/class-names";
 import { getFirstMissingTarget } from "../training-position";
 import type { TrainingSession } from "../types/training.types";
 import { LiveCoachFace, type LiveCoachFaceState } from "./live-coach-face";
+import { LiveAdaptationPreviewContent } from "./live-adaptation-preview";
 import styles from "./live-coach-prototype.module.css";
 
 type LiveCoachState =
@@ -983,14 +984,20 @@ export function LiveCoachPrototype({ isTrainingInputDirty = false, onClientActio
   const pendingError = actionError ?? (state === "error" ? getVisibleErrorMessage(errorMessage) : null);
   const pendingActionPanel = pendingAction ? (
     <div className="border-t border-border/60 pt-4">
-      <p className="font-brand text-lg font-bold leading-6 text-text-primary">
-        {pendingAction.summary.split(" · ")[0]}
-      </p>
-      {pendingAction.summary.includes(" · ") ? (
-        <p className="mt-1 text-sm font-medium text-text-secondary">
-          {pendingAction.summary.split(" · ").slice(1).join(" · ")}
-        </p>
-      ) : null}
+      {pendingAction.adaptationPreview ? (
+        <LiveAdaptationPreviewContent key={pendingAction.actionId} preview={pendingAction.adaptationPreview} />
+      ) : (
+        <>
+          <p className="font-brand text-lg font-bold leading-6 text-text-primary">
+            {pendingAction.summary.split(" · ")[0]}
+          </p>
+          {pendingAction.summary.includes(" · ") ? (
+            <p className="mt-1 text-sm font-medium text-text-secondary">
+              {pendingAction.summary.split(" · ").slice(1).join(" · ")}
+            </p>
+          ) : null}
+        </>
+      )}
       {pendingError ? (
         <p className="mt-3 text-sm leading-5 text-error" role="alert">{pendingError}</p>
       ) : null}
