@@ -1,4 +1,5 @@
 using Entrenate.Application.Coach.LiveCoach.Actions;
+using Entrenate.Application.Coach.LiveCoach.Adaptation;
 using Entrenate.Application.Coach.LiveCoach.Clarifications;
 using Entrenate.Application.Coach.LiveCoach.Conversation;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
@@ -76,6 +77,12 @@ namespace Entrenate.Application.Coach.LiveCoach.Queries.EvaluateLiveCoachProacti
                     context.RecentProactiveTriggers,
                     nowUtc))
             {
+                if (context.LastProactiveTrigger is { } last &&
+                    (!LiveCoachProactiveSuggestionEngine.IsReferenceCurrent(session, last, nowUtc) ||
+                        (!interactionBlocked && !candidates.Any(item => LiveCoachProactiveSuggestionEngine.Matches(item, last)))))
+                {
+                    _conversationStore.Set(context with { LastProactiveTrigger = null }, nowUtc);
+                }
                 return new(null);
             }
 
@@ -84,7 +91,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Queries.EvaluateLiveCoachProacti
                 candidate.ExerciseSessionId,
                 candidate.SourceFingerprint,
                 nowUtc,
-                candidate.EvidenceText);
+                candidate.EvidenceText,
+                LiveTimeConstraintFingerprint.Create(session));
             var recent = (context.RecentProactiveTriggers ?? [])
                 .Where(item => item.Type != candidate.Type ||
                     item.ExerciseSessionId != candidate.ExerciseSessionId)

@@ -1,5 +1,6 @@
 using Entrenate.Application.Coach.LiveCoach.Adaptation;
 using Entrenate.Application.Coach.LiveCoach.Conversation;
+using Entrenate.Application.TrainingSessions;
 using Entrenate.Domain.Entidades;
 
 namespace Entrenate.Application.Coach.LiveCoach.Proactive
@@ -32,11 +33,11 @@ namespace Entrenate.Application.Coach.LiveCoach.Proactive
             bool interactionBlocked = false)
         {
             ArgumentNullException.ThrowIfNull(session);
-            if (interactionBlocked)
+            if (interactionBlocked || CurrentPendingTrainingSetResolver.Resolve(session) is null)
                 return [];
 
             var candidates = new List<LiveCoachProactiveCandidate>();
-            var performance = EvaluatePerformance(session);
+            var performance = EvaluatePerformance(session, nowUtc);
             if (performance.Underperformance is not null)
                 candidates.Add(performance.Underperformance);
             if (performance.ExcessiveEffort is not null)
@@ -73,7 +74,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Proactive
         }
 
         private static (LiveCoachProactiveCandidate? Underperformance, LiveCoachProactiveCandidate? ExcessiveEffort)
-            EvaluatePerformance(SesionEntrenamiento session)
+            EvaluatePerformance(SesionEntrenamiento session, DateTime nowUtc)
         {
             var evidence = LiveCoachPerformanceTrendDetector.Detect(session);
             if (evidence is null)
@@ -81,7 +82,11 @@ namespace Entrenate.Application.Coach.LiveCoach.Proactive
 
             var exercise = evidence.Exercise;
 
-            var underperformance = evidence.RepeatedUnderperformance
+            bool CanAdjust(LivePerformanceSignalType signal) =>
+                LivePrescriptionAdaptationEngine.Evaluate(session, session.UsuarioId, signal, nowUtc, evidence)
+                    .Status == LivePrescriptionAdaptationStatus.Proposal;
+
+            var underperformance = evidence.RepeatedUnderperformance && CanAdjust(LivePerformanceSignalType.MissedRepetitions)
                 ? new LiveCoachProactiveCandidate(
                     LiveCoachProactiveTriggerType.RepeatedUnderperformance,
                     exercise.Id,
@@ -91,7 +96,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Proactive
                     "Revisar prescripción",
                     "No llego a las repeticiones en las últimas dos series; revisá la prescripción pendiente.")
                 : null;
-            var excessiveEffort = evidence.ExcessiveEffort
+            var excessiveEffort = evidence.ExcessiveEffort && CanAdjust(LivePerformanceSignalType.ExcessiveEffort)
                 ? new LiveCoachProactiveCandidate(
                     LiveCoachProactiveTriggerType.ExcessiveEffort,
                     exercise.Id,
@@ -103,6 +108,30 @@ namespace Entrenate.Application.Coach.LiveCoach.Proactive
                 : null;
             return (underperformance, excessiveEffort);
         }
+
+        public static bool IsReferenceCurrent(
+            SesionEntrenamiento session, LiveCoachProactiveTriggerReference reference, DateTime nowUtc)
+        {
+            if (CurrentPendingTrainingSetResolver.Resolve(session) is null ||
+                reference.PendingWorkFingerprint != LiveTimeConstraintFingerprint.Create(session))
+                return false;
+
+            if (reference.Type is LiveCoachProactiveTriggerType.RepeatedUnderperformance or
+                LiveCoachProactiveTriggerType.ExcessiveEffort)
+            {
+                var performance = EvaluatePerformance(session, nowUtc);
+                var candidate = reference.Type == LiveCoachProactiveTriggerType.RepeatedUnderperformance
+                    ? performance.Underperformance : performance.ExcessiveEffort;
+                return candidate is not null && Matches(candidate, reference);
+            }
+
+            return true;
+        }
+
+        public static bool Matches(LiveCoachProactiveCandidate candidate, LiveCoachProactiveTriggerReference reference)
+            => candidate.Type == reference.Type &&
+                candidate.ExerciseSessionId == reference.ExerciseSessionId &&
+                candidate.SourceFingerprint == reference.SourceFingerprint;
 
         private static LiveCoachProactiveCandidate? EvaluateLongRest(
             SesionEntrenamiento session,

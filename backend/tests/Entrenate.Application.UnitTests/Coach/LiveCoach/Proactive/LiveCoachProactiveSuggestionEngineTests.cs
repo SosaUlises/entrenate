@@ -51,6 +51,29 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Proactive
         }
 
         [Fact]
+        public void Evaluate_LastTwoMissesWithNoPendingWork_DoesNotSuggestEvenWithOldRestSnapshot()
+        {
+            var session = CreateSession(exerciseCount: 1, setsPerExercise: 2);
+            var exercise = session.Ejercicios.Single();
+            Register(exercise, 1, 6, 0, NowUtc.AddMinutes(-2));
+            Register(exercise, 2, 7, 0, NowUtc.AddMinutes(-1));
+
+            Assert.Empty(LiveCoachProactiveSuggestionEngine.Evaluate(
+                session, new(exercise.Id, NowUtc.AddMinutes(-5)), null, NowUtc));
+        }
+
+        [Fact]
+        public void Evaluate_AtPrescriptionLimits_DoesNotOfferUnavailableAdjustments()
+        {
+            var session = CreateSession(repMin: 4, repMax: 4, rirMin: 5, rirMax: 5);
+            var exercise = session.Ejercicios.First();
+            Register(exercise, 1, 3, 0, NowUtc.AddMinutes(-2));
+            Register(exercise, 2, 3, 0, NowUtc.AddMinutes(-1));
+
+            Assert.Empty(LiveCoachProactiveSuggestionEngine.Evaluate(session, null, null, NowUtc));
+        }
+
+        [Fact]
         public void Evaluate_LongRest_UsesPrescribedRestPlusSixtySeconds()
         {
             var session = CreateSession(restSeconds: 90);
@@ -169,7 +192,9 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Proactive
         private static SesionEntrenamiento CreateSession(
             int restSeconds = 90,
             int exerciseCount = 2,
-            int setsPerExercise = 3)
+            int setsPerExercise = 3,
+            int repMin = 8, int repMax = 10,
+            int rirMin = 2, int rirMax = 3)
         {
             var exercises = Enumerable.Range(1, exerciseCount)
                 .Select(index =>
@@ -185,10 +210,10 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Proactive
                         exercise.Id,
                         index,
                         setsPerExercise,
-                        8,
-                        10,
-                        2,
-                        3,
+                        repMin,
+                        repMax,
+                        rirMin,
+                        rirMax,
                         restSeconds);
                     typeof(EjercicioSesion)
                         .GetProperty("Ejercicio", BindingFlags.Public | BindingFlags.Instance)!

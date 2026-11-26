@@ -58,9 +58,18 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
         {
             ArgumentNullException.ThrowIfNull(session);
             var evidence = LiveCoachPerformanceTrendDetector.Detect(session);
-            if (evidence is null)
-                return new(LivePrescriptionAdaptationStatus.InsufficientEvidence);
+            return evidence is null
+                ? new(LivePrescriptionAdaptationStatus.InsufficientEvidence)
+                : Evaluate(session, userId, signalType, nowUtc, evidence);
+        }
 
+        internal static LivePrescriptionAdaptationResult Evaluate(
+            SesionEntrenamiento session,
+            string userId,
+            LivePerformanceSignalType signalType,
+            DateTime nowUtc,
+            LiveCoachPerformanceTrendEvidence evidence)
+        {
             var exercise = evidence.Exercise;
             var completed = exercise.Series
                 .Where(set => set.EstaRealmenteCompletada())

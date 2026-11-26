@@ -17,7 +17,8 @@ namespace Entrenate.Application.Coach.LiveCoach.Conversation
         Guid? ExerciseSessionId,
         string SourceFingerprint,
         DateTime TriggeredAtUtc,
-        string EvidenceText);
+        string EvidenceText,
+        string? PendingWorkFingerprint = null);
 
     public sealed record LiveCoachTimeConstraintReference(
         int AvailableMinutes,

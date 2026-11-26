@@ -269,7 +269,10 @@ export function LiveCoachPrototype({ isTrainingInputDirty = false, onClientActio
   const [actionPending, setActionPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [retryIntent, setRetryIntent] = useState<RetryIntent | null>(null);
-  const [proactiveSuggestion, setProactiveSuggestion] = useState<LiveCoachProactiveSuggestion | null>(null);
+  const [proactiveEvaluation, setProactiveEvaluation] = useState<{
+    workKey: string;
+    suggestion: LiveCoachProactiveSuggestion;
+  } | null>(null);
   const [proactivePulse, setProactivePulse] = useState(0);
   const [voiceEnabled, setVoiceEnabled] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -354,13 +357,21 @@ export function LiveCoachPrototype({ isTrainingInputDirty = false, onClientActio
     };
   }, []);
 
-  const sessionActivityFingerprint = session?.ejercicios
-    .map((exercise) => {
-      const latest = [...exercise.series]
-        .sort((first, second) => second.fechaHoraRegistro.localeCompare(first.fechaHoraRegistro))[0];
-      return `${exercise.id}:${exercise.omitido}:${latest?.fechaHoraRegistro ?? "none"}:${latest?.repeticiones ?? ""}:${latest?.rir ?? ""}`;
-    })
-    .join("|") ?? "no-session";
+  const proactiveWorkKey = session && getFirstMissingTarget(session) ? JSON.stringify([
+    session.id, session.estado, restTimer?.sourceExerciseSessionId, restTimer?.startedAtUtc,
+    session.ejercicios.map((exercise) => [
+      exercise.id, exercise.orden, exercise.omitido, exercise.seriesObjetivo,
+      exercise.repeticionesMinimasObjetivo, exercise.repeticionesMaximasObjetivo,
+      exercise.rirObjetivoMinimo, exercise.rirObjetivoMaximo, exercise.descansoObjetivoSegundos,
+      [...exercise.series].sort((first, second) => first.numeroSerie - second.numeroSerie),
+    ]),
+  ]) : null;
+  if (proactiveEvaluation && proactiveEvaluation.workKey !== proactiveWorkKey) {
+    setProactiveEvaluation(null);
+  }
+  const proactiveSuggestion = proactiveEvaluation?.workKey === proactiveWorkKey
+    ? proactiveEvaluation.suggestion
+    : null;
 
   useEffect(() => {
     if (!session?.id || !restTimer?.startedAtUtc || !restTimer.sourceExerciseSessionId) return;
@@ -378,6 +389,7 @@ export function LiveCoachPrototype({ isTrainingInputDirty = false, onClientActio
   useEffect(() => {
     if (
       !session?.id ||
+      !proactiveWorkKey ||
       state !== "idle" ||
       isTrainingInputDirty ||
       showTextInput ||
@@ -396,8 +408,10 @@ export function LiveCoachPrototype({ isTrainingInputDirty = false, onClientActio
         }
         : null,
     }).then((result) => {
-      if (active && result.status === "success" && result.data.suggestion) {
-        setProactiveSuggestion(result.data.suggestion);
+      if (active && result.status === "success") {
+        setProactiveEvaluation(result.data.suggestion
+          ? { workKey: proactiveWorkKey, suggestion: result.data.suggestion }
+          : null);
       }
     });
     return () => {
@@ -411,7 +425,7 @@ export function LiveCoachPrototype({ isTrainingInputDirty = false, onClientActio
     restTimer?.sourceExerciseSessionId,
     restTimer?.startedAtUtc,
     session?.id,
-    sessionActivityFingerprint,
+    proactiveWorkKey,
     showTextInput,
     state,
   ]);
@@ -562,7 +576,7 @@ export function LiveCoachPrototype({ isTrainingInputDirty = false, onClientActio
       return;
     }
 
-    setProactiveSuggestion(null);
+    setProactiveEvaluation(null);
     stopAudio("new-query-ask");
     setActionError(null);
     setRetryIntent({ inputKind, kind: "respond", question: questionText });
@@ -1134,7 +1148,7 @@ export function LiveCoachPrototype({ isTrainingInputDirty = false, onClientActio
                       onClick={() => {
                         const prompt = proactiveSuggestion.actionPrompt;
                         if (!prompt) return;
-                        setProactiveSuggestion(null);
+                        setProactiveEvaluation(null);
                         void askCoach(prompt, "text");
                       }}
                       size="sm"
@@ -1144,7 +1158,7 @@ export function LiveCoachPrototype({ isTrainingInputDirty = false, onClientActio
                     </Button>
                   ) : null}
                   <Button
-                    onClick={() => setProactiveSuggestion(null)}
+                    onClick={() => setProactiveEvaluation(null)}
                     size="sm"
                     variant="ghost"
                   >

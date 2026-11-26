@@ -1631,9 +1631,7 @@ namespace Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach
                 conversation.LastProactiveTrigger is not null)
             {
                 var proactive = conversation.LastProactiveTrigger;
-                if (proactive.ExerciseSessionId.HasValue &&
-                    !session.Ejercicios.Any(exercise =>
-                        exercise.Id == proactive.ExerciseSessionId.Value))
+                if (!Proactive.LiveCoachProactiveSuggestionEngine.IsReferenceCurrent(session, proactive, nowUtc))
                 {
                     RememberConversation(
                         userId,

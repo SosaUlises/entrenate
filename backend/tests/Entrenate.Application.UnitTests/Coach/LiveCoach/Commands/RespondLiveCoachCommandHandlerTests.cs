@@ -3908,17 +3908,12 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         {
             var session = CreateMultiExerciseSession(("Press", 3));
             _sessionRepository.Sessions[session.Id] = session;
-            _sessionConversationStore.Set(
-                new LiveCoachSessionConversationContext(
-                    TestUserId,
-                    session.Id,
-                    LastProactiveTrigger: new LiveCoachProactiveTriggerReference(
-                        LiveCoachProactiveTriggerType.RepeatedUnderperformance,
-                        session.Ejercicios.First().Id,
-                        "fingerprint",
-                        DateTime.UtcNow,
-                        "Las últimas dos series quedaron debajo del mínimo de 8 repeticiones.")),
-                DateTime.UtcNow);
+            var exercise = session.Ejercicios.First();
+            exercise.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-1));
+            exercise.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow);
+            var evaluation = await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id), CancellationToken.None);
+            Assert.NotNull(evaluation.Suggestion);
 
             var result = await _handler.Handle(
                 new RespondLiveCoachCommand(session.Id, "turn-proactive-why", "text", "¿por qué?", null),
@@ -3926,6 +3921,77 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.Contains("mínimo de 8 repeticiones", result.Text);
             Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task EvaluateProactive_AfterOmissionAndFinalSet_ClearsPreviousSuggestion()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var press = session.Ejercicios.First();
+            var remo = session.Ejercicios.Last();
+            press.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-1));
+            press.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow);
+            remo.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-1));
+            remo.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow);
+            var query = new EvaluateLiveCoachProactiveQuery(session.Id);
+            var initial = await _proactiveHandler.Handle(query, CancellationToken.None);
+            Assert.Equal("RepeatedUnderperformance", initial.Suggestion?.Trigger);
+
+            session.OmitirEjercicio(remo.Id);
+            press.RegistrarOActualizarSerie(3, 100, 6, 2, DateTime.UtcNow);
+            var finished = await _proactiveHandler.Handle(query, CancellationToken.None);
+
+            Assert.Null(finished.Suggestion);
+            Assert.Null(_sessionConversationStore.Contexts[(TestUserId, session.Id)].LastProactiveTrigger);
+            Assert.True(session.EstaEnCurso());
+
+            session.ReactivarEjercicio(remo.Id);
+            var reactivated = await _proactiveHandler.Handle(query, CancellationToken.None);
+
+            Assert.Equal("RepeatedUnderperformance", reactivated.Suggestion?.Trigger);
+            Assert.Equal(remo.Id,
+                _sessionConversationStore.Contexts[(TestUserId, session.Id)].LastProactiveTrigger?.ExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_ProactiveWhyAfterOmission_RejectsStaleEvidenceBeforeReevaluation()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var exercise = session.Ejercicios.First();
+            exercise.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-1));
+            exercise.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow);
+            Assert.NotNull((await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id), CancellationToken.None)).Suggestion);
+            session.OmitirEjercicio(session.Ejercicios.Last().Id);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-stale-proactive", "text", "¿por qué?", null),
+                CancellationToken.None);
+
+            Assert.Contains("ya no está vigente", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task EvaluateProactive_AfterPrescriptionAdaptation_InvalidatesEvidenceReference()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var press = session.Ejercicios.First();
+            press.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-1));
+            press.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow);
+            var query = new EvaluateLiveCoachProactiveQuery(session.Id);
+            Assert.NotNull((await _proactiveHandler.Handle(query, CancellationToken.None)).Suggestion);
+
+            session.AdaptarPrescripcionPendiente(press.Id, 3, 8, 10, 1, 2, 6, 8, 1, 2);
+            var result = await _proactiveHandler.Handle(query, CancellationToken.None);
+
+            Assert.Null(result.Suggestion);
+            Assert.Null(_sessionConversationStore.Contexts[(TestUserId, session.Id)].LastProactiveTrigger);
+            Assert.Single(_sessionConversationStore.Contexts[(TestUserId, session.Id)].RecentProactiveTriggers!);
         }
 
         [Fact]
