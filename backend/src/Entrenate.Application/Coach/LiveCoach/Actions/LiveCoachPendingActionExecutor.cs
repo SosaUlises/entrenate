@@ -85,12 +85,20 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
                 if (action.AdaptationProposal is null)
                     throw new ConflictException("La propuesta de ajuste ya no está disponible.");
 
-                var adaptedSession = await _sender.Send(
+                return await _sender.Send(
                     new ApplyLiveAdaptationCommand(action.AdaptationProposal),
                     cancellationToken);
-                return new LiveCoachActionConfirmationDto(
-                    adaptedSession,
-                    action.AdaptationProposal.SuccessMessage);
+            }
+
+            if (action.Type == LiveCoachActionTypes.ApplyPrescriptionAdaptation)
+            {
+                if (action.PrescriptionAdaptationProposal is null)
+                    throw new ConflictException("La propuesta de ajuste ya no esta disponible.");
+
+                return await _sender.Send(
+                    new ApplyLivePrescriptionAdaptationCommand(
+                        action.PrescriptionAdaptationProposal),
+                    cancellationToken);
             }
 
             await _sender.Send(
@@ -127,7 +135,10 @@ namespace Entrenate.Application.Coach.LiveCoach.Actions
                 return new LiveCoachActionConfirmationDto(
                     updatedSession,
                     $"Serie registrada. Descanso: {durationSeconds} segundos.",
-                    new LiveCoachClientActionDto("StartRestTimer", durationSeconds));
+                    new LiveCoachClientActionDto(
+                        "StartRestTimer",
+                        durationSeconds,
+                        action.ExerciseSessionId));
             }
 
             return new LiveCoachActionConfirmationDto(updatedSession, "Serie registrada.");

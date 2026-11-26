@@ -49,6 +49,15 @@ namespace Entrenate.Infrastructure.Persistence.Configurations
                 .HasField("_ejercicios")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
 
+            builder.HasMany(x => x.AdaptacionesLiveCoach)
+                .WithOne(x => x.SesionEntrenamiento)
+                .HasForeignKey(x => x.SesionEntrenamientoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Navigation(x => x.AdaptacionesLiveCoach)
+                .HasField("_adaptacionesLiveCoach")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+
             builder.HasIndex(x => new
             {
                 x.UsuarioId,

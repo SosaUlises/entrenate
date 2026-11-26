@@ -18,7 +18,12 @@ namespace Entrenate.Application.Coach.LiveCoach.Adaptation
                     .Append(exercise.Id).Append(':')
                     .Append(exercise.Orden).Append(':')
                     .Append(exercise.SeriesObjetivo).Append(':')
-                    .Append(exercise.Omitido ? '1' : '0').Append(':');
+                    .Append(exercise.Omitido ? '1' : '0').Append(':')
+                    .Append(exercise.RepeticionesMinimasObjetivo).Append(':')
+                    .Append(exercise.RepeticionesMaximasObjetivo).Append(':')
+                    .Append(exercise.RirObjetivoMinimo).Append(':')
+                    .Append(exercise.RirObjetivoMaximo).Append(':')
+                    .Append(exercise.DescansoObjetivoSegundos).Append(':');
 
                 foreach (var number in exercise.Series
                     .Where(set => set.EstaRealmenteCompletada())

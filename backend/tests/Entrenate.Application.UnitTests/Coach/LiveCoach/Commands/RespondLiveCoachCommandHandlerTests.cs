@@ -9,10 +9,13 @@ using Entrenate.Application.Coach.LiveCoach.Commands.RespondLiveCoach;
 using Entrenate.Application.Coach.LiveCoach.Actions;
 using Entrenate.Application.Coach.LiveCoach.Adaptation;
 using Entrenate.Application.Coach.LiveCoach.Clarifications;
+using Entrenate.Application.Coach.LiveCoach.Conversation;
 using Entrenate.Application.Coach.LiveCoach.Context;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Models;
 using Entrenate.Application.Coach.LiveCoach.Prompt;
+using Entrenate.Application.Coach.LiveCoach.Proactive;
+using Entrenate.Application.Coach.LiveCoach.Queries.EvaluateLiveCoachProactive;
 using Entrenate.Application.Coach.LiveCoach.Routing;
 using Entrenate.Application.Coach.LiveCoach.Tools;
 using Entrenate.Application.Coach.Progress.Analysis;
@@ -45,8 +48,10 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         private readonly FakePendingActionStore _pendingActionStore;
         private readonly FakePendingActionExecutor _pendingActionExecutor;
         private readonly FakeClarificationStore _clarificationStore;
+        private readonly FakeSessionConversationStore _sessionConversationStore;
 
         private readonly RespondLiveCoachCommandHandler _handler;
+        private readonly EvaluateLiveCoachProactiveQueryHandler _proactiveHandler;
 
         public RespondLiveCoachCommandHandlerTests()
         {
@@ -62,6 +67,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             _pendingActionStore = new FakePendingActionStore();
             _pendingActionExecutor = new FakePendingActionExecutor(_pendingActionStore);
             _clarificationStore = new FakeClarificationStore();
+            _sessionConversationStore = new FakeSessionConversationStore();
 
             _handler = new RespondLiveCoachCommandHandler(
                 _sessionRepository,
@@ -76,7 +82,14 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 _pendingActionStore,
                 _pendingActionExecutor,
                 _clarificationStore,
+                _sessionConversationStore,
                 NullLogger<RespondLiveCoachCommandHandler>.Instance);
+            _proactiveHandler = new EvaluateLiveCoachProactiveQueryHandler(
+                _sessionRepository,
+                _currentUserService,
+                _pendingActionStore,
+                _clarificationStore,
+                _sessionConversationStore);
         }
 
         [Fact]
@@ -114,6 +127,12 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         {
             var session = CreateSession(TestUserId, EstadoSesionEntrenamiento.Completada);
             _sessionRepository.Sessions[session.Id] = session;
+            _sessionConversationStore.Set(
+                new LiveCoachSessionConversationContext(
+                    TestUserId,
+                    session.Id,
+                    LiveCoachIntentKind.RemainingSets),
+                DateTime.UtcNow);
 
             var command = new RespondLiveCoachCommand(
                 session.Id,
@@ -126,6 +145,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 _handler.Handle(command, CancellationToken.None));
 
             Assert.Contains("activa", ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.False(_sessionConversationStore.Contexts.ContainsKey((TestUserId, session.Id)));
         }
 
         [Fact]
@@ -2983,7 +3003,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         [Fact]
         public async Task Handle_WhenTimeConstraintNeedsCut_CreatesPendingAdaptationWithoutMutatingSession()
         {
-            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            var session = CreateMultiExerciseSession(("Press", 3), ("Curl", 3), ("Remo", 3));
+            session.OmitirEjercicio(session.Ejercicios.ElementAt(1).Id);
             _sessionRepository.Sessions[session.Id] = session;
 
             var result = await _handler.Handle(
@@ -3000,6 +3021,14 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
             var proposal = Assert.IsType<LiveTimeConstraintProposal>(action.AdaptationProposal);
             Assert.Equal(8, proposal.RequestedRemainingMinutes);
+            var preview = Assert.IsType<LiveAdaptationPreview>(result.PendingAction.AdaptationPreview);
+            Assert.Equal(proposal.EstimatedMinutesBefore, preview.MinutesBefore);
+            Assert.Equal(proposal.EstimatedMinutesAfter, preview.MinutesAfter);
+            Assert.Equal(3, preview.PendingSets);
+            Assert.Collection(preview.Exercises,
+                exercise => Assert.Equal("retained", exercise.Status),
+                exercise => Assert.Equal("alreadyOmitted", exercise.Status),
+                exercise => Assert.Equal("newlyOmitted", exercise.Status));
             Assert.False(session.Ejercicios.Last().Omitido);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
@@ -3116,6 +3145,10 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.NotNull(result.PendingAction);
             Assert.Equal(LiveCoachActionTypes.ApplyFatigueAdaptation, result.PendingAction.Type);
+            var preview = Assert.IsType<LiveAdaptationPreview>(result.PendingAction.AdaptationPreview);
+            Assert.Contains("cansancio", preview.Explanation);
+            Assert.Contains(preview.Exercises, exercise => exercise.Status == "retained");
+            Assert.Contains(preview.Exercises, exercise => exercise.Status == "newlyOmitted");
             var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
             var proposal = Assert.IsType<LiveFatigueAdaptationProposal>(action.AdaptationProposal);
             Assert.Equal(expectedSeverity, proposal.FatigueSeverity);
@@ -3211,10 +3244,37 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         }
 
         [Fact]
-        public async Task Handle_WhenPerformanceIsBelowPrescription_CreatesVolumeProposalWithoutProvider()
+        public void PerformancePreview_ExplainsRecordedEvidenceAndKeepsCompletedWorkSeparate()
+        {
+            var session = CreateMultiExerciseSession(("Press", 1), ("Remo", 3), ("Curl", 3));
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 80, 8, 1, DateTime.UtcNow);
+            var curl = session.Ejercicios.Last();
+            var now = DateTime.UtcNow;
+            var proposal = new LivePerformanceAdaptationProposal(
+                Guid.NewGuid(), "user", session.Id, now, now.AddSeconds(45),
+                LivePerformanceSignalType.MissedRepetitions,
+                new LivePerformanceEvidence(6, 1, 8, 10, 1, 2, true, false),
+                LiveTimeConstraintFingerprint.Create(session),
+                [new(LiveAdaptationChangeType.OmitExercise, curl.Id, "Curl")],
+                "Ajuste por rendimiento");
+
+            var preview = Assert.IsType<LiveAdaptationPreview>(
+                LiveAdaptationTransparency.Preview(session, proposal, null));
+
+            Assert.Contains("6 repeticiones para un objetivo de 8 a 10", preview.Explanation);
+            Assert.Equal(3, preview.PendingSets);
+            Assert.Collection(preview.Exercises,
+                exercise => Assert.Equal("completed", exercise.Status),
+                exercise => Assert.Equal("retained", exercise.Status),
+                exercise => Assert.Equal("newlyOmitted", exercise.Status));
+        }
+
+        [Fact]
+        public async Task Handle_WhenPerformanceIsBelowPrescription_CreatesPrescriptionProposalWithoutProvider()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
-            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow.AddMinutes(-1));
+            session.Ejercicios.First().RegistrarOActualizarSerie(2, 100, 6, 0, DateTime.UtcNow);
             _sessionRepository.Sessions[session.Id] = session;
 
             var result = await _handler.Handle(
@@ -3223,10 +3283,17 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 CancellationToken.None);
 
             Assert.NotNull(result.PendingAction);
-            Assert.Equal(LiveCoachActionTypes.ApplyPerformanceAdaptation, result.PendingAction.Type);
+            Assert.Equal(LiveCoachActionTypes.ApplyPrescriptionAdaptation, result.PendingAction.Type);
+            var preview = Assert.IsType<LiveAdaptationPreview>(result.PendingAction.AdaptationPreview);
+            var change = Assert.IsType<LiveAdaptationPrescriptionChange>(preview.PrescriptionChange);
+            Assert.NotEqual(change.Before, change.After);
+            Assert.Equal(3, change.FromSet);
+            Assert.Contains(preview.Exercises, exercise => exercise.Name == change.ExerciseName && exercise.Target == change.After);
             var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
-            var proposal = Assert.IsType<LivePerformanceAdaptationProposal>(action.AdaptationProposal);
-            Assert.True(proposal.Evidence.MissedPrescription);
+            var proposal = Assert.IsType<LivePrescriptionAdaptationProposal>(action.PrescriptionAdaptationProposal);
+            Assert.Equal(6, proposal.NewRepMin);
+            Assert.Equal(8, proposal.NewRepMax);
+            Assert.Equal(3, proposal.EffectiveFromSetNumber);
             Assert.False(session.Ejercicios.Last().Omitido);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
@@ -3235,7 +3302,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         public async Task Handle_WhenLastSetMetPrescription_DoesNotCreateAdaptation()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
-            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 8, 1, DateTime.UtcNow);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 8, 1, DateTime.UtcNow.AddMinutes(-1));
+            session.Ejercicios.First().RegistrarOActualizarSerie(2, 100, 8, 1, DateTime.UtcNow);
             _sessionRepository.Sessions[session.Id] = session;
 
             var result = await _handler.Handle(
@@ -3244,7 +3312,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 CancellationToken.None);
 
             Assert.Null(result.PendingAction);
-            Assert.Contains("dentro de la prescripción", result.Text);
+            Assert.Contains("Necesito dos series consecutivas", result.Text);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
@@ -3260,8 +3328,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                 CancellationToken.None);
 
             Assert.Null(result.PendingAction);
-            Assert.Contains("No tengo un peso objetivo definido", result.Text);
-            Assert.Contains("Registrá primero", result.Text);
+            Assert.Contains("Necesito dos series consecutivas", result.Text);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
@@ -3269,7 +3336,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         public async Task Handle_WhenPerformanceAdaptationIsConfirmedByVoice_UsesPendingExecutor()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
-            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow.AddMinutes(-1));
+            session.Ejercicios.First().RegistrarOActualizarSerie(2, 100, 6, 0, DateTime.UtcNow);
             _sessionRepository.Sessions[session.Id] = session;
             await _handler.Handle(
                 new RespondLiveCoachCommand(
@@ -3285,7 +3353,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.Equal(1, _pendingActionExecutor.ConfirmCount);
             Assert.Equal(
-                LiveCoachActionTypes.ApplyPerformanceAdaptation,
+                LiveCoachActionTypes.ApplyPrescriptionAdaptation,
                 _pendingActionExecutor.ConfirmedAction?.Type);
             Assert.NotNull(result.UpdatedSession);
             Assert.Equal(0, _conversationProvider.CallCount);
@@ -3295,7 +3363,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         public async Task Handle_WhenPerformanceAdaptationIsCancelled_DoesNotMutateSession()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
-            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow.AddMinutes(-1));
+            session.Ejercicios.First().RegistrarOActualizarSerie(2, 100, 6, 0, DateTime.UtcNow);
             _sessionRepository.Sessions[session.Id] = session;
             await _handler.Handle(
                 new RespondLiveCoachCommand(
@@ -3316,7 +3385,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
         public async Task Handle_WhenPerformanceAdaptationBecameStale_ReturnsSpecificMessage()
         {
             var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
-            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 6, 0, DateTime.UtcNow.AddMinutes(-1));
+            session.Ejercicios.First().RegistrarOActualizarSerie(2, 100, 6, 0, DateTime.UtcNow);
             _sessionRepository.Sessions[session.Id] = session;
             await _handler.Handle(
                 new RespondLiveCoachCommand(
@@ -3356,6 +3426,10 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.NotNull(result.PendingAction);
             Assert.Equal(LiveCoachActionTypes.ApplyCombinedAdaptation, result.PendingAction.Type);
+            var preview = Assert.IsType<LiveAdaptationPreview>(result.PendingAction.AdaptationPreview);
+            Assert.Contains("minutos disponibles", preview.Explanation);
+            Assert.Contains("cansancio", preview.Explanation);
+            Assert.True(preview.MinutesAfter < preview.MinutesBefore);
             Assert.Single(_pendingActionStore.Actions);
             var action = _pendingActionStore.Actions[result.PendingAction.ActionId];
             var proposal = Assert.IsType<LiveCombinedAdaptationProposal>(action.AdaptationProposal);
@@ -3593,6 +3667,28 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
+        [Fact]
+        public async Task Handle_WhenTimeConstraint19MinutesFitsRemainingWork_DoesNotCreatePendingAction()
+        {
+            // Session with 6 pending sets estimated to ~14 minutes
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-time-fits-19",
+                    "text",
+                    "Me quedan 19 minutos",
+                    null),
+                CancellationToken.None);
+
+            Assert.Null(result.PendingAction);
+            Assert.Equal("Con 19 minutos te alcanza para completar lo pendiente según la estimación actual.", result.Text);
+            Assert.Empty(_pendingActionStore.Actions);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
         [Theory]
         [InlineData(4)]
         [InlineData(121)]
@@ -3612,6 +3708,381 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             Assert.Equal("Necesito un tiempo entre 5 y 120 minutos para ajustar la sesión.", result.Text);
             Assert.Null(result.PendingAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_BestSetCriterionFollowUp_ReusesReferencedExerciseWithoutProvider()
+        {
+            var session = CreateBestSetSession();
+            _sessionRepository.Sessions[session.Id] = session;
+
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-best-context", "audio", "cuál fue mi mejor serie", null),
+                CancellationToken.None);
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-best-weight", "audio", "peso", null),
+                CancellationToken.None);
+            Assert.Equal(
+                LiveCoachBestSetCriterion.Weight,
+                _sessionConversationStore.Contexts[(TestUserId, session.Id)].LastBestSetCriterion);
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-best-volume", "audio", "y por volumen", null),
+                CancellationToken.None);
+
+            Assert.Contains("volumen", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("110 kilos", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_RemainingSetsThenExercises_UsesProgressContextWithoutProvider()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-remaining-sets", "text", "cuántas series me quedan", null),
+                CancellationToken.None);
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-remaining-exercises", "text", "y ejercicios", null),
+                CancellationToken.None);
+
+            Assert.Contains("1 ejercicio", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_NamedNavigationThenReturnToThatReference_NavigatesWithoutProvider()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Hip Thrust", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var hipThrust = session.Ejercicios.Single(exercise => exercise.Ejercicio.Nombre == "Hip Thrust");
+
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-show-hip", "text", "mostrame Hip Thrust", null),
+                CancellationToken.None);
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-return-hip", "text", "volvé a ese", null),
+                CancellationToken.None);
+
+            Assert.Equal("NavigateToExercise", result.ClientAction?.Type);
+            Assert.Equal(hipThrust.Id, result.ClientAction?.ExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_AdaptationThenWhatWasRemoved_UsesCurrentProposalAndKeepsPendingAction()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press", 3), ("Remo", 3), ("Curl", 3), ("Tríceps", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var proposal = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-fatigue-context", "audio", "estoy cansado", null),
+                CancellationToken.None);
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-what-removed", "audio", "qué sacaste", null),
+                CancellationToken.None);
+
+            Assert.NotNull(proposal.PendingAction);
+            Assert.Equal(proposal.PendingAction.ActionId, result.PendingAction?.ActionId);
+            Assert.Contains("propone omitir", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_AppliedAdaptationThenWhatWasRemoved_RevalidatesCurrentSession()
+        {
+            var session = CreateMultiExerciseSession(
+                ("Press", 3), ("Remo", 3), ("Curl", 3), ("Tríceps", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-applied-fatigue", "audio", "estoy cansado", null),
+                CancellationToken.None);
+            var pending = Assert.Single(_pendingActionStore.Actions.Values);
+            var proposal = Assert.IsAssignableFrom<ILiveAdaptationProposal>(pending.AdaptationProposal);
+            foreach (var change in proposal.Changes)
+                session.OmitirEjercicio(change.ExerciseSessionId);
+            _pendingActionStore.Actions.Clear();
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-applied-what-removed", "audio", "qué sacaste", null),
+                CancellationToken.None);
+
+            Assert.Contains("Omití", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Null(result.PendingAction);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_ExplicitNavigationOverridesPreviousExerciseReference()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Hip Thrust", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var press = session.Ejercicios.Single(exercise => exercise.Ejercicio.Nombre == "Press");
+
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-reference-hip", "text", "mostrame Hip Thrust", null),
+                CancellationToken.None);
+            var explicitResult = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-explicit-press", "text", "mostrame Press", null),
+                CancellationToken.None);
+            var followUp = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-return-press", "text", "volvé a ese", null),
+                CancellationToken.None);
+
+            Assert.Equal(press.Id, explicitResult.ClientAction?.ExerciseSessionId);
+            Assert.Equal(press.Id, followUp.ClientAction?.ExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_WhenReferencedExerciseIsStale_AsksForExerciseWithoutProvider()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            _sessionConversationStore.Set(
+                new LiveCoachSessionConversationContext(
+                    TestUserId,
+                    session.Id,
+                    LiveCoachIntentKind.NavigateToExercise,
+                    Guid.NewGuid()),
+                DateTime.UtcNow);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-stale-reference", "text", "volvé a ese", null),
+                CancellationToken.None);
+
+            Assert.Contains("a qué ejercicio", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_ContextFromAnotherSession_IsNotReused()
+        {
+            var firstSession = CreateMultiExerciseSession(("Hip Thrust", 3));
+            var secondSession = CreateMultiExerciseSession(("Press", 3));
+            _sessionRepository.Sessions[firstSession.Id] = firstSession;
+            _sessionRepository.Sessions[secondSession.Id] = secondSession;
+
+            await _handler.Handle(
+                new RespondLiveCoachCommand(firstSession.Id, "turn-first-session", "text", "mostrame Hip Thrust", null),
+                CancellationToken.None);
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(secondSession.Id, "turn-second-session", "text", "volvé a ese", null),
+                CancellationToken.None);
+
+            Assert.Null(result.ClientAction);
+            Assert.Contains("de qué ejercicio o dato", result.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_AmbiguousPerformanceFollowUp_AsksForClarificationWithoutProvider()
+        {
+            var session = CreateBestSetSession();
+            _sessionRepository.Sessions[session.Id] = session;
+
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-previous-set", "text", "qué hice en la serie anterior", null),
+                CancellationToken.None);
+            Assert.Equal(
+                LiveCoachIntentKind.PreviousSetPerformance,
+                _sessionConversationStore.Contexts[(TestUserId, session.Id)].LastPerformanceQueryKind);
+            Assert.Equal(
+                LiveCoachIntentKind.DataQuery,
+                _intentRouter.Route("y comparado con la anterior").Kind);
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-compare-ambiguous", "text", "y comparado con la anterior", null),
+                CancellationToken.None);
+
+            Assert.Contains("serie anterior", result.Text);
+            Assert.Contains("sesión anterior", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_ProactiveWhyFollowUp_UsesStructuredEvidenceWithoutProvider()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var exercise = session.Ejercicios.First();
+            exercise.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-1));
+            exercise.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow);
+            var evaluation = await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id), CancellationToken.None);
+            Assert.NotNull(evaluation.Suggestion);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-proactive-why", "text", "¿por qué?", null),
+                CancellationToken.None);
+
+            Assert.Contains("mínimo de 8 repeticiones", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task EvaluateProactive_AfterOmissionAndFinalSet_ClearsPreviousSuggestion()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var press = session.Ejercicios.First();
+            var remo = session.Ejercicios.Last();
+            press.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-1));
+            press.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow);
+            remo.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-1));
+            remo.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow);
+            var query = new EvaluateLiveCoachProactiveQuery(session.Id);
+            var initial = await _proactiveHandler.Handle(query, CancellationToken.None);
+            Assert.Equal("RepeatedUnderperformance", initial.Suggestion?.Trigger);
+
+            session.OmitirEjercicio(remo.Id);
+            press.RegistrarOActualizarSerie(3, 100, 6, 2, DateTime.UtcNow);
+            var finished = await _proactiveHandler.Handle(query, CancellationToken.None);
+
+            Assert.Null(finished.Suggestion);
+            Assert.Null(_sessionConversationStore.Contexts[(TestUserId, session.Id)].LastProactiveTrigger);
+            Assert.True(session.EstaEnCurso());
+
+            session.ReactivarEjercicio(remo.Id);
+            var reactivated = await _proactiveHandler.Handle(query, CancellationToken.None);
+
+            Assert.Equal("RepeatedUnderperformance", reactivated.Suggestion?.Trigger);
+            Assert.Equal(remo.Id,
+                _sessionConversationStore.Contexts[(TestUserId, session.Id)].LastProactiveTrigger?.ExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task Handle_ProactiveWhyAfterOmission_RejectsStaleEvidenceBeforeReevaluation()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3), ("Remo", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var exercise = session.Ejercicios.First();
+            exercise.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-1));
+            exercise.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow);
+            Assert.NotNull((await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id), CancellationToken.None)).Suggestion);
+            session.OmitirEjercicio(session.Ejercicios.Last().Id);
+
+            var result = await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-stale-proactive", "text", "¿por qué?", null),
+                CancellationToken.None);
+
+            Assert.Contains("ya no está vigente", result.Text);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task EvaluateProactive_AfterPrescriptionAdaptation_InvalidatesEvidenceReference()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            var press = session.Ejercicios.First();
+            press.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-1));
+            press.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow);
+            var query = new EvaluateLiveCoachProactiveQuery(session.Id);
+            Assert.NotNull((await _proactiveHandler.Handle(query, CancellationToken.None)).Suggestion);
+
+            session.AdaptarPrescripcionPendiente(press.Id, 3, 8, 10, 1, 2, 6, 8, 1, 2);
+            var result = await _proactiveHandler.Handle(query, CancellationToken.None);
+
+            Assert.Null(result.Suggestion);
+            Assert.Null(_sessionConversationStore.Contexts[(TestUserId, session.Id)].LastProactiveTrigger);
+            Assert.Single(_sessionConversationStore.Contexts[(TestUserId, session.Id)].RecentProactiveTriggers!);
+        }
+
+        [Fact]
+        public async Task Handle_TimeConstraint_RemembersContextEvenWithoutProposal()
+        {
+            var session = CreateMultiExerciseSession(("Press", 1));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            await _handler.Handle(
+                new RespondLiveCoachCommand(session.Id, "turn-time-context", "text", "me quedan 20 minutos", null),
+                CancellationToken.None);
+
+            var context = _sessionConversationStore.Contexts[(TestUserId, session.Id)];
+            Assert.Equal(20, context.LastTimeConstraint?.AvailableMinutes);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task EvaluateProactive_WhenPendingActionExists_ReturnsNoSuggestion()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            await CreatePendingActionAsync(session);
+
+            var result = await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id),
+                CancellationToken.None);
+
+            Assert.Null(result.Suggestion);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task EvaluateProactive_WhenClarificationExists_ReturnsNoSuggestion()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            _sessionRepository.Sessions[session.Id] = session;
+            _clarificationStore.Set(new PendingLiveCoachClarification(
+                Guid.NewGuid(),
+                TestUserId,
+                session.Id,
+                "turn-clarification",
+                session.Ejercicios.First().Id,
+                LiveCoachClarificationKind.BestSetCriterion,
+                [LiveCoachBestSetCriterion.Weight],
+                DateTime.UtcNow.AddMinutes(1)));
+
+            var result = await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id),
+                CancellationToken.None);
+
+            Assert.Null(result.Suggestion);
+            Assert.Equal(0, _conversationProvider.CallCount);
+        }
+
+        [Fact]
+        public async Task EvaluateProactive_EmitsOnceAndStoresStructuredContext()
+        {
+            var session = CreateMultiExerciseSession(("Press", 3));
+            var exercise = session.Ejercicios.First();
+            exercise.RegistrarOActualizarSerie(1, 100, 6, 2, DateTime.UtcNow.AddMinutes(-2));
+            exercise.RegistrarOActualizarSerie(2, 100, 7, 2, DateTime.UtcNow.AddMinutes(-1));
+            _sessionRepository.Sessions[session.Id] = session;
+
+            var first = await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id),
+                CancellationToken.None);
+            var duplicate = await _proactiveHandler.Handle(
+                new EvaluateLiveCoachProactiveQuery(session.Id),
+                CancellationToken.None);
+
+            Assert.Equal("RepeatedUnderperformance", first.Suggestion?.Trigger);
+            Assert.Null(duplicate.Suggestion);
+            var context = _sessionConversationStore.Contexts[(TestUserId, session.Id)];
+            Assert.Equal(
+                LiveCoachProactiveTriggerType.RepeatedUnderperformance,
+                context.LastProactiveTrigger?.Type);
+            Assert.Equal(exercise.Id, context.LastReferencedExerciseSessionId);
+            Assert.Equal(0, _conversationProvider.CallCount);
+
+            var actionResult = await _handler.Handle(
+                new RespondLiveCoachCommand(
+                    session.Id,
+                    "turn-proactive-prescription",
+                    "text",
+                    first.Suggestion!.ActionPrompt!,
+                    null),
+                CancellationToken.None);
+            Assert.Equal(
+                LiveCoachActionTypes.ApplyPrescriptionAdaptation,
+                actionResult.PendingAction?.Type);
             Assert.Equal(0, _conversationProvider.CallCount);
         }
 
@@ -4016,6 +4487,26 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                     };
                 }
             }
+        }
+
+        private sealed class FakeSessionConversationStore : ILiveCoachSessionConversationStore
+        {
+            public Dictionary<(string UserId, Guid SessionId), LiveCoachSessionConversationContext> Contexts { get; } = [];
+
+            public LiveCoachSessionConversationContext? Get(
+                string userId,
+                Guid sessionId,
+                DateTime nowUtc)
+                => Contexts.GetValueOrDefault((userId, sessionId));
+
+            public void Set(LiveCoachSessionConversationContext context, DateTime nowUtc)
+                => Contexts[(context.UserId, context.SessionId)] = context with
+                {
+                    LastUpdatedAtUtc = nowUtc
+                };
+
+            public void Clear(string userId, Guid sessionId)
+                => Contexts.Remove((userId, sessionId));
         }
 
         private sealed class FakePendingActionExecutor(FakePendingActionStore store)

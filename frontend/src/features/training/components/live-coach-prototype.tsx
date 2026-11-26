@@ -15,6 +15,7 @@ import {
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { respondLiveCoachAction } from "@/features/coach/actions/respond-live-coach.action";
+import { evaluateLiveCoachProactiveAction } from "@/features/coach/actions/evaluate-live-coach-proactive.action";
 import {
   cancelLiveCoachPendingActionRequest,
   confirmLiveCoachPendingAction,
@@ -25,11 +26,13 @@ import type {
   LiveCoachClientAction,
   LiveCoachPendingAction,
   LiveCoachRespondResponse,
+  LiveCoachProactiveSuggestion,
 } from "@/features/coach/types/live-coach.types";
 import { cn } from "@/lib/class-names";
 import { getFirstMissingTarget } from "../training-position";
 import type { TrainingSession } from "../types/training.types";
 import { LiveCoachFace, type LiveCoachFaceState } from "./live-coach-face";
+import { LiveAdaptationPreviewContent } from "./live-adaptation-preview";
 import styles from "./live-coach-prototype.module.css";
 
 type LiveCoachState =
@@ -47,10 +50,18 @@ type StatePresentation = {
   label: string;
 };
 
+type RetryIntent =
+  | { kind: "record" }
+  | { inputKind: "audio" | "text"; kind: "respond"; question: string };
+
 const pendingActionLabels: Record<
   LiveCoachPendingAction["type"],
   { cancel: string; confirm: string }
 > = {
+  ApplyPrescriptionAdaptation: {
+    cancel: "Mantener sesión",
+    confirm: "Aplicar ajuste",
+  },
   ApplyCombinedAdaptation: {
     cancel: "Mantener sesión",
     confirm: "Aplicar ajuste",
@@ -85,7 +96,29 @@ function isAdaptationPendingAction(type: LiveCoachPendingAction["type"]) {
   return type === "ApplyTimeConstraintAdaptation"
     || type === "ApplyFatigueAdaptation"
     || type === "ApplyPerformanceAdaptation"
-    || type === "ApplyCombinedAdaptation";
+    || type === "ApplyCombinedAdaptation"
+    || type === "ApplyPrescriptionAdaptation";
+}
+
+function getInvalidPendingActionMessage(
+  type: LiveCoachPendingAction["type"],
+  status: "conflict" | "expired" | "not-found",
+): string {
+  const action = isAdaptationPendingAction(type)
+    ? "este ajuste"
+    : type === "SkipCurrentExercise"
+      ? "este salto del ejercicio"
+      : type === "ReactivateExercise"
+        ? "esta reactivación del ejercicio"
+        : "este registro de la serie";
+
+  if (status === "expired") {
+    return `La confirmación de ${action} venció. Volvé a pedírmelo.`;
+  }
+  if (status === "not-found") {
+    return `La confirmación de ${action} ya no está disponible. Volvé a pedírmelo.`;
+  }
+  return `La sesión cambió desde que preparé ${action}. Volvé a pedírmelo.`;
 }
 
 const statePresentations: Record<LiveCoachState, StatePresentation> = {
@@ -135,6 +168,10 @@ function getVisibleErrorMessage(message: string | null): string {
   }
 
   const normalized = message.toLocaleLowerCase("es");
+  if (
+    normalized.includes("la sesión cambió") ||
+    normalized.includes("la confirmación")
+  ) return message;
   if (normalized.includes("sesión activa")) return "No encontré una sesión activa.";
   if (normalized.includes("permiso") || normalized.includes("micrófono")) {
     return "Revisá el acceso al micrófono e intentá de nuevo.";
@@ -200,6 +237,7 @@ function getAudioFileExtension(mimeType: string): string {
 }
 
 type LiveCoachPrototypeProps = {
+  isTrainingInputDirty?: boolean;
   session?: TrainingSession | null;
   visibleExerciseSessionId?: string | null;
   onSessionUpdated?: (
@@ -213,10 +251,12 @@ type LiveCoachPrototypeProps = {
   restTimer?: {
     isActive: boolean;
     remainingSeconds: number | null;
+    sourceExerciseSessionId: string | null;
+    startedAtUtc: string | null;
   };
 };
 
-export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer, session, visibleExerciseSessionId }: LiveCoachPrototypeProps) {
+export function LiveCoachPrototype({ isTrainingInputDirty = false, onClientAction, onSessionUpdated, restTimer, session, visibleExerciseSessionId }: LiveCoachPrototypeProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<LiveCoachState>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
@@ -228,6 +268,12 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
   const [showTextInput, setShowTextInput] = useState(false);
   const [actionPending, setActionPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [retryIntent, setRetryIntent] = useState<RetryIntent | null>(null);
+  const [proactiveEvaluation, setProactiveEvaluation] = useState<{
+    workKey: string;
+    suggestion: LiveCoachProactiveSuggestion;
+  } | null>(null);
+  const [proactivePulse, setProactivePulse] = useState(0);
   const [voiceEnabled, setVoiceEnabled] = useState(() => {
     if (typeof window === "undefined") return true;
     try {
@@ -243,14 +289,20 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
+  const captureGenerationRef = useRef(0);
+  const recordingStartPendingRef = useRef(false);
   const interactionSnapshotRef = useRef<LiveCoachClientSnapshot | null>(null);
+  const interactionGenerationRef = useRef(0);
   const appliedClientActionsRef = useRef<Set<string>>(new Set());
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentAudioUrlRef = useRef<string | null>(null);
+  const speechAbortRef = useRef<AbortController | null>(null);
 
   function stopAudio(reason?: string) {
     void reason;
+    speechAbortRef.current?.abort();
+    speechAbortRef.current = null;
     if (audioRef.current) {
       const audio = audioRef.current;
       audioRef.current = null;
@@ -271,6 +323,8 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
   }
 
   function cleanupMedia() {
+    captureGenerationRef.current += 1;
+    recordingStartPendingRef.current = false;
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -302,6 +356,79 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       stopAudio("component-unmount");
     };
   }, []);
+
+  const proactiveWorkKey = session && getFirstMissingTarget(session) ? JSON.stringify([
+    session.id, session.estado, restTimer?.sourceExerciseSessionId, restTimer?.startedAtUtc,
+    session.ejercicios.map((exercise) => [
+      exercise.id, exercise.orden, exercise.omitido, exercise.seriesObjetivo,
+      exercise.repeticionesMinimasObjetivo, exercise.repeticionesMaximasObjetivo,
+      exercise.rirObjetivoMinimo, exercise.rirObjetivoMaximo, exercise.descansoObjetivoSegundos,
+      [...exercise.series].sort((first, second) => first.numeroSerie - second.numeroSerie),
+    ]),
+  ]) : null;
+  if (proactiveEvaluation && proactiveEvaluation.workKey !== proactiveWorkKey) {
+    setProactiveEvaluation(null);
+  }
+  const proactiveSuggestion = proactiveEvaluation?.workKey === proactiveWorkKey
+    ? proactiveEvaluation.suggestion
+    : null;
+
+  useEffect(() => {
+    if (!session?.id || !restTimer?.startedAtUtc || !restTimer.sourceExerciseSessionId) return;
+    const source = session.ejercicios.find((exercise) => exercise.id === restTimer.sourceExerciseSessionId);
+    if (!source || source.descansoObjetivoSegundos <= 0) return;
+    const dueAt = new Date(restTimer.startedAtUtc).getTime()
+      + (source.descansoObjetivoSegundos + 60) * 1000;
+    const timeout = window.setTimeout(
+      () => setProactivePulse((current) => current + 1),
+      Math.max(0, dueAt - Date.now()),
+    );
+    return () => window.clearTimeout(timeout);
+  }, [restTimer?.sourceExerciseSessionId, restTimer?.startedAtUtc, session]);
+
+  useEffect(() => {
+    if (
+      !session?.id ||
+      !proactiveWorkKey ||
+      state !== "idle" ||
+      isTrainingInputDirty ||
+      showTextInput ||
+      pendingAction ||
+      coachResponse?.clarification
+    ) {
+      return;
+    }
+    let active = true;
+    void evaluateLiveCoachProactiveAction({
+      sessionId: session.id,
+      snapshot: restTimer?.startedAtUtc && restTimer.sourceExerciseSessionId
+        ? {
+          restExerciseSessionId: restTimer.sourceExerciseSessionId,
+          restStartedAtUtc: restTimer.startedAtUtc,
+        }
+        : null,
+    }).then((result) => {
+      if (active && result.status === "success") {
+        setProactiveEvaluation(result.data.suggestion
+          ? { workKey: proactiveWorkKey, suggestion: result.data.suggestion }
+          : null);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [
+    coachResponse?.clarification,
+    isTrainingInputDirty,
+    pendingAction,
+    proactivePulse,
+    restTimer?.sourceExerciseSessionId,
+    restTimer?.startedAtUtc,
+    session?.id,
+    proactiveWorkKey,
+    showTextInput,
+    state,
+  ]);
 
   function toggleVoice() {
     const next = !voiceEnabled;
@@ -360,8 +487,10 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     };
     audio.onerror = () => {
       stopAudio("audio-error");
+      setVoiceError("No se pudo reproducir la voz. Podés leer la respuesta en texto.");
       setState("success");
     };
+    audio.onabort = audio.onerror;
   }
 
   async function playSpokenAnswer(
@@ -383,6 +512,8 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
 
     stopAudio("replace-audio");
     setVoiceError(null);
+    const controller = new AbortController();
+    speechAbortRef.current = controller;
 
     try {
       const response = await fetch("/api/coach/live/speech", {
@@ -391,9 +522,13 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
           "Content-Type": "application/json",
         },
         method: "POST",
+        signal: controller.signal,
       });
 
+      if (speechAbortRef.current !== controller) return;
+
       if (!response.ok) {
+        if (speechAbortRef.current === controller) speechAbortRef.current = null;
         setVoiceError(
           response.status === 404
             ? "La respuesta de voz expiró. Hacé una nueva consulta."
@@ -404,13 +539,16 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       }
 
       const blob = await response.blob();
+      if (speechAbortRef.current !== controller) return;
       if (blob.size === 0) {
+        if (speechAbortRef.current === controller) speechAbortRef.current = null;
         setVoiceError("El servicio de voz devolvió un audio vacío.");
         setState("success");
         return;
       }
       const url = URL.createObjectURL(blob);
       currentAudioUrlRef.current = url;
+      speechAbortRef.current = null;
 
       const audio = new Audio(url);
       attachAudioEventListeners(audio, listenForPendingConfirmation);
@@ -423,7 +561,9 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
         // Mantenemos audioRef y el URL cargados para que el usuario pueda reproducir al pulsar "Escuchar".
         setState("success");
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      if (speechAbortRef.current === controller) speechAbortRef.current = null;
       setVoiceError("No se pudo conectar con el servicio de voz.");
       setState("success");
     }
@@ -436,9 +576,12 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       return;
     }
 
+    setProactiveEvaluation(null);
     stopAudio("new-query-ask");
     setActionError(null);
+    setRetryIntent({ inputKind, kind: "respond", question: questionText });
     setState("answering");
+    const interactionGeneration = ++interactionGenerationRef.current;
 
     const snapshot = inputKind === "audio"
       ? interactionSnapshotRef.current ?? getClientSnapshot()
@@ -452,6 +595,8 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       sessionId: session.id,
       text: questionText,
     });
+
+    if (interactionGeneration !== interactionGenerationRef.current) return;
 
     if (result.status === "success") {
       const nextPendingAction = result.data.pendingAction ?? null;
@@ -478,6 +623,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       }
       setCoachResponse({ ...result.data, pendingAction: null });
       setPendingAction(nextPendingAction);
+      setRetryIntent(null);
 
       if (result.data.canSynthesizeVoice && voiceEnabled) {
         await playSpokenAnswer(
@@ -502,20 +648,27 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     const query = textInput.trim();
     if (!query) return;
 
-    if (!coachResponse?.clarification || pendingAction) {
-      setTranscript(query);
-    }
+    setTranscript(query);
     setTextInput("");
     setShowTextInput(false);
     await askCoach(query, "text");
   }
 
   async function startRecording(preserveCurrentResponse = false) {
-    if (actionPending) return;
-    interactionSnapshotRef.current = getClientSnapshot();
+    if (
+      actionPending ||
+      recordingStartPendingRef.current ||
+      recorderRef.current?.state === "recording"
+    ) return;
     cleanupMedia();
+    const captureGeneration = captureGenerationRef.current;
+    const interactionGeneration = ++interactionGenerationRef.current;
+    recordingStartPendingRef.current = true;
+    interactionSnapshotRef.current = getClientSnapshot();
     stopAudio("new-query-audio");
     setErrorMessage(null);
+    setRetryIntent(null);
+    setShowTextInput(false);
     if (!preserveCurrentResponse) {
       setTranscript(null);
       setCoachResponse(null);
@@ -528,6 +681,8 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       typeof MediaRecorder === "undefined"
     ) {
       setErrorMessage("Tu navegador no soporta grabación de audio o requiere conexión segura (HTTPS).");
+      setRetryIntent({ kind: "record" });
+      recordingStartPendingRef.current = false;
       setState("error");
       return;
     }
@@ -545,6 +700,8 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
         },
       });
     } catch (err: unknown) {
+      recordingStartPendingRef.current = false;
+      if (captureGeneration !== captureGenerationRef.current) return;
       const isDenied =
         err instanceof DOMException &&
         (err.name === "NotAllowedError" || err.name === "PermissionDeniedError");
@@ -553,7 +710,14 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
           ? "Permiso de micrófono denegado. Habilitá el acceso al micrófono en la configuración de tu navegador."
           : "No se pudo acceder al micrófono del dispositivo.",
       );
+      setRetryIntent({ kind: "record" });
       setState("error");
+      return;
+    }
+
+    if (captureGeneration !== captureGenerationRef.current || !dialogRef.current?.open) {
+      stream.getTracks().forEach((track) => track.stop());
+      recordingStartPendingRef.current = false;
       return;
     }
 
@@ -564,7 +728,17 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     try {
       recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
     } catch {
-      recorder = new MediaRecorder(stream);
+      try {
+        recorder = new MediaRecorder(stream);
+      } catch {
+        stream.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        recordingStartPendingRef.current = false;
+        setRetryIntent({ kind: "record" });
+        setErrorMessage("No se pudo iniciar la grabación en este dispositivo.");
+        setState("error");
+        return;
+      }
     }
 
     recorderRef.current = recorder;
@@ -576,12 +750,20 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       }
     };
 
+    recorder.onerror = () => {
+      cleanupMedia();
+      setRetryIntent({ kind: "record" });
+      setErrorMessage("La grabación se interrumpió. Intentá nuevamente.");
+      setState("error");
+    };
+
     recorder.onstop = async () => {
       const elapsed = Date.now() - startTimeRef.current;
       const finalChunks = [...chunksRef.current];
       cleanupMedia();
 
       if (finalChunks.length === 0) {
+        setRetryIntent({ kind: "record" });
         setErrorMessage("No se grabaron datos de audio.");
         setState("error");
         return;
@@ -592,6 +774,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
       });
 
       if (recordedBlob.size < 1024) {
+        setRetryIntent({ kind: "record" });
         setErrorMessage("La grabación fue demasiado corta o vacía. Hablá más cerca del micrófono.");
         setState("error");
         return;
@@ -609,13 +792,14 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
 
       const result = await transcribeLiveAudioAction(formData);
 
+      if (interactionGeneration !== interactionGenerationRef.current) return;
+
       if (result.status === "success") {
         const text = result.data.transcript;
-        if (!coachResponse?.clarification || pendingAction) {
-          setTranscript(text);
-        }
+        setTranscript(text);
         await askCoach(text, "audio");
       } else {
+        setRetryIntent({ kind: "record" });
         setErrorMessage(result.message || "Ocurrió un error al procesar el audio.");
         setState("error");
       }
@@ -623,6 +807,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
 
     startTimeRef.current = Date.now();
     recorder.start();
+    recordingStartPendingRef.current = false;
     setState("listening");
 
     // Auto-stop at 15 seconds
@@ -644,6 +829,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
   }
 
   function handleReset() {
+    interactionGenerationRef.current += 1;
     cleanupMedia();
     stopAudio("manual-reset");
     setVoiceError(null);
@@ -655,9 +841,12 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     setTextInput("");
     setActionPending(false);
     setActionError(null);
+    setRetryIntent(null);
+    setShowTextInput(false);
   }
 
   function handleCancelOrClose() {
+    interactionGenerationRef.current += 1;
     const pendingActionId = pendingAction?.actionId;
     if (pendingActionId) void cancelLiveCoachPendingActionRequest(pendingActionId);
     cleanupMedia();
@@ -671,7 +860,31 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     setTextInput("");
     setActionPending(false);
     setActionError(null);
+    setRetryIntent(null);
+    setShowTextInput(false);
     dialogRef.current?.close();
+  }
+
+  async function retryLastFailure() {
+    const retry = retryIntent;
+    if (!retry) {
+      handleReset();
+      return;
+    }
+    if (retry.kind === "respond") {
+      await askCoach(retry.question, retry.inputKind);
+      return;
+    }
+    await startRecording(Boolean(pendingAction || coachResponse?.clarification));
+  }
+
+  function openTextFallbackFromError() {
+    cleanupMedia();
+    stopAudio("error-text-fallback");
+    setErrorMessage(null);
+    setRetryIntent(null);
+    setShowTextInput(true);
+    setState(coachResponse?.clarification ? "success" : "idle");
   }
 
   async function confirmPendingAction() {
@@ -705,20 +918,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
     if (result.status === "conflict" || result.status === "expired" || result.status === "not-found") {
       setCoachResponse((current) => current ? { ...current, pendingAction: null } : current);
       setPendingAction(null);
-      if (isAdaptationPendingAction(pendingAction.type)) {
-        setErrorMessage(result.status === "expired"
-          ? "Ese ajuste ya venció. Pedímelo de nuevo y lo recalculo."
-          : result.status === "not-found"
-            ? "Ese ajuste ya no está disponible. Pedímelo de nuevo y lo recalculo."
-            : "Tu sesión cambió desde que preparé el ajuste. Pedímelo de nuevo y lo recalculo.");
-        setState("error");
-        return;
-      }
-      setErrorMessage(pendingAction.type === "SkipCurrentExercise"
-        ? "La sesión cambió. Volvé a pedirme que salte el ejercicio."
-        : pendingAction.type === "ReactivateExercise"
-          ? "La sesión cambió. Volvé a pedirme que reactive el ejercicio."
-        : "La sesión cambió. Volvé a indicarme la serie.");
+      setErrorMessage(getInvalidPendingActionMessage(pendingAction.type, result.status));
       setState("error");
       return;
     }
@@ -765,35 +965,60 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
   }
 
   const clarification = pendingAction ? null : coachResponse?.clarification ?? null;
-  const presentation = clarification && state === "success"
-    ? { description: "Elegí una opción o respondé con tu voz.", label: "Te escucho" }
-    : statePresentations[state];
+  const showClarification = Boolean(clarification && state === "success");
+  const showProactiveSuggestion = Boolean(
+    proactiveSuggestion && !pendingAction && !showClarification && state === "idle",
+  );
+  const showStablePending = Boolean(
+    pendingAction && (state === "idle" || state === "success" || state === "error"),
+  );
+  const presentation = showStablePending
+    ? { description: "Revisá la propuesta antes de continuar.", label: "Confirmá el cambio" }
+    : showClarification
+      ? { description: "Elegí una opción o respondé con tu voz.", label: "Te escucho" }
+      : showProactiveSuggestion
+        ? { description: "Podés revisarla o seguir entrenando.", label: "Sugerencia" }
+        : statePresentations[state];
   const faceState = mapToFaceState(state, pendingAction !== null);
   const confirmationControlsDisabled =
     actionPending ||
     state === "requestingPermission" ||
+    state === "listening" ||
     state === "transcribing" ||
     state === "answering";
   const showVoiceConfirmationAction =
     state !== "requestingPermission" &&
     state !== "listening" &&
     state !== "transcribing" &&
-    state !== "answering";
+    state !== "answering" &&
+    state !== "speaking";
   const pendingLabels = pendingAction
-    ? pendingActionLabels[pendingAction.type] ?? { cancel: "Cancelar", confirm: "Confirmar" }
+    ? pendingActionLabels[pendingAction.type]
     : null;
+  const pendingError = actionError ?? (state === "error" ? getVisibleErrorMessage(errorMessage) : null);
   const pendingActionPanel = pendingAction ? (
     <div className="border-t border-border/60 pt-4">
-      <p className="font-brand text-lg font-bold leading-6 text-text-primary">
-        {pendingAction.summary.split(" · ")[0]}
-      </p>
-      {pendingAction.summary.includes(" · ") ? (
-        <p className="mt-1 text-sm font-medium text-text-secondary">
-          {pendingAction.summary.split(" · ").slice(1).join(" · ")}
-        </p>
+      {pendingAction.adaptationPreview ? (
+        <LiveAdaptationPreviewContent key={pendingAction.actionId} preview={pendingAction.adaptationPreview} />
+      ) : (
+        <>
+          <p className="font-brand text-lg font-bold leading-6 text-text-primary">
+            {pendingAction.summary.split(" · ")[0]}
+          </p>
+          {pendingAction.summary.includes(" · ") ? (
+            <p className="mt-1 text-sm font-medium text-text-secondary">
+              {pendingAction.summary.split(" · ").slice(1).join(" · ")}
+            </p>
+          ) : null}
+        </>
+      )}
+      {pendingError ? (
+        <p className="mt-3 text-sm leading-5 text-error" role="alert">{pendingError}</p>
       ) : null}
-      {actionError ? (
-        <p className="mt-3 text-sm leading-5 text-error" role="alert">{actionError}</p>
+      {voiceError ? (
+        <p className="mt-3 text-[0.8125rem] leading-5 text-warning" role="status">
+          {voiceError}
+        </p>
       ) : null}
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Button disabled={confirmationControlsDisabled} onClick={cancelPendingAction} variant="ghost">
@@ -824,7 +1049,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
         aria-controls="live-coach-dialog"
         aria-haspopup="dialog"
         aria-label={`Abrir Live Coach. Estado: ${presentation.label}`}
-        className="flex min-h-12 shrink-0 items-center gap-2 rounded-control-sm px-2 text-text-secondary transition-colors duration-150 hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+        className="relative flex min-h-12 shrink-0 items-center gap-2 rounded-control-sm px-2 text-text-secondary transition-colors duration-150 hover:bg-surface-active hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
         onClick={openSheet}
         type="button"
       >
@@ -832,6 +1057,12 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
         <span className="hidden text-[0.8125rem] font-semibold min-[380px]:inline">
           Live Coach
         </span>
+        {proactiveSuggestion ? (
+          <span
+            aria-label="Live Coach tiene una sugerencia"
+            className="absolute right-1 top-1 size-2 rounded-full bg-thermal-accent"
+          />
+        ) : null}
       </button>
 
       <dialog
@@ -839,7 +1070,10 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
         aria-modal="true"
         className="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[calc(100dvh-0.5rem)] w-full max-w-none overflow-y-auto rounded-t-container border border-border-strong bg-surface-elevated p-0 text-text-primary shadow-elevated backdrop:bg-black/75 sm:inset-0 sm:m-auto sm:w-[calc(100%-2rem)] sm:max-w-md sm:rounded-container"
         onClick={handleBackdropClick}
-        onClose={handleCancelOrClose}
+        onCancel={(event) => {
+          event.preventDefault();
+          handleCancelOrClose();
+        }}
         ref={dialogRef}
         id="live-coach-dialog"
       >
@@ -903,7 +1137,38 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
           </section>
 
           <div className={cn(styles.stateBody, "mt-4 space-y-4")} key={state}>
-            {state === "idle" && (
+            {state === "idle" && showProactiveSuggestion && proactiveSuggestion && (
+              <div className="border-t border-border/60 pt-4 text-left" role="status">
+                <p className="text-sm font-medium leading-6 text-text-primary">
+                  {proactiveSuggestion.text}
+                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {proactiveSuggestion.actionLabel && proactiveSuggestion.actionPrompt ? (
+                    <Button
+                      onClick={() => {
+                        const prompt = proactiveSuggestion.actionPrompt;
+                        if (!prompt) return;
+                        setProactiveEvaluation(null);
+                        void askCoach(prompt, "text");
+                      }}
+                      size="sm"
+                      variant="secondary"
+                    >
+                      {proactiveSuggestion.actionLabel}
+                    </Button>
+                  ) : null}
+                  <Button
+                    onClick={() => setProactiveEvaluation(null)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    Ahora no
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {state === "idle" && !showProactiveSuggestion && !pendingAction && (
               <div className="space-y-2">
                 <Button fullWidth onClick={() => void startRecording()}>
                   <Mic aria-hidden="true" size={18} />
@@ -946,7 +1211,36 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
               </div>
             )}
 
-            {state === "listening" && (
+            {pendingAction ? (
+              <div className="space-y-4">
+                {state === "listening" ? (
+                  <button
+                    className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-thermal-accent/60 bg-thermal-accent/15 px-4 py-3 text-sm font-semibold text-thermal-accent transition-colors duration-150 hover:bg-thermal-accent/25 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                    onClick={stopRecording}
+                    type="button"
+                  >
+                    <Square aria-hidden="true" className="fill-current" size={16} />
+                    <span>Detener y enviar</span>
+                  </button>
+                ) : null}
+                {pendingActionPanel}
+                {state === "speaking" ? (
+                  <Button
+                    fullWidth
+                    onClick={() => {
+                      stopAudio("manual-stop");
+                      setState("success");
+                    }}
+                    variant="secondary"
+                  >
+                    <Square aria-hidden="true" className="fill-current" size={15} />
+                    <span>Detener voz</span>
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+
+            {state === "listening" && !pendingAction && (
               <div className="space-y-4">
                 <button
                   className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-control-sm border border-thermal-accent/60 bg-thermal-accent/15 px-4 py-3 text-sm font-semibold text-thermal-accent transition-colors duration-150 hover:bg-thermal-accent/25 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
@@ -956,13 +1250,10 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
                   <Square aria-hidden="true" className="fill-current" size={16} />
                   <span>Detener y enviar</span>
                 </button>
-                {pendingActionPanel}
               </div>
             )}
 
-            {(state === "requestingPermission" || state === "transcribing" || state === "answering") && pendingActionPanel}
-
-            {state === "speaking" && coachResponse && (
+            {state === "speaking" && coachResponse && !pendingAction && (
               <div className="space-y-4">
                 <div className="max-h-[min(10rem,28dvh)] overflow-y-auto border-t border-border/60 pt-4 activity-scrollbar">
                   {coachResponse.isStaleContext && (
@@ -972,8 +1263,6 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
                     {coachResponse.text}
                   </p>
                 </div>
-
-                {pendingActionPanel}
 
                 <div>
                   <Button
@@ -991,7 +1280,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
               </div>
             )}
 
-            {state === "success" && coachResponse && (
+            {state === "success" && coachResponse && !pendingAction && (
               <div className="space-y-4">
                 <div className="max-h-[min(15rem,36dvh)] space-y-4 overflow-y-auto border-t border-border/60 pt-4 activity-scrollbar">
                   {transcript && (
@@ -1025,8 +1314,6 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
                       </p>
                     )}
                   </div>
-
-                  {pendingActionPanel}
                 </div>
 
                 {clarification ? (
@@ -1100,7 +1387,7 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
                       </Button>
                     </div>
                   </div>
-                ) : !pendingAction ? (
+                ) : (
                   <div className="flex gap-2">
                     {coachResponse.canSynthesizeVoice && (
                       <Button
@@ -1122,11 +1409,11 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
                       <span>Otra consulta</span>
                     </Button>
                   </div>
-                ) : null}
+                )}
               </div>
             )}
 
-            {state === "error" && (
+            {state === "error" && !pendingAction && (
               <div className="space-y-4">
                 <p
                   className="flex items-start justify-center gap-2 text-center text-sm leading-5 text-text-secondary"
@@ -1136,12 +1423,16 @@ export function LiveCoachPrototype({ onClientAction, onSessionUpdated, restTimer
                   <span>{getVisibleErrorMessage(errorMessage)}</span>
                 </p>
 
-                {pendingAction ? pendingActionPanel : (
-                  <Button fullWidth onClick={handleReset} variant="secondary">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button fullWidth onClick={() => void retryLastFailure()} variant="secondary">
                     <RotateCcw aria-hidden="true" size={16} />
-                    <span>Reintentar</span>
+                    <span>{retryIntent ? "Reintentar" : "Volver"}</span>
                   </Button>
-                )}
+                  <Button fullWidth onClick={openTextFallbackFromError} variant="ghost">
+                    <MessageSquare aria-hidden="true" size={16} />
+                    <span>Escribir</span>
+                  </Button>
+                </div>
               </div>
             )}
           </div>

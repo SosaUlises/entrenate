@@ -5,6 +5,7 @@ namespace Entrenate.Domain.Entidades
     public class SesionEntrenamiento
     {
         private readonly List<EjercicioSesion> _ejercicios = [];
+        private readonly List<AdaptacionLiveCoachSesion> _adaptacionesLiveCoach = [];
 
         public Guid Id { get; private set; }
 
@@ -28,6 +29,9 @@ namespace Entrenate.Domain.Entidades
 
         public IReadOnlyCollection<EjercicioSesion> Ejercicios
             => _ejercicios.AsReadOnly();
+
+        public IReadOnlyCollection<AdaptacionLiveCoachSesion> AdaptacionesLiveCoach
+            => _adaptacionesLiveCoach.AsReadOnly();
 
         private SesionEntrenamiento()
         {
@@ -207,6 +211,61 @@ namespace Entrenate.Domain.Entidades
                 throw new InvalidOperationException("El ejercicio no está omitido.");
 
             ejercicio.Reactivar();
+        }
+
+        public void AdaptarPrescripcionPendiente(
+            Guid ejercicioSesionId,
+            int effectiveFromSetNumber,
+            int previousRepMin,
+            int previousRepMax,
+            int previousRirMin,
+            int previousRirMax,
+            int newRepMin,
+            int newRepMax,
+            int newRirMin,
+            int newRirMax)
+        {
+            if (Estado != EstadoSesionEntrenamiento.EnCurso)
+                throw new InvalidOperationException("Solo se puede adaptar una sesion en curso.");
+
+            var ejercicio = BuscarEjercicio(ejercicioSesionId);
+            if (ejercicio.Omitido)
+                throw new InvalidOperationException("No se puede adaptar un ejercicio omitido.");
+
+            ejercicio.AdaptarPrescripcionPendiente(
+                effectiveFromSetNumber,
+                previousRepMin,
+                previousRepMax,
+                previousRirMin,
+                previousRirMax,
+                newRepMin,
+                newRepMax,
+                newRirMin,
+                newRirMax);
+        }
+
+        public void RegistrarAdaptacionLiveCoach(
+            TipoAdaptacionLiveCoach tipo,
+            DateTime fechaAplicacionUtc,
+            Guid? ejercicioSesionId = null,
+            int? serieEfectivaDesde = null,
+            int? repeticionesMinimasAnteriores = null,
+            int? repeticionesMaximasAnteriores = null,
+            int? repeticionesMinimasNuevas = null,
+            int? repeticionesMaximasNuevas = null,
+            int? rirMinimoAnterior = null,
+            int? rirMaximoAnterior = null,
+            int? rirMinimoNuevo = null,
+            int? rirMaximoNuevo = null)
+        {
+            if (Estado != EstadoSesionEntrenamiento.EnCurso)
+                throw new InvalidOperationException("Solo se pueden registrar ajustes durante una sesion en curso.");
+
+            _adaptacionesLiveCoach.Add(new AdaptacionLiveCoachSesion(
+                Id, tipo, fechaAplicacionUtc, ejercicioSesionId, serieEfectivaDesde,
+                repeticionesMinimasAnteriores, repeticionesMaximasAnteriores,
+                repeticionesMinimasNuevas, repeticionesMaximasNuevas,
+                rirMinimoAnterior, rirMaximoAnterior, rirMinimoNuevo, rirMaximoNuevo));
         }
 
         private EjercicioSesion BuscarEjercicio(Guid ejercicioSesionId)

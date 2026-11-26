@@ -11,7 +11,7 @@ namespace Entrenate.Infrastructure.UnitTests.Persistence
         public void Model_ConfiguresSesionAdaptacionCorrectly()
         {
             var options = new DbContextOptionsBuilder<EntrenateDbContext>()
-                .UseNpgsql("Host=localhost;Database=entrenate_test;Username=postgres;Password=postgres")
+                .UseNpgsql()
                 .Options;
 
             using var context = new EntrenateDbContext(options);
@@ -60,7 +60,7 @@ namespace Entrenate.Infrastructure.UnitTests.Persistence
         public void Model_ConfiguresChildCollectionsCorrectly()
         {
             var options = new DbContextOptionsBuilder<EntrenateDbContext>()
-                .UseNpgsql("Host=localhost;Database=entrenate_test;Username=postgres;Password=postgres")
+                .UseNpgsql()
                 .Options;
 
             using var context = new EntrenateDbContext(options);

@@ -18,6 +18,14 @@ namespace Entrenate.Domain.Entidades
 
         public DateTime FechaHoraRegistro { get; private set; }
 
+        public int? RepeticionesObjetivoMinimas { get; private set; }
+
+        public int? RepeticionesObjetivoMaximas { get; private set; }
+
+        public int? RirObjetivoMinimo { get; private set; }
+
+        public int? RirObjetivoMaximo { get; private set; }
+
         public EjercicioSesion EjercicioSesion { get; set; } = null!;
 
         public void ConfigurarNumeroSerie(int numeroSerie)
@@ -69,6 +77,33 @@ namespace Entrenate.Domain.Entidades
                     "No se puede completar una serie sin registrar repeticiones.");
 
             Completada = true;
+        }
+
+        internal void RegistrarPrescripcion(
+            int repeticionesObjetivoMinimas,
+            int repeticionesObjetivoMaximas,
+            int rirObjetivoMinimo,
+            int rirObjetivoMaximo)
+        {
+            if (RepeticionesObjetivoMinimas.HasValue)
+                return;
+
+            if (repeticionesObjetivoMinimas < 1 ||
+                repeticionesObjetivoMaximas < repeticionesObjetivoMinimas)
+            {
+                throw new ArgumentException("El rango de repeticiones objetivo no es valido.");
+            }
+
+            if (rirObjetivoMinimo < 0 || rirObjetivoMaximo > 5 ||
+                rirObjetivoMaximo < rirObjetivoMinimo)
+            {
+                throw new ArgumentException("El rango de RIR objetivo no es valido.");
+            }
+
+            RepeticionesObjetivoMinimas = repeticionesObjetivoMinimas;
+            RepeticionesObjetivoMaximas = repeticionesObjetivoMaximas;
+            RirObjetivoMinimo = rirObjetivoMinimo;
+            RirObjetivoMaximo = rirObjetivoMaximo;
         }
 
         public bool EstaRealmenteCompletada()

@@ -7,5 +7,9 @@ namespace Entrenate.Application.TrainingSessions.DTOs
         int Repeticiones,
         int? Rir,
         bool Completada,
-        DateTime FechaHoraRegistro);
+        DateTime FechaHoraRegistro,
+        int? RepeticionesObjetivoMinimas = null,
+        int? RepeticionesObjetivoMaximas = null,
+        int? RirObjetivoMinimo = null,
+        int? RirObjetivoMaximo = null);
 }

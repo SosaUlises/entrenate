@@ -27,6 +27,72 @@ export type LiveCoachRespondRequest = {
   clientSnapshot?: LiveCoachClientSnapshot | null;
 };
 
+export type LiveCoachProactiveRequest = {
+  sessionId: string;
+  snapshot?: {
+    restExerciseSessionId?: string | null;
+    restStartedAtUtc?: string | null;
+  } | null;
+};
+
+export type LiveCoachProactiveSuggestion = {
+  trigger: "RepeatedUnderperformance" | "ExcessiveEffort" | "SessionTimeDrift" | "LongRest";
+  text: string;
+  actionLabel?: string | null;
+  actionPrompt?: string | null;
+};
+
+export type LiveCoachProactiveEvaluation = {
+  suggestion?: LiveCoachProactiveSuggestion | null;
+};
+
+export type PostSessionBestSet = {
+  criterion: "Volume" | "Weight" | "Repetitions";
+  exerciseName: string;
+  setNumber: number;
+  weightKg: number;
+  repetitions: number;
+  rir: number | null;
+  volume: number;
+};
+
+export type PostSessionAdaptation = {
+  type: string;
+  label: string;
+  detail: string | null;
+};
+
+export type PostSessionExerciseSummary = {
+  exerciseSessionId: string;
+  exerciseName: string;
+  completed: boolean;
+  omitted: boolean;
+  completedSets: number;
+  missedRepetitionSets: number;
+  excessiveEffortSets: number;
+  assessedSets: number;
+  affectedSets: number;
+  maxRepetitionShortfall: number;
+  maxRirShortfall: number;
+  repetitionTargetMetSets: number;
+};
+
+export type PostSessionCoachSummary = {
+  sessionId: string;
+  totalExercises: number;
+  completedExercises: number;
+  omittedExercises: number;
+  completedSets: number;
+  underperformanceEvents: number;
+  excessiveEffortEvents: number;
+  adaptationsApplied: PostSessionAdaptation[];
+  bestSets: PostSessionBestSet[];
+  exercises: PostSessionExerciseSummary[];
+  notableObservations: string[];
+};
+
+export type PostSessionCoachAnswer = { answer: string };
+
 export type LiveCoachRespondResponse = {
   responseId: string;
   clientTurnId: string;
@@ -50,7 +116,7 @@ export type LiveCoachClarificationOption = {
 };
 
 export type LiveCoachClientAction =
-  | { type: "StartRestTimer"; durationSeconds: number }
+  | { type: "StartRestTimer"; durationSeconds: number; exerciseSessionId?: string | null }
   | { type: "StopRestTimer"; durationSeconds?: null }
   | {
     type: "NavigateNextExercise" | "NavigatePreviousExercise" | "NavigateToExercise";
@@ -67,9 +133,40 @@ export type LiveCoachPendingAction = {
     | "ApplyTimeConstraintAdaptation"
     | "ApplyFatigueAdaptation"
     | "ApplyPerformanceAdaptation"
-    | "ApplyCombinedAdaptation";
+    | "ApplyCombinedAdaptation"
+    | "ApplyPrescriptionAdaptation";
   summary: string;
   expiresAtUtc: string;
+  adaptationPreview?: LiveAdaptationPreview | null;
+};
+
+export type LiveAdaptationTarget = {
+  repMin: number;
+  repMax: number;
+  rirMin: number;
+  rirMax: number;
+};
+
+export type LiveAdaptationPreview = {
+  title: string;
+  explanation: string;
+  pendingSets: number;
+  minutesBefore: number | null;
+  minutesAfter: number | null;
+  exercises: {
+    id: string;
+    name: string;
+    status: "retained" | "completed" | "newlyOmitted" | "alreadyOmitted";
+    pendingSets: number;
+    target: LiveAdaptationTarget;
+    restSeconds: number;
+  }[];
+  prescriptionChange: {
+    exerciseName: string;
+    fromSet: number;
+    before: LiveAdaptationTarget;
+    after: LiveAdaptationTarget;
+  } | null;
 };
 
 export type LiveCoachActionConfirmation = {

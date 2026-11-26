@@ -1,4 +1,4 @@
-﻿using Entrenate.Application.Coach.AdaptiveTraining.DTOs;
+using Entrenate.Application.Coach.AdaptiveTraining.DTOs;
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.Coach.Progress.Analysis;
@@ -57,6 +57,7 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
             return _context.SesionesEntrenamiento
                 .Include(x => x.Ejercicios)
                     .ThenInclude(x => x.Series)
+                .Include(x => x.AdaptacionesLiveCoach)
                 .FirstOrDefaultAsync(
                     x => x.Id == sessionId &&
                         x.UsuarioId == userId,
@@ -120,6 +121,9 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                     .ThenInclude(x => x.Ejercicio)
                 .Include(x => x.Ejercicios.OrderBy(y => y.Orden))
                     .ThenInclude(x => x.Series.OrderBy(y => y.NumeroSerie))
+                .Include(x => x.Adaptacion)
+                    .ThenInclude(x => x!.Cambios)
+                .Include(x => x.AdaptacionesLiveCoach.OrderBy(y => y.FechaAplicacionUtc))
                 .FirstOrDefaultAsync(
                     x => x.Id == sessionId &&
                         x.UsuarioId == userId,
@@ -158,7 +162,11 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                             y.Repeticiones,
                             y.Rir,
                             y.Completada,
-                            y.FechaHoraRegistro))
+                            y.FechaHoraRegistro,
+                            y.RepeticionesObjetivoMinimas,
+                            y.RepeticionesObjetivoMaximas,
+                            y.RirObjetivoMinimo,
+                            y.RirObjetivoMaximo))
                         .ToList()))
                 .ToListAsync(cancellationToken);
         }
@@ -210,7 +218,11 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                             y.Repeticiones,
                             y.Rir,
                             y.Completada,
-                            y.FechaHoraRegistro))
+                            y.FechaHoraRegistro,
+                            y.RepeticionesObjetivoMinimas,
+                            y.RepeticionesObjetivoMaximas,
+                            y.RirObjetivoMinimo,
+                            y.RirObjetivoMaximo))
                         .ToList()))
                 .ToListAsync(cancellationToken);
         }
@@ -264,7 +276,11 @@ namespace Entrenate.Infrastructure.Persistence.Repositories
                             y.Repeticiones,
                             y.Rir,
                             y.Completada,
-                            y.FechaHoraRegistro))
+                            y.FechaHoraRegistro,
+                            y.RepeticionesObjetivoMinimas,
+                            y.RepeticionesObjetivoMaximas,
+                            y.RirObjetivoMinimo,
+                            y.RirObjetivoMaximo))
                         .ToList()))
                 .ToListAsync(cancellationToken);
         }

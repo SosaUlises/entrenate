@@ -20,12 +20,14 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
         public async Task Handle_WhenProposalIsCurrent_OmitsAllChangesAndSavesOnce()
         {
             var session = CreateSession();
-            var proposal = CreateProposal(session);
+            session.Ejercicios.First().RegistrarOActualizarSerie(1, 100, 8, 1, DateTime.UtcNow);
+            session.OmitirEjercicio(session.Ejercicios.ElementAt(1).Id);
+            var proposal = CreateProposal(session) with { EstimatedMinutesAfter = 99 };
             var repository = new FakeRepository(session);
             var handler = new ApplyLiveAdaptationCommandHandler(
                 new StubCurrentUser("user"),
                 repository,
-                new StubSender(ToDto(session)));
+                new StubSender(() => ToDto(session)));
 
             var result = await handler.Handle(
                 new ApplyLiveAdaptationCommand(proposal),
@@ -34,7 +36,33 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
             Assert.True(session.Ejercicios.Last().Omitido);
             Assert.False(session.Ejercicios.First().Omitido);
             Assert.Equal(1, repository.SaveCount);
-            Assert.Equal(session.Id, result.Id);
+            Assert.Equal(session.Id, result.UpdatedSession.Id);
+            Assert.Contains("Omití Curl.", result.Text);
+            Assert.DoesNotContain("Remo", result.Text);
+            Assert.Contains("Quedan 2 series. Sigue Press, serie 2, 8 a 10 repeticiones y RIR 1 a 2.", result.Text);
+            Assert.Contains("Tiempo pendiente estimado: 3 min.", result.Text);
+            Assert.Equal(2, result.UpdatedSession.Ejercicios.Count(exercise => exercise.Omitido));
+            Assert.Contains(result.UpdatedSession.Ejercicios,
+                exercise => exercise.Id == session.Ejercicios.Last().Id && exercise.Omitido);
+            Assert.Contains(result.UpdatedSession.Ejercicios, exercise => !exercise.Omitido);
+            var audit = Assert.Single(session.AdaptacionesLiveCoach);
+            Assert.Equal(TipoAdaptacionLiveCoach.Tiempo, audit.Tipo);
+        }
+
+        [Fact]
+        public async Task Handle_WhenNoWorkRemains_LeavesFinalizationToTraining()
+        {
+            var session = CreateSession();
+            foreach (var exercise in session.Ejercicios.Take(2))
+                for (var number = 1; number <= 3; number++)
+                    exercise.RegistrarOActualizarSerie(number, 100, 8, 1, DateTime.UtcNow);
+            var repository = new FakeRepository(session);
+
+            var result = await CreateHandler(repository, session).Handle(
+                new ApplyLiveAdaptationCommand(CreateProposal(session)), CancellationToken.None);
+
+            Assert.Contains("No quedan series pendientes. Podés finalizar el entrenamiento.", result.Text);
+            Assert.Equal(EstadoSesionEntrenamiento.EnCurso, session.Estado);
         }
 
         [Fact]
@@ -52,6 +80,7 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
 
             Assert.Equal(0, repository.SaveCount);
             Assert.All(session.Ejercicios, exercise => Assert.False(exercise.Omitido));
+            Assert.Empty(session.AdaptacionesLiveCoach);
         }
 
         [Fact]
@@ -141,21 +170,49 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Adaptation
                 session.HoraInicio,
                 session.HoraFin,
                 session.Estado,
-                []);
+                session.Ejercicios
+                    .OrderBy(x => x.Orden)
+                    .Select(x => new TrainingSessionExerciseDto(
+                        x.Id,
+                        x.EjercicioId,
+                        x.Ejercicio.Nombre,
+                        x.Orden,
+                        x.SeriesObjetivo,
+                        x.RepeticionesMinimasObjetivo,
+                        x.RepeticionesMaximasObjetivo,
+                        x.RirObjetivoMinimo,
+                        x.RirObjetivoMaximo,
+                        x.DescansoObjetivoSegundos,
+                        x.Notas,
+                        [],
+                        x.Omitido))
+                    .ToList());
 
         private sealed class StubCurrentUser(string userId) : ICurrentUserService
         {
             public string? UserId { get; } = userId;
         }
 
-        private sealed class StubSender(TrainingSessionDto response) : ISender
+        private sealed class StubSender : ISender
         {
+            private readonly Func<TrainingSessionDto> _responseFactory;
+
+            public StubSender(TrainingSessionDto response)
+            {
+                _responseFactory = () => response;
+            }
+
+            public StubSender(Func<TrainingSessionDto> responseFactory)
+            {
+                _responseFactory = responseFactory;
+            }
+
             public Task<TResponse> Send<TResponse>(
                 IRequest<TResponse> request,
                 CancellationToken cancellationToken = default)
             {
                 Assert.IsType<GetTrainingSessionByIdQuery>(request);
-                return Task.FromResult((TResponse)(object)response);
+                return Task.FromResult((TResponse)(object)_responseFactory());
             }
 
             public Task<object?> Send(object request, CancellationToken cancellationToken = default)

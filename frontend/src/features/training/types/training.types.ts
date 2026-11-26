@@ -6,6 +6,10 @@ export type TrainingSet = {
   rir: number | null;
   completada: boolean;
   fechaHoraRegistro: string;
+  repeticionesObjetivoMinimas?: number | null;
+  repeticionesObjetivoMaximas?: number | null;
+  rirObjetivoMinimo?: number | null;
+  rirObjetivoMaximo?: number | null;
 };
 
 export type TrainingSessionExercise = {

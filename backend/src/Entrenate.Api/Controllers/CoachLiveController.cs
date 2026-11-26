@@ -10,6 +10,9 @@ using Entrenate.Application.Coach.LiveCoach.Commands.TranscribeLiveAudio;
 using Entrenate.Application.Coach.LiveCoach.Context;
 using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Coach.LiveCoach.Models;
+using Entrenate.Application.Coach.LiveCoach.Proactive;
+using Entrenate.Application.Coach.LiveCoach.Queries.EvaluateLiveCoachProactive;
+using Entrenate.Application.Coach.LiveCoach.PostSession;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -237,6 +240,31 @@ namespace Entrenate.Api.Controllers
             return Ok(response);
         }
 
+        [HttpPost("proactive")]
+        public async Task<IActionResult> EvaluateProactive(
+            [FromBody] EvaluateLiveCoachProactiveRequest request,
+            CancellationToken cancellationToken)
+        {
+            if (request.SessionId == Guid.Empty)
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Sesión requerida",
+                    Detail = "El campo sessionId es obligatorio.",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            var snapshot = request.Snapshot is null
+                ? null
+                : new LiveCoachProactiveSnapshot(
+                    request.Snapshot.RestExerciseSessionId,
+                    request.Snapshot.RestStartedAtUtc);
+            return Ok(await _sender.Send(
+                new EvaluateLiveCoachProactiveQuery(request.SessionId, snapshot),
+                cancellationToken));
+        }
+
         [HttpPost("speech")]
         [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -286,6 +314,21 @@ namespace Entrenate.Api.Controllers
 
             return NoContent();
         }
+
+        [HttpGet("sessions/{sessionId:guid}/summary")]
+        public async Task<IActionResult> GetPostSessionSummary(
+            Guid sessionId,
+            CancellationToken cancellationToken)
+            => Ok(await _sender.Send(
+                new GetPostSessionCoachSummaryQuery(sessionId), cancellationToken));
+
+        [HttpPost("sessions/{sessionId:guid}/summary/respond")]
+        public async Task<IActionResult> AnswerPostSessionQuestion(
+            Guid sessionId,
+            [FromBody] PostSessionCoachQuestionRequest request,
+            CancellationToken cancellationToken)
+            => Ok(await _sender.Send(
+                new AnswerPostSessionCoachQuery(sessionId, request.Question), cancellationToken));
     }
 }
 

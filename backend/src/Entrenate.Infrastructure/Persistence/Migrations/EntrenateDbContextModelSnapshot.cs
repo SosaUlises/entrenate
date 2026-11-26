@@ -22,6 +22,58 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Entrenate.Domain.Entidades.AdaptacionLiveCoachSesion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("EjercicioSesionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("FechaAplicacionUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("RepeticionesMaximasAnteriores")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RepeticionesMaximasNuevas")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RepeticionesMinimasAnteriores")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RepeticionesMinimasNuevas")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirMaximoAnterior")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirMaximoNuevo")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirMinimoAnterior")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirMinimoNuevo")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SerieEfectivaDesde")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SesionEntrenamientoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SesionEntrenamientoId", "FechaAplicacionUtc");
+
+                    b.ToTable("AdaptacionesLiveCoachSesion", (string)null);
+                });
+
             modelBuilder.Entity("Entrenate.Domain.Entidades.DiaEntrenamientoPreferido", b =>
                 {
                     b.Property<Guid>("Id")
@@ -440,7 +492,19 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.Property<int>("Repeticiones")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("RepeticionesObjetivoMaximas")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RepeticionesObjetivoMinimas")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("Rir")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirObjetivoMaximo")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RirObjetivoMinimo")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -859,6 +923,17 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Entrenate.Domain.Entidades.AdaptacionLiveCoachSesion", b =>
+                {
+                    b.HasOne("Entrenate.Domain.Entidades.SesionEntrenamiento", "SesionEntrenamiento")
+                        .WithMany("AdaptacionesLiveCoach")
+                        .HasForeignKey("SesionEntrenamientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SesionEntrenamiento");
+                });
+
             modelBuilder.Entity("Entrenate.Domain.Entidades.DiaEntrenamientoPreferido", b =>
                 {
                     b.HasOne("Entrenate.Domain.Entidades.PerfilEntrenamiento", null)
@@ -1152,6 +1227,8 @@ namespace Entrenate.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Entrenate.Domain.Entidades.SesionEntrenamiento", b =>
                 {
                     b.Navigation("Adaptacion");
+
+                    b.Navigation("AdaptacionesLiveCoach");
 
                     b.Navigation("Ejercicios");
                 });

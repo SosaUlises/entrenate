@@ -100,7 +100,11 @@ namespace Entrenate.Application.TrainingSessions.Commands.StartTrainingSession
                                 y.Repeticiones,
                                 y.Rir,
                                 y.Completada,
-                                y.FechaHoraRegistro))
+                                y.FechaHoraRegistro,
+                                y.RepeticionesObjetivoMinimas,
+                                y.RepeticionesObjetivoMaximas,
+                                y.RirObjetivoMinimo,
+                                y.RirObjetivoMaximo))
                             .ToList(),
                         x.Omitido))
                     .ToList());

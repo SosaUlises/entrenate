@@ -86,7 +86,11 @@ namespace Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet
                 trainingSet.Repeticiones,
                 trainingSet.Rir,
                 trainingSet.Completada,
-                trainingSet.FechaHoraRegistro);
+                trainingSet.FechaHoraRegistro,
+                trainingSet.RepeticionesObjetivoMinimas,
+                trainingSet.RepeticionesObjetivoMaximas,
+                trainingSet.RirObjetivoMinimo,
+                trainingSet.RirObjetivoMaximo);
         }
     }
 }

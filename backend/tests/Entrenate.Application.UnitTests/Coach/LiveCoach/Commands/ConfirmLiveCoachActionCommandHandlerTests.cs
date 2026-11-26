@@ -1,6 +1,7 @@
 using Entrenate.Application.Coach.LiveCoach.Actions;
 using Entrenate.Application.Coach.LiveCoach.Adaptation;
 using Entrenate.Application.Coach.LiveCoach.Commands.ConfirmLiveCoachAction;
+using Entrenate.Application.Coach.LiveCoach.DTOs;
 using Entrenate.Application.Common.Exceptions;
 using Entrenate.Application.Common.Interfaces;
 using Entrenate.Application.TrainingSessions.Commands.UpsertTrainingSet;
@@ -130,7 +131,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
 
             var command = Assert.IsType<ApplyLiveAdaptationCommand>(sender.Requests.Single());
             Assert.Equal(proposal, command.Proposal);
-            Assert.Equal("Listo. Ajusté la sesión para acercarla a 20 minutos.", result.Text);
+            Assert.Equal("Resumen de la sesión guardada.", result.Text);
+            Assert.Same(updated, result.UpdatedSession);
         }
 
         [Fact]
@@ -319,7 +321,8 @@ namespace Entrenate.Application.UnitTests.Coach.LiveCoach.Commands
                         command.Rir, true, DateTime.UtcNow),
                     SkipCurrentExerciseCommand => updatedSession ?? throw new InvalidOperationException(),
                     ReactivateExerciseCommand => updatedSession ?? throw new InvalidOperationException(),
-                    ApplyLiveAdaptationCommand => updatedSession ?? throw new InvalidOperationException(),
+                    ApplyLiveAdaptationCommand => new LiveCoachActionConfirmationDto(
+                        updatedSession ?? throw new InvalidOperationException(), "Resumen de la sesión guardada."),
                     GetTrainingSessionByIdQuery => updatedSession ?? new TrainingSessionDto(
                         sessionId, null, DateTime.UtcNow.Date, DateTime.UtcNow,
                         null, EstadoSesionEntrenamiento.EnCurso, []),

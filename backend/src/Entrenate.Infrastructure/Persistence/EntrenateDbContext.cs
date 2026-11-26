@@ -66,6 +66,9 @@ namespace Entrenate.Infrastructure.Persistence
         public DbSet<SerieEntrenamiento> SeriesEntrenamiento =>
             Set<SerieEntrenamiento>();
 
+        public DbSet<AdaptacionLiveCoachSesion> AdaptacionesLiveCoachSesiones =>
+            Set<AdaptacionLiveCoachSesion>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

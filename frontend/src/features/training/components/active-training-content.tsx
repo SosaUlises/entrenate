@@ -228,7 +228,12 @@ export function ActiveTrainingContent() {
 
       setGuidedRest((current) => current && current.remaining > 0
         ? current
-        : { next, remaining: action.durationSeconds });
+        : {
+          next,
+          remaining: action.durationSeconds,
+          sourceExerciseSessionId: action.exerciseSessionId ?? next.exercise.id,
+          startedAtUtc: new Date().toISOString(),
+        });
       return true;
     }
 
@@ -288,11 +293,22 @@ export function ActiveTrainingContent() {
         </div>
         {session ? (
           <LiveCoachPrototype
+            isTrainingInputDirty={isDirty}
             onClientAction={applyLiveCoachClientAction}
             onSessionUpdated={synchronizeLiveCoachSession}
             restTimer={guidedRest
-              ? { isActive: guidedRest.remaining > 0, remainingSeconds: guidedRest.remaining }
-              : { isActive: false, remainingSeconds: null }}
+              ? {
+                isActive: guidedRest.remaining > 0,
+                remainingSeconds: guidedRest.remaining,
+                sourceExerciseSessionId: guidedRest.sourceExerciseSessionId,
+                startedAtUtc: guidedRest.startedAtUtc,
+              }
+              : {
+                isActive: false,
+                remainingSeconds: null,
+                sourceExerciseSessionId: null,
+                startedAtUtc: null,
+              }}
             session={session}
             visibleExerciseSessionId={visibleExerciseSessionId}
           />

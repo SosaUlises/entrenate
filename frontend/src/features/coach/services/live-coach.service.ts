@@ -5,6 +5,10 @@ import type {
   LiveCoachRespondResponse,
   LiveCoachActionConfirmation,
   LiveCoachTranscriptionResponse,
+  LiveCoachProactiveEvaluation,
+  LiveCoachProactiveRequest,
+  PostSessionCoachAnswer,
+  PostSessionCoachSummary,
 } from "../types/live-coach.types";
 
 export function transcribeLiveAudio(
@@ -16,6 +20,21 @@ export function transcribeLiveAudio(
     {
       authToken,
       body: formData,
+      cache: "no-store",
+      method: "POST",
+    },
+  );
+}
+
+export function evaluateLiveCoachProactive(
+  payload: LiveCoachProactiveRequest,
+  authToken: string,
+): Promise<LiveCoachProactiveEvaluation> {
+  return apiRequest<LiveCoachProactiveEvaluation, LiveCoachProactiveRequest>(
+    "/api/coach/live/proactive",
+    {
+      authToken,
+      body: payload,
       cache: "no-store",
       method: "POST",
     },
@@ -60,6 +79,27 @@ export function cancelLiveCoachAction(
   return apiRequest<void>(
     `/api/coach/live/actions/${encodeURIComponent(actionId)}/cancel`,
     { authToken, cache: "no-store", method: "POST" },
+  );
+}
+
+export function getPostSessionCoachSummary(
+  sessionId: string,
+  authToken: string,
+): Promise<PostSessionCoachSummary> {
+  return apiRequest<PostSessionCoachSummary>(
+    `/api/coach/live/sessions/${encodeURIComponent(sessionId)}/summary`,
+    { authToken, cache: "no-store", method: "GET" },
+  );
+}
+
+export function answerPostSessionCoachQuestion(
+  sessionId: string,
+  question: string,
+  authToken: string,
+): Promise<PostSessionCoachAnswer> {
+  return apiRequest<PostSessionCoachAnswer, { question: string }>(
+    `/api/coach/live/sessions/${encodeURIComponent(sessionId)}/summary/respond`,
+    { authToken, body: { question }, cache: "no-store", method: "POST" },
   );
 }
 

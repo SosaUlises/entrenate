@@ -43,14 +43,11 @@
 .eyePosture,
 .eyeLid,
 .eyeShape {
-  transition:
-    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
-    filter 320ms ease;
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .eyeShape {
   fill: var(--technical-white, #e8e7df);
-  filter: drop-shadow(0 0 7px rgba(232, 231, 223, 0.24));
 }
 
 /* --------------------------------------------------------------------------
@@ -116,11 +113,6 @@
   transform: translateX(-1.5px);
 }
 
-[data-state="listening"] .eyeShape {
-  filter: drop-shadow(0 0 10px rgba(232, 231, 223, 0.36))
-    drop-shadow(0 0 3px rgba(225, 115, 78, 0.28));
-}
-
 /* Thinking: ojos redondos plenos (sin deformar ni achicar). Asimetría posicional pura */
 [data-state="thinking"] .faceMotion {
   transform: translateY(-1px);
@@ -139,7 +131,6 @@
 }
 
 [data-state="thinking"] .eyeShape {
-  filter: drop-shadow(0 0 9px rgba(232, 231, 223, 0.32));
   transform: none;
 }
 
@@ -150,11 +141,6 @@
 /* Speaking: articulación energética y elocuente */
 [data-state="speaking"] .faceMotion {
   transform: translateY(-0.5px);
-}
-
-[data-state="speaking"] .eyeShape {
-  filter: drop-shadow(0 0 11px rgba(232, 231, 223, 0.38))
-    drop-shadow(0 0 3px rgba(225, 115, 78, 0.32));
 }
 
 /* Success / Listo: postura erguida, ojos circulares plenos, sutil convergencia resuelta */
@@ -175,31 +161,21 @@
 }
 
 [data-state="success"] .eyeShape {
-  filter: drop-shadow(0 0 8px rgba(232, 231, 223, 0.32));
   transform: none;
 }
 
 /* Error: reacción sobria, contenida y firme */
 [data-state="error"] .eyeLeft .eyePosture {
-  transform: rotate(-6deg) translateY(1px);
+  transform: translate(-1px, 1px);
 }
 
 [data-state="error"] .eyeRight .eyePosture {
-  transform: rotate(6deg) translateY(1px);
-}
-
-[data-state="error"] .eyeShape {
-  filter: drop-shadow(0 0 8px rgba(216, 93, 86, 0.32));
+  transform: translate(1px, 1px);
 }
 
 /* Waiting confirmation / Pending action: expectante, estable y atento al usuario */
 [data-state="waitingConfirmation"] .faceMotion {
   transform: translateY(-0.5px);
-}
-
-[data-state="waitingConfirmation"] .eyeShape {
-  filter: drop-shadow(0 0 9px rgba(232, 231, 223, 0.32))
-    drop-shadow(0 0 2px rgba(216, 174, 85, 0.24));
 }
 
 /* --------------------------------------------------------------------------
@@ -266,17 +242,17 @@
   animation-delay: 720ms;
 }
 
-/* SPEAKING: modulación vocal rítmica con squash & stretch dinámico y bobs elásticos */
+/* SPEAKING: cadencia rítmica mediante posición, sin deformar la forma base */
 .animated[data-state="speaking"] .faceMotion {
   animation: speaking-cadence 560ms cubic-bezier(0.33, 1, 0.68, 1) infinite alternate;
 }
 
 .animated[data-state="speaking"] .eyeLeft .eyePosture {
-  animation: speaking-left-squash 480ms ease-in-out infinite;
+  animation: speaking-left-shift 720ms ease-in-out infinite;
 }
 
 .animated[data-state="speaking"] .eyeRight .eyePosture {
-  animation: speaking-right-squash 520ms ease-in-out infinite;
+  animation: speaking-right-shift 760ms ease-in-out infinite;
   animation-delay: 40ms;
 }
 
@@ -499,35 +475,27 @@
   }
 }
 
-/* Speaking: squash & stretch dinámico ojo izquierdo */
-@keyframes speaking-left-squash {
+/* Speaking: micro desplazamiento alternado del ojo izquierdo */
+@keyframes speaking-left-shift {
   0%,
   100% {
-    transform: scale(0.92, 1.14) translateY(-1px);
+    transform: translate(-0.8px, -1px);
   }
 
-  38% {
-    transform: scale(1.1, 0.86) translateY(1.5px);
-  }
-
-  68% {
-    transform: scale(0.98, 1.05) translateY(-0.5px);
+  50% {
+    transform: translate(0.6px, 0.8px);
   }
 }
 
-/* Speaking: squash & stretch dinámico ojo derecho (desfasado para riqueza acústica) */
-@keyframes speaking-right-squash {
+/* Speaking: micro desplazamiento alternado del ojo derecho */
+@keyframes speaking-right-shift {
   0%,
   100% {
-    transform: scale(1.08, 0.88) translateY(1.2px);
+    transform: translate(0.8px, 0.9px);
   }
 
-  44% {
-    transform: scale(0.93, 1.15) translateY(-1.6px);
-  }
-
-  76% {
-    transform: scale(1.02, 0.96) translateY(0.2px);
+  50% {
+    transform: translate(-0.6px, -1px);
   }
 }
 
@@ -579,31 +547,26 @@
 /* Idea / Foquito: pop técnico externo limpio, breve (460ms), no toca a los ojos */
 @keyframes idea-pop-fade {
   0% {
-    filter: none;
     opacity: 0;
     transform: translateY(3px) scale(0.5);
   }
 
   22% {
-    filter: drop-shadow(0 0 7px rgba(225, 115, 78, 0.65));
     opacity: 1;
     transform: translateY(0) scale(1.1);
   }
 
   52% {
-    filter: drop-shadow(0 0 5px rgba(225, 115, 78, 0.45));
     opacity: 0.95;
     transform: translateY(-0.3px) scale(1);
   }
 
   75% {
-    filter: drop-shadow(0 0 2px rgba(225, 115, 78, 0.2));
     opacity: 0.4;
     transform: translateY(-1.5px) scale(0.92);
   }
 
   100% {
-    filter: none;
     opacity: 0;
     transform: translateY(-3px) scale(0.8);
   }
